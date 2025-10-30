@@ -12,19 +12,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // 2. Configuración de Identity
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
-    // Configuración de contraseñas
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredLength = 6;
-
-    // Configuración de lockout
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
-
-    // Configuración de usuario
     options.User.RequireUniqueEmail = true;
 })
 .AddRoles<IdentityRole>()
