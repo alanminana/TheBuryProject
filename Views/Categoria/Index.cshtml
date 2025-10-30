@@ -1,0 +1,134 @@
+﻿@model IEnumerable<TheBuryProject.ViewModels.CategoriaViewModel>
+
+@{
+    ViewData["Title"] = "Categorías";
+}
+
+<div class="container-fluid py-4">
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0 fw-bold">Gestión de Categorías</h1>
+            <p class="text-muted mb-0">Administrá las categorías de productos del sistema</p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Create" class="btn btn-primary btn-lg shadow-sm">
+                <i class="bi bi-plus-circle me-2"></i>Nueva Categoría
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="fw-semibold px-4 py-3">Código</th>
+                            <th class="fw-semibold py-3">Nombre</th>
+                            <th class="fw-semibold py-3">Descripción</th>
+                            <th class="fw-semibold py-3">Categoría Padre</th>
+                            <th class="fw-semibold py-3">Control Serie</th>
+                            <th class="fw-semibold text-center py-3 px-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="px-4">
+                                        <span class="badge bg-primary-subtle text-primary-emphasis">@item.Codigo</span>
+                                    </td>
+                                    <td class="fw-medium">@item.Nombre</td>
+                                    <td class="text-muted">@(item.Descripcion ?? "-")</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.ParentNombre))
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">@item.ParentNombre</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.ControlSerieDefault)
+                                        {
+                                            <span class="badge rounded-pill bg-success-subtle text-success-emphasis">
+                                                <i class="bi bi-check-lg"></i> Sí
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">No</span>
+                                        }
+                                    </td>
+                                    <td class="text-center px-4">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="Details" asp-route-id="@item.Id"
+                                               class="btn btn-outline-info"
+                                               data-bs-toggle="tooltip"
+                                               title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@item.Id"
+                                               class="btn btn-outline-warning"
+                                               data-bs-toggle="tooltip"
+                                               title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.Id"
+                                               class="btn btn-outline-danger"
+                                               data-bs-toggle="tooltip"
+                                               title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <i class="bi bi-inbox display-1 text-muted d-block mb-3"></i>
+                                    <p class="text-muted mb-2">No hay categorías registradas</p>
+                                    <a asp-action="Create" class="btn btn-primary">Crear la primera categoría</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script>
+        // Inicializar tooltips de Bootstrap 5.3
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    </script>
+}

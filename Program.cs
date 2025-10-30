@@ -1,15 +1,50 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Data;
+using TheBuryProject.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 1. Configuración de DbContext con SQL Server
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// 2. Configuración de Identity
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+{
+    // Configuración de contraseñas
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 6;
+
+    // Configuración de lockout
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+
+    // Configuración de usuario
+    options.User.RequireUniqueEmail = true;
+})
+.AddRoles<IdentityRole>()
+.AddEntityFrameworkStores<AppDbContext>();
+
+// 3. Registro de servicios (Dependency Injection)
+builder.Services.AddScoped<ICategoriaService, CategoriaService>();
+
+// 4. Configuración de MVC
 builder.Services.AddControllersWithViews();
+
+// 5. Configuración de Razor Pages (para Identity UI)
+builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// 6. Configuración del pipeline HTTP
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -18,10 +53,16 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// 7. Autenticación y autorización
+app.UseAuthentication();
 app.UseAuthorization();
 
+// 8. Mapeo de rutas
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// 9. Mapeo de Razor Pages (para Identity UI)
+app.MapRazorPages();
 
 app.Run();
