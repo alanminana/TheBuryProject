@@ -1,6 +1,7 @@
 // Controllers/BaseEntityController.cs
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using TheBuryProject.Data.Repositories;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;

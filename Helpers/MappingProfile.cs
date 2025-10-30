@@ -13,3 +13,4 @@ public class MappingProfile : Profile
         CreateMap<Marca, MarcaViewModel>()
             .ForMember(d => d.ParentNombre, o => o.MapFrom(s => s.Parent.Nombre));
     }
+}

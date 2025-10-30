@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using TheBuryProject.Models;
+using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
@@ -106,7 +105,7 @@ namespace TheBuryProject.Controllers
                         return View(viewModel);
                     }
 
-                    var marca = new PageResult
+                    var marca = new Marca
                     {
                         Codigo = viewModel.Codigo,
                         Nombre = viewModel.Nombre,
@@ -189,7 +188,7 @@ namespace TheBuryProject.Controllers
                         return View(viewModel);
                     }
 
-                    var marca = new PageResult
+                    var marca = new Marca
                     {
                         Id = viewModel.Id,
                         Codigo = viewModel.Codigo,

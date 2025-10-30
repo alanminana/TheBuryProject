@@ -1,168 +1,72 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-using TheBuryProject.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using TheBuryProject.Models.Base;
-using TheBuryProject.Models.Entities;
 
-namespace TheBuryProject.Data
+namespace TheBuryProject.Data.Repositories
 {
     /// <summary>
-    /// Contexto principal de la base de datos del sistema.
-    /// Hereda de IdentityDbContext para incluir tablas de autenticación.
+    /// Implementación genérica del repositorio.
+    /// Maneja operaciones CRUD básicas para cualquier entidad.
     /// </summary>
-    public class AppDbContext : IdentityDbContext
+    /// <typeparam name="T">Tipo de entidad que hereda de BaseEntity</typeparam>
+    public class Repository<T> : IRepository<T> where T : BaseEntity
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options)
-            : base(options)
+        private readonly AppDbContext _context;
+        private readonly DbSet<T> _dbSet;
+
+        public Repository(AppDbContext context)
         {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _dbSet = _context.Set<T>();
         }
 
-        // DbSets - Cada uno representa una tabla en la base de datos
-        public DbSet<Categoria> Categorias { get; set; }
-        public DbSet<Marca> Marcas { get; set; }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        public async Task<T?> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            base.OnModelCreating(modelBuilder);
-
-            // Configuración de Categoria
-            modelBuilder.Entity<Categoria>(entity =>
-            {
-                // Índice único en el código
-                entity.HasIndex(e => e.Codigo)
-                    .IsUnique()
-                    .HasFilter("IsDeleted = 0"); // Solo para registros no eliminados
-
-                // Configuración de la relación padre-hijo (auto-referencia)
-                entity.HasOne(e => e.Parent)
-                    .WithMany(e => e.Children)
-                    .HasForeignKey(e => e.ParentId)
-                    .OnDelete(DeleteBehavior.Restrict); // No borrar en cascada
-
-                // RowVersion para control de concurrencia
-                entity.Property(e => e.RowVersion)
-                    .IsRowVersion();
-
-                // Filtro global para soft delete
-                entity.HasQueryFilter(e => !e.IsDeleted);
-            });
-
-            // Configuración de Marca
-            modelBuilder.Entity<Marca>(entity =>
-            {
-                // Índice único en el código
-                entity.HasIndex(e => e.Codigo)
-                    .IsUnique()
-                    .HasFilter("IsDeleted = 0"); // Solo para registros no eliminados
-
-                // Configuración de la relación padre-hijo (auto-referencia)
-                entity.HasOne(e => e.Parent)
-                    .WithMany(e => e.Children)
-                    .HasForeignKey(e => e.ParentId)
-                    .OnDelete(DeleteBehavior.Restrict); // No borrar en cascada
-
-                // RowVersion para control de concurrencia
-                entity.Property(e => e.RowVersion)
-                    .IsRowVersion();
-
-                // Filtro global para soft delete
-                entity.HasQueryFilter(e => !e.IsDeleted);
-            });
-
-            // Seed de datos inicial
-            SeedData(modelBuilder);
+            return await _dbSet.FindAsync(new object[] { id }, ct);
         }
 
-        /// <summary>
-        /// Datos iniciales para la base de datos
-        /// </summary>
-        private void SeedData(ModelBuilder modelBuilder)
+        public async Task<IEnumerable<T>> GetAllAsync(CancellationToken ct = default)
         {
-            modelBuilder.Entity<Categoria>().HasData(
-                new Categoria
-                {
-                    Id = 1,
-                    Codigo = "ELEC",
-                    Nombre = "Electrónica",
-                    Descripcion = "Productos electrónicos",
-                    ControlSerieDefault = true,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
-                },
-                new Categoria
-                {
-                    Id = 2,
-                    Codigo = "FRIO",
-                    Nombre = "Refrigeración",
-                    Descripcion = "Heladeras, freezers y aire acondicionado",
-                    ControlSerieDefault = true,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
-                }
-            );
-
-            modelBuilder.Entity<Marca>().HasData(
-                new Marca
-                {
-                    Id = 1,
-                    Codigo = "SAM",
-                    Nombre = "Samsung",
-                    Descripcion = "Electrónica y electrodomésticos",
-                    PaisOrigen = "Corea del Sur",
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
-                },
-                new Marca
-                {
-                    Id = 2,
-                    Codigo = "LG",
-                    Nombre = "LG",
-                    Descripcion = "Electrónica y electrodomésticos",
-                    PaisOrigen = "Corea del Sur",
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
-                },
-                new Marca
-                {
-                    Id = 3,
-                    Codigo = "WHI",
-                    Nombre = "Whirlpool",
-                    Descripcion = "Electrodomésticos",
-                    PaisOrigen = "Estados Unidos",
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
-                }
-            );
+            return await _dbSet.ToListAsync(ct);
         }
 
-        /// <summary>
-        /// Interceptor para auditoría automática antes de guardar cambios
-        /// </summary>
-        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        public async Task AddAsync(T entity, CancellationToken ct = default)
         {
-            var entries = ChangeTracker.Entries<BaseEntity>();
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
 
-            foreach (var entry in entries)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    entry.Entity.CreatedAt = DateTime.UtcNow;
-                    // TODO: Obtener usuario del contexto HTTP
-                    entry.Entity.CreatedBy = "System";
-                }
-                else if (entry.State == EntityState.Modified)
-                {
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
-                    // TODO: Obtener usuario del contexto HTTP
-                    entry.Entity.UpdatedBy = "System";
+            await _dbSet.AddAsync(entity, ct);
+        }
 
-                    // ✅ NUEVO: IMPORTANTE: Proteger campos de auditoría de creación para que no se modifiquen
-                    entry.Property(e => e.CreatedAt).IsModified = false;
-                    entry.Property(e => e.CreatedBy).IsModified = false;
-                }
-            }
+        public void Update(T entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
 
-            return base.SaveChangesAsync(cancellationToken);
+            _dbSet.Update(entity);
+        }
+
+        public void Remove(T entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            // Soft delete - marcar como eliminado en lugar de borrar físicamente
+            entity.IsDeleted = true;
+            _dbSet.Update(entity);
+        }
+
+        public async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
+        {
+            if (predicate == null)
+                throw new ArgumentNullException(nameof(predicate));
+
+            return await _dbSet.AnyAsync(predicate, ct);
+        }
+
+        public IQueryable<T> Query()
+        {
+            return _dbSet.AsQueryable();
         }
     }
 }
