@@ -8,7 +8,7 @@ using TheBuryProject.Services.Interfaces;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Configuración de DbContext con SQL Server
-builder.Services.AddDbContext<IRepository>(options =>
+builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // 2. Configuración de Identity
@@ -25,12 +25,13 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     options.User.RequireUniqueEmail = true;
 })
 .AddRoles<IdentityRole>()
-.AddEntityFrameworkStores<IRepository>();
+.AddEntityFrameworkStores<AppDbContext>();
 
 // 3. Registro de servicios (Dependency Injection)
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
+
 // 4. Configuración de MVC
 builder.Services.AddControllersWithViews();
 

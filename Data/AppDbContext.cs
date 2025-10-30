@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using TheBuryProject.Models;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Entities;
 
@@ -10,9 +9,9 @@ namespace TheBuryProject.Data
     /// Contexto principal de la base de datos del sistema.
     /// Hereda de IdentityDbContext para incluir tablas de autenticación.
     /// </summary>
-    public class IRepository : IdentityDbContext
+    public class AppDbContext : IdentityDbContext
     {
-        public IRepository(DbContextOptions<IRepository> options)
+        public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
         }
@@ -156,7 +155,7 @@ namespace TheBuryProject.Data
                     // TODO: Obtener usuario del contexto HTTP
                     entry.Entity.UpdatedBy = "System";
 
-                    // ✅ NUEVO: IMPORTANTE: Proteger campos de auditoría de creación para que no se modifiquen
+                    // IMPORTANTE: Proteger campos de auditoría de creación para que no se modifiquen
                     entry.Property(e => e.CreatedAt).IsModified = false;
                     entry.Property(e => e.CreatedBy).IsModified = false;
                 }
