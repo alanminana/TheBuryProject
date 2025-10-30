@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+Ôªøusing Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Models;
 
@@ -6,7 +6,7 @@ namespace TheBuryProject.Data
 {
     /// <summary>
     /// Contexto principal de la base de datos del sistema.
-    /// Hereda de IdentityDbContext para incluir tablas de autenticaciÛn.
+    /// Hereda de IdentityDbContext para incluir tablas de autenticaci√≥n.
     /// </summary>
     public class AppDbContext : IdentityDbContext
     {
@@ -23,15 +23,15 @@ namespace TheBuryProject.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // ConfiguraciÛn de Categoria
+            // Configuraci√≥n de Categoria
             modelBuilder.Entity<Categoria>(entity =>
             {
-                // Õndice ˙nico en el cÛdigo
+                // √çndice √∫nico en el c√≥digo
                 entity.HasIndex(e => e.Codigo)
                     .IsUnique()
                     .HasFilter("IsDeleted = 0"); // Solo para registros no eliminados
 
-                // ConfiguraciÛn de la relaciÛn padre-hijo (auto-referencia)
+                // Configuraci√≥n de la relaci√≥n padre-hijo (auto-referencia)
                 entity.HasOne(e => e.Parent)
                     .WithMany(e => e.Children)
                     .HasForeignKey(e => e.ParentId)
@@ -45,15 +45,15 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // ConfiguraciÛn de Marca
+            // Configuraci√≥n de Marca
             modelBuilder.Entity<Marca>(entity =>
             {
-                // Õndice ˙nico en el cÛdigo
+                // √çndice √∫nico en el c√≥digo
                 entity.HasIndex(e => e.Codigo)
                     .IsUnique()
                     .HasFilter("IsDeleted = 0"); // Solo para registros no eliminados
 
-                // ConfiguraciÛn de la relaciÛn padre-hijo (auto-referencia)
+                // Configuraci√≥n de la relaci√≥n padre-hijo (auto-referencia)
                 entity.HasOne(e => e.Parent)
                     .WithMany(e => e.Children)
                     .HasForeignKey(e => e.ParentId)
@@ -81,8 +81,8 @@ namespace TheBuryProject.Data
                 {
                     Id = 1,
                     Codigo = "ELEC",
-                    Nombre = "ElectrÛnica",
-                    Descripcion = "Productos electrÛnicos",
+                    Nombre = "Electr√≥nica",
+                    Descripcion = "Productos electr√≥nicos",
                     ControlSerieDefault = true,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
@@ -91,7 +91,7 @@ namespace TheBuryProject.Data
                 {
                     Id = 2,
                     Codigo = "FRIO",
-                    Nombre = "RefrigeraciÛn",
+                    Nombre = "Refrigeraci√≥n",
                     Descripcion = "Heladeras, freezers y aire acondicionado",
                     ControlSerieDefault = true,
                     CreatedAt = DateTime.UtcNow,
@@ -105,7 +105,7 @@ namespace TheBuryProject.Data
                     Id = 1,
                     Codigo = "SAM",
                     Nombre = "Samsung",
-                    Descripcion = "ElectrÛnica y electrodomÈsticos",
+                    Descripcion = "Electr√≥nica y electrodom√©sticos",
                     PaisOrigen = "Corea del Sur",
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
@@ -115,7 +115,7 @@ namespace TheBuryProject.Data
                     Id = 2,
                     Codigo = "LG",
                     Nombre = "LG",
-                    Descripcion = "ElectrÛnica y electrodomÈsticos",
+                    Descripcion = "Electr√≥nica y electrodom√©sticos",
                     PaisOrigen = "Corea del Sur",
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
@@ -125,7 +125,7 @@ namespace TheBuryProject.Data
                     Id = 3,
                     Codigo = "WHI",
                     Nombre = "Whirlpool",
-                    Descripcion = "ElectrodomÈsticos",
+                    Descripcion = "Electrodom√©sticos",
                     PaisOrigen = "Estados Unidos",
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
@@ -134,7 +134,7 @@ namespace TheBuryProject.Data
         }
 
         /// <summary>
-        /// Interceptor para auditorÌa autom·tica antes de guardar cambios
+        /// Interceptor para auditor√≠a autom√°tica antes de guardar cambios
         /// </summary>
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -153,6 +153,10 @@ namespace TheBuryProject.Data
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
                     // TODO: Obtener usuario del contexto HTTP
                     entry.Entity.UpdatedBy = "System";
+
+                    // ‚úÖ NUEVO: IMPORTANTE: Proteger campos de auditor√≠a de creaci√≥n para que no se modifiquen
+                    entry.Property(e => e.CreatedAt).IsModified = false;
+                    entry.Property(e => e.CreatedBy).IsModified = false;
                 }
             }
 

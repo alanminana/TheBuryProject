@@ -1,12 +1,12 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Models;
 
 namespace TheBuryProject.Services
 {
     /// <summary>
-    /// Implementaci�n del servicio de Categor�as.
-    /// Contiene toda la l�gica de negocio relacionada con categor�as.
+    /// Implementación del servicio de Categorías.
+    /// Contiene toda la lógica de negocio relacionada con categorías.
     /// </summary>
     public class CategoriaService : ICategoriaService
     {
@@ -30,7 +30,7 @@ namespace TheBuryProject.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener todas las categor�as");
+                _logger.LogError(ex, "Error al obtener todas las categorías");
                 throw;
             }
         }
@@ -46,7 +46,7 @@ namespace TheBuryProject.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener categor�a con Id {Id}", id);
+                _logger.LogError(ex, "Error al obtener categoría con Id {Id}", id);
                 throw;
             }
         }
@@ -60,7 +60,7 @@ namespace TheBuryProject.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener categor�a con c�digo {Codigo}", codigo);
+                _logger.LogError(ex, "Error al obtener categoría con código {Codigo}", codigo);
                 throw;
             }
         }
@@ -69,22 +69,44 @@ namespace TheBuryProject.Services
         {
             try
             {
+                // ✅ NUEVO: Validación de string vacío
+                if (string.IsNullOrWhiteSpace(categoria.Codigo))
+                {
+                    throw new InvalidOperationException("El código no puede estar vacío");
+                }
+
                 // Validaciones de negocio
                 if (await ExistsCodigoAsync(categoria.Codigo))
                 {
-                    throw new InvalidOperationException($"Ya existe una categor�a con el c�digo {categoria.Codigo}");
+                    throw new InvalidOperationException($"Ya existe una categoría con el código {categoria.Codigo}");
+                }
+
+                // ✅ NUEVO: Validar que el ParentId exista si se especifica
+                if (categoria.ParentId.HasValue)
+                {
+                    var parentExists = await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value);
+                    if (!parentExists)
+                    {
+                        throw new InvalidOperationException($"La categoría padre con Id {categoria.ParentId.Value} no existe");
+                    }
+
+                    // ✅ NUEVO: Validar que no se está creando un ciclo
+                    if (await WouldCreateCycleAsync(null, categoria.ParentId.Value))
+                    {
+                        throw new InvalidOperationException("No se puede establecer esta relación porque crearía un ciclo");
+                    }
                 }
 
                 _context.Categorias.Add(categoria);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Categor�a creada: {Codigo} - {Nombre}", categoria.Codigo, categoria.Nombre);
+                _logger.LogInformation("Categoría creada: {Codigo} - {Nombre}", categoria.Codigo, categoria.Nombre);
 
                 return categoria;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear categor�a {Codigo}", categoria.Codigo);
+                _logger.LogError(ex, "Error al crear categoría {Codigo}", categoria.Codigo);
                 throw;
             }
         }
@@ -97,13 +119,35 @@ namespace TheBuryProject.Services
                 var existing = await _context.Categorias.FindAsync(categoria.Id);
                 if (existing == null)
                 {
-                    throw new InvalidOperationException($"No se encontr� la categor�a con Id {categoria.Id}");
+                    throw new InvalidOperationException($"No se encontró la categoría con Id {categoria.Id}");
                 }
 
-                // Validar c�digo �nico (excluyendo el registro actual)
+                // ✅ NUEVO: Validación de string vacío
+                if (string.IsNullOrWhiteSpace(categoria.Codigo))
+                {
+                    throw new InvalidOperationException("El código no puede estar vacío");
+                }
+
+                // Validar código único (excluyendo el registro actual)
                 if (await ExistsCodigoAsync(categoria.Codigo, categoria.Id))
                 {
-                    throw new InvalidOperationException($"Ya existe otra categor�a con el c�digo {categoria.Codigo}");
+                    throw new InvalidOperationException($"Ya existe otra categoría con el código {categoria.Codigo}");
+                }
+
+                // ✅ NUEVO: Validar que el ParentId exista si se especifica
+                if (categoria.ParentId.HasValue)
+                {
+                    var parentExists = await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value);
+                    if (!parentExists)
+                    {
+                        throw new InvalidOperationException($"La categoría padre con Id {categoria.ParentId.Value} no existe");
+                    }
+
+                    // ✅ NUEVO: Validar que no se crea un ciclo
+                    if (await WouldCreateCycleAsync(categoria.Id, categoria.ParentId.Value))
+                    {
+                        throw new InvalidOperationException("No se puede establecer esta relación porque crearía un ciclo jerárquico");
+                    }
                 }
 
                 // Actualizar propiedades
@@ -113,20 +157,26 @@ namespace TheBuryProject.Services
                 existing.ParentId = categoria.ParentId;
                 existing.ControlSerieDefault = categoria.ControlSerieDefault;
 
+                // ✅ NUEVO: IMPORTANTE: Copiar el RowVersion para que funcione el control de concurrencia
+                if (categoria.RowVersion != null)
+                {
+                    _context.Entry(existing).OriginalValues["RowVersion"] = categoria.RowVersion;
+                }
+
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Categor�a actualizada: {Codigo} - {Nombre}", categoria.Codigo, categoria.Nombre);
+                _logger.LogInformation("Categoría actualizada: {Codigo} - {Nombre}", categoria.Codigo, categoria.Nombre);
 
                 return existing;
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                _logger.LogWarning(ex, "Conflicto de concurrencia al actualizar categor�a {Id}", categoria.Id);
-                throw new InvalidOperationException("La categor�a fue modificada por otro usuario. Por favor, recargue los datos.");
+                _logger.LogWarning(ex, "Conflicto de concurrencia al actualizar categoría {Id}", categoria.Id);
+                throw new InvalidOperationException("La categoría fue modificada por otro usuario. Por favor, recargue los datos.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar categor�a {Id}", categoria.Id);
+                _logger.LogError(ex, "Error al actualizar categoría {Id}", categoria.Id);
                 throw;
             }
         }
@@ -141,24 +191,24 @@ namespace TheBuryProject.Services
                     return false;
                 }
 
-                // Verificar si tiene categor�as hijas
+                // Verificar si tiene categorías hijas
                 var hasChildren = await _context.Categorias.AnyAsync(c => c.ParentId == id);
                 if (hasChildren)
                 {
-                    throw new InvalidOperationException("No se puede eliminar una categor�a que tiene subcategor�as");
+                    throw new InvalidOperationException("No se puede eliminar una categoría que tiene subcategorías");
                 }
 
                 // Soft delete
                 categoria.IsDeleted = true;
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Categor�a eliminada (soft delete): {Codigo} - {Nombre}", categoria.Codigo, categoria.Nombre);
+                _logger.LogInformation("Categoría eliminada (soft delete): {Codigo} - {Nombre}", categoria.Codigo, categoria.Nombre);
 
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar categor�a {Id}", id);
+                _logger.LogError(ex, "Error al eliminar categoría {Id}", id);
                 throw;
             }
         }
@@ -178,9 +228,58 @@ namespace TheBuryProject.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al verificar existencia de c�digo {Codigo}", codigo);
+                _logger.LogError(ex, "Error al verificar existencia de código {Codigo}", codigo);
                 throw;
             }
+        }
+
+        // ✅ NUEVO MÉTODO COMPLETO
+        /// <summary>
+        /// Valida si establecer parentId como padre de categoryId crearía un ciclo jerárquico
+        /// </summary>
+        private async Task<bool> WouldCreateCycleAsync(int? categoryId, int parentId)
+        {
+            // Si no hay categoryId, es una creación nueva, no puede haber ciclo
+            if (!categoryId.HasValue)
+            {
+                return false;
+            }
+
+            // Si intenta ser su propio padre
+            if (categoryId.Value == parentId)
+            {
+                return true;
+            }
+
+            // Recorrer la jerarquía hacia arriba desde el parent propuesto
+            var currentParentId = parentId;
+            var visitedIds = new HashSet<int> { categoryId.Value };
+
+            while (currentParentId != null)
+            {
+                // Si encontramos la categoría original, hay un ciclo
+                if (visitedIds.Contains(currentParentId.Value))
+                {
+                    return true;
+                }
+
+                visitedIds.Add(currentParentId.Value);
+
+                // Obtener el padre del padre
+                var parent = await _context.Categorias
+                    .Where(c => c.Id == currentParentId.Value)
+                    .Select(c => new { c.ParentId })
+                    .FirstOrDefaultAsync();
+
+                if (parent == null)
+                {
+                    break;
+                }
+
+                currentParentId = parent.ParentId;
+            }
+
+            return false;
         }
     }
 }

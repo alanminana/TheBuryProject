@@ -1,12 +1,12 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Models;
 
 namespace TheBuryProject.Services
 {
     /// <summary>
-    /// Implementaci�n del servicio de Marcas.
-    /// Contiene toda la l�gica de negocio relacionada con marcas.
+    /// Implementación del servicio de Marcas.
+    /// Contiene toda la lógica de negocio relacionada con marcas.
     /// </summary>
     public class MarcaService : IMarcaService
     {
@@ -60,7 +60,7 @@ namespace TheBuryProject.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener marca con c�digo {Codigo}", codigo);
+                _logger.LogError(ex, "Error al obtener marca con código {Codigo}", codigo);
                 throw;
             }
         }
@@ -69,10 +69,32 @@ namespace TheBuryProject.Services
         {
             try
             {
+                // ✅ NUEVO: Validación de string vacío
+                if (string.IsNullOrWhiteSpace(marca.Codigo))
+                {
+                    throw new InvalidOperationException("El código no puede estar vacío");
+                }
+
                 // Validaciones de negocio
                 if (await ExistsCodigoAsync(marca.Codigo))
                 {
-                    throw new InvalidOperationException($"Ya existe una marca con el c�digo {marca.Codigo}");
+                    throw new InvalidOperationException($"Ya existe una marca con el código {marca.Codigo}");
+                }
+
+                // ✅ NUEVO: Validar que el ParentId exista si se especifica
+                if (marca.ParentId.HasValue)
+                {
+                    var parentExists = await _context.Marcas.AnyAsync(m => m.Id == marca.ParentId.Value);
+                    if (!parentExists)
+                    {
+                        throw new InvalidOperationException($"La marca padre con Id {marca.ParentId.Value} no existe");
+                    }
+
+                    // ✅ NUEVO: Validar que no se está creando un ciclo
+                    if (await WouldCreateCycleAsync(null, marca.ParentId.Value))
+                    {
+                        throw new InvalidOperationException("No se puede establecer esta relación porque crearía un ciclo");
+                    }
                 }
 
                 _context.Marcas.Add(marca);
@@ -97,13 +119,35 @@ namespace TheBuryProject.Services
                 var existing = await _context.Marcas.FindAsync(marca.Id);
                 if (existing == null)
                 {
-                    throw new InvalidOperationException($"No se encontr� la marca con Id {marca.Id}");
+                    throw new InvalidOperationException($"No se encontró la marca con Id {marca.Id}");
                 }
 
-                // Validar c�digo �nico (excluyendo el registro actual)
+                // ✅ NUEVO: Validación de string vacío
+                if (string.IsNullOrWhiteSpace(marca.Codigo))
+                {
+                    throw new InvalidOperationException("El código no puede estar vacío");
+                }
+
+                // Validar código único (excluyendo el registro actual)
                 if (await ExistsCodigoAsync(marca.Codigo, marca.Id))
                 {
-                    throw new InvalidOperationException($"Ya existe otra marca con el c�digo {marca.Codigo}");
+                    throw new InvalidOperationException($"Ya existe otra marca con el código {marca.Codigo}");
+                }
+
+                // ✅ NUEVO: Validar que el ParentId exista si se especifica
+                if (marca.ParentId.HasValue)
+                {
+                    var parentExists = await _context.Marcas.AnyAsync(m => m.Id == marca.ParentId.Value);
+                    if (!parentExists)
+                    {
+                        throw new InvalidOperationException($"La marca padre con Id {marca.ParentId.Value} no existe");
+                    }
+
+                    // ✅ NUEVO: Validar que no se crea un ciclo
+                    if (await WouldCreateCycleAsync(marca.Id, marca.ParentId.Value))
+                    {
+                        throw new InvalidOperationException("No se puede establecer esta relación porque crearía un ciclo jerárquico");
+                    }
                 }
 
                 // Actualizar propiedades
@@ -112,6 +156,12 @@ namespace TheBuryProject.Services
                 existing.Descripcion = marca.Descripcion;
                 existing.ParentId = marca.ParentId;
                 existing.PaisOrigen = marca.PaisOrigen;
+
+                // ✅ NUEVO: IMPORTANTE: Copiar el RowVersion para que funcione el control de concurrencia
+                if (marca.RowVersion != null)
+                {
+                    _context.Entry(existing).OriginalValues["RowVersion"] = marca.RowVersion;
+                }
 
                 await _context.SaveChangesAsync();
 
@@ -178,9 +228,58 @@ namespace TheBuryProject.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al verificar existencia de c�digo {Codigo}", codigo);
+                _logger.LogError(ex, "Error al verificar existencia de código {Codigo}", codigo);
                 throw;
             }
+        }
+
+        // ✅ NUEVO MÉTODO COMPLETO
+        /// <summary>
+        /// Valida si establecer parentId como padre de marcaId crearía un ciclo jerárquico
+        /// </summary>
+        private async Task<bool> WouldCreateCycleAsync(int? marcaId, int parentId)
+        {
+            // Si no hay marcaId, es una creación nueva, no puede haber ciclo
+            if (!marcaId.HasValue)
+            {
+                return false;
+            }
+
+            // Si intenta ser su propio padre
+            if (marcaId.Value == parentId)
+            {
+                return true;
+            }
+
+            // Recorrer la jerarquía hacia arriba desde el parent propuesto
+            var currentParentId = parentId;
+            var visitedIds = new HashSet<int> { marcaId.Value };
+
+            while (currentParentId != null)
+            {
+                // Si encontramos la marca original, hay un ciclo
+                if (visitedIds.Contains(currentParentId.Value))
+                {
+                    return true;
+                }
+
+                visitedIds.Add(currentParentId.Value);
+
+                // Obtener el padre del padre
+                var parent = await _context.Marcas
+                    .Where(m => m.Id == currentParentId.Value)
+                    .Select(m => new { m.ParentId })
+                    .FirstOrDefaultAsync();
+
+                if (parent == null)
+                {
+                    break;
+                }
+
+                currentParentId = parent.ParentId;
+            }
+
+            return false;
         }
     }
 }
