@@ -54,7 +54,6 @@ theburyProject.sln
 │   ├── Extensions/
 │   └── Program.cs
 │
-├── theburyProject.Application (Capa de Aplicación)
 │   ├── DTOs/
 │   │   ├── Categoria/
 │   │   ├── Producto/
@@ -65,14 +64,12 @@ theburyProject.sln
 │   ├── Validators/ (FluentValidation)
 │   └── Common/ (SearchRequest, PageResult, ServiceResult)
 │
-├── theburyProject.Domain (Dominio Puro)
 │   ├── Entities/
 │   ├── Enums/
 │   ├── Exceptions/
 │   ├── Interfaces/ (IRepository, IUnitOfWork)
 │   └── ValueObjects/ (opcional DDD)
 │
-└── theburyProject.Infrastructure (Persistencia e Infra)
     ├── Data/
     │   ├── AppDbContext.cs
     │   ├── Configurations/ (EF Fluent API)
@@ -498,4 +495,8 @@ Y yo podré continuar exactamente donde quedamos.
 
 ---
 
+
+
 **FIN DEL DOCUMENTO MAESTRO**
+
+

@@ -17,6 +17,7 @@ namespace TheBuryProject.Data
 
         // DbSets - Cada uno representa una tabla en la base de datos
         public DbSet<Categoria> Categorias { get; set; }
+        public DbSet<Marca> Marcas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -44,7 +45,29 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // Seed de datos inicial (opcional)
+            // Configuración de Marca
+            modelBuilder.Entity<Marca>(entity =>
+            {
+                // Índice único en el código
+                entity.HasIndex(e => e.Codigo)
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0"); // Solo para registros no eliminados
+
+                // Configuración de la relación padre-hijo (auto-referencia)
+                entity.HasOne(e => e.Parent)
+                    .WithMany(e => e.Children)
+                    .HasForeignKey(e => e.ParentId)
+                    .OnDelete(DeleteBehavior.Restrict); // No borrar en cascada
+
+                // RowVersion para control de concurrencia
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                // Filtro global para soft delete
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // Seed de datos inicial
             SeedData(modelBuilder);
         }
 
@@ -71,6 +94,39 @@ namespace TheBuryProject.Data
                     Nombre = "Refrigeración",
                     Descripcion = "Heladeras, freezers y aire acondicionado",
                     ControlSerieDefault = true,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "System"
+                }
+            );
+
+            modelBuilder.Entity<Marca>().HasData(
+                new Marca
+                {
+                    Id = 1,
+                    Codigo = "SAM",
+                    Nombre = "Samsung",
+                    Descripcion = "Electrónica y electrodomésticos",
+                    PaisOrigen = "Corea del Sur",
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "System"
+                },
+                new Marca
+                {
+                    Id = 2,
+                    Codigo = "LG",
+                    Nombre = "LG",
+                    Descripcion = "Electrónica y electrodomésticos",
+                    PaisOrigen = "Corea del Sur",
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "System"
+                },
+                new Marca
+                {
+                    Id = 3,
+                    Codigo = "WHI",
+                    Nombre = "Whirlpool",
+                    Descripcion = "Electrodomésticos",
+                    PaisOrigen = "Estados Unidos",
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 }

@@ -27,7 +27,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 
 // 3. Registro de servicios (Dependency Injection)
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
-
+builder.Services.AddScoped<IMarcaService, MarcaService>();
 // 4. Configuración de MVC
 builder.Services.AddControllersWithViews();
 
