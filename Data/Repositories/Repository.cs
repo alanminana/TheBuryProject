@@ -10,9 +10,9 @@ namespace TheBuryProject.Data
     /// Contexto principal de la base de datos del sistema.
     /// Hereda de IdentityDbContext para incluir tablas de autenticación.
     /// </summary>
-    public class IRepository : IdentityDbContext
+    public class AppDbContext : IdentityDbContext
     {
-        public IRepository(DbContextOptions<IRepository> options)
+        public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
         }

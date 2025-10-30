@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using TheBuryProject.Models.Base;
 
-namespace TheBuryProject.Models
+namespace TheBuryProject.Models.Entities
 {
     /// <summary>
     /// Representa una marca de productos en el sistema.

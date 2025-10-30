@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Models;
+using TheBuryProject.Models.Entities;
+using TheBuryProject.Services.Interfaces;
 
 namespace TheBuryProject.Services
 {
@@ -69,32 +71,10 @@ namespace TheBuryProject.Services
         {
             try
             {
-                // ✅ NUEVO: Validación de string vacío
-                if (string.IsNullOrWhiteSpace(categoria.Codigo))
-                {
-                    throw new InvalidOperationException("El código no puede estar vacío");
-                }
-
                 // Validaciones de negocio
                 if (await ExistsCodigoAsync(categoria.Codigo))
                 {
                     throw new InvalidOperationException($"Ya existe una categoría con el código {categoria.Codigo}");
-                }
-
-                // ✅ NUEVO: Validar que el ParentId exista si se especifica
-                if (categoria.ParentId.HasValue)
-                {
-                    var parentExists = await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value);
-                    if (!parentExists)
-                    {
-                        throw new InvalidOperationException($"La categoría padre con Id {categoria.ParentId.Value} no existe");
-                    }
-
-                    // ✅ NUEVO: Validar que no se está creando un ciclo
-                    if (await WouldCreateCycleAsync(null, categoria.ParentId.Value))
-                    {
-                        throw new InvalidOperationException("No se puede establecer esta relación porque crearía un ciclo");
-                    }
                 }
 
                 _context.Categorias.Add(categoria);
@@ -122,32 +102,10 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException($"No se encontró la categoría con Id {categoria.Id}");
                 }
 
-                // ✅ NUEVO: Validación de string vacío
-                if (string.IsNullOrWhiteSpace(categoria.Codigo))
-                {
-                    throw new InvalidOperationException("El código no puede estar vacío");
-                }
-
                 // Validar código único (excluyendo el registro actual)
                 if (await ExistsCodigoAsync(categoria.Codigo, categoria.Id))
                 {
                     throw new InvalidOperationException($"Ya existe otra categoría con el código {categoria.Codigo}");
-                }
-
-                // ✅ NUEVO: Validar que el ParentId exista si se especifica
-                if (categoria.ParentId.HasValue)
-                {
-                    var parentExists = await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value);
-                    if (!parentExists)
-                    {
-                        throw new InvalidOperationException($"La categoría padre con Id {categoria.ParentId.Value} no existe");
-                    }
-
-                    // ✅ NUEVO: Validar que no se crea un ciclo
-                    if (await WouldCreateCycleAsync(categoria.Id, categoria.ParentId.Value))
-                    {
-                        throw new InvalidOperationException("No se puede establecer esta relación porque crearía un ciclo jerárquico");
-                    }
                 }
 
                 // Actualizar propiedades
@@ -156,12 +114,6 @@ namespace TheBuryProject.Services
                 existing.Descripcion = categoria.Descripcion;
                 existing.ParentId = categoria.ParentId;
                 existing.ControlSerieDefault = categoria.ControlSerieDefault;
-
-                // ✅ NUEVO: IMPORTANTE: Copiar el RowVersion para que funcione el control de concurrencia
-                if (categoria.RowVersion != null)
-                {
-                    _context.Entry(existing).OriginalValues["RowVersion"] = categoria.RowVersion;
-                }
 
                 await _context.SaveChangesAsync();
 
@@ -231,55 +183,6 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al verificar existencia de código {Codigo}", codigo);
                 throw;
             }
-        }
-
-        // ✅ NUEVO MÉTODO COMPLETO
-        /// <summary>
-        /// Valida si establecer parentId como padre de categoryId crearía un ciclo jerárquico
-        /// </summary>
-        private async Task<bool> WouldCreateCycleAsync(int? categoryId, int parentId)
-        {
-            // Si no hay categoryId, es una creación nueva, no puede haber ciclo
-            if (!categoryId.HasValue)
-            {
-                return false;
-            }
-
-            // Si intenta ser su propio padre
-            if (categoryId.Value == parentId)
-            {
-                return true;
-            }
-
-            // Recorrer la jerarquía hacia arriba desde el parent propuesto
-            var currentParentId = parentId;
-            var visitedIds = new HashSet<int> { categoryId.Value };
-
-            while (currentParentId != null)
-            {
-                // Si encontramos la categoría original, hay un ciclo
-                if (visitedIds.Contains(currentParentId.Value))
-                {
-                    return true;
-                }
-
-                visitedIds.Add(currentParentId.Value);
-
-                // Obtener el padre del padre
-                var parent = await _context.Categorias
-                    .Where(c => c.Id == currentParentId.Value)
-                    .Select(c => new { c.ParentId })
-                    .FirstOrDefaultAsync();
-
-                if (parent == null)
-                {
-                    break;
-                }
-
-                currentParentId = parent.ParentId;
-            }
-
-            return false;
         }
     }
 }

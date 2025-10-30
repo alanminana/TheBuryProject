@@ -1,19 +1,19 @@
 using Microsoft.AspNetCore.Mvc;
-using TheBuryProject.Services;
+using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    public class CatalogoController : Controller
+    public class BaseEntityController : Controller
     {
         private readonly ICategoriaService _categoriaService;
         private readonly IMarcaService _marcaService;
-        private readonly ILogger<CatalogoController> _logger;
+        private readonly ILogger<BaseEntityController> _logger;
 
-        public CatalogoController(
+        public BaseEntityController(
             ICategoriaService categoriaService,
             IMarcaService marcaService,
-            ILogger<CatalogoController> logger)
+            ILogger<BaseEntityController> logger)
         {
             _categoriaService = categoriaService;
             _marcaService = marcaService;

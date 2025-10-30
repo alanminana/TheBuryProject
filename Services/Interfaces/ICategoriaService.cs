@@ -1,6 +1,6 @@
-using TheBuryProject.Models;
+using TheBuryProject.Models.Entities;
 
-namespace TheBuryProject.Services
+namespace TheBuryProject.Services.Interfaces
 {
     /// <summary>
     /// Interfaz de servicio para operaciones de negocio de Categorías

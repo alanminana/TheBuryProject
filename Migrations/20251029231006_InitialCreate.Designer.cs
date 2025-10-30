@@ -6,12 +6,13 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheBuryProject.Data;
+using TheBuryProject.Data.Repositories;
 
 #nullable disable
 
 namespace TheBuryProject.Migrations
 {
-    [DbContext(typeof(AppDbContext))]
+    [DbContext(typeof(IRepository))]
     [Migration("20251029231006_InitialCreate")]
     partial class InitialCreate
     {

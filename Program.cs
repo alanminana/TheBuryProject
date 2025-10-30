@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using TheBuryProject.Data;
 using TheBuryProject.Services;
+using TheBuryProject.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Configuración de DbContext con SQL Server
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<IRepository>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // 2. Configuración de Identity
@@ -23,9 +25,10 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     options.User.RequireUniqueEmail = true;
 })
 .AddRoles<IdentityRole>()
-.AddEntityFrameworkStores<AppDbContext>();
+.AddEntityFrameworkStores<IRepository>();
 
 // 3. Registro de servicios (Dependency Injection)
+builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
 // 4. Configuración de MVC

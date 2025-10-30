@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Models;
-using TheBuryProject.Services;
+using TheBuryProject.Models.Entities;
+using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers

@@ -1,4 +1,4 @@
-namespace TheBuryProject.Models
+namespace TheBuryProject.Models.Base
 {
     /// <summary>
     /// Clase base para todas las entidades del sistema.

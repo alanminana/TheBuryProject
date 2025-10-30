@@ -5,12 +5,13 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheBuryProject.Data;
+using TheBuryProject.Data.Repositories;
 
 #nullable disable
 
 namespace TheBuryProject.Migrations
 {
-    [DbContext(typeof(AppDbContext))]
+    [DbContext(typeof(IRepository))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

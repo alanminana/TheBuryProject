@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
-using TheBuryProject.Models;
+using TheBuryProject.Data.Repositories;
+using TheBuryProject.Models.Entities;
+using TheBuryProject.Services.Interfaces;
 
 namespace TheBuryProject.Services
 {
@@ -10,10 +12,10 @@ namespace TheBuryProject.Services
     /// </summary>
     public class MarcaService : IMarcaService
     {
-        private readonly AppDbContext _context;
+        private readonly IRepository _context;
         private readonly ILogger<MarcaService> _logger;
 
-        public MarcaService(AppDbContext context, ILogger<MarcaService> logger)
+        public MarcaService(IRepository context, ILogger<MarcaService> logger)
         {
             _context = context;
             _logger = logger;
