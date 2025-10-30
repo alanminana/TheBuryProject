@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Models;
@@ -18,31 +19,13 @@ namespace TheBuryProject.Controllers
             _logger = logger;
         }
 
-        // GET: Categoria
+        private readonly IMapper _mapper;
+
         public async Task<IActionResult> Index()
         {
-            try
-            {
-                var categorias = await _categoriaService.GetAllAsync();
-                var viewModels = categorias.Select(c => new CategoriaViewModel
-                {
-                    Id = c.Id,
-                    Codigo = c.Codigo,
-                    Nombre = c.Nombre,
-                    Descripcion = c.Descripcion,
-                    ParentId = c.ParentId,
-                    ParentNombre = c.Parent?.Nombre,
-                    ControlSerieDefault = c.ControlSerieDefault
-                }).ToList();
-
-                return View(viewModels);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener lista de categorías");
-                TempData["Error"] = "Error al cargar las categorías. Por favor, intente nuevamente.";
-                return View(new List<CategoriaViewModel>());
-            }
+            var categorias = await _categoriaService.GetAllAsync();
+            var viewModels = _mapper.Map<IEnumerable<CategoriaViewModel>>(categorias);
+            return View(viewModels);
         }
 
         // GET: Categoria/Details/5
