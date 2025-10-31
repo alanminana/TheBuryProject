@@ -76,6 +76,11 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException("El código no puede estar vacío");
                 }
 
+                if (string.IsNullOrWhiteSpace(marca.Nombre))
+                {
+                    throw new InvalidOperationException("El nombre no puede estar vacío");
+                }
+
                 // Validaciones de negocio
                 if (await ExistsCodigoAsync(marca.Codigo))
                 {
@@ -116,17 +121,22 @@ namespace TheBuryProject.Services
         {
             try
             {
+                // Validación de string vacío
+                if (string.IsNullOrWhiteSpace(marca.Codigo))
+                {
+                    throw new InvalidOperationException("El código no puede estar vacío");
+                }
+
+                if (string.IsNullOrWhiteSpace(marca.Nombre))
+                {
+                    throw new InvalidOperationException("El nombre no puede estar vacío");
+                }
+
                 // Verificar que existe
                 var existing = await _context.Marcas.FindAsync(marca.Id);
                 if (existing == null)
                 {
                     throw new InvalidOperationException($"No se encontró la marca con Id {marca.Id}");
-                }
-
-                // Validación de string vacío
-                if (string.IsNullOrWhiteSpace(marca.Codigo))
-                {
-                    throw new InvalidOperationException("El código no puede estar vacío");
                 }
 
                 // Validar código único (excluyendo el registro actual)
@@ -235,8 +245,11 @@ namespace TheBuryProject.Services
         }
 
         /// <summary>
-        /// Valida si establecer parentId como padre de marcaId crearía un ciclo jerárquico
+        /// Verifica si establecer una relación padre-hijo crearía un ciclo en la jerarquía.
         /// </summary>
+        /// <param name="marcaId">ID de la marca (null para nuevas marcas)</param>
+        /// <param name="parentId">ID del padre propuesto</param>
+        /// <returns>True si se crearía un ciclo, False en caso contrario</returns>
         private async Task<bool> WouldCreateCycleAsync(int? marcaId, int parentId)
         {
             // Si no hay marcaId, es una creación nueva, no puede haber ciclo
@@ -252,11 +265,14 @@ namespace TheBuryProject.Services
             }
 
             // Recorrer la jerarquía hacia arriba desde el parent propuesto
-            var currentParentId = (int?)parentId;  // ✅ Cast explícito a int?
+            var currentParentId = (int?)parentId;
+            var visitedIds = new HashSet<int> { marcaId.Value };
 
-            while (currentParentId.HasValue)  // ✅ Usar .HasValue
+            while (currentParentId.HasValue)
             {
-                if (visitedIds.Contains(currentParentId.Value))  // ✅ Ahora sí tiene .Value
+                // Si encontramos la marca original, hay un ciclo
+                if (visitedIds.Contains(currentParentId.Value))
+                {
                     return true;
                 }
 

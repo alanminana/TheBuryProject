@@ -8,7 +8,7 @@ namespace TheBuryProject.Data.Repositories
     /// Proporciona operaciones CRUD básicas y consultas.
     /// </summary>
     /// <typeparam name="T">Tipo de entidad que hereda de BaseEntity</typeparam>
-    public interface IRepository<T> where T : BaseEntity
+    public interface AutoMapperProfile<T> where T : BaseEntity
     {
         /// <summary>
         /// Obtiene una entidad por su ID

@@ -76,6 +76,11 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException("El código no puede estar vacío");
                 }
 
+                if (string.IsNullOrWhiteSpace(categoria.Nombre))
+                {
+                    throw new InvalidOperationException("El nombre no puede estar vacío");
+                }
+
                 // Validaciones de negocio
                 if (await ExistsCodigoAsync(categoria.Codigo))
                 {
@@ -116,17 +121,22 @@ namespace TheBuryProject.Services
         {
             try
             {
+                // Validación de string vacío
+                if (string.IsNullOrWhiteSpace(categoria.Codigo))
+                {
+                    throw new InvalidOperationException("El código no puede estar vacío");
+                }
+
+                if (string.IsNullOrWhiteSpace(categoria.Nombre))
+                {
+                    throw new InvalidOperationException("El nombre no puede estar vacío");
+                }
+
                 // Verificar que existe
                 var existing = await _context.Categorias.FindAsync(categoria.Id);
                 if (existing == null)
                 {
                     throw new InvalidOperationException($"No se encontró la categoría con Id {categoria.Id}");
-                }
-
-                // Validación de string vacío
-                if (string.IsNullOrWhiteSpace(categoria.Codigo))
-                {
-                    throw new InvalidOperationException("El código no puede estar vacío");
                 }
 
                 // Validar código único (excluyendo el registro actual)
@@ -235,8 +245,11 @@ namespace TheBuryProject.Services
         }
 
         /// <summary>
-        /// Valida si establecer parentId como padre de categoryId crearía un ciclo jerárquico
+        /// Verifica si establecer una relación padre-hijo crearía un ciclo en la jerarquía.
         /// </summary>
+        /// <param name="categoryId">ID de la categoría (null para nuevas categorías)</param>
+        /// <param name="parentId">ID del padre propuesto</param>
+        /// <returns>True si se crearía un ciclo, False en caso contrario</returns>
         private async Task<bool> WouldCreateCycleAsync(int? categoryId, int parentId)
         {
             // Si no hay categoryId, es una creación nueva, no puede haber ciclo
@@ -252,10 +265,10 @@ namespace TheBuryProject.Services
             }
 
             // Recorrer la jerarquía hacia arriba desde el parent propuesto
-            var currentParentId = parentId;
+            var currentParentId = (int?)parentId;
             var visitedIds = new HashSet<int> { categoryId.Value };
 
-            while (currentParentId != null)
+            while (currentParentId.HasValue)
             {
                 // Si encontramos la categoría original, hay un ciclo
                 if (visitedIds.Contains(currentParentId.Value))

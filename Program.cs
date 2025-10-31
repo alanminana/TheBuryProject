@@ -1,17 +1,18 @@
+锘縰sing AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using TheBuryProject.Data;
+using TheBuryProject.Helpers;
 using TheBuryProject.Services;
 using TheBuryProject.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configuraci髇 de DbContext con SQL Server
+// 1. Configuraci贸n de DbContext con SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Configuraci髇 de Identity
+// 2. Configuraci贸n de Identity
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
     options.Password.RequireDigit = true;
@@ -27,20 +28,31 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<AppDbContext>();
 
-// 3. Registro de servicios (Dependency Injection)
-builder.Services.AddAutoMapper(typeof(Program));
+// 3. Configuraci贸n de AutoMapper
+builder.Services.AddSingleton<IMapper>(sp =>
+{
+    var loggerFactory = sp.GetService<ILoggerFactory>();
+    var config = new MapperConfiguration(cfg =>
+    {
+        cfg.AddProfile<MappingProfile>();
+    }, loggerFactory);
+
+    return config.CreateMapper();
+});
+
+// 4. Registro de servicios (Dependency Injection)
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
 
-// 4. Configuraci髇 de MVC
+// 5. Configuraci贸n de MVC
 builder.Services.AddControllersWithViews();
 
-// 5. Configuraci髇 de Razor Pages (para Identity UI)
+// 6. Configuraci贸n de Razor Pages (para Identity UI)
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-// 6. Configuraci髇 del pipeline HTTP
+// 7. Configuraci贸n del pipeline HTTP
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -52,16 +64,16 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// 7. Autenticaci髇 y autorizaci髇
+// 8. Autenticaci贸n y autorizaci贸n
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 8. Mapeo de rutas
+// 9. Mapeo de rutas
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// 9. Mapeo de Razor Pages (para Identity UI)
+// 10. Mapeo de Razor Pages (para Identity UI)
 app.MapRazorPages();
 
 app.Run();

@@ -12,15 +12,16 @@ namespace TheBuryProject.Controllers
     {
         private readonly ICategoriaService _categoriaService;
         private readonly ILogger<CategoriaController> _logger;
+        private readonly IMapper _mapper;  // ✅ AGREGAR ESTA LÍNEA
 
         public CategoriaController(
             ICategoriaService categoriaService,
             ILogger<CategoriaController> logger,
-            IMapper mapper)  // ✅ Agregado al constructor
+            IMapper mapper)
         {
             _categoriaService = categoriaService;
             _logger = logger;
-            _mapper = mapper;  // ✅ Inicializado
+            _mapper = mapper;
         }
         public async Task<IActionResult> Index()
         {
