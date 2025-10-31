@@ -43,6 +43,8 @@ builder.Services.AddSingleton<IMapper>(sp =>
 // 4. Registro de servicios (Dependency Injection)
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
+builder.Services.AddScoped<IProductoService, ProductoService>();  // ✅ AGREGAR ESTA LÍNEA
+
 
 // 5. Configuración de MVC
 builder.Services.AddControllersWithViews();

@@ -19,6 +19,7 @@ namespace TheBuryProject.Data
         // DbSets - Cada uno representa una tabla en la base de datos
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<Marca> Marcas { get; set; }
+        public DbSet<Producto> Productos { get; set; }  // ✅ AGREGAR ESTA LÍNEA
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -67,7 +68,47 @@ namespace TheBuryProject.Data
                 // Filtro global para soft delete
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
+            // ✅ AGREGAR TODA ESTA CONFIGURACIÓN DE PRODUCTO
+            // Configuración de Producto
+            modelBuilder.Entity<Producto>(entity =>
+            {
+                // Índice único en el código
+                entity.HasIndex(e => e.Codigo)
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0"); // Solo para registros no eliminados
 
+                // Relación con Categoria
+                entity.HasOne(e => e.Categoria)
+                    .WithMany()
+                    .HasForeignKey(e => e.CategoriaId)
+                    .OnDelete(DeleteBehavior.Restrict); // No borrar en cascada
+
+                // Relación con Marca
+                entity.HasOne(e => e.Marca)
+                    .WithMany()
+                    .HasForeignKey(e => e.MarcaId)
+                    .OnDelete(DeleteBehavior.Restrict); // No borrar en cascada
+
+                // Configuración de decimales para precios
+                entity.Property(e => e.PrecioCompra)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.PrecioVenta)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.StockActual)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.StockMinimo)
+                    .HasPrecision(18, 2);
+
+                // RowVersion para control de concurrencia
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                // Filtro global para soft delete
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
             // Seed de datos inicial
             SeedData(modelBuilder);
         }

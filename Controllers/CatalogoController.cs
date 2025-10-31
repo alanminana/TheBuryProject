@@ -1,23 +1,23 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    public class BaseEntityController : Controller
+    public class CatalogoController : Controller
     {
         private readonly ICategoriaService _categoriaService;
         private readonly IMarcaService _marcaService;
-        private readonly ILogger<BaseEntityController> _logger;
+        private readonly ILogger<CatalogoController> _logger;  // ✅ AGREGAR ESTA LÍNEA
 
-        public BaseEntityController(
+        public CatalogoController(
             ICategoriaService categoriaService,
             IMarcaService marcaService,
-            ILogger<BaseEntityController> logger)
+            ILogger<CatalogoController> logger)  // ✅ CAMBIAR BaseEntityController por CatalogoController
         {
             _categoriaService = categoriaService;
             _marcaService = marcaService;
-            _logger = logger;
+            _logger = logger;  // ✅ Ahora sí puede asignar porque existe el campo
         }
 
         // GET: Catalogo
@@ -56,8 +56,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener cat�logo");
-                TempData["Error"] = "Error al cargar el cat�logo";
+                _logger.LogError(ex, "Error al obtener catálogo");
+                TempData["Error"] = "Error al cargar el catálogo";
                 return View(new CatalogoViewModel());
             }
         }

@@ -1,0 +1,197 @@
+﻿@model TheBuryProject.ViewModels.ProductoViewModel
+
+@{
+    ViewData["Title"] = "Editar Producto";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="mb-4">
+                <a asp-action="Index" class="text-decoration-none">
+                    <i class="bi bi-arrow-left me-2"></i>Volver al listado
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-warning-subtle border-warning py-3">
+                    <h4 class="mb-0 fw-bold text-warning-emphasis">
+                        <i class="bi bi-pencil-square me-2"></i>Editar Producto
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <div>Por favor, corregí los errores antes de continuar</div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-info-circle text-primary"></i> Información Básica
+                                </h5>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input asp-for="Codigo" class="form-control" id="floatingCodigo" placeholder="Código" />
+                                    <label for="floatingCodigo">Código *</label>
+                                    <span asp-validation-for="Codigo" class="text-danger small"></span>
+                                </div>
+                                <div class="form-text">Código único del producto</div>
+                            </div>
+
+                            <div class="col-md-8">
+                                <div class="form-floating">
+                                    <input asp-for="Nombre" class="form-control" id="floatingNombre" placeholder="Nombre" />
+                                    <label for="floatingNombre">Nombre *</label>
+                                    <span asp-validation-for="Nombre" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <textarea asp-for="Descripcion" class="form-control" id="floatingDescripcion" placeholder="Descripción" style="height: 100px"></textarea>
+                                    <label for="floatingDescripcion">Descripción (opcional)</label>
+                                    <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select asp-for="CategoriaId" class="form-select" id="floatingCategoria" asp-items="ViewBag.Categorias">
+                                        <option value="">-- Seleccione una categoría --</option>
+                                    </select>
+                                    <label for="floatingCategoria">Categoría *</label>
+                                    <span asp-validation-for="CategoriaId" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select asp-for="MarcaId" class="form-select" id="floatingMarca" asp-items="ViewBag.Marcas">
+                                        <option value="">-- Seleccione una marca --</option>
+                                    </select>
+                                    <label for="floatingMarca">Marca *</label>
+                                    <span asp-validation-for="MarcaId" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-cash-coin text-success"></i> Precios
+                                </h5>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input asp-for="PrecioCompra" class="form-control" id="floatingPrecioCompra" placeholder="Precio de Compra" type="number" step="0.01" />
+                                    <label for="floatingPrecioCompra">Precio de Compra *</label>
+                                    <span asp-validation-for="PrecioCompra" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input asp-for="PrecioVenta" class="form-control" id="floatingPrecioVenta" placeholder="Precio de Venta" type="number" step="0.01" />
+                                    <label for="floatingPrecioVenta">Precio de Venta *</label>
+                                    <span asp-validation-for="PrecioVenta" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-boxes text-info"></i> Inventario
+                                </h5>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input asp-for="StockActual" class="form-control" id="floatingStockActual" placeholder="Stock Actual" type="number" step="0.01" />
+                                    <label for="floatingStockActual">Stock Actual *</label>
+                                    <span asp-validation-for="StockActual" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input asp-for="StockMinimo" class="form-control" id="floatingStockMinimo" placeholder="Stock Mínimo" type="number" step="0.01" />
+                                    <label for="floatingStockMinimo">Stock Mínimo *</label>
+                                    <span asp-validation-for="StockMinimo" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input asp-for="UnidadMedida" class="form-control" id="floatingUnidad" placeholder="Unidad" />
+                                    <label for="floatingUnidad">Unidad de Medida *</label>
+                                    <span asp-validation-for="UnidadMedida" class="text-danger small"></span>
+                                </div>
+                                <div class="form-text">Ej: UN, KG, MT, LT</div>
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-gear text-secondary"></i> Configuración
+                                </h5>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body">
+                                        <div class="form-check form-switch">
+                                            <input asp-for="RequiereNumeroSerie" class="form-check-input" type="checkbox" role="switch" id="switchNumeroSerie" />
+                                            <label class="form-check-label fw-medium" for="switchNumeroSerie">
+                                                Requiere Número de Serie
+                                            </label>
+                                        </div>
+                                        <div class="form-text mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Activa el control individual por número de serie
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body">
+                                        <div class="form-check form-switch">
+                                            <input asp-for="Activo" class="form-check-input" type="checkbox" role="switch" id="switchActivo" />
+                                            <label class="form-check-label fw-medium" for="switchActivo">
+                                                Producto Activo
+                                            </label>
+                                        </div>
+                                        <div class="form-text mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Solo productos activos están disponibles para la venta
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning btn-lg px-4">
+                                <i class="bi bi-check-circle me-2"></i>Actualizar Producto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

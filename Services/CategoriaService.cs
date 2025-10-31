@@ -9,12 +9,12 @@ namespace TheBuryProject.Services
     /// Implementación del servicio de Categorías.
     /// Contiene toda la lógica de negocio relacionada con categorías.
     /// </summary>
-    public class CategoriaService : ICategoriaService
+    public class IProductoService : ICategoriaService
     {
         private readonly AppDbContext _context;
-        private readonly ILogger<CategoriaService> _logger;
+        private readonly ILogger<IProductoService> _logger;
 
-        public CategoriaService(AppDbContext context, ILogger<CategoriaService> logger)
+        public IProductoService(AppDbContext context, ILogger<IProductoService> logger)
         {
             _context = context;
             _logger = logger;

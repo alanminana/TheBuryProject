@@ -1,0 +1,168 @@
+﻿@model IEnumerable<TheBuryProject.ViewModels.ProductoViewModel>
+
+@{
+    ViewData["Title"] = "Productos";
+}
+
+<div class="container-fluid py-4">
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0 fw-bold">
+                <i class="bi bi-box-seam text-primary"></i> Gestión de Productos
+            </h1>
+            <p class="text-muted mb-0">Administrá el catálogo de productos del sistema</p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Create" class="btn btn-primary btn-lg shadow-sm">
+                <i class="bi bi-plus-circle me-2"></i>Nuevo Producto
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="fw-semibold px-4 py-3">Código</th>
+                            <th class="fw-semibold py-3">Nombre</th>
+                            <th class="fw-semibold py-3">Categoría</th>
+                            <th class="fw-semibold py-3">Marca</th>
+                            <th class="fw-semibold py-3 text-end">Precio Compra</th>
+                            <th class="fw-semibold py-3 text-end">Precio Venta</th>
+                            <th class="fw-semibold py-3 text-center">Stock</th>
+                            <th class="fw-semibold py-3 text-center">Estado</th>
+                            <th class="fw-semibold text-center py-3 px-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var producto in Model)
+                            {
+                                <tr>
+                                    <td class="px-4">
+                                        <span class="badge bg-primary-subtle text-primary-emphasis">@producto.Codigo</span>
+                                    </td>
+                                    <td class="fw-medium">@producto.Nombre</td>
+                                    <td class="text-muted">@producto.CategoriaNombre</td>
+                                    <td class="text-muted">@producto.MarcaNombre</td>
+                                    <td class="text-end">@producto.PrecioCompra.ToString("C2")</td>
+                                    <td class="text-end fw-bold">@producto.PrecioVenta.ToString("C2")</td>
+                                    <td class="text-center">
+                                        <span class="badge rounded-pill @(producto.EstadoStock == "Sin Stock" ? "bg-danger" : producto.EstadoStock == "Stock Bajo" ? "bg-warning text-dark" : "bg-success")">
+                                            @producto.StockActual @producto.UnidadMedida
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (producto.Activo)
+                                        {
+                                            <span class="badge bg-success-subtle text-success-emphasis">
+                                                <i class="bi bi-check-circle"></i> Activo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                                                <i class="bi bi-x-circle"></i> Inactivo
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center px-4">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="Details" asp-route-id="@producto.Id"
+                                               class="btn btn-outline-info"
+                                               data-bs-toggle="tooltip"
+                                               title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@producto.Id"
+                                               class="btn btn-outline-warning"
+                                               data-bs-toggle="tooltip"
+                                               title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@producto.Id"
+                                               class="btn btn-outline-danger"
+                                               data-bs-toggle="tooltip"
+                                               title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center py-5">
+                                    <i class="bi bi-inbox display-1 text-muted d-block mb-3"></i>
+                                    <p class="text-muted mb-2">No hay productos registrados</p>
+                                    <a asp-action="Create" class="btn btn-primary">Crear el primer producto</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Total Productos</h6>
+                        <h3 class="mb-0 fw-bold">@Model.Count()</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Productos Activos</h6>
+                        <h3 class="mb-0 fw-bold text-success">@Model.Count(p => p.Activo)</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Stock Bajo</h6>
+                        <h3 class="mb-0 fw-bold text-warning">@Model.Count(p => p.EstadoStock == "Stock Bajo" || p.EstadoStock == "Sin Stock")</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Inicializar tooltips de Bootstrap 5.3
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    </script>
+}
