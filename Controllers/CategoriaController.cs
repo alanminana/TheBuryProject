@@ -1,4 +1,4 @@
-using AutoMapper;
+ï»¿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Models;
@@ -13,14 +13,15 @@ namespace TheBuryProject.Controllers
         private readonly ICategoriaService _categoriaService;
         private readonly ILogger<CategoriaController> _logger;
 
-        public CategoriaController(ICategoriaService categoriaService, ILogger<CategoriaController> logger)
+        public CategoriaController(
+            ICategoriaService categoriaService,
+            ILogger<CategoriaController> logger,
+            IMapper mapper)  // âœ… Agregado al constructor
         {
             _categoriaService = categoriaService;
             _logger = logger;
+            _mapper = mapper;  // âœ… Inicializado
         }
-
-        private readonly IMapper _mapper;
-
         public async Task<IActionResult> Index()
         {
             var categorias = await _categoriaService.GetAllAsync();
@@ -59,7 +60,7 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener detalles de categoría {Id}", id);
+                _logger.LogError(ex, "Error al obtener detalles de categorÃ­a {Id}", id);
                 TempData["Error"] = "Error al cargar los detalles. Por favor, intente nuevamente.";
                 return RedirectToAction(nameof(Index));
             }
@@ -81,10 +82,10 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
-                    // Verificar que el código no exista
+                    // Verificar que el cÃ³digo no exista
                     if (await _categoriaService.ExistsCodigoAsync(viewModel.Codigo))
                     {
-                        ModelState.AddModelError("Codigo", "Ya existe una categoría con este código");
+                        ModelState.AddModelError("Codigo", "Ya existe una categorÃ­a con este cÃ³digo");
                         await CargarCategoriasParaDropdown(viewModel.ParentId);
                         return View(viewModel);
                     }
@@ -99,13 +100,13 @@ namespace TheBuryProject.Controllers
                     };
 
                     await _categoriaService.CreateAsync(categoria);
-                    TempData["Success"] = "Categoría creada exitosamente";
+                    TempData["Success"] = "CategorÃ­a creada exitosamente";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error al crear categoría");
-                    ModelState.AddModelError("", "Error al crear la categoría. Por favor, intente nuevamente.");
+                    _logger.LogError(ex, "Error al crear categorÃ­a");
+                    ModelState.AddModelError("", "Error al crear la categorÃ­a. Por favor, intente nuevamente.");
                 }
             }
 
@@ -144,8 +145,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar categoría para editar {Id}", id);
-                TempData["Error"] = "Error al cargar la categoría. Por favor, intente nuevamente.";
+                _logger.LogError(ex, "Error al cargar categorÃ­a para editar {Id}", id);
+                TempData["Error"] = "Error al cargar la categorÃ­a. Por favor, intente nuevamente.";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -164,10 +165,10 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
-                    // Verificar que el código no exista (excluyendo el registro actual)
+                    // Verificar que el cÃ³digo no exista (excluyendo el registro actual)
                     if (await _categoriaService.ExistsCodigoAsync(viewModel.Codigo, id))
                     {
-                        ModelState.AddModelError("Codigo", "Ya existe otra categoría con este código");
+                        ModelState.AddModelError("Codigo", "Ya existe otra categorÃ­a con este cÃ³digo");
                         await CargarCategoriasParaDropdown(viewModel.ParentId, id);
                         return View(viewModel);
                     }
@@ -183,18 +184,18 @@ namespace TheBuryProject.Controllers
                     };
 
                     await _categoriaService.UpdateAsync(categoria);
-                    TempData["Success"] = "Categoría actualizada exitosamente";
+                    TempData["Success"] = "CategorÃ­a actualizada exitosamente";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (InvalidOperationException ex)
                 {
-                    _logger.LogWarning(ex, "Error de validación al actualizar categoría {Id}", id);
+                    _logger.LogWarning(ex, "Error de validaciÃ³n al actualizar categorÃ­a {Id}", id);
                     ModelState.AddModelError("", ex.Message);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error al actualizar categoría {Id}", id);
-                    ModelState.AddModelError("", "Error al actualizar la categoría. Por favor, intente nuevamente.");
+                    _logger.LogError(ex, "Error al actualizar categorÃ­a {Id}", id);
+                    ModelState.AddModelError("", "Error al actualizar la categorÃ­a. Por favor, intente nuevamente.");
                 }
             }
 
@@ -233,8 +234,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar categoría para eliminar {Id}", id);
-                TempData["Error"] = "Error al cargar la categoría. Por favor, intente nuevamente.";
+                _logger.LogError(ex, "Error al cargar categorÃ­a para eliminar {Id}", id);
+                TempData["Error"] = "Error al cargar la categorÃ­a. Por favor, intente nuevamente.";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -249,35 +250,35 @@ namespace TheBuryProject.Controllers
                 var result = await _categoriaService.DeleteAsync(id);
                 if (result)
                 {
-                    TempData["Success"] = "Categoría eliminada exitosamente";
+                    TempData["Success"] = "CategorÃ­a eliminada exitosamente";
                 }
                 else
                 {
-                    TempData["Error"] = "No se encontró la categoría a eliminar";
+                    TempData["Error"] = "No se encontrÃ³ la categorÃ­a a eliminar";
                 }
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogWarning(ex, "Error de validación al eliminar categoría {Id}", id);
+                _logger.LogWarning(ex, "Error de validaciÃ³n al eliminar categorÃ­a {Id}", id);
                 TempData["Error"] = ex.Message;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar categoría {Id}", id);
-                TempData["Error"] = "Error al eliminar la categoría. Por favor, intente nuevamente.";
+                _logger.LogError(ex, "Error al eliminar categorÃ­a {Id}", id);
+                TempData["Error"] = "Error al eliminar la categorÃ­a. Por favor, intente nuevamente.";
             }
 
             return RedirectToAction(nameof(Index));
         }
 
         /// <summary>
-        /// Carga las categorías disponibles para el dropdown de categoría padre
+        /// Carga las categorÃ­as disponibles para el dropdown de categorÃ­a padre
         /// </summary>
         private async Task CargarCategoriasParaDropdown(int? selectedId = null, int? excludeId = null)
         {
             var categorias = await _categoriaService.GetAllAsync();
 
-            // Excluir la categoría actual (para evitar ciclos)
+            // Excluir la categorÃ­a actual (para evitar ciclos)
             if (excludeId.HasValue)
             {
                 categorias = categorias.Where(c => c.Id != excludeId.Value);

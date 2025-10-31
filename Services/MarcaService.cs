@@ -252,14 +252,11 @@ namespace TheBuryProject.Services
             }
 
             // Recorrer la jerarquía hacia arriba desde el parent propuesto
-            var currentParentId = parentId;
-            var visitedIds = new HashSet<int> { marcaId.Value };
+            var currentParentId = (int?)parentId;  // ✅ Cast explícito a int?
 
-            while (currentParentId != null)
+            while (currentParentId.HasValue)  // ✅ Usar .HasValue
             {
-                // Si encontramos la marca original, hay un ciclo
-                if (visitedIds.Contains(currentParentId.Value))
-                {
+                if (visitedIds.Contains(currentParentId.Value))  // ✅ Ahora sí tiene .Value
                     return true;
                 }
 
