@@ -30,19 +30,58 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Producto
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            string? searchTerm = null,
+            int? categoriaId = null,
+            int? marcaId = null,
+            bool stockBajo = false,
+            bool soloActivos = false,
+            string? orderBy = null,
+            string? orderDirection = "asc")
         {
             try
             {
-                var productos = await _productoService.GetAllAsync();
+                // Ejecutar búsqueda con filtros
+                var productos = await _productoService.SearchAsync(
+                    searchTerm,
+                    categoriaId,
+                    marcaId,
+                    stockBajo,
+                    soloActivos,
+                    orderBy,
+                    orderDirection
+                );
+
                 var viewModels = _mapper.Map<IEnumerable<ProductoViewModel>>(productos);
-                return View(viewModels);
+
+                // Crear ViewModel de filtros
+                var filterViewModel = new ProductoFilterViewModel
+                {
+                    SearchTerm = searchTerm,
+                    CategoriaId = categoriaId,
+                    MarcaId = marcaId,
+                    StockBajo = stockBajo,
+                    SoloActivos = soloActivos,
+                    OrderBy = orderBy,
+                    OrderDirection = orderDirection,
+                    Productos = viewModels,
+                    TotalResultados = viewModels.Count()
+                };
+
+                // Cargar dropdowns para filtros
+                await CargarDropdownsFiltrosAsync(categoriaId, marcaId);
+
+                return View(filterViewModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener listado de productos");
                 TempData["Error"] = "Error al cargar los productos. Por favor, intente nuevamente.";
-                return View(new List<ProductoViewModel>());
+
+                // Cargar dropdowns incluso en caso de error
+                await CargarDropdownsFiltrosAsync();
+
+                return View(new ProductoFilterViewModel());
             }
         }
 
@@ -252,19 +291,22 @@ namespace TheBuryProject.Controllers
         /// <summary>
         /// Carga los dropdowns de Categorías y Marcas para los formularios
         /// </summary>
-        private async Task CargarDropdownsAsync(int? categoriaSeleccionada = null, int? marcaSeleccionada = null)
+        /// <summary>
+        /// Carga los dropdowns para los filtros
+        /// </summary>
+        private async Task CargarDropdownsFiltrosAsync(int? categoriaSeleccionada = null, int? marcaSeleccionada = null)
         {
             var categorias = await _categoriaService.GetAllAsync();
             var marcas = await _marcaService.GetAllAsync();
 
-            ViewBag.Categorias = new SelectList(
+            ViewBag.CategoriasFiltro = new SelectList(
                 categorias.OrderBy(c => c.Nombre),
                 "Id",
                 "Nombre",
                 categoriaSeleccionada
             );
 
-            ViewBag.Marcas = new SelectList(
+            ViewBag.MarcasFiltro = new SelectList(
                 marcas.OrderBy(m => m.Nombre),
                 "Id",
                 "Nombre",

@@ -1,28 +1,18 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
-using TheBuryProject.Data.Interfaces;
-using TheBuryProject.Data.Repositories;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 
 namespace TheBuryProject.Services
 {
-    /// <summary>
-    /// Servicio para la gestión de productos
-    /// </summary>
     public class ProductoService : IProductoService
     {
-        private readonly IRepository<Producto> _repository;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly AppDbContext _context;
         private readonly ILogger<ProductoService> _logger;
 
-        public ProductoService(
-            IRepository<Producto> repository,
-            IUnitOfWork unitOfWork,
-            ILogger<ProductoService> logger)
+        public ProductoService(AppDbContext context, ILogger<ProductoService> logger)
         {
-            _repository = repository;
-            _unitOfWork = unitOfWork;
+            _context = context;
             _logger = logger;
         }
 
@@ -30,10 +20,11 @@ namespace TheBuryProject.Services
         {
             try
             {
-                return await _repository.GetAllAsync(
-                    include: q => q.Include(p => p.Categoria)
-                                   .Include(p => p.Marca)
-                );
+                return await _context.Productos
+                    .Include(p => p.Categoria)
+                    .Include(p => p.Marca)
+                    .OrderBy(p => p.Nombre)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -41,16 +32,95 @@ namespace TheBuryProject.Services
                 throw;
             }
         }
+        public async Task<IEnumerable<Producto>> SearchAsync(
+    string? searchTerm = null,
+    int? categoriaId = null,
+    int? marcaId = null,
+    bool stockBajo = false,
+    bool soloActivos = false,
+    string? orderBy = null,
+    string? orderDirection = "asc")
+        {
+            try
+            {
+                var query = _context.Productos
+                    .Include(p => p.Categoria)
+                    .Include(p => p.Marca)
+                    .AsQueryable();
 
+                // Filtro por búsqueda de texto
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    searchTerm = searchTerm.ToLower();
+                    query = query.Where(p =>
+                        p.Codigo.ToLower().Contains(searchTerm) ||
+                        p.Nombre.ToLower().Contains(searchTerm) ||
+                        (p.Descripcion != null && p.Descripcion.ToLower().Contains(searchTerm))
+                    );
+                }
+
+                // Filtro por categoría
+                if (categoriaId.HasValue)
+                {
+                    query = query.Where(p => p.CategoriaId == categoriaId.Value);
+                }
+
+                // Filtro por marca
+                if (marcaId.HasValue)
+                {
+                    query = query.Where(p => p.MarcaId == marcaId.Value);
+                }
+
+                // Filtro por stock bajo
+                if (stockBajo)
+                {
+                    query = query.Where(p => p.StockActual <= p.StockMinimo);
+                }
+
+                // Filtro solo activos
+                if (soloActivos)
+                {
+                    query = query.Where(p => p.Activo);
+                }
+
+                // Ordenamiento
+                if (!string.IsNullOrWhiteSpace(orderBy))
+                {
+                    var ascending = orderDirection?.ToLower() != "desc";
+
+                    query = orderBy.ToLower() switch
+                    {
+                        "codigo" => ascending ? query.OrderBy(p => p.Codigo) : query.OrderByDescending(p => p.Codigo),
+                        "nombre" => ascending ? query.OrderBy(p => p.Nombre) : query.OrderByDescending(p => p.Nombre),
+                        "preciocompra" => ascending ? query.OrderBy(p => p.PrecioCompra) : query.OrderByDescending(p => p.PrecioCompra),
+                        "precioventa" => ascending ? query.OrderBy(p => p.PrecioVenta) : query.OrderByDescending(p => p.PrecioVenta),
+                        "stock" => ascending ? query.OrderBy(p => p.StockActual) : query.OrderByDescending(p => p.StockActual),
+                        "categoria" => ascending ? query.OrderBy(p => p.Categoria.Nombre) : query.OrderByDescending(p => p.Categoria.Nombre),
+                        "marca" => ascending ? query.OrderBy(p => p.Marca.Nombre) : query.OrderByDescending(p => p.Marca.Nombre),
+                        _ => query.OrderBy(p => p.Nombre) // Default
+                    };
+                }
+                else
+                {
+                    query = query.OrderBy(p => p.Nombre);
+                }
+
+                return await query.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al buscar productos con filtros");
+                throw;
+            }
+        }
         public async Task<Producto?> GetByIdAsync(int id)
         {
             try
             {
-                return await _repository.GetByIdAsync(
-                    id,
-                    include: q => q.Include(p => p.Categoria)
-                                   .Include(p => p.Marca)
-                );
+                return await _context.Productos
+                    .Include(p => p.Categoria)
+                    .Include(p => p.Marca)
+                    .FirstOrDefaultAsync(p => p.Id == id);
             }
             catch (Exception ex)
             {
@@ -63,11 +133,12 @@ namespace TheBuryProject.Services
         {
             try
             {
-                return await _repository.FindAsync(
-                    p => p.CategoriaId == categoriaId,
-                    include: q => q.Include(p => p.Categoria)
-                                   .Include(p => p.Marca)
-                );
+                return await _context.Productos
+                    .Include(p => p.Categoria)
+                    .Include(p => p.Marca)
+                    .Where(p => p.CategoriaId == categoriaId)
+                    .OrderBy(p => p.Nombre)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -80,11 +151,12 @@ namespace TheBuryProject.Services
         {
             try
             {
-                return await _repository.FindAsync(
-                    p => p.MarcaId == marcaId,
-                    include: q => q.Include(p => p.Categoria)
-                                   .Include(p => p.Marca)
-                );
+                return await _context.Productos
+                    .Include(p => p.Categoria)
+                    .Include(p => p.Marca)
+                    .Where(p => p.MarcaId == marcaId)
+                    .OrderBy(p => p.Nombre)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -97,11 +169,12 @@ namespace TheBuryProject.Services
         {
             try
             {
-                return await _repository.FindAsync(
-                    p => p.StockActual <= p.StockMinimo,
-                    include: q => q.Include(p => p.Categoria)
-                                   .Include(p => p.Marca)
-                );
+                return await _context.Productos
+                    .Include(p => p.Categoria)
+                    .Include(p => p.Marca)
+                    .Where(p => p.StockActual <= p.StockMinimo)
+                    .OrderBy(p => p.Nombre)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -114,25 +187,21 @@ namespace TheBuryProject.Services
         {
             try
             {
-                // Validar que el código no esté vacío
                 if (string.IsNullOrWhiteSpace(producto.Codigo))
                 {
                     throw new InvalidOperationException("El código del producto no puede estar vacío");
                 }
 
-                // Validar que el nombre no esté vacío
                 if (string.IsNullOrWhiteSpace(producto.Nombre))
                 {
                     throw new InvalidOperationException("El nombre del producto no puede estar vacío");
                 }
 
-                // Validar que el código no exista
                 if (await ExistsCodigoAsync(producto.Codigo))
                 {
                     throw new InvalidOperationException($"Ya existe un producto con el código '{producto.Codigo}'");
                 }
 
-                // Validar que el precio de venta sea mayor o igual al precio de compra
                 if (producto.PrecioVenta < producto.PrecioCompra)
                 {
                     _logger.LogWarning(
@@ -143,7 +212,6 @@ namespace TheBuryProject.Services
                     );
                 }
 
-                // Validar precios positivos
                 if (producto.PrecioCompra < 0)
                 {
                     throw new InvalidOperationException("El precio de compra no puede ser negativo");
@@ -154,7 +222,6 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException("El precio de venta no puede ser negativo");
                 }
 
-                // Validar stock no negativo
                 if (producto.StockActual < 0)
                 {
                     throw new InvalidOperationException("El stock actual no puede ser negativo");
@@ -166,8 +233,8 @@ namespace TheBuryProject.Services
                 }
 
                 producto.CreatedAt = DateTime.UtcNow;
-                await _repository.AddAsync(producto);
-                await _unitOfWork.CommitAsync();
+                _context.Productos.Add(producto);
+                await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Producto creado exitosamente: {Codigo} - {Nombre}", producto.Codigo, producto.Nombre);
                 return producto;
@@ -183,32 +250,27 @@ namespace TheBuryProject.Services
         {
             try
             {
-                // Verificar que el producto existe
-                var productoExistente = await _repository.GetByIdAsync(producto.Id);
+                var productoExistente = await _context.Productos.FindAsync(producto.Id);
                 if (productoExistente == null)
                 {
                     throw new InvalidOperationException($"No se encontró el producto con ID {producto.Id}");
                 }
 
-                // Validar que el código no esté vacío
                 if (string.IsNullOrWhiteSpace(producto.Codigo))
                 {
                     throw new InvalidOperationException("El código del producto no puede estar vacío");
                 }
 
-                // Validar que el nombre no esté vacío
                 if (string.IsNullOrWhiteSpace(producto.Nombre))
                 {
                     throw new InvalidOperationException("El nombre del producto no puede estar vacío");
                 }
 
-                // Validar que el código no exista en otro producto
                 if (await ExistsCodigoAsync(producto.Codigo, producto.Id))
                 {
                     throw new InvalidOperationException($"Ya existe otro producto con el código '{producto.Codigo}'");
                 }
 
-                // Validar precios
                 if (producto.PrecioCompra < 0)
                 {
                     throw new InvalidOperationException("El precio de compra no puede ser negativo");
@@ -229,7 +291,6 @@ namespace TheBuryProject.Services
                     );
                 }
 
-                // Validar stock no negativo
                 if (producto.StockActual < 0)
                 {
                     throw new InvalidOperationException("El stock actual no puede ser negativo");
@@ -241,8 +302,8 @@ namespace TheBuryProject.Services
                 }
 
                 producto.UpdatedAt = DateTime.UtcNow;
-                _repository.Update(producto);
-                await _unitOfWork.CommitAsync();
+                _context.Entry(productoExistente).CurrentValues.SetValues(producto);
+                await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Producto actualizado exitosamente: {Codigo} - {Nombre}", producto.Codigo, producto.Nombre);
                 return producto;
@@ -258,18 +319,16 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var producto = await _repository.GetByIdAsync(id);
+                var producto = await _context.Productos.FindAsync(id);
                 if (producto == null)
                 {
                     _logger.LogWarning("Intento de eliminar producto inexistente con ID {Id}", id);
                     return false;
                 }
 
-                // Soft delete
                 producto.IsDeleted = true;
                 producto.UpdatedAt = DateTime.UtcNow;
-                _repository.Update(producto);
-                await _unitOfWork.CommitAsync();
+                await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Producto eliminado (soft delete): {Codigo} - {Nombre}", producto.Codigo, producto.Nombre);
                 return true;
@@ -285,14 +344,14 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var productos = await _repository.FindAsync(p => p.Codigo == codigo);
+                var query = _context.Productos.Where(p => p.Codigo == codigo);
 
                 if (excludeId.HasValue)
                 {
-                    productos = productos.Where(p => p.Id != excludeId.Value);
+                    query = query.Where(p => p.Id != excludeId.Value);
                 }
 
-                return productos.Any();
+                return await query.AnyAsync();
             }
             catch (Exception ex)
             {
@@ -305,7 +364,7 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var producto = await _repository.GetByIdAsync(id);
+                var producto = await _context.Productos.FindAsync(id);
                 if (producto == null)
                 {
                     throw new InvalidOperationException($"No se encontró el producto con ID {id}");
@@ -324,8 +383,7 @@ namespace TheBuryProject.Services
 
                 producto.StockActual = nuevoStock;
                 producto.UpdatedAt = DateTime.UtcNow;
-                _repository.Update(producto);
-                await _unitOfWork.CommitAsync();
+                await _context.SaveChangesAsync();
 
                 _logger.LogInformation(
                     "Stock actualizado para producto {Codigo}: {StockAnterior} → {StockNuevo} (Δ {Cantidad})",
