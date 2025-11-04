@@ -180,7 +180,7 @@ namespace TheBuryProject.Data
         /// </summary>
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            var entries = ChangeTracker.Entries<BaseEntity>();
+            var entries = ChangeTracker.Entries<EstadoOrdenCompra>();
 
             foreach (var entry in entries)
             {

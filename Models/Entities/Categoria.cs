@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// Representa una categoría de productos en el sistema.
     /// Soporta jerarquía (categorías padre e hijas).
     /// </summary>
-    public class Categoria : BaseEntity
+    public class Categoria : EstadoOrdenCompra
     {
         /// <summary>
         /// Código único de la categoría (ej: "ELEC", "FRIO")
@@ -43,7 +43,10 @@ namespace TheBuryProject.Models.Entities
         /// Categoría padre (navegación)
         /// </summary>
         public virtual Categoria? Parent { get; set; }
-
+        /// <summary>
+        /// Indica si la marca está activa
+        /// </summary>
+        public bool Activo { get; set; } = true;
         /// <summary>
         /// Categorías hijas (navegación)
         /// </summary>

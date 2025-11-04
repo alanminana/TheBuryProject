@@ -33,5 +33,7 @@ namespace TheBuryProject.ViewModels
         // Para mostrar en el listado
         [Display(Name = "Nombre Marca Padre")]
         public string? ParentNombre { get; set; }
+        [Display(Name = "Activo")]
+        public bool Activo { get; set; } = true;
     }
 }

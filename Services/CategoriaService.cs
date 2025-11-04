@@ -279,7 +279,7 @@ namespace TheBuryProject.Services
                     {
                         "nombre" => ascending ? query.OrderBy(c => c.Nombre) : query.OrderByDescending(c => c.Nombre),
                         "descripcion" => ascending ? query.OrderBy(c => c.Descripcion) : query.OrderByDescending(c => c.Descripcion),
-                        "parent" => ascending ? query.OrderBy(c => c.Parent.Nombre) : query.OrderByDescending(c => c.Parent.Nombre),
+                        "parent" => ascending ? query.OrderBy(c => c.Parent!.Nombre) : query.OrderByDescending(c => c.Parent!.Nombre),
                         _ => query.OrderBy(c => c.Nombre)
                     };
                 }

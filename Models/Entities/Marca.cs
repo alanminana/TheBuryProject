@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// Representa una marca de productos en el sistema.
     /// Soporta jerarquía (marcas padre e hijas/submarcas).
     /// </summary>
-    public class Marca : BaseEntity
+    public class Marca : EstadoOrdenCompra
     {
         /// <summary>
         /// Código único de la marca (ej: "SAM", "LG", "WHI")
@@ -44,7 +44,10 @@ namespace TheBuryProject.Models.Entities
         /// Marca padre (navegación)
         /// </summary>
         public virtual Marca? Parent { get; set; }
-
+        /// <summary>
+        /// Indica si la marca está activa
+        /// </summary>
+        public bool Activo { get; set; } = true;
         /// <summary>
         /// SubMarcas (navegación)
         /// </summary>

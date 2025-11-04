@@ -32,5 +32,7 @@ namespace TheBuryProject.ViewModels
         // Para el dropdown de categorías padre
         [Display(Name = "Nombre Categoría Padre")]
         public string? ParentNombre { get; set; }
+        [Display(Name = "Activo")]
+        public bool Activo { get; set; } = true;
     }
 }

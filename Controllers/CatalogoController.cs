@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
@@ -8,55 +9,42 @@ namespace TheBuryProject.Controllers
     {
         private readonly ICategoriaService _categoriaService;
         private readonly IMarcaService _marcaService;
-        private readonly ILogger<CatalogoController> _logger;  // ✅ AGREGAR ESTA LÍNEA
+        private readonly ILogger<CatalogoController> _logger;
+        private readonly IMapper _mapper;
 
         public CatalogoController(
             ICategoriaService categoriaService,
             IMarcaService marcaService,
-            ILogger<CatalogoController> logger)  // ✅ CAMBIAR BaseEntityController por CatalogoController
+            ILogger<CatalogoController> logger,
+            IMapper mapper)
         {
             _categoriaService = categoriaService;
             _marcaService = marcaService;
-            _logger = logger;  // ✅ Ahora sí puede asignar porque existe el campo
+            _logger = logger;
+            _mapper = mapper;
         }
 
         // GET: Catalogo
-        public async Task<IActionResult> Index(
-            string? searchTerm = null,
-            bool soloActivos = false,
-            string? orderBy = null,
-            string? orderDirection = "asc")
+        public async Task<IActionResult> Index()
         {
             try
             {
-                // Ejecutar búsqueda con filtros
-                var categorias = await _categoriaService.SearchAsync(
-                    searchTerm,
-                    soloActivos,
-                    orderBy,
-                    orderDirection
-                );
+                var categorias = await _categoriaService.GetAllAsync();
+                var marcas = await _marcaService.GetAllAsync();
 
-                var viewModels = _mapper.Map<IEnumerable<CategoriaViewModel>>(categorias);
-
-                // Crear ViewModel de filtros
-                var filterViewModel = new CategoriaFilterViewModel
+                var viewModel = new CatalogoViewModel
                 {
-                    SearchTerm = searchTerm,
-                    SoloActivos = soloActivos,
-                    OrderBy = orderBy,
-                    OrderDirection = orderDirection,
-                    Categorias = viewModels,
-                    TotalResultados = viewModels.Count()
+                    Categorias = _mapper.Map<IEnumerable<CategoriaViewModel>>(categorias),
+                    Marcas = _mapper.Map<IEnumerable<MarcaViewModel>>(marcas)
                 };
 
-                return View(filterViewModel);
+                return View(viewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener listado de categorías");
-                TempData["Error"] = "Error al cargar las categorías. Por favor, intente nuevamente.";
-                return View(new CategoriaFilterViewModel());
+                _logger.LogError(ex, "Error al obtener catálogo");
+                TempData["Error"] = "Error al cargar el catálogo";
+                return View(new CatalogoViewModel());
             }
         }
     }

@@ -9,7 +9,7 @@ namespace TheBuryProject.Data.Repositories
     /// Maneja operaciones CRUD básicas para cualquier entidad.
     /// </summary>
     /// <typeparam name="T">Tipo de entidad que hereda de BaseEntity</typeparam>
-    public class Repository<T> : AutoMapperProfile<T> where T : BaseEntity
+    public class Repository<T> : AutoMapperProfile<T> where T : EstadoOrdenCompra
     {
         private readonly AppDbContext _context;
         private readonly DbSet<T> _dbSet;

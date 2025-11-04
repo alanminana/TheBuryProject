@@ -23,50 +23,44 @@ namespace TheBuryProject.Controllers
             _logger = logger;
             _mapper = mapper;  // ✅ INICIALIZAR mapper aquí
         }
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+         string? searchTerm = null,
+         bool soloActivos = false,
+         string? orderBy = null,
+         string? orderDirection = "asc")
         {
-            var categorias = await _categoriaService.GetAllAsync();
-            var viewModels = _mapper.Map<IEnumerable<CategoriaViewModel>>(categorias);
-            return View(viewModels);
-        }
-
-        // GET: Categoria/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
             try
             {
-                var categoria = await _categoriaService.GetByIdAsync(id.Value);
-                if (categoria == null)
-                {
-                    return NotFound();
-                }
+                // Ejecutar búsqueda con filtros
+                var categorias = await _categoriaService.SearchAsync(
+                    searchTerm,
+                    soloActivos,
+                    orderBy,
+                    orderDirection
+                );
 
-                var viewModel = new CategoriaViewModel
+                var viewModels = _mapper.Map<IEnumerable<CategoriaViewModel>>(categorias);
+
+                // Crear ViewModel de filtros
+                var filterViewModel = new CategoriaFilterViewModel
                 {
-                    Id = categoria.Id,
-                    Codigo = categoria.Codigo,
-                    Nombre = categoria.Nombre,
-                    Descripcion = categoria.Descripcion,
-                    ParentId = categoria.ParentId,
-                    ParentNombre = categoria.Parent?.Nombre,
-                    ControlSerieDefault = categoria.ControlSerieDefault
+                    SearchTerm = searchTerm,
+                    SoloActivos = soloActivos,
+                    OrderBy = orderBy,
+                    OrderDirection = orderDirection,
+                    Categorias = viewModels,
+                    TotalResultados = viewModels.Count()
                 };
 
-                return View(viewModel);
+                return View(filterViewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener detalles de categoría {Id}", id);
-                TempData["Error"] = "Error al cargar los detalles. Por favor, intente nuevamente.";
-                return RedirectToAction(nameof(Index));
+                _logger.LogError(ex, "Error al obtener listado de categorías");
+                TempData["Error"] = "Error al cargar las categorías. Por favor, intente nuevamente.";
+                return View(new CategoriaFilterViewModel());
             }
         }
-
         // GET: Categoria/Create
         public async Task<IActionResult> Create()
         {
