@@ -1,0 +1,245 @@
+﻿@model TheBuryProject.ViewModels.ChequeViewModel
+
+@{
+    ViewData["Title"] = "Detalle del Cheque";
+}
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>
+                <i class="bi bi-credit-card"></i> Cheque #@Model.Numero
+            </h2>
+            <div>
+                @if (Model.Estado != TheBuryProject.Models.Enums.EstadoCheque.Cobrado &&
+                                Model.Estado != TheBuryProject.Models.Enums.EstadoCheque.Depositado)
+                {
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                }
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-circle"></i> @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Alertas de vencimiento -->
+        @if (Model.EstaVencido)
+        {
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Este cheque está vencido</strong>
+                @if (Model.FechaVencimiento.HasValue)
+                {
+                    <br />
+                    Venció el @Model.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                            }
+            </div>
+        }
+        else if (Model.EstaPorVencer)
+        {
+            <div class="alert alert-warning">
+                <i class="bi bi-clock"></i>
+                <strong>Este cheque está por vencer</strong>
+                @if (Model.FechaVencimiento.HasValue)
+                {
+                    <br />
+                    Vence el @Model.FechaVencimiento.Value.ToString("dd/MM/yyyy")(@Model.DiasPorVencer día(s))
+                            }
+            </div>
+        }
+
+        <!-- Información del Cheque -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información del Cheque
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Número</dt>
+                            <dd class="col-sm-7"><strong>@Model.Numero</strong></dd>
+
+                            <dt class="col-sm-5">Banco</dt>
+                            <dd class="col-sm-7">@Model.Banco</dd>
+
+                            <dt class="col-sm-5">Monto</dt>
+                            <dd class="col-sm-7">
+                                <strong class="text-primary fs-4">$@Model.Monto.ToString("N2")</strong>
+                            </dd>
+
+                            <dt class="col-sm-5">Estado</dt>
+                            <dd class="col-sm-7">
+                                @{
+                                    var badgeClass = Model.Estado switch
+                                    {
+                                        TheBuryProject.Models.Enums.EstadoCheque.Emitido => "bg-secondary",
+                                        TheBuryProject.Models.Enums.EstadoCheque.Entregado => "bg-info",
+                                        TheBuryProject.Models.Enums.EstadoCheque.Depositado => "bg-warning",
+                                        TheBuryProject.Models.Enums.EstadoCheque.Cobrado => "bg-success",
+                                        TheBuryProject.Models.Enums.EstadoCheque.Rechazado => "bg-danger",
+                                        TheBuryProject.Models.Enums.EstadoCheque.Anulado => "bg-dark",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @badgeClass">@Model.Estado.ToString()</span>
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Fecha Emisión</dt>
+                            <dd class="col-sm-7">@Model.FechaEmision.ToString("dd/MM/yyyy")</dd>
+
+                            @if (Model.FechaVencimiento.HasValue)
+                            {
+                                <dt class="col-sm-5">Fecha Vencimiento</dt>
+                                <dd class="col-sm-7">
+                                    @Model.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                                    @if (!Model.EstaVencido && Model.DiasPorVencer > 0)
+                                    {
+                                        <br />
+                                        <small class="text-muted">(@Model.DiasPorVencer día(s))</small>
+                                    }
+                                </dd>
+                            }
+
+                            <dt class="col-sm-5">Proveedor</dt>
+                            <dd class="col-sm-7">
+                                <a asp-controller="Proveedor" asp-action="Details" asp-route-id="@Model.ProveedorId">
+                                    @Model.ProveedorNombre
+                                </a>
+                            </dd>
+
+                            @if (Model.OrdenCompraId.HasValue)
+                            {
+                                <dt class="col-sm-5">Orden de Compra</dt>
+                                <dd class="col-sm-7">
+                                    <a asp-controller="OrdenCompra" asp-action="Details" asp-route-id="@Model.OrdenCompraId">
+                                        @Model.OrdenCompraNumero
+                                    </a>
+                                </dd>
+                            }
+                        </dl>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Observaciones))
+                {
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <h6 class="text-muted">Observaciones</h6>
+                            <p class="text-muted mb-0">@Model.Observaciones</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Cambiar Estado -->
+        @if (Model.Estado != TheBuryProject.Models.Enums.EstadoCheque.Anulado)
+        {
+            <div class="card mb-3">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">
+                        <i class="bi bi-arrow-repeat"></i> Cambiar Estado
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="CambiarEstado" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <label class="form-label">Nuevo Estado</label>
+                                <select name="nuevoEstado" class="form-select">
+                                    @foreach (TheBuryProject.Models.Enums.EstadoCheque estado in Enum.GetValues(typeof(TheBuryProject.Models.Enums.EstadoCheque)))
+                                    {
+                                        if (estado != Model.Estado)
+                                        {
+                                            <option value="@((int)estado)">@estado.ToString()</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="bi bi-check-circle"></i> Cambiar Estado
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+
+        <!-- Acciones -->
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-check"></i> Acciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    @if (Model.Estado != TheBuryProject.Models.Enums.EstadoCheque.Cobrado &&
+                                        Model.Estado != TheBuryProject.Models.Enums.EstadoCheque.Depositado)
+                    {
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Editar Cheque
+                        </a>
+                    }
+
+                    <a href="#" class="btn btn-outline-primary disabled">
+                        <i class="bi bi-printer"></i> Imprimir Comprobante
+                    </a>
+                    <small class="text-muted text-center">(Próximamente)</small>
+
+                    <hr />
+
+                    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i> Eliminar Cheque
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información de auditoría -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Auditoría
+                </h6>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    <strong>Creado:</strong><br />
+                    @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    <br /><br />
+                    <strong>Última modificación:</strong><br />
+                    @Model.UpdatedAt.ToString("dd/MM/yyyy HH:mm")
+                </small>
+            </div>
+        </div>
+    </div>
+</div>

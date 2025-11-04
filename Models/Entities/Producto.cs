@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Entidad que representa un producto en el sistema
     /// </summary>
-    public class Producto : EstadoOrdenCompra
+    public class Producto : BaseEntity
     {
         /// <summary>
         /// Código único del producto

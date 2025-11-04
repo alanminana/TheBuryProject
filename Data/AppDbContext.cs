@@ -1,4 +1,4 @@
-Ôªøusing Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Entities;
@@ -7,7 +7,7 @@ namespace TheBuryProject.Data
 {
     /// <summary>
     /// Contexto principal de la base de datos del sistema.
-    /// Hereda de IdentityDbContext para incluir tablas de autenticaci√≥n.
+    /// Hereda de IdentityDbContext para incluir tablas de autenticaciÛn.
     /// </summary>
     public class AppDbContext : IdentityDbContext
     {
@@ -19,77 +19,78 @@ namespace TheBuryProject.Data
         // DbSets - Cada uno representa una tabla en la base de datos
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<Marca> Marcas { get; set; }
-        public DbSet<Producto> Productos { get; set; }  // ‚úÖ AGREGAR ESTA L√çNEA
+        public DbSet<Producto> Productos { get; set; }
+
+        // Proveedores
+        public DbSet<Proveedor> Proveedores { get; set; }
+        public DbSet<ProveedorProducto> ProveedorProductos { get; set; }
+        public DbSet<ProveedorMarca> ProveedorMarcas { get; set; }
+        public DbSet<ProveedorCategoria> ProveedorCategorias { get; set; }
+
+        // ”rdenes de Compra
+        public DbSet<OrdenCompra> OrdenesCompra { get; set; }
+        public DbSet<OrdenCompraDetalle> OrdenCompraDetalles { get; set; }
+
+        // Cheques
+        public DbSet<Cheque> Cheques { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configuraci√≥n de Categoria
+            // ConfiguraciÛn de Categoria
             modelBuilder.Entity<Categoria>(entity =>
             {
-                // √çndice √∫nico en el c√≥digo
                 entity.HasIndex(e => e.Codigo)
                     .IsUnique()
-                    .HasFilter("IsDeleted = 0"); // Solo para registros no eliminados
+                    .HasFilter("IsDeleted = 0");
 
-                // Configuraci√≥n de la relaci√≥n padre-hijo (auto-referencia)
                 entity.HasOne(e => e.Parent)
                     .WithMany(e => e.Children)
                     .HasForeignKey(e => e.ParentId)
-                    .OnDelete(DeleteBehavior.Restrict); // No borrar en cascada
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                // RowVersion para control de concurrencia
                 entity.Property(e => e.RowVersion)
                     .IsRowVersion();
 
-                // Filtro global para soft delete
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // Configuraci√≥n de Marca
+            // ConfiguraciÛn de Marca
             modelBuilder.Entity<Marca>(entity =>
             {
-                // √çndice √∫nico en el c√≥digo
                 entity.HasIndex(e => e.Codigo)
                     .IsUnique()
-                    .HasFilter("IsDeleted = 0"); // Solo para registros no eliminados
+                    .HasFilter("IsDeleted = 0");
 
-                // Configuraci√≥n de la relaci√≥n padre-hijo (auto-referencia)
                 entity.HasOne(e => e.Parent)
                     .WithMany(e => e.Children)
                     .HasForeignKey(e => e.ParentId)
-                    .OnDelete(DeleteBehavior.Restrict); // No borrar en cascada
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                // RowVersion para control de concurrencia
                 entity.Property(e => e.RowVersion)
                     .IsRowVersion();
 
-                // Filtro global para soft delete
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
-            // ‚úÖ AGREGAR TODA ESTA CONFIGURACI√ìN DE PRODUCTO
-            // Configuraci√≥n de Producto
+
+            // ConfiguraciÛn de Producto
             modelBuilder.Entity<Producto>(entity =>
             {
-                // √çndice √∫nico en el c√≥digo
                 entity.HasIndex(e => e.Codigo)
                     .IsUnique()
-                    .HasFilter("IsDeleted = 0"); // Solo para registros no eliminados
+                    .HasFilter("IsDeleted = 0");
 
-                // Relaci√≥n con Categoria
                 entity.HasOne(e => e.Categoria)
                     .WithMany()
                     .HasForeignKey(e => e.CategoriaId)
-                    .OnDelete(DeleteBehavior.Restrict); // No borrar en cascada
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                // Relaci√≥n con Marca
                 entity.HasOne(e => e.Marca)
                     .WithMany()
                     .HasForeignKey(e => e.MarcaId)
-                    .OnDelete(DeleteBehavior.Restrict); // No borrar en cascada
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                // Configuraci√≥n de decimales para precios
                 entity.Property(e => e.PrecioCompra)
                     .HasPrecision(18, 2);
 
@@ -102,13 +103,161 @@ namespace TheBuryProject.Data
                 entity.Property(e => e.StockMinimo)
                     .HasPrecision(18, 2);
 
-                // RowVersion para control de concurrencia
                 entity.Property(e => e.RowVersion)
                     .IsRowVersion();
 
-                // Filtro global para soft delete
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
+
+            // ConfiguraciÛn de Proveedor
+            modelBuilder.Entity<Proveedor>(entity =>
+            {
+                entity.HasIndex(e => e.Cuit)
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0");
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // ConfiguraciÛn de ProveedorProducto (RelaciÛn N:N)
+            modelBuilder.Entity<ProveedorProducto>(entity =>
+            {
+                entity.HasOne(e => e.Proveedor)
+                    .WithMany(p => p.ProveedorProductos)
+                    .HasForeignKey(e => e.ProveedorId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Producto)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.ProveedorId, e.ProductoId })
+                    .IsUnique();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // ConfiguraciÛn de ProveedorMarca (RelaciÛn N:N)
+            modelBuilder.Entity<ProveedorMarca>(entity =>
+            {
+                entity.HasOne(e => e.Proveedor)
+                    .WithMany(p => p.ProveedorMarcas)
+                    .HasForeignKey(e => e.ProveedorId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Marca)
+                    .WithMany()
+                    .HasForeignKey(e => e.MarcaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.ProveedorId, e.MarcaId })
+                    .IsUnique();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // ConfiguraciÛn de ProveedorCategoria (RelaciÛn N:N)
+            modelBuilder.Entity<ProveedorCategoria>(entity =>
+            {
+                entity.HasOne(e => e.Proveedor)
+                    .WithMany(p => p.ProveedorCategorias)
+                    .HasForeignKey(e => e.ProveedorId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Categoria)
+                    .WithMany()
+                    .HasForeignKey(e => e.CategoriaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new { e.ProveedorId, e.CategoriaId })
+                    .IsUnique();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // ConfiguraciÛn de OrdenCompra
+            modelBuilder.Entity<OrdenCompra>(entity =>
+            {
+                entity.HasIndex(e => e.Numero)
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0");
+
+                entity.HasOne(e => e.Proveedor)
+                    .WithMany(p => p.OrdenesCompra)
+                    .HasForeignKey(e => e.ProveedorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.Subtotal)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Descuento)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Iva)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Total)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // ConfiguraciÛn de OrdenCompraDetalle
+            modelBuilder.Entity<OrdenCompraDetalle>(entity =>
+            {
+                entity.HasOne(e => e.OrdenCompra)
+                    .WithMany(o => o.Detalles)
+                    .HasForeignKey(e => e.OrdenCompraId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Producto)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.PrecioUnitario)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Subtotal)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // ConfiguraciÛn de Cheque
+            modelBuilder.Entity<Cheque>(entity =>
+            {
+                entity.HasIndex(e => e.Numero);
+
+                entity.HasOne(e => e.Proveedor)
+                    .WithMany(p => p.Cheques)
+                    .HasForeignKey(e => e.ProveedorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.OrdenCompra)
+                    .WithMany()
+                    .HasForeignKey(e => e.OrdenCompraId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.Property(e => e.Monto)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
             // Seed de datos inicial
             SeedData(modelBuilder);
         }
@@ -123,9 +272,10 @@ namespace TheBuryProject.Data
                 {
                     Id = 1,
                     Codigo = "ELEC",
-                    Nombre = "Electr√≥nica",
-                    Descripcion = "Productos electr√≥nicos",
+                    Nombre = "ElectrÛnica",
+                    Descripcion = "Productos electrÛnicos",
                     ControlSerieDefault = true,
+                    Activo = true,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 },
@@ -133,9 +283,10 @@ namespace TheBuryProject.Data
                 {
                     Id = 2,
                     Codigo = "FRIO",
-                    Nombre = "Refrigeraci√≥n",
+                    Nombre = "RefrigeraciÛn",
                     Descripcion = "Heladeras, freezers y aire acondicionado",
                     ControlSerieDefault = true,
+                    Activo = true,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 }
@@ -147,8 +298,9 @@ namespace TheBuryProject.Data
                     Id = 1,
                     Codigo = "SAM",
                     Nombre = "Samsung",
-                    Descripcion = "Electr√≥nica y electrodom√©sticos",
+                    Descripcion = "ElectrÛnica y electrodomÈsticos",
                     PaisOrigen = "Corea del Sur",
+                    Activo = true,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 },
@@ -157,8 +309,9 @@ namespace TheBuryProject.Data
                     Id = 2,
                     Codigo = "LG",
                     Nombre = "LG",
-                    Descripcion = "Electr√≥nica y electrodom√©sticos",
+                    Descripcion = "ElectrÛnica y electrodomÈsticos",
                     PaisOrigen = "Corea del Sur",
+                    Activo = true,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 },
@@ -167,8 +320,9 @@ namespace TheBuryProject.Data
                     Id = 3,
                     Codigo = "WHI",
                     Nombre = "Whirlpool",
-                    Descripcion = "Electrodom√©sticos",
+                    Descripcion = "ElectrodomÈsticos",
                     PaisOrigen = "Estados Unidos",
+                    Activo = true,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = "System"
                 }
@@ -176,27 +330,24 @@ namespace TheBuryProject.Data
         }
 
         /// <summary>
-        /// Interceptor para auditor√≠a autom√°tica antes de guardar cambios
+        /// Interceptor para auditorÌa autom·tica antes de guardar cambios
         /// </summary>
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            var entries = ChangeTracker.Entries<EstadoOrdenCompra>();
+            var entries = ChangeTracker.Entries<BaseEntity>();
 
             foreach (var entry in entries)
             {
                 if (entry.State == EntityState.Added)
                 {
                     entry.Entity.CreatedAt = DateTime.UtcNow;
-                    // TODO: Obtener usuario del contexto HTTP
                     entry.Entity.CreatedBy = "System";
                 }
                 else if (entry.State == EntityState.Modified)
                 {
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
-                    // TODO: Obtener usuario del contexto HTTP
                     entry.Entity.UpdatedBy = "System";
 
-                    // IMPORTANTE: Proteger campos de auditor√≠a de creaci√≥n para que no se modifiquen
                     entry.Property(e => e.CreatedAt).IsModified = false;
                     entry.Property(e => e.CreatedBy).IsModified = false;
                 }

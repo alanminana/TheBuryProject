@@ -1,0 +1,180 @@
+﻿@model TheBuryProject.ViewModels.ProveedorViewModel
+
+@{
+    ViewData["Title"] = "Detalle del Proveedor";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>
+                <i class="bi bi-building"></i> Detalle del Proveedor
+            </h2>
+            <div>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información General
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted border-bottom pb-2">Datos Fiscales</h6>
+                        <dl class="row">
+                            <dt class="col-sm-4">CUIT</dt>
+                            <dd class="col-sm-8"><strong>@Model.Cuit</strong></dd>
+
+                            <dt class="col-sm-4">Razón Social</dt>
+                            <dd class="col-sm-8">@Model.RazonSocial</dd>
+
+                            @if (!string.IsNullOrEmpty(Model.NombreFantasia))
+                            {
+                                <dt class="col-sm-4">Nombre Fantasía</dt>
+                                <dd class="col-sm-8">@Model.NombreFantasia</dd>
+                            }
+
+                            <dt class="col-sm-4">Estado</dt>
+                            <dd class="col-sm-8">
+                                @if (Model.Activo)
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                }
+                            </dd>
+                        </dl>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="text-muted border-bottom pb-2">Datos de Contacto</h6>
+                        <dl class="row">
+                            <dt class="col-sm-4">Email</dt>
+                            <dd class="col-sm-8">
+                                <a href="mailto:@Model.Email">
+                                    <i class="bi bi-envelope"></i> @Model.Email
+                                </a>
+                            </dd>
+
+                            <dt class="col-sm-4">Teléfono</dt>
+                            <dd class="col-sm-8">
+                                <i class="bi bi-telephone"></i> @Model.Telefono
+                            </dd>
+
+                            @if (!string.IsNullOrEmpty(Model.Direccion))
+                            {
+                                <dt class="col-sm-4">Dirección</dt>
+                                <dd class="col-sm-8">
+                                    <i class="bi bi-geo-alt"></i> @Model.Direccion
+                                </dd>
+                            }
+                        </dl>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Aclaraciones))
+                {
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6 class="text-muted border-bottom pb-2">Aclaraciones / Observaciones</h6>
+                            <p class="text-muted">@Model.Aclaraciones</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Resumen Financiero -->
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Resumen Financiero
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <i class="bi bi-cart-check fs-2 text-primary"></i>
+                            <h4 class="mt-2">@Model.TotalOrdenesCompra</h4>
+                            <p class="text-muted mb-0">Órdenes de Compra</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <i class="bi bi-credit-card fs-2 text-warning"></i>
+                            <h4 class="mt-2">@Model.ChequesVigentes</h4>
+                            <p class="text-muted mb-0">Cheques Vigentes</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3">
+                            <i class="bi bi-currency-dollar fs-2 text-danger"></i>
+                            <h4 class="mt-2 text-danger">$@Model.TotalDeuda.ToString("N2")</h4>
+                            <p class="text-muted mb-0">Deuda Pendiente</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones Adicionales -->
+        <div class="card mt-3">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-check"></i> Acciones Disponibles
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="#" class="btn btn-outline-primary w-100 disabled">
+                            <i class="bi bi-box-seam"></i><br />
+                            Ver Productos
+                        </a>
+                        <small class="text-muted d-block text-center mt-1">(Próximamente)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="#" class="btn btn-outline-primary w-100 disabled">
+                            <i class="bi bi-cart-plus"></i><br />
+                            Nueva Orden de Compra
+                        </a>
+                        <small class="text-muted d-block text-center mt-1">(Próximamente)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="#" class="btn btn-outline-primary w-100 disabled">
+                            <i class="bi bi-credit-card-2-front"></i><br />
+                            Registrar Cheque
+                        </a>
+                        <small class="text-muted d-block text-center mt-1">(Próximamente)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger w-100">
+                            <i class="bi bi-trash"></i><br />
+                            Eliminar Proveedor
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

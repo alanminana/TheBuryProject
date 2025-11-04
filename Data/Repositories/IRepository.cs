@@ -1,14 +1,14 @@
-Ôªøusing System.Linq.Expressions;
+using System.Linq.Expressions;
 using TheBuryProject.Models.Base;
 
 namespace TheBuryProject.Data.Repositories
 {
     /// <summary>
-    /// Interfaz gen√©rica para repositorio de entidades.
-    /// Proporciona operaciones CRUD b√°sicas y consultas.
+    /// Interfaz genÈrica para repositorio de entidades.
+    /// Proporciona operaciones CRUD b·sicas y consultas.
     /// </summary>
     /// <typeparam name="T">Tipo de entidad que hereda de BaseEntity</typeparam>
-    public interface AutoMapperProfile<T> where T : EstadoOrdenCompra
+    public interface AutoMapperProfile<T> where T : BaseEntity
     {
         /// <summary>
         /// Obtiene una entidad por su ID

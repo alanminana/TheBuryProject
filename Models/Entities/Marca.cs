@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// Representa una marca de productos en el sistema.
     /// Soporta jerarquía (marcas padre e hijas/submarcas).
     /// </summary>
-    public class Marca : EstadoOrdenCompra
+    public class Marca : BaseEntity
     {
         /// <summary>
         /// Código único de la marca (ej: "SAM", "LG", "WHI")

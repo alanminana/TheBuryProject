@@ -44,7 +44,8 @@ builder.Services.AddSingleton<IMapper>(sp =>
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();  // ← Esta línea
-
+builder.Services.AddScoped<IProveedorService, ProveedorService>();
+builder.Services.AddScoped<IChequeService, ChequeService>();
 
 // 5. Configuración de MVC
 builder.Services.AddControllersWithViews();

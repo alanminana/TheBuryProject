@@ -1,0 +1,106 @@
+﻿@model TheBuryProject.ViewModels.ChequeViewModel
+
+@{
+    ViewData["Title"] = "Eliminar Cheque";
+}
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <strong>¿Está seguro que desea eliminar este cheque?</strong>
+                    <p class="mb-0 mt-2">Esta acción no se puede deshacer.</p>
+                </div>
+
+                <dl class="row">
+                    <dt class="col-sm-4">Número de Cheque</dt>
+                    <dd class="col-sm-8"><strong>@Model.Numero</strong></dd>
+
+                    <dt class="col-sm-4">Banco</dt>
+                    <dd class="col-sm-8">@Model.Banco</dd>
+
+                    <dt class="col-sm-4">Monto</dt>
+                    <dd class="col-sm-8">
+                        <strong class="text-primary fs-5">$@Model.Monto.ToString("N2")</strong>
+                    </dd>
+
+                    <dt class="col-sm-4">Proveedor</dt>
+                    <dd class="col-sm-8">@Model.ProveedorNombre</dd>
+
+                    <dt class="col-sm-4">Fecha Emisión</dt>
+                    <dd class="col-sm-8">@Model.FechaEmision.ToString("dd/MM/yyyy")</dd>
+
+                    @if (Model.FechaVencimiento.HasValue)
+                    {
+                        <dt class="col-sm-4">Fecha Vencimiento</dt>
+                        <dd class="col-sm-8">
+                            @Model.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                            @if (Model.EstaVencido)
+                            {
+                                <br />
+                                <span class="badge bg-danger">Vencido</span>
+                            }
+                            else if (Model.EstaPorVencer)
+                            {
+                                <br />
+                                <span class="badge bg-warning">Por vencer</span>
+                            }
+                        </dd>
+                    }
+
+                    <dt class="col-sm-4">Estado</dt>
+                    <dd class="col-sm-8">
+                        @{
+                            var badgeClass = Model.Estado switch
+                            {
+                                TheBuryProject.Models.Enums.EstadoCheque.Emitido => "bg-secondary",
+                                TheBuryProject.Models.Enums.EstadoCheque.Entregado => "bg-info",
+                                TheBuryProject.Models.Enums.EstadoCheque.Depositado => "bg-warning",
+                                TheBuryProject.Models.Enums.EstadoCheque.Cobrado => "bg-success",
+                                TheBuryProject.Models.Enums.EstadoCheque.Rechazado => "bg-danger",
+                                TheBuryProject.Models.Enums.EstadoCheque.Anulado => "bg-dark",
+                                _ => "bg-secondary"
+                            };
+                        }
+                        <span class="badge @badgeClass">@Model.Estado.ToString()</span>
+                    </dd>
+
+                    @if (!string.IsNullOrEmpty(Model.OrdenCompraNumero))
+                    {
+                        <dt class="col-sm-4">Orden de Compra</dt>
+                        <dd class="col-sm-8">
+                            <a asp-controller="OrdenCompra" asp-action="Details" asp-route-id="@Model.OrdenCompraId">
+                                @Model.OrdenCompraNumero
+                            </a>
+                        </dd>
+                    }
+                </dl>
+
+                @if (!string.IsNullOrEmpty(Model.Observaciones))
+                {
+                    <h5 class="mt-3 mb-2">Observaciones</h5>
+                    <p class="text-muted">@Model.Observaciones</p>
+                }
+
+                <form asp-action="Delete" method="post" class="d-inline">
+                    <input type="hidden" asp-for="Id" />
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Eliminar Cheque
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

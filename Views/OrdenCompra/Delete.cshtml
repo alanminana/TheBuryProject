@@ -1,0 +1,98 @@
+﻿@model TheBuryProject.ViewModels.ProveedorViewModel
+
+@{
+    ViewData["Title"] = "Eliminar Proveedor";
+}
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <strong>¿Está seguro que desea eliminar este proveedor?</strong>
+                    <p class="mb-0 mt-2">Esta acción no se puede deshacer.</p>
+                </div>
+
+                <dl class="row">
+                    <dt class="col-sm-3">CUIT</dt>
+                    <dd class="col-sm-9">@Model.Cuit</dd>
+
+                    <dt class="col-sm-3">Razón Social</dt>
+                    <dd class="col-sm-9">@Model.RazonSocial</dd>
+
+                    @if (!string.IsNullOrEmpty(Model.NombreFantasia))
+                    {
+                        <dt class="col-sm-3">Nombre Fantasía</dt>
+                        <dd class="col-sm-9">@Model.NombreFantasia</dd>
+                    }
+
+                    <dt class="col-sm-3">Email</dt>
+                    <dd class="col-sm-9">@Model.Email</dd>
+
+                    <dt class="col-sm-3">Teléfono</dt>
+                    <dd class="col-sm-9">@Model.Telefono</dd>
+
+                    @if (!string.IsNullOrEmpty(Model.Direccion))
+                    {
+                        <dt class="col-sm-3">Dirección</dt>
+                        <dd class="col-sm-9">@Model.Direccion</dd>
+                    }
+
+                    <dt class="col-sm-3">Estado</dt>
+                    <dd class="col-sm-9">
+                        @if (Model.Activo)
+                        {
+                            <span class="badge bg-success">Activo</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Inactivo</span>
+                        }
+                    </dd>
+
+                    @if (Model.TotalOrdenesCompra > 0)
+                    {
+                        <dt class="col-sm-3">Órdenes de Compra</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-info">@Model.TotalOrdenesCompra</span>
+                        </dd>
+                    }
+
+                    @if (Model.ChequesVigentes > 0)
+                    {
+                        <dt class="col-sm-3">Cheques Vigentes</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-warning">@Model.ChequesVigentes</span>
+                        </dd>
+                    }
+
+                    @if (Model.TotalDeuda > 0)
+                    {
+                        <dt class="col-sm-3">Deuda Pendiente</dt>
+                        <dd class="col-sm-9">
+                            <span class="text-danger fw-bold">$@Model.TotalDeuda.ToString("N2")</span>
+                        </dd>
+                    }
+                </dl>
+
+                <form asp-action="Delete" method="post" class="d-inline">
+                    <input type="hidden" asp-for="Id" />
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Eliminar Proveedor
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

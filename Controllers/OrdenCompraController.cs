@@ -1,0 +1,321 @@
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Models.Entities;
+using TheBuryProject.Models.Enums;
+using TheBuryProject.Services.Interfaces;
+using TheBuryProject.ViewModels;
+
+namespace TheBuryProject.Controllers
+{
+    [Authorize]
+    public class OrdenCompraController : Controller
+    {
+        private readonly IOrdenCompraService _ordenCompraService;
+        private readonly IProveedorService _proveedorService;
+        private readonly IProductoService _productoService;
+        private readonly IMapper _mapper;
+        private readonly ILogger<OrdenCompraController> _logger;
+
+        public OrdenCompraController(
+            IOrdenCompraService ordenCompraService,
+            IProveedorService proveedorService,
+            IProductoService productoService,
+            IMapper mapper,
+            ILogger<OrdenCompraController> logger)
+        {
+            _ordenCompraService = ordenCompraService;
+            _proveedorService = proveedorService;
+            _productoService = productoService;
+            _mapper = mapper;
+            _logger = logger;
+        }
+
+        // GET: OrdenCompra
+        public async Task<IActionResult> Index(OrdenCompraFilterViewModel filter)
+        {
+            try
+            {
+                var ordenes = await _ordenCompraService.SearchAsync(
+                    searchTerm: filter.SearchTerm,
+                    proveedorId: filter.ProveedorId,
+                    estado: filter.Estado,
+                    fechaDesde: filter.FechaDesde,
+                    fechaHasta: filter.FechaHasta,
+                    orderBy: filter.OrderBy,
+                    orderDirection: filter.OrderDirection);
+
+                var viewModels = _mapper.Map<IEnumerable<OrdenCompraViewModel>>(ordenes);
+
+                // Cargar proveedores para el filtro
+                var proveedores = await _proveedorService.GetAllAsync();
+                ViewBag.Proveedores = new SelectList(proveedores, "Id", "RazonSocial", filter.ProveedorId);
+                ViewBag.Estados = new SelectList(Enum.GetValues(typeof(EstadoOrdenCompra)));
+
+                ViewBag.Filter = filter;
+
+                return View(viewModels);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener las órdenes de compra");
+                TempData["Error"] = "Error al cargar las órdenes de compra";
+                return View(new List<OrdenCompraViewModel>());
+            }
+        }
+
+        // GET: OrdenCompra/Details/5
+        public async Task<IActionResult> Details(int id)
+        {
+            try
+            {
+                var orden = await _ordenCompraService.GetByIdAsync(id);
+                if (orden == null)
+                {
+                    TempData["Error"] = "Orden de compra no encontrada";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var viewModel = _mapper.Map<OrdenCompraViewModel>(orden);
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener la orden de compra {Id}", id);
+                TempData["Error"] = "Error al cargar los detalles de la orden";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: OrdenCompra/Create
+        public async Task<IActionResult> Create()
+        {
+            try
+            {
+                await CargarDatosSelectListsAsync();
+
+                var viewModel = new OrdenCompraViewModel
+                {
+                    FechaEmision = DateTime.Today,
+                    Estado = EstadoOrdenCompra.Borrador
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar el formulario de creación");
+                TempData["Error"] = "Error al cargar el formulario";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // POST: OrdenCompra/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(OrdenCompraViewModel viewModel)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    await CargarDatosSelectListsAsync(viewModel.ProveedorId);
+                    return View(viewModel);
+                }
+
+                // Validar que tenga al menos un detalle
+                if (viewModel.Detalles == null || !viewModel.Detalles.Any())
+                {
+                    ModelState.AddModelError("", "Debe agregar al menos un producto a la orden");
+                    await CargarDatosSelectListsAsync(viewModel.ProveedorId);
+                    return View(viewModel);
+                }
+
+                var orden = _mapper.Map<OrdenCompra>(viewModel);
+                await _ordenCompraService.CreateAsync(orden);
+
+                TempData["Success"] = $"Orden de compra {orden.Numero} creada exitosamente";
+                return RedirectToAction(nameof(Details), new { id = orden.Id });
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                await CargarDatosSelectListsAsync(viewModel.ProveedorId);
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear la orden de compra");
+                ModelState.AddModelError("", "Error al crear la orden de compra");
+                await CargarDatosSelectListsAsync(viewModel.ProveedorId);
+                return View(viewModel);
+            }
+        }
+
+        // GET: OrdenCompra/Edit/5
+        public async Task<IActionResult> Edit(int id)
+        {
+            try
+            {
+                var orden = await _ordenCompraService.GetByIdAsync(id);
+                if (orden == null)
+                {
+                    TempData["Error"] = "Orden de compra no encontrada";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // No permitir editar órdenes recibidas o canceladas
+                if (orden.Estado == EstadoOrdenCompra.Recibida || orden.Estado == EstadoOrdenCompra.Cancelada)
+                {
+                    TempData["Error"] = "No se puede editar una orden recibida o cancelada";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                var viewModel = _mapper.Map<OrdenCompraViewModel>(orden);
+                await CargarDatosSelectListsAsync(viewModel.ProveedorId);
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar la orden de compra {Id} para edición", id);
+                TempData["Error"] = "Error al cargar la orden para edición";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // POST: OrdenCompra/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, OrdenCompraViewModel viewModel)
+        {
+            if (id != viewModel.Id)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    await CargarDatosSelectListsAsync(viewModel.ProveedorId);
+                    return View(viewModel);
+                }
+
+                // Validar que tenga al menos un detalle
+                if (viewModel.Detalles == null || !viewModel.Detalles.Any())
+                {
+                    ModelState.AddModelError("", "Debe agregar al menos un producto a la orden");
+                    await CargarDatosSelectListsAsync(viewModel.ProveedorId);
+                    return View(viewModel);
+                }
+
+                var orden = _mapper.Map<OrdenCompra>(viewModel);
+                await _ordenCompraService.UpdateAsync(orden);
+
+                TempData["Success"] = "Orden de compra actualizada exitosamente";
+                return RedirectToAction(nameof(Details), new { id = orden.Id });
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                await CargarDatosSelectListsAsync(viewModel.ProveedorId);
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la orden de compra {Id}", id);
+                ModelState.AddModelError("", "Error al actualizar la orden de compra");
+                await CargarDatosSelectListsAsync(viewModel.ProveedorId);
+                return View(viewModel);
+            }
+        }
+
+        // GET: OrdenCompra/Delete/5
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var orden = await _ordenCompraService.GetByIdAsync(id);
+                if (orden == null)
+                {
+                    TempData["Error"] = "Orden de compra no encontrada";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var viewModel = _mapper.Map<OrdenCompraViewModel>(orden);
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar la orden de compra {Id} para eliminación", id);
+                TempData["Error"] = "Error al cargar la orden";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // POST: OrdenCompra/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            try
+            {
+                await _ordenCompraService.DeleteAsync(id);
+                TempData["Success"] = "Orden de compra eliminada exitosamente";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(Delete), new { id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la orden de compra {Id}", id);
+                TempData["Error"] = "Error al eliminar la orden de compra";
+                return RedirectToAction(nameof(Delete), new { id });
+            }
+        }
+
+        // POST: OrdenCompra/CambiarEstado
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CambiarEstado(int id, EstadoOrdenCompra nuevoEstado)
+        {
+            try
+            {
+                var resultado = await _ordenCompraService.CambiarEstadoAsync(id, nuevoEstado);
+                if (resultado)
+                {
+                    TempData["Success"] = $"Estado cambiado a {nuevoEstado} exitosamente";
+                }
+                else
+                {
+                    TempData["Error"] = "No se pudo cambiar el estado";
+                }
+
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado de la orden {Id}", id);
+                TempData["Error"] = "Error al cambiar el estado";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+        }
+
+        // Helper: Cargar datos para los SelectLists
+        private async Task CargarDatosSelectListsAsync(int? proveedorIdSeleccionado = null)
+        {
+            var proveedores = await _proveedorService.SearchAsync(soloActivos: true);
+            ViewBag.Proveedores = new SelectList(proveedores, "Id", "RazonSocial", proveedorIdSeleccionado);
+
+            var productos = await _productoService.SearchAsync(soloActivos: true);
+            ViewBag.Productos = new SelectList(productos, "Id", "Nombre");
+
+            ViewBag.Estados = new SelectList(Enum.GetValues(typeof(EstadoOrdenCompra)));
+        }
+    }
+}
