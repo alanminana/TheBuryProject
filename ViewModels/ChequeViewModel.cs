@@ -73,5 +73,7 @@ namespace TheBuryProject.ViewModels
 
         [Display(Name = "Última Modificación")]
         public DateTime UpdatedAt { get; set; }
+
+  
     }
 }
