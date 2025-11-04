@@ -294,5 +294,56 @@ namespace TheBuryProject.Services
 
             return false;
         }
+
+        public async Task<IEnumerable<Marca>> SearchAsync(
+    string? searchTerm = null,
+    bool soloActivos = false,
+    string? orderBy = null,
+    string? orderDirection = "asc")
+        {
+            try
+            {
+                var query = _context.Marcas.AsQueryable();
+
+                // Búsqueda por texto
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    searchTerm = searchTerm.ToLower();
+                    query = query.Where(m =>
+                        m.Nombre.ToLower().Contains(searchTerm) ||
+                        (m.Descripcion != null && m.Descripcion.ToLower().Contains(searchTerm))
+                    );
+                }
+
+                // Filtro solo activos
+                if (soloActivos)
+                {
+                    query = query.Where(m => m.Activo);
+                }
+
+                // Ordenamiento dinámico
+                if (!string.IsNullOrWhiteSpace(orderBy))
+                {
+                    var ascending = orderDirection?.ToLower() != "desc";
+                    query = orderBy.ToLower() switch
+                    {
+                        "nombre" => ascending ? query.OrderBy(m => m.Nombre) : query.OrderByDescending(m => m.Nombre),
+                        "descripcion" => ascending ? query.OrderBy(m => m.Descripcion) : query.OrderByDescending(m => m.Descripcion),
+                        _ => query.OrderBy(m => m.Nombre)
+                    };
+                }
+                else
+                {
+                    query = query.OrderBy(m => m.Nombre);
+                }
+
+                return await query.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al buscar marcas con filtros");
+                throw;
+            }
+        }
     }
 }

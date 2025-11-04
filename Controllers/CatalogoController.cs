@@ -21,44 +21,42 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Catalogo
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            string? searchTerm = null,
+            bool soloActivos = false,
+            string? orderBy = null,
+            string? orderDirection = "asc")
         {
             try
             {
-                var categorias = await _categoriaService.GetAllAsync();
-                var marcas = await _marcaService.GetAllAsync();
+                // Ejecutar búsqueda con filtros
+                var categorias = await _categoriaService.SearchAsync(
+                    searchTerm,
+                    soloActivos,
+                    orderBy,
+                    orderDirection
+                );
 
-                var viewModel = new CatalogoViewModel
+                var viewModels = _mapper.Map<IEnumerable<CategoriaViewModel>>(categorias);
+
+                // Crear ViewModel de filtros
+                var filterViewModel = new CategoriaFilterViewModel
                 {
-                    Categorias = categorias.Select(c => new CategoriaViewModel
-                    {
-                        Id = c.Id,
-                        Codigo = c.Codigo,
-                        Nombre = c.Nombre,
-                        Descripcion = c.Descripcion,
-                        ParentId = c.ParentId,
-                        ParentNombre = c.Parent?.Nombre,
-                        ControlSerieDefault = c.ControlSerieDefault
-                    }),
-                    Marcas = marcas.Select(m => new MarcaViewModel
-                    {
-                        Id = m.Id,
-                        Codigo = m.Codigo,
-                        Nombre = m.Nombre,
-                        Descripcion = m.Descripcion,
-                        ParentId = m.ParentId,
-                        ParentNombre = m.Parent?.Nombre,
-                        PaisOrigen = m.PaisOrigen
-                    })
+                    SearchTerm = searchTerm,
+                    SoloActivos = soloActivos,
+                    OrderBy = orderBy,
+                    OrderDirection = orderDirection,
+                    Categorias = viewModels,
+                    TotalResultados = viewModels.Count()
                 };
 
-                return View(viewModel);
+                return View(filterViewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener catálogo");
-                TempData["Error"] = "Error al cargar el catálogo";
-                return View(new CatalogoViewModel());
+                _logger.LogError(ex, "Error al obtener listado de categorías");
+                TempData["Error"] = "Error al cargar las categorías. Por favor, intente nuevamente.";
+                return View(new CategoriaFilterViewModel());
             }
         }
     }

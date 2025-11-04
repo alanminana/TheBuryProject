@@ -18,11 +18,23 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Marca
-        public async Task<IActionResult> Index()
+        // GET: Marca
+        public async Task<IActionResult> Index(
+            string? searchTerm = null,
+            bool soloActivos = false,
+            string? orderBy = null,
+            string? orderDirection = "asc")
         {
             try
             {
-                var marcas = await _marcaService.GetAllAsync();
+                // Ejecutar búsqueda con filtros
+                var marcas = await _marcaService.SearchAsync(
+                    searchTerm,
+                    soloActivos,
+                    orderBy,
+                    orderDirection
+                );
+
                 var viewModels = marcas.Select(m => new MarcaViewModel
                 {
                     Id = m.Id,
@@ -31,16 +43,28 @@ namespace TheBuryProject.Controllers
                     Descripcion = m.Descripcion,
                     ParentId = m.ParentId,
                     ParentNombre = m.Parent?.Nombre,
-                    PaisOrigen = m.PaisOrigen
+                    PaisOrigen = m.PaisOrigen,
+                    Activo = m.Activo
                 }).ToList();
 
-                return View(viewModels);
+                // Crear ViewModel de filtros
+                var filterViewModel = new MarcaFilterViewModel
+                {
+                    SearchTerm = searchTerm,
+                    SoloActivos = soloActivos,
+                    OrderBy = orderBy,
+                    OrderDirection = orderDirection,
+                    Marcas = viewModels,
+                    TotalResultados = viewModels.Count
+                };
+
+                return View(filterViewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener lista de marcas");
+                _logger.LogError(ex, "Error al obtener listado de marcas");
                 TempData["Error"] = "Error al cargar las marcas. Por favor, intente nuevamente.";
-                return View(new List<MarcaViewModel>());
+                return View(new MarcaFilterViewModel());
             }
         }
 

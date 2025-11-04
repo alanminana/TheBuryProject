@@ -1,4 +1,4 @@
-﻿@model IEnumerable<TheBuryProject.ViewModels.ProductoViewModel>
+﻿@model TheBuryProject.ViewModels.ProductoFilterViewModel
 
 @{
     ViewData["Title"] = "Productos";
@@ -37,6 +37,137 @@
         </div>
     }
 
+    <!-- Formulario de Búsqueda y Filtros -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom">
+            <button class="btn btn-link text-decoration-none text-dark w-100 text-start p-0"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#filtrosCollapse">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-funnel me-2"></i>Búsqueda y Filtros Avanzados
+                    </h6>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+            </button>
+        </div>
+        <div class="collapse show" id="filtrosCollapse">
+            <div class="card-body">
+                <form asp-action="Index" method="get">
+                    <div class="row g-3">
+                        <!-- Búsqueda de texto -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-search me-1"></i>Búsqueda por texto
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   name="searchTerm"
+                                   value="@Model.SearchTerm"
+                                   placeholder="Buscar por código, nombre o descripción..." />
+                        </div>
+
+                        <!-- Categoría -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-tag me-1"></i>Categoría
+                            </label>
+                            <select class="form-select" name="categoriaId" asp-items="ViewBag.CategoriasFiltro">
+                                <option value="">Todas las categorías</option>
+                            </select>
+                        </div>
+
+                        <!-- Marca -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-award me-1"></i>Marca
+                            </label>
+                            <select class="form-select" name="marcaId" asp-items="ViewBag.MarcasFiltro">
+                                <option value="">Todas las marcas</option>
+                            </select>
+                        </div>
+
+                        <!-- Checkboxes -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Opciones adicionales</label>
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="stockBajo"
+                                       id="stockBajo"
+                                       value="true"
+                                       @(Model.StockBajo ? "checked" : "") />
+                                <label class="form-check-label" for="stockBajo">
+                                    <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+                                    Solo productos con stock bajo
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="soloActivos"
+                                       id="soloActivos"
+                                       value="true"
+                                       @(Model.SoloActivos ? "checked" : "") />
+                                <label class="form-check-label" for="soloActivos">
+                                    <i class="bi bi-check-circle text-success me-1"></i>
+                                    Solo productos activos
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Ordenamiento -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-sort-down me-1"></i>Ordenar por
+                            </label>
+                            <select class="form-select" name="orderBy">
+                                <option value="nombre" selected="@(Model.OrderBy == "nombre" || string.IsNullOrEmpty(Model.OrderBy))">Nombre</option>
+                                <option value="codigo" selected="@(Model.OrderBy == "codigo")">Código</option>
+                                <option value="precioventa" selected="@(Model.OrderBy == "precioventa")">Precio Venta</option>
+                                <option value="stock" selected="@(Model.OrderBy == "stock")">Stock</option>
+                                <option value="categoria" selected="@(Model.OrderBy == "categoria")">Categoría</option>
+                                <option value="marca" selected="@(Model.OrderBy == "marca")">Marca</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Dirección</label>
+                            <select class="form-select" name="orderDirection">
+                                <option value="asc" selected="@(Model.OrderDirection == "asc" || string.IsNullOrEmpty(Model.OrderDirection))">Ascendente</option>
+                                <option value="desc" selected="@(Model.OrderDirection == "desc")">Descendente</option>
+                            </select>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="col-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search me-2"></i>Buscar
+                                </button>
+                                <a asp-action="Index" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-2"></i>Limpiar Filtros
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultados -->
+    @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.CategoriaId.HasValue || Model.MarcaId.HasValue || Model.StockBajo || Model.SoloActivos)
+    {
+        <div class="alert alert-info d-flex align-items-center mb-3">
+            <i class="bi bi-info-circle me-2"></i>
+            <span>
+                Se encontraron <strong>@Model.TotalResultados</strong> productos que coinciden con los filtros aplicados
+            </span>
+        </div>
+    }
+
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -55,9 +186,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (Model.Any())
+                        @if (Model.Productos.Any())
                         {
-                            @foreach (var producto in Model)
+                            @foreach (var producto in Model.Productos)
                             {
                                 <tr>
                                     <td class="px-4">
@@ -117,8 +248,16 @@
                             <tr>
                                 <td colspan="9" class="text-center py-5">
                                     <i class="bi bi-inbox display-1 text-muted d-block mb-3"></i>
-                                    <p class="text-muted mb-2">No hay productos registrados</p>
-                                    <a asp-action="Create" class="btn btn-primary">Crear el primer producto</a>
+                                    @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.CategoriaId.HasValue || Model.MarcaId.HasValue || Model.StockBajo || Model.SoloActivos)
+                                    {
+                                        <p class="text-muted mb-2">No se encontraron productos con los filtros aplicados</p>
+                                        <a asp-action="Index" class="btn btn-outline-primary">Limpiar filtros</a>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted mb-2">No hay productos registrados</p>
+                                        <a asp-action="Create" class="btn btn-primary">Crear el primer producto</a>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -128,14 +267,14 @@
         </div>
     </div>
 
-    @if (Model.Any())
+    @if (Model.Productos.Any())
     {
         <div class="row mt-4">
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body">
                         <h6 class="text-muted mb-2">Total Productos</h6>
-                        <h3 class="mb-0 fw-bold">@Model.Count()</h3>
+                        <h3 class="mb-0 fw-bold">@Model.TotalResultados</h3>
                     </div>
                 </div>
             </div>
@@ -143,7 +282,7 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-body">
                         <h6 class="text-muted mb-2">Productos Activos</h6>
-                        <h3 class="mb-0 fw-bold text-success">@Model.Count(p => p.Activo)</h3>
+                        <h3 class="mb-0 fw-bold text-success">@Model.Productos.Count(p => p.Activo)</h3>
                     </div>
                 </div>
             </div>
@@ -151,7 +290,7 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-body">
                         <h6 class="text-muted mb-2">Stock Bajo</h6>
-                        <h3 class="mb-0 fw-bold text-warning">@Model.Count(p => p.EstadoStock == "Stock Bajo" || p.EstadoStock == "Sin Stock")</h3>
+                        <h3 class="mb-0 fw-bold text-warning">@Model.Productos.Count(p => p.EstadoStock == "Stock Bajo" || p.EstadoStock == "Sin Stock")</h3>
                     </div>
                 </div>
             </div>

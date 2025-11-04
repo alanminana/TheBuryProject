@@ -111,7 +111,28 @@ namespace TheBuryProject.Controllers
                 return RedirectToAction(nameof(Index));
             }
         }
+        /// <summary>
+        /// Carga los dropdowns de Categorías y Marcas para los formularios
+        /// </summary>
+        private async Task CargarDropdownsAsync(int? categoriaSeleccionada = null, int? marcaSeleccionada = null)
+        {
+            var categorias = await _categoriaService.GetAllAsync();
+            var marcas = await _marcaService.GetAllAsync();
 
+            ViewBag.Categorias = new SelectList(
+                categorias.OrderBy(c => c.Nombre),
+                "Id",
+                "Nombre",
+                categoriaSeleccionada
+            );
+
+            ViewBag.Marcas = new SelectList(
+                marcas.OrderBy(m => m.Nombre),
+                "Id",
+                "Nombre",
+                marcaSeleccionada
+            );
+        }
         // GET: Producto/Create
         public async Task<IActionResult> Create()
         {

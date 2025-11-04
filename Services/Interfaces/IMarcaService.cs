@@ -41,5 +41,11 @@ namespace TheBuryProject.Services.Interfaces
         /// Verifica si existe una marca con el código especificado
         /// </summary>
         Task<bool> ExistsCodigoAsync(string codigo, int? excludeId = null);
+
+        Task<IEnumerable<Marca>> SearchAsync(
+    string? searchTerm = null,
+    bool soloActivos = false,
+    string? orderBy = null,
+    string? orderDirection = "asc");
     }
 }

@@ -243,7 +243,59 @@ namespace TheBuryProject.Services
                 throw;
             }
         }
+        public async Task<IEnumerable<Categoria>> SearchAsync(
+    string? searchTerm = null,
+    bool soloActivos = false,
+    string? orderBy = null,
+    string? orderDirection = "asc")
+        {
+            try
+            {
+                var query = _context.Categorias
+                    .Include(c => c.Parent)
+                    .AsQueryable();
 
+                // Búsqueda por texto
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    searchTerm = searchTerm.ToLower();
+                    query = query.Where(c =>
+                        c.Nombre.ToLower().Contains(searchTerm) ||
+                        (c.Descripcion != null && c.Descripcion.ToLower().Contains(searchTerm))
+                    );
+                }
+
+                // Filtro solo activos
+                if (soloActivos)
+                {
+                    query = query.Where(c => c.Activo);
+                }
+
+                // Ordenamiento dinámico
+                if (!string.IsNullOrWhiteSpace(orderBy))
+                {
+                    var ascending = orderDirection?.ToLower() != "desc";
+                    query = orderBy.ToLower() switch
+                    {
+                        "nombre" => ascending ? query.OrderBy(c => c.Nombre) : query.OrderByDescending(c => c.Nombre),
+                        "descripcion" => ascending ? query.OrderBy(c => c.Descripcion) : query.OrderByDescending(c => c.Descripcion),
+                        "parent" => ascending ? query.OrderBy(c => c.Parent.Nombre) : query.OrderByDescending(c => c.Parent.Nombre),
+                        _ => query.OrderBy(c => c.Nombre)
+                    };
+                }
+                else
+                {
+                    query = query.OrderBy(c => c.Nombre);
+                }
+
+                return await query.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al buscar categorías con filtros");
+                throw;
+            }
+        }
         /// <summary>
         /// Verifica si establecer una relación padre-hijo crearía un ciclo en la jerarquía.
         /// </summary>
