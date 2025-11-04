@@ -48,8 +48,7 @@ namespace TheBuryProject.Models.Entities
         /// <summary>
         /// Fecha de vencimiento/cobro del cheque
         /// </summary>
-        public DateTime FechaVencimiento { get; set; }
-
+        public DateTime? FechaVencimiento { get; set; }
         /// <summary>
         /// Proveedor al que se le entrega el cheque
         /// </summary>

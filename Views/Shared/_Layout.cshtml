@@ -27,15 +27,54 @@
                                 <i class="bi bi-house-door"></i> Inicio
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Producto" asp-action="Index">
-                                <i class="bi bi-box-seam"></i> Productos
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Catalogo" asp-action="Index">
+
+                        <!-- Catálogo Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-grid"></i> Catálogo
                             </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Producto" asp-action="Index">
+                                        <i class="bi bi-box-seam"></i> Productos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Categoria" asp-action="Index">
+                                        <i class="bi bi-folder"></i> Categorías
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Marca" asp-action="Index">
+                                        <i class="bi bi-tag"></i> Marcas
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Proveedores Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-truck"></i> Proveedores
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Proveedor" asp-action="Index">
+                                        <i class="bi bi-building"></i> Proveedores
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="OrdenCompra" asp-action="Index">
+                                        <i class="bi bi-cart"></i> Órdenes de Compra
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Cheque" asp-action="Index">
+                                        <i class="bi bi-credit-card"></i> Cheques
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
                 </div>
