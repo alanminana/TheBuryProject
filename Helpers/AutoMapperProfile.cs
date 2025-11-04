@@ -1,10 +1,13 @@
-﻿// Helpers/MappingProfile.cs
-using AutoMapper;
+﻿using AutoMapper;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.ViewModels;
-
-namespace TheBuryProject.Helpers
++using System.Linq;
+ using TheBuryProject.Models.Entities;
+ using TheBuryProject.Models.Enums;
+ using TheBuryProject.ViewModels;
+ 
+ namespace TheBuryProject.Helpers
 {
     public class MappingProfile : Profile
     {
@@ -31,9 +34,29 @@ namespace TheBuryProject.Helpers
                     c.Estado != EstadoCheque.Anulado)))
                 .ForMember(d => d.TotalDeuda, o => o.MapFrom(s => s.OrdenesCompra
                     .Where(oc => oc.Estado != EstadoOrdenCompra.Cancelada)
-                    .Sum(oc => oc.Total)));
+                   .Sum(oc => oc.Total)))
+               .ForMember(d => d.ProductosSeleccionados, o => o.MapFrom(s => s.ProveedorProductos.Select(pp => pp.ProductoId)))
+               .ForMember(d => d.MarcasSeleccionadas, o => o.MapFrom(s => s.ProveedorMarcas.Select(pm => pm.MarcaId)))
+               .ForMember(d => d.CategoriasSeleccionadas, o => o.MapFrom(s => s.ProveedorCategorias.Select(pc => pc.CategoriaId)))
+               .ForMember(d => d.ProductosAsociados, o => o.MapFrom(s => s.ProveedorProductos
+                   .Where(pp => pp.Producto != null)
+                   .Select(pp => pp.Producto!.Nombre)))
+               .ForMember(d => d.MarcasAsociadas, o => o.MapFrom(s => s.ProveedorMarcas
+                   .Where(pm => pm.Marca != null)
+                   .Select(pm => pm.Marca!.Nombre)))
+               .ForMember(d => d.CategoriasAsociadas, o => o.MapFrom(s => s.ProveedorCategorias
+                   .Where(pc => pc.Categoria != null)
+                   .Select(pc => pc.Categoria!.Nombre)));
 
-            CreateMap<ProveedorViewModel, Proveedor>();
+            CreateMap<ProveedorViewModel, Proveedor>()
+                .ForMember(d => d.ProveedorProductos, o => o.MapFrom(s => s.ProductosSeleccionados
+                    .Select(id => new ProveedorProducto { ProductoId = id })))
+                .ForMember(d => d.ProveedorMarcas, o => o.MapFrom(s => s.MarcasSeleccionadas
+                    .Select(id => new ProveedorMarca { MarcaId = id })))
+                .ForMember(d => d.ProveedorCategorias, o => o.MapFrom(s => s.CategoriasSeleccionadas
+                    .Select(id => new ProveedorCategoria { CategoriaId = id })))
+                .ForMember(d => d.OrdenesCompra, o => o.Ignore())
+                .ForMember(d => d.Cheques, o => o.Ignore());
 
             // Mappings para OrdenCompra
             CreateMap<OrdenCompra, OrdenCompraViewModel>()
@@ -59,14 +82,3 @@ namespace TheBuryProject.Helpers
             CreateMap<Cheque, ChequeViewModel>()
                 .ForMember(d => d.ProveedorNombre, o => o.MapFrom(s => s.Proveedor != null ? s.Proveedor.RazonSocial : null))
                 .ForMember(d => d.OrdenCompraNumero, o => o.MapFrom(s => s.OrdenCompra != null ? s.OrdenCompra.Numero : null))
-                .ForMember(d => d.EstadoNombre, o => o.MapFrom(s => s.Estado.ToString()))
-                .ForMember(d => d.DiasPorVencer, o => o.MapFrom(s =>
-                    s.FechaVencimiento.HasValue ? (s.FechaVencimiento.Value.Date - DateTime.Today).Days : 0));
-
-            CreateMap<ChequeViewModel, Cheque>()
-                .ForMember(d => d.Proveedor, o => o.Ignore())
-                .ForMember(d => d.OrdenCompra, o => o.Ignore());
-        }
-
-    }
-}

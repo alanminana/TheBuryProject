@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
@@ -11,13 +12,21 @@ namespace TheBuryProject.Controllers
         private readonly IProveedorService _proveedorService;
         private readonly ILogger<ProveedorController> _logger;
         private readonly IMapper _mapper;
-
+        private readonly ICategoriaService _categoriaService;
+        private readonly IMarcaService _marcaService;
+        private readonly IProductoService _productoService;
         public ProveedorController(
-            IProveedorService proveedorService,
-            ILogger<ProveedorController> logger,
-            IMapper mapper)
+        IProveedorService proveedorService,
+        ICategoriaService categoriaService,
+        IMarcaService marcaService,
+        IProductoService productoService,
+        ILogger<ProveedorController> logger,
+        IMapper mapper)
         {
             _proveedorService = proveedorService;
+            _categoriaService = categoriaService;
+            _marcaService = marcaService;
+            _productoService = productoService;
             _logger = logger;
             _mapper = mapper;
         }
@@ -87,12 +96,12 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        // GET: Proveedor/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View();
+            var viewModel = new ProveedorViewModel();
+            await CargarAsociacionesAsync(viewModel);
+            return View(viewModel);
         }
-
         // POST: Proveedor/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -106,6 +115,8 @@ namespace TheBuryProject.Controllers
                     if (await _proveedorService.ExistsCuitAsync(viewModel.Cuit))
                     {
                         ModelState.AddModelError("Cuit", "Ya existe un proveedor con este CUIT");
+                        await CargarAsociacionesAsync(viewModel);
+
                         return View(viewModel);
                     }
 
@@ -126,6 +137,7 @@ namespace TheBuryProject.Controllers
                     ModelState.AddModelError("", "Error al crear el proveedor. Por favor, intente nuevamente.");
                 }
             }
+            await CargarAsociacionesAsync(viewModel);
 
             return View(viewModel);
         }
@@ -147,6 +159,8 @@ namespace TheBuryProject.Controllers
                 }
 
                 var viewModel = _mapper.Map<ProveedorViewModel>(proveedor);
+                await CargarAsociacionesAsync(viewModel);
+
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -195,6 +209,7 @@ namespace TheBuryProject.Controllers
                     ModelState.AddModelError("", "Error al actualizar el proveedor. Por favor, intente nuevamente.");
                 }
             }
+            await CargarAsociacionesAsync(viewModel);
 
             return View(viewModel);
         }
@@ -216,6 +231,8 @@ namespace TheBuryProject.Controllers
                 }
 
                 var viewModel = _mapper.Map<ProveedorViewModel>(proveedor);
+                await CargarAsociacionesAsync(viewModel);
+
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -255,6 +272,41 @@ namespace TheBuryProject.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+        private async Task CargarAsociacionesAsync(ProveedorViewModel viewModel)
+        {
+            var categorias = await _categoriaService.GetAllAsync();
+            viewModel.CategoriasDisponibles = categorias
+                .OrderBy(c => c.Nombre)
+                .Select(c => new SelectListItem
+                {
+                    Value = c.Id.ToString(),
+                    Text = c.Nombre,
+                    Selected = viewModel.CategoriasSeleccionadas.Contains(c.Id)
+                })
+                .ToList();
+
+            var marcas = await _marcaService.GetAllAsync();
+            viewModel.MarcasDisponibles = marcas
+                .OrderBy(m => m.Nombre)
+                .Select(m => new SelectListItem
+                {
+                    Value = m.Id.ToString(),
+                    Text = m.Nombre,
+                    Selected = viewModel.MarcasSeleccionadas.Contains(m.Id)
+                })
+                .ToList();
+
+            var productos = await _productoService.GetAllAsync();
+            viewModel.ProductosDisponibles = productos
+                .OrderBy(p => p.Nombre)
+                .Select(p => new SelectListItem
+                {
+                    Value = p.Id.ToString(),
+                    Text = string.IsNullOrWhiteSpace(p.Codigo) ? p.Nombre : $"{p.Codigo} - {p.Nombre}",
+                    Selected = viewModel.ProductosSeleccionados.Contains(p.Id)
+                })
+                .ToList();
         }
     }
 }

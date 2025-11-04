@@ -71,6 +71,28 @@
                             </div>
                         </div>
 
+                        <!-- Asociaciones -->
+                        <h5 class="mb-3 pb-2 border-bottom">
+                            <i class="bi bi-diagram-3 text-primary"></i> Cobertura de Catálogo
+                        </h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label asp-for="CategoriasSeleccionadas" class="form-label"></label>
+                                <select asp-for="CategoriasSeleccionadas" class="form-select" asp-items="Model.CategoriasDisponibles" multiple="multiple"></select>
+                                <small class="text-muted d-block mt-1">Seleccioná las categorías que trabaja este proveedor.</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="MarcasSeleccionadas" class="form-label"></label>
+                                <select asp-for="MarcasSeleccionadas" class="form-select" asp-items="Model.MarcasDisponibles" multiple="multiple"></select>
+                                <small class="text-muted d-block mt-1">Elegí las marcas con las que opera.</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ProductosSeleccionados" class="form-label"></label>
+                                <select asp-for="ProductosSeleccionados" class="form-select" asp-items="Model.ProductosDisponibles" multiple="multiple" size="8"></select>
+                                <small class="text-muted d-block mt-1">Podés marcar productos clave o habituales.</small>
+                            </div>
+                        </div>
+
                         <!-- Dirección -->
                         <h5 class="mb-3 pb-2 border-bottom">
                             <i class="bi bi-geo-alt text-primary"></i> Dirección
@@ -96,8 +118,6 @@
                                 <input asp-for="CodigoPostal" class="form-control" />
                                 <span asp-validation-for="CodigoPostal" class="text-danger"></span>
                             </div>
-                        </div>
-
                         <!-- Aclaraciones -->
                         <h5 class="mb-3 pb-2 border-bottom">
                             <i class="bi bi-chat-text text-primary"></i> Información Adicional
