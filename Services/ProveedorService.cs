@@ -67,10 +67,17 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException($"Ya existe un proveedor con el CUIT {proveedor.Cuit}");
                 }
 
+                // ⭐ DEBUG - Ver qué viene en las asociaciones
+                _logger.LogInformation("=== CREAR PROVEEDOR DEBUG ===");
+                _logger.LogInformation("Productos recibidos: {Count}", proveedor.ProveedorProductos.Count);
+                _logger.LogInformation("Marcas recibidas: {Count}", proveedor.ProveedorMarcas.Count);
+                _logger.LogInformation("Categorías recibidas: {Count}", proveedor.ProveedorCategorias.Count);
+
                 // Asegurar que las referencias al proveedor estén correctas
                 foreach (var pp in proveedor.ProveedorProductos)
                 {
                     pp.Proveedor = proveedor;
+                    _logger.LogInformation("Producto ID: {ProductoId}", pp.ProductoId);
                 }
 
                 foreach (var pm in proveedor.ProveedorMarcas)
@@ -85,6 +92,14 @@ namespace TheBuryProject.Services
 
                 _context.Proveedores.Add(proveedor);
                 await _context.SaveChangesAsync();
+
+                // ⭐ DEBUG - Verificar después de guardar
+                var proveedorGuardado = await _context.Proveedores
+                    .Include(p => p.ProveedorProductos)
+                    .FirstOrDefaultAsync(p => p.Id == proveedor.Id);
+
+                _logger.LogInformation("Productos guardados en DB: {Count}", proveedorGuardado?.ProveedorProductos.Count ?? 0);
+                _logger.LogInformation("=== FIN DEBUG ===");
 
                 _logger.LogInformation("Proveedor creado: {Id} - {RazonSocial} con {ProductosCount} productos, {MarcasCount} marcas, {CategoriasCount} categorías",
                     proveedor.Id, proveedor.RazonSocial, proveedor.ProveedorProductos.Count, proveedor.ProveedorMarcas.Count, proveedor.ProveedorCategorias.Count);
