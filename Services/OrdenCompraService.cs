@@ -3,6 +3,7 @@ using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
+using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Services
 {
@@ -29,7 +30,9 @@ namespace TheBuryProject.Services
 
         public async Task<OrdenCompra?> GetByIdAsync(int id)
         {
-            return await _context.OrdenesCompra
+            _logger.LogInformation("=== GetByIdAsync - Orden {Id} ===", id);
+
+            var orden = await _context.OrdenesCompra
                 .Include(o => o.Proveedor)
                 .Include(o => o.Detalles)
                     .ThenInclude(d => d.Producto)
@@ -38,16 +41,46 @@ namespace TheBuryProject.Services
                     .ThenInclude(d => d.Producto)
                         .ThenInclude(p => p.Categoria)
                 .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (orden == null)
+            {
+                _logger.LogWarning("Orden {Id} NO encontrada", id);
+                _logger.LogInformation("=== FIN GetByIdAsync ===");
+                return null;
+            }
+
+            _logger.LogInformation("Orden encontrada: {Numero}", orden.Numero);
+            _logger.LogInformation("Proveedor: {Proveedor}", orden.Proveedor?.RazonSocial ?? "NULL");
+            _logger.LogInformation("Detalles Count: {Count}", orden.Detalles?.Count ?? 0);
+
+            var detalles = orden.Detalles ?? new List<OrdenCompraDetalle>();
+            _logger.LogInformation("Detalles Count: {Count}", detalles.Count);
+
+            foreach (var d in detalles)
+            {
+                if (d == null) continue;
+
+                _logger.LogInformation(
+                    "Detalle {Id} - ProdId {ProdId} - Cant {Cant} - Rec {Rec} - Prod {Prod}",
+                    d.Id,
+                    d.ProductoId,
+                    d.Cantidad,
+                    d.CantidadRecibida,
+                    d.Producto?.Nombre ?? "NULL"
+                );
+            }
+
+            _logger.LogInformation("=== FIN GetByIdAsync ===");
+            return orden;
         }
+
         public async Task<OrdenCompra> CreateAsync(OrdenCompra ordenCompra)
         {
-            // Validar que el número no exista
             if (await NumeroOrdenExisteAsync(ordenCompra.Numero))
             {
                 throw new InvalidOperationException($"Ya existe una orden con el número {ordenCompra.Numero}");
             }
 
-            // Validar que el proveedor exista y cargar productos asociados
             var proveedor = await _context.Proveedores
                 .Include(p => p.ProveedorProductos)
                 .FirstOrDefaultAsync(p => p.Id == ordenCompra.ProveedorId);
@@ -57,7 +90,6 @@ namespace TheBuryProject.Services
                 throw new InvalidOperationException("El proveedor especificado no existe");
             }
 
-            // Validar que todos los productos de la orden estén asociados al proveedor
             if (proveedor.ProveedorProductos.Any())
             {
                 var productosAsociadosIds = proveedor.ProveedorProductos
@@ -78,14 +110,11 @@ namespace TheBuryProject.Services
                 if (productosNoAsociados.Any())
                 {
                     throw new InvalidOperationException(
-                        $"No se puede crear la orden. Los siguientes productos no están asociados al proveedor '{proveedor.RazonSocial}': {string.Join(", ", productosNoAsociados)}. " +
-                        "Asocia estos productos al proveedor antes de crear la orden.");
+                        $"No se puede crear la orden. Productos no asociados al proveedor '{proveedor.RazonSocial}': {string.Join(", ", productosNoAsociados)}.");
                 }
             }
 
-            // Calcular totales
             CalcularTotales(ordenCompra);
-
             _context.OrdenesCompra.Add(ordenCompra);
             await _context.SaveChangesAsync();
 
@@ -93,7 +122,6 @@ namespace TheBuryProject.Services
 
             return ordenCompra;
         }
-
 
         public async Task<OrdenCompra> UpdateAsync(OrdenCompra ordenCompra)
         {
@@ -103,16 +131,13 @@ namespace TheBuryProject.Services
                 throw new InvalidOperationException("La orden de compra no existe");
             }
 
-            // Validar que el número no exista en otra orden
             if (await NumeroOrdenExisteAsync(ordenCompra.Numero, ordenCompra.Id))
             {
                 throw new InvalidOperationException($"Ya existe otra orden con el número {ordenCompra.Numero}");
             }
 
-            // Calcular totales
             CalcularTotales(ordenCompra);
 
-            // Actualizar propiedades
             ordenExistente.Numero = ordenCompra.Numero;
             ordenExistente.ProveedorId = ordenCompra.ProveedorId;
             ordenExistente.FechaEmision = ordenCompra.FechaEmision;
@@ -125,9 +150,9 @@ namespace TheBuryProject.Services
             ordenExistente.Total = ordenCompra.Total;
             ordenExistente.Observaciones = ordenCompra.Observaciones;
 
-            // Actualizar detalles
-            // Eliminar detalles que ya no están
-            var detallesAEliminar = ordenExistente.Detalles
+            var existingDetalles = ordenExistente.Detalles ?? new List<OrdenCompraDetalle>();
+
+            var detallesAEliminar = existingDetalles
                 .Where(d => !ordenCompra.Detalles.Any(nd => nd.Id == d.Id))
                 .ToList();
 
@@ -136,13 +161,11 @@ namespace TheBuryProject.Services
                 _context.OrdenCompraDetalles.Remove(detalle);
             }
 
-            // Agregar o actualizar detalles
             foreach (var detalleNuevo in ordenCompra.Detalles)
             {
-                var detalleExistente = ordenExistente.Detalles.FirstOrDefault(d => d.Id == detalleNuevo.Id);
+                var detalleExistente = existingDetalles.FirstOrDefault(d => d.Id == detalleNuevo.Id);
                 if (detalleExistente != null)
                 {
-                    // Actualizar
                     detalleExistente.ProductoId = detalleNuevo.ProductoId;
                     detalleExistente.Cantidad = detalleNuevo.Cantidad;
                     detalleExistente.PrecioUnitario = detalleNuevo.PrecioUnitario;
@@ -151,14 +174,13 @@ namespace TheBuryProject.Services
                 }
                 else
                 {
-                    // Agregar
                     detalleNuevo.OrdenCompraId = ordenExistente.Id;
-                    ordenExistente.Detalles.Add(detalleNuevo);
+                    (ordenExistente.Detalles ??= new List<OrdenCompraDetalle>())
+                        .Add(detalleNuevo);
                 }
             }
 
             await _context.SaveChangesAsync();
-
             _logger.LogInformation("Orden de compra {Numero} actualizada exitosamente", ordenCompra.Numero);
             return ordenExistente;
         }
@@ -166,27 +188,20 @@ namespace TheBuryProject.Services
         public async Task<bool> DeleteAsync(int id)
         {
             var orden = await GetByIdAsync(id);
-            if (orden == null)
-            {
-                return false;
-            }
+            if (orden == null) return false;
 
-            // Validar que se pueda eliminar (no debe estar en ciertos estados)
             if (orden.Estado == EstadoOrdenCompra.Recibida || orden.Estado == EstadoOrdenCompra.EnTransito)
             {
-                throw new InvalidOperationException("No se puede eliminar una orden que está en tránsito o ya fue recibida");
+                throw new InvalidOperationException("No se puede eliminar una orden en tránsito o recibida");
             }
 
-            // Verificar si tiene cheques asociados
-            var tieneCheques = await _context.Cheques.AnyAsync(c => c.OrdenCompraId == id);
-            if (tieneCheques)
+            if (await _context.Cheques.AnyAsync(c => c.OrdenCompraId == id))
             {
-                throw new InvalidOperationException("No se puede eliminar una orden que tiene cheques asociados");
+                throw new InvalidOperationException("No se puede eliminar una orden con cheques asociados");
             }
 
             _context.OrdenesCompra.Remove(orden);
             await _context.SaveChangesAsync();
-
             _logger.LogInformation("Orden de compra {Id} eliminada exitosamente", id);
             return true;
         }
@@ -205,7 +220,6 @@ namespace TheBuryProject.Services
                 .Include(o => o.Detalles)
                 .AsQueryable();
 
-            // Filtro por término de búsqueda
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 query = query.Where(o =>
@@ -215,47 +229,25 @@ namespace TheBuryProject.Services
                     o.Observaciones.Contains(searchTerm));
             }
 
-            // Filtro por proveedor
             if (proveedorId.HasValue)
-            {
                 query = query.Where(o => o.ProveedorId == proveedorId.Value);
-            }
 
-            // Filtro por estado
             if (estado.HasValue)
-            {
                 query = query.Where(o => o.Estado == estado.Value);
-            }
 
-            // Filtro por rango de fechas
             if (fechaDesde.HasValue)
-            {
                 query = query.Where(o => o.FechaEmision >= fechaDesde.Value);
-            }
 
             if (fechaHasta.HasValue)
-            {
                 query = query.Where(o => o.FechaEmision <= fechaHasta.Value);
-            }
 
-            // Ordenamiento
             query = orderBy?.ToLower() switch
             {
-                "numero" => orderDirection == "desc"
-                    ? query.OrderByDescending(o => o.Numero)
-                    : query.OrderBy(o => o.Numero),
-                "proveedor" => orderDirection == "desc"
-                    ? query.OrderByDescending(o => o.Proveedor.RazonSocial)
-                    : query.OrderBy(o => o.Proveedor.RazonSocial),
-                "fechaemision" => orderDirection == "desc"
-                    ? query.OrderByDescending(o => o.FechaEmision)
-                    : query.OrderBy(o => o.FechaEmision),
-                "estado" => orderDirection == "desc"
-                    ? query.OrderByDescending(o => o.Estado)
-                    : query.OrderBy(o => o.Estado),
-                "total" => orderDirection == "desc"
-                    ? query.OrderByDescending(o => o.Total)
-                    : query.OrderBy(o => o.Total),
+                "numero" => orderDirection == "desc" ? query.OrderByDescending(o => o.Numero) : query.OrderBy(o => o.Numero),
+                "proveedor" => orderDirection == "desc" ? query.OrderByDescending(o => o.Proveedor.RazonSocial) : query.OrderBy(o => o.Proveedor.RazonSocial),
+                "fechaemision" => orderDirection == "desc" ? query.OrderByDescending(o => o.FechaEmision) : query.OrderBy(o => o.FechaEmision),
+                "estado" => orderDirection == "desc" ? query.OrderByDescending(o => o.Estado) : query.OrderBy(o => o.Estado),
+                "total" => orderDirection == "desc" ? query.OrderByDescending(o => o.Total) : query.OrderBy(o => o.Total),
                 _ => query.OrderByDescending(o => o.FechaEmision)
             };
 
@@ -274,20 +266,13 @@ namespace TheBuryProject.Services
         public async Task<bool> CambiarEstadoAsync(int id, EstadoOrdenCompra nuevoEstado)
         {
             var orden = await _context.OrdenesCompra.FindAsync(id);
-            if (orden == null)
-            {
-                return false;
-            }
+            if (orden == null) return false;
 
-            // Si se marca como recibida, actualizar la fecha de recepción
             if (nuevoEstado == EstadoOrdenCompra.Recibida && orden.Estado != EstadoOrdenCompra.Recibida)
-            {
                 orden.FechaRecepcion = DateTime.Now;
-            }
 
             orden.Estado = nuevoEstado;
             await _context.SaveChangesAsync();
-
             _logger.LogInformation("Estado de orden {Id} cambiado a {Estado}", id, nuevoEstado);
             return true;
         }
@@ -298,35 +283,97 @@ namespace TheBuryProject.Services
                 .AnyAsync(o => o.Numero == numero && (excludeId == null || o.Id != excludeId.Value));
         }
 
-        public async Task<decimal> CalcularTotalOrdenAsync(int ordenId)
+        public async Task<OrdenCompra> RecepcionarAsync(int ordenId, List<RecepcionDetalleViewModel> detallesRecepcion)
         {
             var orden = await GetByIdAsync(ordenId);
             if (orden == null)
+                throw new InvalidOperationException("Orden no encontrada");
+
+            if (orden.Estado != EstadoOrdenCompra.Confirmada &&
+                orden.Estado != EstadoOrdenCompra.EnTransito)
             {
-                return 0;
+                throw new InvalidOperationException("Solo se pueden recepcionar órdenes confirmadas o en tránsito");
             }
 
-            return orden.Total;
+            bool todosRecibidos = true;
+
+            foreach (var recepcion in detallesRecepcion)
+            {
+                if (recepcion.CantidadARecepcionar <= 0) continue;
+
+                var detalle = orden.Detalles?.FirstOrDefault(d => d.Id == recepcion.DetalleId);
+                if (detalle == null) continue;
+
+                int cantidadSolicitada = detalle.Cantidad;
+                int cantidadRecibidaActual = detalle.CantidadRecibida;
+
+                int totalRecibido = cantidadRecibidaActual + recepcion.CantidadARecepcionar;
+
+                if (totalRecibido > cantidadSolicitada)
+                {
+                    throw new InvalidOperationException(
+                        $"No se puede recepcionar más de lo solicitado para {detalle.Producto?.Nombre ?? "producto"}"
+                    );
+                }
+
+                detalle.CantidadRecibida = totalRecibido;
+
+                var producto = await _context.Productos.FindAsync(detalle.ProductoId);
+                if (producto != null)
+                {
+                    var stockAnterior = producto.StockActual;
+                    producto.StockActual += recepcion.CantidadARecepcionar;
+
+                    var movimiento = new MovimientoStock
+                    {
+                        ProductoId = producto.Id,
+                        Tipo = TipoMovimiento.Entrada,
+                        Cantidad = recepcion.CantidadARecepcionar,
+                        StockAnterior = stockAnterior,
+                        StockNuevo = producto.StockActual,
+                        Referencia = $"Orden de Compra {orden.Numero}",
+                        OrdenCompraId = orden.Id,
+                        Motivo = "Recepción de mercadería",
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.MovimientosStock.Add(movimiento);
+                }
+
+                if (detalle.CantidadRecibida < cantidadSolicitada)
+                    todosRecibidos = false;
+            }
+
+            if (todosRecibidos)
+            {
+                orden.Estado = EstadoOrdenCompra.Recibida;
+                orden.FechaRecepcion = DateTime.Now;
+            }
+            else if (orden.Estado == EstadoOrdenCompra.Confirmada)
+            {
+                orden.Estado = EstadoOrdenCompra.EnTransito;
+            }
+
+            await _context.SaveChangesAsync();
+            return orden;
+        }
+
+        public async Task<decimal> CalcularTotalOrdenAsync(int ordenId)
+        {
+            var orden = await GetByIdAsync(ordenId);
+            return orden?.Total ?? 0;
         }
 
         private void CalcularTotales(OrdenCompra ordenCompra)
         {
-            // Calcular subtotales de cada detalle
             foreach (var detalle in ordenCompra.Detalles)
             {
                 detalle.Subtotal = detalle.Cantidad * detalle.PrecioUnitario;
             }
 
-            // Calcular subtotal general
             ordenCompra.Subtotal = ordenCompra.Detalles.Sum(d => d.Subtotal);
-
-            // Aplicar descuento
             var subtotalConDescuento = ordenCompra.Subtotal - ordenCompra.Descuento;
-
-            // Calcular IVA
-            ordenCompra.Iva = subtotalConDescuento * 0.21m; // 21% IVA por defecto
-
-            // Calcular total
+            ordenCompra.Iva = subtotalConDescuento * 0.21m;
             ordenCompra.Total = subtotalConDescuento + ordenCompra.Iva;
         }
     }

@@ -305,7 +305,88 @@ namespace TheBuryProject.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
         }
+        // GET: OrdenCompra/Recepcionar/5
+        // GET: OrdenCompra/Recepcionar/5
+        public async Task<IActionResult> Recepcionar(int id)
+        {
+            try
+            {
+                var orden = await _ordenCompraService.GetByIdAsync(id);
 
+                if (orden == null)
+                {
+                    TempData["Error"] = "Orden no encontrada";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Solo se puede recepcionar si está confirmada o en tránsito
+                if (orden.Estado != EstadoOrdenCompra.Confirmada &&
+                    orden.Estado != EstadoOrdenCompra.EnTransito)
+                {
+                    TempData["Error"] = "Solo se pueden recepcionar órdenes confirmadas o en tránsito";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                // Mapear a ViewModel
+                var viewModel = _mapper.Map<OrdenCompraViewModel>(orden);
+
+                // DEBUG: Log para verificar datos
+                _logger.LogInformation("=== RECEPCIONAR ORDEN {Id} ===", id);
+                _logger.LogInformation("Número: {Numero}", viewModel.Numero);
+                _logger.LogInformation("Proveedor: {Proveedor}", viewModel.ProveedorNombre);
+                _logger.LogInformation("Detalles Count: {Count}", viewModel.Detalles?.Count ?? 0);
+
+                if (viewModel.Detalles != null)
+                {
+                    foreach (var detalle in viewModel.Detalles)
+                    {
+                        _logger.LogInformation("  - Producto: {Nombre}, Cantidad: {Cantidad}, Recibida: {Recibida}",
+                            detalle.ProductoNombre, detalle.Cantidad, detalle.CantidadRecibida);
+                    }
+                }
+                _logger.LogInformation("=== FIN DEBUG ===");
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar orden para recepción {Id}", id);
+                TempData["Error"] = "Error al cargar la orden";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // POST: OrdenCompra/Recepcionar/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Recepcionar(int id, List<RecepcionDetalleViewModel> detalles)
+        {
+            try
+            {
+                // Validar que al menos se haya recepcionado algo
+                if (detalles == null || !detalles.Any(d => d.CantidadARecepcionar > 0))
+                {
+                    TempData["Error"] = "Debe recepcionar al menos un producto";
+                    return RedirectToAction(nameof(Recepcionar), new { id });
+                }
+
+                await _ordenCompraService.RecepcionarAsync(id, detalles);
+
+                TempData["Success"] = "Mercadería recepcionada exitosamente";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(Recepcionar), new { id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al recepcionar orden {Id}", id);
+                TempData["Error"] = "Error al recepcionar mercadería";
+                return RedirectToAction(nameof(Recepcionar), new { id });
+            }
+        }
         // Helper: Cargar datos para los SelectLists
         private async Task CargarDatosSelectListsAsync(int? proveedorIdSeleccionado = null)
         {

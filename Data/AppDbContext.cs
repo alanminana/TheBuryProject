@@ -30,6 +30,7 @@ namespace TheBuryProject.Data
         // Órdenes de Compra
         public DbSet<OrdenCompra> OrdenesCompra { get; set; }
         public DbSet<OrdenCompraDetalle> OrdenCompraDetalles { get; set; }
+        public DbSet<MovimientoStock> MovimientosStock { get; set; }
 
         // Cheques
         public DbSet<Cheque> Cheques { get; set; }

@@ -1,0 +1,144 @@
+﻿@model TheBuryProject.ViewModels.OrdenCompraViewModel
+
+@{
+    ViewData["Title"] = "Recepcionar Mercadería";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>
+                <i class="bi bi-box-arrow-in-down"></i> Recepcionar Mercadería
+            </h2>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+
+        @* DEBUG INFO *@
+        <div class="alert alert-info">
+            <strong>DEBUG:</strong><br />
+            - Orden ID: @Model.Id<br />
+            - Número: @Model.Numero<br />
+            - Proveedor: @Model.ProveedorNombre<br />
+            - Estado: @Model.Estado<br />
+            - Detalles Count: @(Model.Detalles?.Count ?? 0)<br />
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Orden: @Model.Numero - @Model.ProveedorNombre</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Estado:</strong> @Model.Estado</p>
+                <p><strong>Fecha Emisión:</strong> @Model.FechaEmision.ToString("dd/MM/yyyy")</p>
+            </div>
+        </div>
+
+        @if (Model.Detalles == null || !Model.Detalles.Any())
+        {
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>No hay detalles para mostrar.</strong>
+                <p>Esto puede deberse a que:</p>
+                <ul>
+                    <li>La orden no tiene productos asociados</li>
+                    <li>Hay un problema con el mapeo de datos</li>
+                </ul>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                    Editar Orden para Agregar Productos
+                </a>
+            </div>
+        }
+        else
+        {
+            <form asp-action="Recepcionar" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-box-seam"></i> Productos a Recepcionar</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cantidad Solicitada</th>
+                                        <th class="text-center">Ya Recibida</th>
+                                        <th class="text-center">Pendiente</th>
+                                        <th class="text-center">Recepcionar Ahora</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Detalles.Count; i++)
+                                    {
+                                        var detalle = Model.Detalles[i];
+                                        var pendiente = detalle.Cantidad - detalle.CantidadRecibida;
+
+                                        <tr class="@(pendiente == 0 ? "table-success" : "")">
+                                            <td>
+                                                <strong>@(detalle.ProductoCodigo ?? "SIN-CODIGO")</strong> - @(detalle.ProductoNombre ?? "SIN NOMBRE")
+                                                <br />
+                                                <small class="text-muted">ID: @detalle.ProductoId</small>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-primary fs-6">@detalle.Cantidad</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-success fs-6">@detalle.CantidadRecibida</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning text-dark fs-6">@pendiente</span>
+                                            </td>
+                                            <td class="text-center">
+                                                @if (pendiente > 0)
+                                                {
+                                                    <input type="hidden" name="detalles[@i].DetalleId" value="@detalle.Id" />
+                                                    <input type="hidden" name="detalles[@i].ProductoId" value="@detalle.ProductoId" />
+                                                    <input type="hidden" name="detalles[@i].ProductoNombre" value="@detalle.ProductoNombre" />
+                                                    <input type="hidden" name="detalles[@i].CantidadSolicitada" value="@detalle.Cantidad" />
+                                                    <input type="hidden" name="detalles[@i].CantidadYaRecibida" value="@detalle.CantidadRecibida" />
+                                                    <input type="number"
+                                                           name="detalles[@i].CantidadARecepcionar"
+                                                           class="form-control form-control-lg text-center fw-bold"
+                                                           min="0"
+                                                           max="@pendiente"
+                                                           value="@pendiente"
+                                                           style="width: 120px; margin: 0 auto;" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-success fs-5">
+                                                        <i class="bi bi-check-circle-fill"></i> Completo
+                                                    </span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-check-circle"></i> Confirmar Recepción
+                    </button>
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary btn-lg">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

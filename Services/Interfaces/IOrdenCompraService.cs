@@ -1,5 +1,6 @@
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
+using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Services.Interfaces
 {
@@ -10,7 +11,6 @@ namespace TheBuryProject.Services.Interfaces
         Task<OrdenCompra> CreateAsync(OrdenCompra ordenCompra);
         Task<OrdenCompra> UpdateAsync(OrdenCompra ordenCompra);
         Task<bool> DeleteAsync(int id);
-
         Task<IEnumerable<OrdenCompra>> SearchAsync(
             string? searchTerm = null,
             int? proveedorId = null,
@@ -19,10 +19,12 @@ namespace TheBuryProject.Services.Interfaces
             DateTime? fechaHasta = null,
             string? orderBy = null,
             string? orderDirection = "asc");
-
         Task<IEnumerable<OrdenCompra>> GetByProveedorIdAsync(int proveedorId);
         Task<bool> CambiarEstadoAsync(int id, EstadoOrdenCompra nuevoEstado);
         Task<bool> NumeroOrdenExisteAsync(string numero, int? excludeId = null);
         Task<decimal> CalcularTotalOrdenAsync(int ordenId);
+
+        // NUEVO: Método para recepcionar
+        Task<OrdenCompra> RecepcionarAsync(int ordenId, List<RecepcionDetalleViewModel> detallesRecepcion);
     }
 }

@@ -1,5 +1,4 @@
-﻿Views/OrdenCompra/Edit.cshtml
-@model TheBuryProject.ViewModels.OrdenCompraViewModel
+﻿@model TheBuryProject.ViewModels.OrdenCompraViewModel
 
 @{
     ViewData["Title"] = "Editar Orden de Compra";
@@ -182,38 +181,51 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
+    <!-- JSON con los detalles actuales, seguro para JS -->
+    @if (Model.Detalles != null && Model.Detalles.Any())
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            Model.Detalles.Select(d => new
+            {
+                id = d.Id,
+                productoId = d.ProductoId,
+                productoNombre = d.ProductoNombre,
+                cantidad = d.Cantidad,
+                precioUnitario = d.PrecioUnitario,
+                subtotal = d.Subtotal,
+                cantidadRecibida = d.CantidadRecibida
+            })
+        );
+        <script id="detalles-data" type="application/json">
+            @Html.Raw(json)
+        </script>
+    }
+
     <script>
         let detalles = [];
         let detalleIndex = 0;
 
-        // Cargar detalles existentes
-        @if (Model.Detalles != null && Model.Detalles.Any())
-        {
-                foreach (var detalle in Model.Detalles)
-                {
-                        <text>
-                        detalles.push({
-                            index: detalleIndex++,
-                            id: @detalle.Id,
-                            productoId: @detalle.ProductoId,
-                            productoNombre: '@Html.Raw(detalle.ProductoNombre)',
-                            cantidad: @detalle.Cantidad,
-                            precioUnitario: @detalle.PrecioUnitario,
-                            subtotal: @detalle.Subtotal,
-                            cantidadRecibida: @detalle.CantidadRecibida
-                        });
-                        </text>
+        // Leer JSON embebido si existe
+        (function initDetalles() {
+            const dataEl = document.getElementById('detalles-data');
+            if (dataEl && dataEl.textContent && dataEl.textContent.trim().length > 0) {
+                try {
+                    detalles = JSON.parse(dataEl.textContent);
+                    detalleIndex = detalles.length;
+                } catch (_) {
+                    detalles = [];
+                    detalleIndex = 0;
                 }
-                <text>
-                renderDetalles();
-                calcularTotales();
-                </text>
-        }
+            }
+        })();
+
+        renderDetalles();
+        calcularTotales();
 
         function agregarDetalle() {
             const productoSelect = document.getElementById('productoSelect');
             const productoId = productoSelect.value;
-            const productoNombre = productoSelect.options[productoSelect.selectedIndex].text;
+            const productoNombre = productoSelect.options[productoSelect.selectedIndex]?.text || '';
             const cantidad = parseFloat(document.getElementById('cantidadInput').value);
             const precio = parseFloat(document.getElementById('precioInput').value);
 
@@ -222,30 +234,27 @@
                 return;
             }
 
-            // Verificar si el producto ya está agregado
-            if (detalles.some(d => d.productoId == productoId)) {
+            if (detalles.some(d => String(d.productoId) === String(productoId))) {
                 alert('Este producto ya está agregado a la orden');
                 return;
             }
 
             const subtotal = cantidad * precio;
 
-            const detalle = {
+            detalles.push({
                 index: detalleIndex++,
                 id: 0,
-                productoId: productoId,
-                productoNombre: productoNombre,
-                cantidad: cantidad,
+                productoId,
+                productoNombre,
+                cantidad,
                 precioUnitario: precio,
-                subtotal: subtotal,
+                subtotal,
                 cantidadRecibida: 0
-            };
+            });
 
-            detalles.push(detalle);
             renderDetalles();
             calcularTotales();
 
-            // Limpiar campos
             productoSelect.value = '';
             document.getElementById('cantidadInput').value = '1';
             document.getElementById('precioInput').value = '0';
@@ -279,15 +288,15 @@
                             <input type="hidden" name="Detalles[${idx}].CantidadRecibida" value="${detalle.cantidadRecibida}" />
                         </td>
                         <td class="text-end">
-                            ${detalle.cantidad.toFixed(2)}
+                            ${Number(detalle.cantidad).toFixed(2)}
                             <input type="hidden" name="Detalles[${idx}].Cantidad" value="${detalle.cantidad}" />
                         </td>
                         <td class="text-end">
-                            $${detalle.precioUnitario.toFixed(2)}
+                            $${Number(detalle.precioUnitario).toFixed(2)}
                             <input type="hidden" name="Detalles[${idx}].PrecioUnitario" value="${detalle.precioUnitario}" />
                         </td>
                         <td class="text-end">
-                            <strong>$${detalle.subtotal.toFixed(2)}</strong>
+                            <strong>$${Number(detalle.subtotal).toFixed(2)}</strong>
                             <input type="hidden" name="Detalles[${idx}].Subtotal" value="${detalle.subtotal}" />
                         </td>
                         <td class="text-center">
@@ -297,12 +306,12 @@
                         </td>
                     </tr>
                 `;
-                tbody.innerHTML += row;
+                tbody.insertAdjacentHTML('beforeend', row);
             });
         }
 
         function calcularTotales() {
-            const subtotal = detalles.reduce((sum, d) => sum + d.subtotal, 0);
+            const subtotal = detalles.reduce((sum, d) => sum + Number(d.subtotal || 0), 0);
             const descuento = parseFloat(document.getElementById('Descuento').value) || 0;
             const subtotalConDescuento = subtotal - descuento;
             const iva = subtotalConDescuento * 0.21;
@@ -318,7 +327,6 @@
             document.getElementById('totalHidden').value = total.toFixed(2);
         }
 
-        // Validar antes de enviar
         document.getElementById('ordenCompraForm').addEventListener('submit', function(e) {
             if (detalles.length === 0) {
                 e.preventDefault();
