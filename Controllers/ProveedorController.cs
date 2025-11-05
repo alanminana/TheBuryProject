@@ -1,7 +1,9 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
@@ -11,6 +13,8 @@ namespace TheBuryProject.Controllers
     [AllowAnonymous]
     public class ProveedorController : Controller
     {
+        private readonly AppDbContext _context; // Agregar esta línea al inicio de la clase
+
         private readonly IProveedorService _proveedorService;
         private readonly ILogger<ProveedorController> _logger;
         private readonly IMapper _mapper;
@@ -18,12 +22,13 @@ namespace TheBuryProject.Controllers
         private readonly IMarcaService _marcaService;
         private readonly IProductoService _productoService;
         public ProveedorController(
-        IProveedorService proveedorService,
-        ICategoriaService categoriaService,
-        IMarcaService marcaService,
-        IProductoService productoService,
-        ILogger<ProveedorController> logger,
-        IMapper mapper)
+            IProveedorService proveedorService,
+            ICategoriaService categoriaService,
+            IMarcaService marcaService,
+            IProductoService productoService,
+            ILogger<ProveedorController> logger,
+            IMapper mapper,
+            AppDbContext context)
         {
             _proveedorService = proveedorService;
             _categoriaService = categoriaService;
@@ -31,6 +36,7 @@ namespace TheBuryProject.Controllers
             _productoService = productoService;
             _logger = logger;
             _mapper = mapper;
+            _context = context;
         }
 
         // GET: Proveedor
@@ -130,7 +136,7 @@ namespace TheBuryProject.Controllers
                 }
                 catch (InvalidOperationException ex)
                 {
-                    _logger.LogWarning(ex, "Error de validaci�n al crear proveedor");
+                    _logger.LogWarning(ex, "Error de validación al crear proveedor");
                     ModelState.AddModelError("", ex.Message);
                 }
                 catch (Exception ex)
@@ -202,7 +208,7 @@ namespace TheBuryProject.Controllers
                 }
                 catch (InvalidOperationException ex)
                 {
-                    _logger.LogWarning(ex, "Error de validaci�n al actualizar proveedor {Id}", id);
+                    _logger.LogWarning(ex, "Error de validación al actualizar proveedor {Id}", id);
                     ModelState.AddModelError("", ex.Message);
                 }
                 catch (Exception ex)
@@ -259,12 +265,12 @@ namespace TheBuryProject.Controllers
                 }
                 else
                 {
-                    TempData["Error"] = "No se encontr� el proveedor a eliminar";
+                    TempData["Error"] = "No se encontró el proveedor a eliminar";
                 }
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogWarning(ex, "Error de validaci�n al eliminar proveedor {Id}", id);
+                _logger.LogWarning(ex, "Error de validación al eliminar proveedor {Id}", id);
                 TempData["Error"] = ex.Message;
             }
             catch (Exception ex)
@@ -281,37 +287,79 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                var proveedor = await _proveedorService.GetByIdAsync(id);
-                if (proveedor == null)
+                _logger.LogInformation("=== OBTENER PRODUCTOS PROVEEDOR {Id} ===", id);
+
+                var productosProveedor = await _context.ProveedorProductos
+                    .Include(pp => pp.Producto)
+                    .Where(pp => pp.ProveedorId == id && pp.IsDeleted == false)
+                    .ToListAsync();
+
+                _logger.LogInformation("ProveedorProductos encontrados: {Count}", productosProveedor.Count);
+
+                if (!productosProveedor.Any())
                 {
-                    return NotFound();
+                    _logger.LogWarning("Proveedor {Id} no tiene productos asociados", id);
+                    return Json(new List<object>());
                 }
 
-                // Si el proveedor tiene productos asociados, devolver solo esos
-                if (proveedor.ProveedorProductos.Any())
-                {
-                    var productos = proveedor.ProveedorProductos
-                        .Where(pp => pp.Producto != null && pp.Producto.Activo)
-                        .Select(pp => new
-                        {
-                            id = pp.ProductoId,
-                            nombre = pp.Producto!.Codigo + " - " + pp.Producto.Nombre,
-                            precio = pp.Producto.PrecioCompra
-                        })
-                        .OrderBy(p => p.nombre)
-                        .ToList();
+                // MODIFICADO: Mostrar productos activos E INACTIVOS (solo filtrar IsDeleted)
+                var productos = productosProveedor
+                    .Where(pp => pp.Producto != null && pp.Producto.IsDeleted == false)
+                    .Select(pp => new
+                    {
+                        id = pp.ProductoId,
+                        nombre = string.IsNullOrEmpty(pp.Producto!.Codigo)
+                            ? pp.Producto.Nombre
+                            : $"{pp.Producto.Codigo} - {pp.Producto.Nombre}",
+                        precio = pp.Producto.PrecioCompra,
+                        activo = pp.Producto.Activo // Agregar para ver si está activo
+                    })
+                    .OrderBy(p => p.nombre)
+                    .ToList();
 
-                    return Json(productos);
-                }
-
-                // Si no tiene productos asociados, devolver mensaje
-                return Json(new { error = "Este proveedor no tiene productos asociados" });
+                _logger.LogInformation("Productos retornados: {Count}", productos.Count);
+                return Json(productos);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener productos del proveedor {Id}", id);
-                return BadRequest("Error al obtener productos");
+                return StatusCode(500, new { error = "Error al obtener productos" });
             }
+        }
+
+
+        // TEMPORAL: Endpoint de diagnóstico - Eliminar después de resolver el problema
+        [HttpGet]
+        public async Task<IActionResult> DiagnosticoProveedor(int id)
+        {
+            var proveedor = await _context.Proveedores.FindAsync(id);
+            var productosProveedor = await _context.ProveedorProductos
+                .Include(pp => pp.Producto)
+                .Where(pp => pp.ProveedorId == id)
+                .ToListAsync();
+
+            var diagnostico = new
+            {
+                proveedorExiste = proveedor != null,
+                proveedorNombre = proveedor?.RazonSocial,
+                proveedorActivo = proveedor?.Activo,
+                proveedorIsDeleted = proveedor?.IsDeleted,
+                totalProductosRelacion = productosProveedor.Count,
+                productos = productosProveedor.Select(pp => new
+                {
+                    ppId = pp.Id,
+                    ppIsDeleted = pp.IsDeleted,
+                    productoId = pp.ProductoId,
+                    productoNull = pp.Producto == null,
+                    productoNombre = pp.Producto?.Nombre,
+                    productoCodigo = pp.Producto?.Codigo,
+                    productoActivo = pp.Producto?.Activo,
+                    productoIsDeleted = pp.Producto?.IsDeleted,
+                    productoPrecioCompra = pp.Producto?.PrecioCompra
+                }).ToList()
+            };
+
+            return Json(diagnostico);
         }
         private async Task CargarAsociacionesAsync(ProveedorViewModel viewModel)
         {
