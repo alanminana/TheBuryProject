@@ -1,0 +1,144 @@
+﻿using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Data;
+using TheBuryProject.Models.Entities;
+using TheBuryProject.Models.Enums;
+using TheBuryProject.Services.Interfaces;
+
+namespace TheBuryProject.Services
+{
+    public class MovimientoStockService : IMovimientoStockService
+    {
+        private readonly AppDbContext _context;
+        private readonly ILogger<MovimientoStockService> _logger;
+
+        public MovimientoStockService(AppDbContext context, ILogger<MovimientoStockService> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        public async Task<IEnumerable<MovimientoStock>> GetAllAsync()
+        {
+            return await _context.MovimientosStock
+                .Include(m => m.Producto)
+                .Include(m => m.OrdenCompra)
+                .OrderByDescending(m => m.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<MovimientoStock?> GetByIdAsync(int id)
+        {
+            return await _context.MovimientosStock
+                .Include(m => m.Producto)
+                .Include(m => m.OrdenCompra)
+                .FirstOrDefaultAsync(m => m.Id == id);
+        }
+
+        public async Task<IEnumerable<MovimientoStock>> GetByProductoIdAsync(int productoId)
+        {
+            return await _context.MovimientosStock
+                .Include(m => m.Producto)
+                .Include(m => m.OrdenCompra)
+                .Where(m => m.ProductoId == productoId)
+                .OrderByDescending(m => m.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<MovimientoStock>> GetByOrdenCompraIdAsync(int ordenCompraId)
+        {
+            return await _context.MovimientosStock
+                .Include(m => m.Producto)
+                .Include(m => m.OrdenCompra)
+                .Where(m => m.OrdenCompraId == ordenCompraId)
+                .OrderBy(m => m.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<MovimientoStock>> GetByTipoAsync(TipoMovimiento tipo)
+        {
+            return await _context.MovimientosStock
+                .Include(m => m.Producto)
+                .Include(m => m.OrdenCompra)
+                .Where(m => m.Tipo == tipo)
+                .OrderByDescending(m => m.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<MovimientoStock>> GetByFechaRangoAsync(DateTime fechaDesde, DateTime fechaHasta)
+        {
+            return await _context.MovimientosStock
+                .Include(m => m.Producto)
+                .Include(m => m.OrdenCompra)
+                .Where(m => m.CreatedAt >= fechaDesde && m.CreatedAt <= fechaHasta)
+                .OrderByDescending(m => m.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<MovimientoStock> CreateAsync(MovimientoStock movimiento)
+        {
+            _context.MovimientosStock.Add(movimiento);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Movimiento de stock registrado: Producto {ProductoId}, Tipo {Tipo}, Cantidad {Cantidad}",
+                movimiento.ProductoId, movimiento.Tipo, movimiento.Cantidad);
+
+            return movimiento;
+        }
+
+        public async Task<IEnumerable<MovimientoStock>> SearchAsync(
+            int? productoId = null,
+            TipoMovimiento? tipo = null,
+            DateTime? fechaDesde = null,
+            DateTime? fechaHasta = null,
+            string? orderBy = null,
+            string? orderDirection = "desc")
+        {
+            var query = _context.MovimientosStock
+                .Include(m => m.Producto)
+                .Include(m => m.OrdenCompra)
+                .AsQueryable();
+
+            // Filtros
+            if (productoId.HasValue)
+            {
+                query = query.Where(m => m.ProductoId == productoId.Value);
+            }
+
+            if (tipo.HasValue)
+            {
+                query = query.Where(m => m.Tipo == tipo.Value);
+            }
+
+            if (fechaDesde.HasValue)
+            {
+                query = query.Where(m => m.CreatedAt >= fechaDesde.Value);
+            }
+
+            if (fechaHasta.HasValue)
+            {
+                query = query.Where(m => m.CreatedAt <= fechaHasta.Value);
+            }
+
+            // Ordenamiento
+            query = orderBy?.ToLower() switch
+            {
+                "fecha" => orderDirection == "desc"
+                    ? query.OrderByDescending(m => m.CreatedAt)
+                    : query.OrderBy(m => m.CreatedAt),
+                "producto" => orderDirection == "desc"
+                    ? query.OrderByDescending(m => m.Producto.Nombre)
+                    : query.OrderBy(m => m.Producto.Nombre),
+                "tipo" => orderDirection == "desc"
+                    ? query.OrderByDescending(m => m.Tipo)
+                    : query.OrderBy(m => m.Tipo),
+                "cantidad" => orderDirection == "desc"
+                    ? query.OrderByDescending(m => m.Cantidad)
+                    : query.OrderBy(m => m.Cantidad),
+                _ => query.OrderByDescending(m => m.CreatedAt)
+            };
+
+            return await query.ToListAsync();
+        }
+    }
+}

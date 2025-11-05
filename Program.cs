@@ -46,6 +46,7 @@ builder.Services.AddScoped<IMarcaService, MarcaService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();  // ← Esta línea
 builder.Services.AddScoped<IProveedorService, ProveedorService>(); 
 builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();  // ← AGREGAR ESTA LÍNEA
+builder.Services.AddScoped<IMovimientoStockService, MovimientoStockService>();
 
 builder.Services.AddScoped<IChequeService, ChequeService>();
 

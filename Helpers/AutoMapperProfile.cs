@@ -106,6 +106,17 @@ namespace TheBuryProject.Helpers
             CreateMap<ChequeViewModel, Cheque>()
                 .ForMember(d => d.Proveedor, o => o.Ignore())
                 .ForMember(d => d.OrdenCompra, o => o.Ignore());
+
+            // Mappings para MovimientoStock
+            CreateMap<MovimientoStock, MovimientoStockViewModel>()
+                .ForMember(d => d.ProductoNombre, o => o.MapFrom(s => s.Producto != null ? s.Producto.Nombre : null))
+                .ForMember(d => d.ProductoCodigo, o => o.MapFrom(s => s.Producto != null ? s.Producto.Codigo : null))
+                .ForMember(d => d.TipoNombre, o => o.MapFrom(s => s.Tipo.ToString()))
+                .ForMember(d => d.OrdenCompraNumero, o => o.MapFrom(s => s.OrdenCompra != null ? s.OrdenCompra.Numero : null))
+                .ForMember(d => d.Fecha, o => o.MapFrom(s => s.CreatedAt));
+
+
+
         }
     }
 }
