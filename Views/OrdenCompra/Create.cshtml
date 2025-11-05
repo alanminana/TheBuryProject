@@ -183,6 +183,74 @@
     <script>
         let detalles = [];
         let detalleIndex = 0;
+        let productosProveedor = [];
+
+        // ⭐ CARGAR PRODUCTOS CUANDO SE SELECCIONA UN PROVEEDOR
+        document.getElementById('ProveedorId').addEventListener('change', async function() {
+            const proveedorId = this.value;
+            const productoSelect = document.getElementById('productoSelect');
+
+            // Limpiar select de productos
+            productoSelect.innerHTML = '<option value="">Seleccione un producto</option>';
+            productosProveedor = [];
+
+            if (!proveedorId) {
+                return;
+            }
+
+            try {
+                // Mostrar loading
+                productoSelect.disabled = true;
+                productoSelect.innerHTML = '<option value="">Cargando productos...</option>';
+
+                // Obtener productos del proveedor
+                const response = await fetch(`/Proveedor/GetProductos/${proveedorId}`);
+                const data = await response.json();
+
+                console.log('Respuesta del servidor:', data); // DEBUG
+
+                if (data.error) {
+                    alert(data.error);
+                    productoSelect.innerHTML = '<option value="">No hay productos disponibles</option>';
+                    productoSelect.disabled = false;
+                    return;
+                }
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    alert('Este proveedor no tiene productos asociados. Por favor, asocia productos al proveedor primero.');
+                    productoSelect.innerHTML = '<option value="">No hay productos disponibles</option>';
+                    productoSelect.disabled = false;
+                    return;
+                }
+
+                // Cargar productos en el select
+                productosProveedor = data;
+                productoSelect.innerHTML = '<option value="">Seleccione un producto</option>';
+                data.forEach(producto => {
+                    const option = document.createElement('option');
+                    option.value = producto.id;
+                    option.textContent = producto.nombre;
+                    option.dataset.precio = producto.precio;
+                    productoSelect.appendChild(option);
+                });
+
+                productoSelect.disabled = false;
+                console.log(`Cargados ${data.length} productos`); // DEBUG
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+                alert('Error al cargar los productos del proveedor: ' + error.message);
+                productoSelect.innerHTML = '<option value="">Error al cargar productos</option>';
+                productoSelect.disabled = false;
+            }
+        });
+
+        // Auto-completar precio al seleccionar producto
+        document.getElementById('productoSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.dataset.precio) {
+                document.getElementById('precioInput').value = parseFloat(selectedOption.dataset.precio).toFixed(2);
+            }
+        });
 
         function agregarDetalle() {
             const productoSelect = document.getElementById('productoSelect');

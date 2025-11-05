@@ -63,5 +63,26 @@ namespace TheBuryProject.ViewModels
         public int TotalOrdenesCompra { get; set; }
         public int ChequesVigentes { get; set; }
         public decimal TotalDeuda { get; set; }
+
+        // Propiedades para las asociaciones con el catálogo
+        [Display(Name = "Categorías")]
+        public List<int> CategoriasSeleccionadas { get; set; } = new List<int>();
+
+        [Display(Name = "Marcas")]
+        public List<int> MarcasSeleccionadas { get; set; } = new List<int>();
+
+        [Display(Name = "Productos")]
+        public List<int> ProductosSeleccionados { get; set; } = new List<int>();
+
+        // Propiedades para los dropdowns (UI)
+        public List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> CategoriasDisponibles { get; set; } = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+        public List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> MarcasDisponibles { get; set; } = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+        public List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ProductosDisponibles { get; set; } = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+
+        // Propiedades para mostrar en la vista de detalles
+        public List<string> CategoriasAsociadas { get; set; } = new List<string>();
+        public List<string> MarcasAsociadas { get; set; } = new List<string>();
+        public List<string> ProductosAsociados { get; set; } = new List<string>();
+
     }
 }

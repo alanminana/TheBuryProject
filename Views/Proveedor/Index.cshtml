@@ -142,9 +142,8 @@
                         <tr>
                             <th class="fw-semibold px-4 py-3">CUIT</th>
                             <th class="fw-semibold py-3">Razón Social</th>
+                            <th class="fw-semibold py-3">Productos Asociados</th>
                             <th class="fw-semibold py-3">Contacto</th>
-                            <th class="fw-semibold py-3">Email</th>
-                            <th class="fw-semibold py-3">Teléfono</th>
                             <th class="fw-semibold py-3 text-center">Estado</th>
                             <th class="fw-semibold text-center py-3 px-4">Acciones</th>
                         </tr>
@@ -165,9 +164,36 @@
                                             <small class="text-muted">@proveedor.NombreFantasia</small>
                                         }
                                     </td>
-                                    <td class="text-muted">@(proveedor.Contacto ?? "-")</td>
-                                    <td class="text-muted">@(proveedor.Email ?? "-")</td>
-                                    <td class="text-muted">@(proveedor.Telefono ?? "-")</td>
+                                    <td>
+                                        @if (proveedor.ProductosAsociados.Any())
+                                        {
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @foreach (var producto in proveedor.ProductosAsociados.Take(3))
+                                                {
+                                                    <span class="badge bg-success-subtle text-success-emphasis small">@producto</span>
+                                                }
+                                                @if (proveedor.ProductosAsociados.Count > 3)
+                                                {
+                                                    <span class="badge bg-secondary-subtle text-secondary-emphasis small"
+                                                          data-bs-toggle="tooltip"
+                                                          title="@string.Join(", ", proveedor.ProductosAsociados.Skip(3))">
+                                                        +@(proveedor.ProductosAsociados.Count - 3) más
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">
+                                                <i class="bi bi-exclamation-triangle text-warning"></i> Sin productos
+                                            </small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="text-muted small">@(proveedor.Contacto ?? "-")</div>
+                                        <div class="text-muted small">@(proveedor.Email ?? "-")</div>
+                                        <div class="text-muted small">@(proveedor.Telefono ?? "-")</div>
+                                    </td>
                                     <td class="text-center">
                                         @if (proveedor.Activo)
                                         {
@@ -210,7 +236,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="7" class="text-center py-5">
+                                <td colspan="6" class="text-center py-5">
                                     <i class="bi bi-inbox display-1 text-muted d-block mb-3"></i>
                                     @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos)
                                     {

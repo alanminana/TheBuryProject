@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Models.Entities;
@@ -7,6 +8,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
+    [AllowAnonymous]
     public class ProveedorController : Controller
     {
         private readonly IProveedorService _proveedorService;
@@ -272,6 +274,44 @@ namespace TheBuryProject.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+        // API: Obtener productos del proveedor
+        [HttpGet]
+        public async Task<IActionResult> GetProductos(int id)
+        {
+            try
+            {
+                var proveedor = await _proveedorService.GetByIdAsync(id);
+                if (proveedor == null)
+                {
+                    return NotFound();
+                }
+
+                // Si el proveedor tiene productos asociados, devolver solo esos
+                if (proveedor.ProveedorProductos.Any())
+                {
+                    var productos = proveedor.ProveedorProductos
+                        .Where(pp => pp.Producto != null && pp.Producto.Activo)
+                        .Select(pp => new
+                        {
+                            id = pp.ProductoId,
+                            nombre = pp.Producto!.Codigo + " - " + pp.Producto.Nombre,
+                            precio = pp.Producto.PrecioCompra
+                        })
+                        .OrderBy(p => p.nombre)
+                        .ToList();
+
+                    return Json(productos);
+                }
+
+                // Si no tiene productos asociados, devolver mensaje
+                return Json(new { error = "Este proveedor no tiene productos asociados" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener productos del proveedor {Id}", id);
+                return BadRequest("Error al obtener productos");
+            }
         }
         private async Task CargarAsociacionesAsync(ProveedorViewModel viewModel)
         {

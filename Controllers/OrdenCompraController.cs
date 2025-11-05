@@ -9,6 +9,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
+    [AllowAnonymous]
     public class OrdenCompraController : Controller
     {
         private readonly IOrdenCompraService _ordenCompraService;

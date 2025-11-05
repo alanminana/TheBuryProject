@@ -21,6 +21,12 @@ namespace TheBuryProject.Services
             try
             {
                 return await _context.Proveedores
+                    .Include(p => p.ProveedorProductos)
+                        .ThenInclude(pp => pp.Producto)
+                    .Include(p => p.ProveedorMarcas)
+                        .ThenInclude(pm => pm.Marca)
+                    .Include(p => p.ProveedorCategorias)
+                        .ThenInclude(pc => pc.Categoria)
                     .OrderBy(p => p.RazonSocial)
                     .ToListAsync();
             }
@@ -61,10 +67,27 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException($"Ya existe un proveedor con el CUIT {proveedor.Cuit}");
                 }
 
+                // Asegurar que las referencias al proveedor estén correctas
+                foreach (var pp in proveedor.ProveedorProductos)
+                {
+                    pp.Proveedor = proveedor;
+                }
+
+                foreach (var pm in proveedor.ProveedorMarcas)
+                {
+                    pm.Proveedor = proveedor;
+                }
+
+                foreach (var pc in proveedor.ProveedorCategorias)
+                {
+                    pc.Proveedor = proveedor;
+                }
+
                 _context.Proveedores.Add(proveedor);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Proveedor creado: {Id} - {RazonSocial}", proveedor.Id, proveedor.RazonSocial);
+                _logger.LogInformation("Proveedor creado: {Id} - {RazonSocial} con {ProductosCount} productos, {MarcasCount} marcas, {CategoriasCount} categorías",
+                    proveedor.Id, proveedor.RazonSocial, proveedor.ProveedorProductos.Count, proveedor.ProveedorMarcas.Count, proveedor.ProveedorCategorias.Count);
             }
             catch (Exception ex)
             {
@@ -83,14 +106,44 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException($"Ya existe otro proveedor con el CUIT {proveedor.Cuit}");
                 }
 
-                var existingProveedor = await _context.Proveedores.FindAsync(proveedor.Id);
+                var existingProveedor = await _context.Proveedores
+                    .Include(p => p.ProveedorProductos)
+                    .Include(p => p.ProveedorMarcas)
+                    .Include(p => p.ProveedorCategorias)
+                    .FirstOrDefaultAsync(p => p.Id == proveedor.Id);
+
                 if (existingProveedor == null)
                 {
                     throw new InvalidOperationException("Proveedor no encontrado");
                 }
 
-                // Actualizar propiedades
+                // Actualizar propiedades básicas
                 _context.Entry(existingProveedor).CurrentValues.SetValues(proveedor);
+
+                // Actualizar asociaciones de productos
+                existingProveedor.ProveedorProductos.Clear();
+                foreach (var pp in proveedor.ProveedorProductos)
+                {
+                    pp.ProveedorId = proveedor.Id;
+                    existingProveedor.ProveedorProductos.Add(pp);
+                }
+
+                // Actualizar asociaciones de marcas
+                existingProveedor.ProveedorMarcas.Clear();
+                foreach (var pm in proveedor.ProveedorMarcas)
+                {
+                    pm.ProveedorId = proveedor.Id;
+                    existingProveedor.ProveedorMarcas.Add(pm);
+                }
+
+                // Actualizar asociaciones de categorías
+                existingProveedor.ProveedorCategorias.Clear();
+                foreach (var pc in proveedor.ProveedorCategorias)
+                {
+                    pc.ProveedorId = proveedor.Id;
+                    existingProveedor.ProveedorCategorias.Add(pc);
+                }
+
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Proveedor actualizado: {Id} - {RazonSocial}", proveedor.Id, proveedor.RazonSocial);
@@ -161,7 +214,14 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var query = _context.Proveedores.AsQueryable();
+                var query = _context.Proveedores
+                    .Include(p => p.ProveedorProductos)
+                        .ThenInclude(pp => pp.Producto)
+                    .Include(p => p.ProveedorMarcas)
+                        .ThenInclude(pm => pm.Marca)
+                    .Include(p => p.ProveedorCategorias)
+                        .ThenInclude(pc => pc.Categoria)
+                    .AsQueryable();
 
                 // Búsqueda por texto
                 if (!string.IsNullOrWhiteSpace(searchTerm))

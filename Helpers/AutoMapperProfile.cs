@@ -1,13 +1,10 @@
 ﻿using AutoMapper;
+using System.Linq;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.ViewModels;
-+using System.Linq;
- using TheBuryProject.Models.Entities;
- using TheBuryProject.Models.Enums;
- using TheBuryProject.ViewModels;
- 
- namespace TheBuryProject.Helpers
+
+namespace TheBuryProject.Helpers
 {
     public class MappingProfile : Profile
     {
@@ -82,3 +79,15 @@ using TheBuryProject.ViewModels;
             CreateMap<Cheque, ChequeViewModel>()
                 .ForMember(d => d.ProveedorNombre, o => o.MapFrom(s => s.Proveedor != null ? s.Proveedor.RazonSocial : null))
                 .ForMember(d => d.OrdenCompraNumero, o => o.MapFrom(s => s.OrdenCompra != null ? s.OrdenCompra.Numero : null))
+                .ForMember(d => d.EstadoNombre, o => o.MapFrom(s => s.Estado.ToString()))
+                .ForMember(d => d.DiasPorVencer, o => o.MapFrom(s =>
+                    s.FechaVencimiento.HasValue
+                        ? (int)(s.FechaVencimiento.Value - DateTime.Today).TotalDays
+                        : 0));
+
+            CreateMap<ChequeViewModel, Cheque>()
+                .ForMember(d => d.Proveedor, o => o.Ignore())
+                .ForMember(d => d.OrdenCompra, o => o.Ignore());
+        }
+    }
+}

@@ -39,7 +39,6 @@ namespace TheBuryProject.Services
                         .ThenInclude(p => p.Categoria)
                 .FirstOrDefaultAsync(o => o.Id == id);
         }
-
         public async Task<OrdenCompra> CreateAsync(OrdenCompra ordenCompra)
         {
             // Validar que el número no exista
@@ -48,11 +47,40 @@ namespace TheBuryProject.Services
                 throw new InvalidOperationException($"Ya existe una orden con el número {ordenCompra.Numero}");
             }
 
-            // Validar que el proveedor exista
-            var proveedor = await _context.Proveedores.FindAsync(ordenCompra.ProveedorId);
+            // Validar que el proveedor exista y cargar productos asociados
+            var proveedor = await _context.Proveedores
+                .Include(p => p.ProveedorProductos)
+                .FirstOrDefaultAsync(p => p.Id == ordenCompra.ProveedorId);
+
             if (proveedor == null)
             {
                 throw new InvalidOperationException("El proveedor especificado no existe");
+            }
+
+            // Validar que todos los productos de la orden estén asociados al proveedor
+            if (proveedor.ProveedorProductos.Any())
+            {
+                var productosAsociadosIds = proveedor.ProveedorProductos
+                    .Select(pp => pp.ProductoId)
+                    .ToList();
+
+                var productosNoAsociados = new List<string>();
+
+                foreach (var detalle in ordenCompra.Detalles)
+                {
+                    if (!productosAsociadosIds.Contains(detalle.ProductoId))
+                    {
+                        var producto = await _context.Productos.FindAsync(detalle.ProductoId);
+                        productosNoAsociados.Add(producto?.Nombre ?? $"ID {detalle.ProductoId}");
+                    }
+                }
+
+                if (productosNoAsociados.Any())
+                {
+                    throw new InvalidOperationException(
+                        $"No se puede crear la orden. Los siguientes productos no están asociados al proveedor '{proveedor.RazonSocial}': {string.Join(", ", productosNoAsociados)}. " +
+                        "Asocia estos productos al proveedor antes de crear la orden.");
+                }
             }
 
             // Calcular totales
@@ -62,8 +90,10 @@ namespace TheBuryProject.Services
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Orden de compra {Numero} creada exitosamente", ordenCompra.Numero);
+
             return ordenCompra;
         }
+
 
         public async Task<OrdenCompra> UpdateAsync(OrdenCompra ordenCompra)
         {
