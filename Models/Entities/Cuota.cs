@@ -1,0 +1,50 @@
+using System.ComponentModel.DataAnnotations;
+using TheBuryProject.Models.Base;
+using TheBuryProject.Models.Enums;
+
+namespace TheBuryProject.Models.Entities
+{
+    /// <summary>
+    /// Representa una cuota individual de un crédito
+    /// </summary>
+    public class Cuota : BaseEntity
+    {
+        public int CreditoId { get; set; }
+
+        [Required]
+        public int NumeroCuota { get; set; }
+
+        [Required]
+        public decimal MontoCapital { get; set; }
+
+        [Required]
+        public decimal MontoInteres { get; set; }
+
+        [Required]
+        public decimal MontoTotal { get; set; }
+
+        [Required]
+        public DateTime FechaVencimiento { get; set; }
+
+        public DateTime? FechaPago { get; set; }
+
+        public decimal MontoPagado { get; set; } = 0;
+
+        public decimal MontoPunitorio { get; set; } = 0;
+
+        public EstadoCuota Estado { get; set; } = EstadoCuota.Pendiente;
+
+        [StringLength(500)]
+        public string? Observaciones { get; set; }
+
+        // Datos de pago
+        [StringLength(50)]
+        public string? MedioPago { get; set; } // Efectivo, Transferencia, Cheque, etc.
+
+        [StringLength(100)]
+        public string? ComprobantePago { get; set; } // Número de comprobante/recibo
+
+        // Navigation Properties
+        public virtual Credito Credito { get; set; } = null!;
+    }
+}

@@ -38,6 +38,7 @@ namespace TheBuryProject.Data
         // Clientes y Créditos
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<Credito> Creditos { get; set; }
+        public DbSet<Cuota> Cuotas { get; set; }
         public DbSet<Garante> Garantes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
