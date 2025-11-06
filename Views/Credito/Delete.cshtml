@@ -1,0 +1,59 @@
+﻿@model TheBuryProject.ViewModels.CreditoViewModel
+
+@{
+    ViewData["Title"] = "Eliminar Crédito";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2 class="text-danger"><i class="fas fa-trash"></i> Eliminar Crédito</h2>
+        </div>
+    </div>
+
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>¡Atención!</strong> Esta acción no se puede deshacer. ¿Está seguro de que desea eliminar este crédito?
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Información del Crédito</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Número:</dt>
+                <dd class="col-sm-9">@Model.Numero</dd>
+
+                <dt class="col-sm-3">Cliente:</dt>
+                <dd class="col-sm-9">@Model.ClienteNombre</dd>
+
+                <dt class="col-sm-3">Monto Solicitado:</dt>
+                <dd class="col-sm-9">@Model.MontoSolicitado.ToString("C2")</dd>
+
+                <dt class="col-sm-3">Cantidad de Cuotas:</dt>
+                <dd class="col-sm-9">@Model.CantidadCuotas</dd>
+
+                <dt class="col-sm-3">Estado:</dt>
+                <dd class="col-sm-9">
+                    <span class="badge bg-info">@Model.Estado.ToString()</span>
+                </dd>
+
+                <dt class="col-sm-3">Fecha de Solicitud:</dt>
+                <dd class="col-sm-9">@Model.FechaSolicitud.ToString("dd/MM/yyyy")</dd>
+            </dl>
+        </div>
+
+        <div class="card-footer">
+            <form asp-action="Delete" method="post">
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Confirmar Eliminación
+                </button>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </form>
+        </div>
+    </div>
+</div>

@@ -39,6 +39,7 @@ namespace TheBuryProject.Data
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<Credito> Creditos { get; set; }
         public DbSet<Garante> Garantes { get; set; }
+        public DbSet<Cuota> Cuotas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -342,6 +343,19 @@ namespace TheBuryProject.Data
                     .IsRowVersion();
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
+                entity.Property(e => e.CFTEA)
+    .HasPrecision(5, 2);
+
+                entity.Property(e => e.TotalAPagar)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.SaldoPendiente)
+                    .HasPrecision(18, 2);
+
+                entity.HasOne(e => e.Garante)
+                    .WithMany()
+                    .HasForeignKey(e => e.GaranteId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Configuración de Garante
@@ -362,7 +376,37 @@ namespace TheBuryProject.Data
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
+            // Configuración de Cuota
+            modelBuilder.Entity<Cuota>(entity =>
+            {
+                entity.HasOne(e => e.Credito)
+                    .WithMany(c => c.Cuotas)
+                    .HasForeignKey(e => e.CreditoId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
+                entity.HasIndex(e => new { e.CreditoId, e.NumeroCuota })
+                    .IsUnique();
+
+                entity.Property(e => e.MontoCapital)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.MontoInteres)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.MontoTotal)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.MontoPagado)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.MontoPunitorio)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
             // Seed de datos inicial
             SeedData(modelBuilder);
         }
