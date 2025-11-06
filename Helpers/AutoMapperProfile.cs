@@ -115,7 +115,24 @@ namespace TheBuryProject.Helpers
                 .ForMember(d => d.OrdenCompraNumero, o => o.MapFrom(s => s.OrdenCompra != null ? s.OrdenCompra.Numero : null))
                 .ForMember(d => d.Fecha, o => o.MapFrom(s => s.CreatedAt));
 
+            // =======================
+            // Cliente
+            // =======================
+            CreateMap<Cliente, ClienteViewModel>()
+                .ForMember(d => d.Edad, o => o.MapFrom(s =>
+                    s.FechaNacimiento.HasValue
+                        ? (int)((DateTime.Today - s.FechaNacimiento.Value).TotalDays / 365.25)
+                        : (int?)null))
+                .ForMember(d => d.CreditosActivos, o => o.MapFrom(s => s.Creditos.Count(c =>
+                    c.Estado == EstadoCredito.Vigente ||
+                    c.Estado == EstadoCredito.EnMora)))
+                .ForMember(d => d.TotalAdeudado, o => o.MapFrom(s => s.Creditos
+                    .Where(c => c.Estado == EstadoCredito.Vigente || c.Estado == EstadoCredito.EnMora)
+                    .Sum(c => c.MontoAprobado)));
 
+            CreateMap<ClienteViewModel, Cliente>()
+                .ForMember(d => d.Creditos, o => o.Ignore())
+                .ForMember(d => d.ComoGarante, o => o.Ignore());
 
         }
     }

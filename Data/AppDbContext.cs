@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+ï»¿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Entities;
@@ -7,7 +7,7 @@ namespace TheBuryProject.Data
 {
     /// <summary>
     /// Contexto principal de la base de datos del sistema.
-    /// Hereda de IdentityDbContext para incluir tablas de autenticación.
+    /// Hereda de IdentityDbContext para incluir tablas de autenticaciï¿½n.
     /// </summary>
     public class AppDbContext : IdentityDbContext
     {
@@ -27,7 +27,7 @@ namespace TheBuryProject.Data
         public DbSet<ProveedorMarca> ProveedorMarcas { get; set; }
         public DbSet<ProveedorCategoria> ProveedorCategorias { get; set; }
 
-        // Órdenes de Compra
+        // ï¿½rdenes de Compra
         public DbSet<OrdenCompra> OrdenesCompra { get; set; }
         public DbSet<OrdenCompraDetalle> OrdenCompraDetalles { get; set; }
         public DbSet<MovimientoStock> MovimientosStock { get; set; }
@@ -35,11 +35,16 @@ namespace TheBuryProject.Data
         // Cheques
         public DbSet<Cheque> Cheques { get; set; }
 
+        // Clientes y CrÃ©ditos
+        public DbSet<Cliente> Clientes { get; set; }
+        public DbSet<Credito> Creditos { get; set; }
+        public DbSet<Garante> Garantes { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configuración de Categoria
+            // Configuraciï¿½n de Categoria
             modelBuilder.Entity<Categoria>(entity =>
             {
                 entity.HasIndex(e => e.Codigo)
@@ -57,7 +62,7 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // Configuración de Marca
+            // Configuraciï¿½n de Marca
             modelBuilder.Entity<Marca>(entity =>
             {
                 entity.HasIndex(e => e.Codigo)
@@ -75,7 +80,7 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // Configuración de Producto
+            // Configuraciï¿½n de Producto
             modelBuilder.Entity<Producto>(entity =>
             {
                 entity.HasIndex(e => e.Codigo)
@@ -110,7 +115,7 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // Configuración de Proveedor
+            // Configuraciï¿½n de Proveedor
             modelBuilder.Entity<Proveedor>(entity =>
             {
                 entity.HasIndex(e => e.Cuit)
@@ -123,7 +128,7 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // Configuración de ProveedorProducto (Relación N:N)
+            // Configuraciï¿½n de ProveedorProducto (Relaciï¿½n N:N)
             modelBuilder.Entity<ProveedorProducto>(entity =>
             {
                 entity.HasOne(e => e.Proveedor)
@@ -142,7 +147,7 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // Configuración de ProveedorMarca (Relación N:N)
+            // Configuraciï¿½n de ProveedorMarca (Relaciï¿½n N:N)
             modelBuilder.Entity<ProveedorMarca>(entity =>
             {
                 entity.HasOne(e => e.Proveedor)
@@ -161,7 +166,7 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // Configuración de ProveedorCategoria (Relación N:N)
+            // Configuraciï¿½n de ProveedorCategoria (Relaciï¿½n N:N)
             modelBuilder.Entity<ProveedorCategoria>(entity =>
             {
                 entity.HasOne(e => e.Proveedor)
@@ -180,7 +185,7 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // Configuración de OrdenCompra
+            // Configuraciï¿½n de OrdenCompra
             modelBuilder.Entity<OrdenCompra>(entity =>
             {
                 entity.HasIndex(e => e.Numero)
@@ -210,7 +215,7 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // Configuración de OrdenCompraDetalle
+            // Configuraciï¿½n de OrdenCompraDetalle
             modelBuilder.Entity<OrdenCompraDetalle>(entity =>
             {
                 entity.HasOne(e => e.OrdenCompra)
@@ -235,7 +240,7 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
-            // Configuración de Cheque
+            // Configuraciï¿½n de Cheque
             modelBuilder.Entity<Cheque>(entity =>
             {
                 entity.HasIndex(e => e.Numero);
@@ -258,8 +263,8 @@ namespace TheBuryProject.Data
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
-            // Configuración de MovimientoStock
-            // Configuración de MovimientoStock
+            // Configuraciï¿½n de MovimientoStock
+            // Configuraciï¿½n de MovimientoStock
             modelBuilder.Entity<MovimientoStock>(entity =>
             {
                 entity.HasOne(e => e.Producto)
@@ -303,6 +308,77 @@ namespace TheBuryProject.Data
                     .HasForeignKey(e => e.OrdenCompraId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
+            // ConfiguraciÃ³n de Cliente
+            modelBuilder.Entity<Cliente>(entity =>
+            {
+                entity.HasIndex(e => new { e.TipoDocumento, e.NumeroDocumento })
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0");
+
+                entity.Property(e => e.Sueldo)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.PuntajeRiesgo)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // ConfiguraciÃ³n de Credito
+            modelBuilder.Entity<Credito>(entity =>
+            {
+                entity.HasIndex(e => e.Numero)
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0");
+
+                entity.HasOne(e => e.Cliente)
+                    .WithMany(c => c.Creditos)
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.MontoSolicitado)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.MontoAprobado)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.TasaInteres)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.MontoCuota)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.PuntajeRiesgoInicial)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // ConfiguraciÃ³n de Garante
+            modelBuilder.Entity<Garante>(entity =>
+            {
+                entity.HasOne(e => e.Cliente)
+                    .WithMany(c => c.ComoGarante)
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.GaranteCliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.GaranteClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
             // Seed de datos inicial
             SeedData(modelBuilder);
         }
@@ -317,8 +393,8 @@ namespace TheBuryProject.Data
                 {
                     Id = 1,
                     Codigo = "ELEC",
-                    Nombre = "Electrónica",
-                    Descripcion = "Productos electrónicos",
+                    Nombre = "Electrï¿½nica",
+                    Descripcion = "Productos electrï¿½nicos",
                     ControlSerieDefault = true,
                     Activo = true,
                     CreatedAt = DateTime.UtcNow,
@@ -328,7 +404,7 @@ namespace TheBuryProject.Data
                 {
                     Id = 2,
                     Codigo = "FRIO",
-                    Nombre = "Refrigeración",
+                    Nombre = "Refrigeraciï¿½n",
                     Descripcion = "Heladeras, freezers y aire acondicionado",
                     ControlSerieDefault = true,
                     Activo = true,
@@ -343,7 +419,7 @@ namespace TheBuryProject.Data
                     Id = 1,
                     Codigo = "SAM",
                     Nombre = "Samsung",
-                    Descripcion = "Electrónica y electrodomésticos",
+                    Descripcion = "Electrï¿½nica y electrodomï¿½sticos",
                     PaisOrigen = "Corea del Sur",
                     Activo = true,
                     CreatedAt = DateTime.UtcNow,
@@ -354,7 +430,7 @@ namespace TheBuryProject.Data
                     Id = 2,
                     Codigo = "LG",
                     Nombre = "LG",
-                    Descripcion = "Electrónica y electrodomésticos",
+                    Descripcion = "Electrï¿½nica y electrodomï¿½sticos",
                     PaisOrigen = "Corea del Sur",
                     Activo = true,
                     CreatedAt = DateTime.UtcNow,
@@ -365,7 +441,7 @@ namespace TheBuryProject.Data
                     Id = 3,
                     Codigo = "WHI",
                     Nombre = "Whirlpool",
-                    Descripcion = "Electrodomésticos",
+                    Descripcion = "Electrodomï¿½sticos",
                     PaisOrigen = "Estados Unidos",
                     Activo = true,
                     CreatedAt = DateTime.UtcNow,
@@ -375,7 +451,7 @@ namespace TheBuryProject.Data
         }
 
         /// <summary>
-        /// Interceptor para auditoría automática antes de guardar cambios
+        /// Interceptor para auditorï¿½a automï¿½tica antes de guardar cambios
         /// </summary>
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
