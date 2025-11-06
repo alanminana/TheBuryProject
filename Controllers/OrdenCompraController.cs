@@ -359,7 +359,7 @@ namespace TheBuryProject.Controllers
         // POST: OrdenCompra/Recepcionar/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Recepcionar(int id, List<RecepcionDetalleViewModel> detalles)
+        public async Task<IActionResult> Recepcionar(int id, List<CreditoViewModel> detalles)
         {
             try
             {

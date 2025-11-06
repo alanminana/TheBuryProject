@@ -292,11 +292,11 @@ namespace TheBuryProject.Migrations
                             Activo = true,
                             Codigo = "ELEC",
                             ControlSerieDefault = true,
-                            CreatedAt = new DateTime(2025, 11, 6, 3, 45, 33, 755, DateTimeKind.Utc).AddTicks(6071),
+                            CreatedAt = new DateTime(2025, 11, 6, 4, 20, 26, 819, DateTimeKind.Utc).AddTicks(4774),
                             CreatedBy = "System",
-                            Descripcion = "Productos electr�nicos",
+                            Descripcion = "Productos electrónicos",
                             IsDeleted = false,
-                            Nombre = "Electr�nica"
+                            Nombre = "Electrónica"
                         },
                         new
                         {
@@ -304,11 +304,11 @@ namespace TheBuryProject.Migrations
                             Activo = true,
                             Codigo = "FRIO",
                             ControlSerieDefault = true,
-                            CreatedAt = new DateTime(2025, 11, 6, 3, 45, 33, 755, DateTimeKind.Utc).AddTicks(6073),
+                            CreatedAt = new DateTime(2025, 11, 6, 4, 20, 26, 819, DateTimeKind.Utc).AddTicks(4778),
                             CreatedBy = "System",
                             Descripcion = "Heladeras, freezers y aire acondicionado",
                             IsDeleted = false,
-                            Nombre = "Refrigeraci�n"
+                            Nombre = "Refrigeración"
                         });
                 });
 
@@ -770,9 +770,9 @@ namespace TheBuryProject.Migrations
                             Id = 1,
                             Activo = true,
                             Codigo = "SAM",
-                            CreatedAt = new DateTime(2025, 11, 6, 3, 45, 33, 755, DateTimeKind.Utc).AddTicks(6562),
+                            CreatedAt = new DateTime(2025, 11, 6, 4, 20, 26, 819, DateTimeKind.Utc).AddTicks(4976),
                             CreatedBy = "System",
-                            Descripcion = "Electr�nica y electrodom�sticos",
+                            Descripcion = "Electrónica y electrodomésticos",
                             IsDeleted = false,
                             Nombre = "Samsung",
                             PaisOrigen = "Corea del Sur"
@@ -782,9 +782,9 @@ namespace TheBuryProject.Migrations
                             Id = 2,
                             Activo = true,
                             Codigo = "LG",
-                            CreatedAt = new DateTime(2025, 11, 6, 3, 45, 33, 755, DateTimeKind.Utc).AddTicks(6565),
+                            CreatedAt = new DateTime(2025, 11, 6, 4, 20, 26, 819, DateTimeKind.Utc).AddTicks(5015),
                             CreatedBy = "System",
-                            Descripcion = "Electr�nica y electrodom�sticos",
+                            Descripcion = "Electrónica y electrodomésticos",
                             IsDeleted = false,
                             Nombre = "LG",
                             PaisOrigen = "Corea del Sur"
@@ -794,9 +794,9 @@ namespace TheBuryProject.Migrations
                             Id = 3,
                             Activo = true,
                             Codigo = "WHI",
-                            CreatedAt = new DateTime(2025, 11, 6, 3, 45, 33, 755, DateTimeKind.Utc).AddTicks(6567),
+                            CreatedAt = new DateTime(2025, 11, 6, 4, 20, 26, 819, DateTimeKind.Utc).AddTicks(5017),
                             CreatedBy = "System",
-                            Descripcion = "Electrodom�sticos",
+                            Descripcion = "Electrodomésticos",
                             IsDeleted = false,
                             Nombre = "Whirlpool",
                             PaisOrigen = "Estados Unidos"

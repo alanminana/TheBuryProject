@@ -3,7 +3,7 @@
     /// <summary>
     /// ViewModel para recepcionar un detalle de orden de compra
     /// </summary>
-    public class RecepcionDetalleViewModel
+    public class CreditoViewModel
     {
         public int DetalleId { get; set; }
         public int ProductoId { get; set; }
