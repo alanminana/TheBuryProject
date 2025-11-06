@@ -1,0 +1,635 @@
+﻿📁 /Views/Cliente/Edit.cshtml
+
+@model TheBuryProject.ViewModels.ClienteViewModel
+
+@{
+    ViewData["Title"] = "Editar Cliente";
+}
+
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="bi bi-pencil"></i> Editar Cliente</h2>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="PuntajeRiesgo" />
+            <input type="hidden" asp-for="CreatedAt" />
+            <input type="hidden" asp-for="CreatedBy" />
+            
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <!-- Datos Personales -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-person"></i> Datos Personales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="TipoDocumento" class="form-label"></label>
+                            <select asp-for="TipoDocumento" class="form-select" asp-items="ViewBag.TiposDocumento"></select>
+                            <span asp-validation-for="TipoDocumento" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="NumeroDocumento" class="form-label"></label>
+                            <input asp-for="NumeroDocumento" class="form-control" />
+                            <span asp-validation-for="NumeroDocumento" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="Apellido" class="form-label"></label>
+                            <input asp-for="Apellido" class="form-control" />
+                            <span asp-validation-for="Apellido" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="Nombre" class="form-label"></label>
+                            <input asp-for="Nombre" class="form-control" />
+                            <span asp-validation-for="Nombre" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="FechaNacimiento" class="form-label"></label>
+                            <input asp-for="FechaNacimiento" class="form-control" type="date" />
+                            <span asp-validation-for="FechaNacimiento" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="EstadoCivil" class="form-label"></label>
+                            <select asp-for="EstadoCivil" class="form-select" asp-items="ViewBag.EstadosCiviles">
+                                <option value="">Seleccione...</option>
+                            </select>
+                            <span asp-validation-for="EstadoCivil" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos de Contacto -->
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-telephone"></i> Datos de Contacto</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="Telefono" class="form-label"></label>
+                            <input asp-for="Telefono" class="form-control" />
+                            <span asp-validation-for="Telefono" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="TelefonoAlternativo" class="form-label"></label>
+                            <input asp-for="TelefonoAlternativo" class="form-control" />
+                            <span asp-validation-for="TelefonoAlternativo" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" type="email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Domicilio -->
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Domicilio</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Domicilio" class="form-label"></label>
+                            <input asp-for="Domicilio" class="form-control" />
+                            <span asp-validation-for="Domicilio" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="Localidad" class="form-label"></label>
+                            <input asp-for="Localidad" class="form-control" />
+                            <span asp-validation-for="Localidad" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label asp-for="Provincia" class="form-label"></label>
+                            <select asp-for="Provincia" class="form-select" asp-items="ViewBag.Provincias">
+                                <option value="">Seleccione...</option>
+                            </select>
+                            <span asp-validation-for="Provincia" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-1 mb-3">
+                            <label asp-for="CodigoPostal" class="form-label"></label>
+                            <input asp-for="CodigoPostal" class="form-control" />
+                            <span asp-validation-for="CodigoPostal" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos Laborales -->
+            <div class="card mb-3">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="bi bi-briefcase"></i> Datos Laborales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="Empleador" class="form-label"></label>
+                            <input asp-for="Empleador" class="form-control" />
+                            <span asp-validation-for="Empleador" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="TipoEmpleo" class="form-label"></label>
+                            <select asp-for="TipoEmpleo" class="form-select" asp-items="ViewBag.TiposEmpleo">
+                                <option value="">Seleccione...</option>
+                            </select>
+                            <span asp-validation-for="TipoEmpleo" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label asp-for="Sueldo" class="form-label"></label>
+                            <input asp-for="Sueldo" class="form-control" type="number" step="0.01" />
+                            <span asp-validation-for="Sueldo" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="TelefonoLaboral" class="form-label"></label>
+                            <input asp-for="TelefonoLaboral" class="form-control" />
+                            <span asp-validation-for="TelefonoLaboral" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentación -->
+            <div class="card mb-3">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Documentación</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <div class="form-check">
+                                <input asp-for="TieneReciboSueldo" class="form-check-input" />
+                                <label asp-for="TieneReciboSueldo" class="form-check-label"></label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <div class="form-check">
+                                <input asp-for="TieneVeraz" class="form-check-input" />
+                                <label asp-for="TieneVeraz" class="form-check-label"></label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <div class="form-check">
+                                <input asp-for="TieneImpuesto" class="form-check-input" />
+                                <label asp-for="TieneImpuesto" class="form-check-label"></label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <div class="form-check">
+                                <input asp-for="TieneServicioLuz" class="form-check-input" />
+                                <label asp-for="TieneServicioLuz" class="form-check-label"></label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <div class="form-check">
+                                <input asp-for="TieneServicioGas" class="form-check-input" />
+                                <label asp-for="TieneServicioGas" class="form-check-label"></label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <div class="form-check">
+                                <input asp-for="TieneServicioAgua" class="form-check-input" />
+                                <label asp-for="TieneServicioAgua" class="form-check-label"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-chat-text"></i> Observaciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="Observaciones" class="form-label"></label>
+                            <textarea asp-for="Observaciones" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Observaciones" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input asp-for="Activo" class="form-check-input" />
+                                <label asp-for="Activo" class="form-check-label"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary btn-lg px-4">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary btn-lg px-4">
+                    <i class="bi bi-check-circle"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+1️⃣3️⃣ Details.cshtml (Ver detalles del cliente)
+📁 /Views/Cliente/Details.cshtml
+
+@model TheBuryProject.ViewModels.ClienteViewModel
+
+@{
+    ViewData["Title"] = "Detalles del Cliente";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>
+                <i class="bi bi-person"></i> @Model.NombreCompleto
+            </h2>
+            <div>
+                @if (Model.Activo)
+                {
+                    <a asp-controller="Credito" asp-action="Create" asp-route-clienteId="@Model.Id" class="btn btn-success">
+                        <i class="bi bi-cash-coin"></i> Solicitar Crédito
+                    </a>
+                }
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Estado y Puntaje -->
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div class="card @(Model.Activo ? "border-success" : "border-secondary")">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Estado</h6>
+                        <h3>
+                            @if (Model.Activo)
+                            {
+                                <span class="badge bg-success fs-5">Activo</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary fs-5">Inactivo</span>
+                            }
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card @(Model.PuntajeRiesgo >= 7 ? "border-success" : Model.PuntajeRiesgo >= 4 ? "border-warning" : "border-danger")">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Puntaje de Riesgo</h6>
+                        <h3>
+                            @{
+                                var badgeClass = Model.PuntajeRiesgo >= 7 ? "bg-success" :
+                                                 Model.PuntajeRiesgo >= 4 ? "bg-warning" : "bg-danger";
+                            }
+                            <span class="badge @badgeClass fs-3">@Model.PuntajeRiesgo.ToString("F1")</span>
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Créditos Activos</h6>
+                        <h3>
+                            <span class="badge bg-info fs-3">@Model.CreditosActivos</span>
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card @(Model.TotalAdeudado > 0 ? "border-danger" : "border-success")">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Total Adeudado</h6>
+                        <h3 class="@(Model.TotalAdeudado > 0 ? "text-danger" : "text-success")">
+                            @Model.TotalAdeudado.ToString("C")
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos Personales -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person"></i> Datos Personales</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small fw-semibold">Tipo de Documento</label>
+                        <p class="fw-bold">@Model.TipoDocumento</p>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small fw-semibold">Número de Documento</label>
+                        <p class="fw-bold">@Model.NumeroDocumento</p>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small fw-semibold">Fecha de Nacimiento</label>
+                        <p class="fw-bold">
+                            @if (Model.FechaNacimiento.HasValue)
+                            {
+                                @Model.FechaNacimiento.Value.ToString("dd/MM/yyyy")
+                                @if (Model.Edad.HasValue)
+                                {
+                                    <span class="text-muted">(@Model.Edad años)</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">No especificada</span>
+                            }
+                        </p>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small fw-semibold">Estado Civil</label>
+                        <p class="fw-bold">@(Model.EstadoCivil ?? "-")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos de Contacto -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-telephone"></i> Datos de Contacto</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small fw-semibold">Teléfono</label>
+                        <p class="fw-bold"><i class="bi bi-telephone"></i> @Model.Telefono</p>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small fw-semibold">Teléfono Alternativo</label>
+                        <p class="fw-bold">
+                            @if (!string.IsNullOrEmpty(Model.TelefonoAlternativo))
+                            {
+                                <i class="bi bi-telephone"></i>
+                                @Model.TelefonoAlternativo
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-semibold">Email</label>
+                        <p class="fw-bold">
+                            @if (!string.IsNullOrEmpty(Model.Email))
+                            {
+                                <i class="bi bi-envelope"></i>
+                                <a href="mailto:@Model.Email">@Model.Email</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Domicilio -->
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Domicilio</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-semibold">Dirección</label>
+                        <p class="fw-bold"><i class="bi bi-house"></i> @Model.Domicilio</p>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small fw-semibold">Localidad</label>
+                        <p class="fw-bold">@(Model.Localidad ?? "-")</p>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label text-muted small fw-semibold">Provincia</label>
+                        <p class="fw-bold">@(Model.Provincia ?? "-")</p>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label text-muted small fw-semibold">CP</label>
+                        <p class="fw-bold">@(Model.CodigoPostal ?? "-")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos Laborales -->
+        <div class="card mb-3">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-briefcase"></i> Datos Laborales</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label text-muted small fw-semibold">Empleador</label>
+                        <p class="fw-bold">@(Model.Empleador ?? "-")</p>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small fw-semibold">Tipo de Empleo</label>
+                        <p class="fw-bold">@(Model.TipoEmpleo ?? "-")</p>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label text-muted small fw-semibold">Sueldo</label>
+                        <p class="fw-bold">
+                            @if (Model.Sueldo.HasValue)
+                            {
+                                @Model.Sueldo.Value.ToString("C")
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </p>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted small fw-semibold">Teléfono Laboral</label>
+                        <p class="fw-bold">@(Model.TelefonoLaboral ?? "-")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentación -->
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Documentación Presentada</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        @if (Model.TieneReciboSueldo)
+                        {
+                            <i class="bi bi-check-circle-fill text-success"></i> <strong>Recibo de Sueldo</strong>
+                        }
+                        else
+                        {
+                            <i class="bi bi-x-circle text-muted"></i> <span class="text-muted">Recibo de Sueldo</span>
+                        }
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        @if (Model.TieneVeraz)
+                        {
+                            <i class="bi bi-check-circle-fill text-success"></i> <strong>Veraz</strong>
+                        }
+                        else
+                        {
+                            <i class="bi bi-x-circle text-muted"></i> <span class="text-muted">Veraz</span>
+                        }
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        @if (Model.TieneImpuesto)
+                        {
+                            <i class="bi bi-check-circle-fill text-success"></i> <strong>Impuesto</strong>
+                        }
+                        else
+                        {
+                            <i class="bi bi-x-circle text-muted"></i> <span class="text-muted">Impuesto</span>
+                        }
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        @if (Model.TieneServicioLuz)
+                        {
+                            <i class="bi bi-check-circle-fill text-success"></i> <strong>Servicio de Luz</strong>
+                        }
+                        else
+                        {
+                            <i class="bi bi-x-circle text-muted"></i> <span class="text-muted">Servicio de Luz</span>
+                        }
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        @if (Model.TieneServicioGas)
+                        {
+                            <i class="bi bi-check-circle-fill text-success"></i> <strong>Servicio de Gas</strong>
+                        }
+                        else
+                        {
+                            <i class="bi bi-x-circle text-muted"></i> <span class="text-muted">Servicio de Gas</span>
+                        }
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        @if (Model.TieneServicioAgua)
+                        {
+                            <i class="bi bi-check-circle-fill text-success"></i> <strong>Servicio de Agua</strong>
+                        }
+                        else
+                        {
+                            <i class="bi bi-x-circle text-muted"></i> <span class="text-muted">Servicio de Agua</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observaciones -->
+        @if (!string.IsNullOrEmpty(Model.Observaciones))
+        {
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-chat-text"></i> Observaciones</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">@Model.Observaciones</p>
+                </div>
+            </div>
+        }
+
+        <!-- Auditoría -->
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Información de Auditoría</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-semibold">Creado</label>
+                        <p>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm") 
+                           @if (!string.IsNullOrEmpty(Model.CreatedBy))
+                           {
+                               <span class="text-muted">por @Model.CreatedBy</span>
+                           }
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-semibold">Última Modificación</label>
+                        <p>
+                            @if (Model.UpdatedAt.HasValue)
+                            {
+                                @Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                if (!string.IsNullOrEmpty(Model.UpdatedBy))
+                                {
+                                    <span class="text-muted">por @Model.UpdatedBy</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Acciones</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    @if (Model.Activo)
+                    {
+                        <a asp-controller="Credito" asp-action="Create" asp-route-clienteId="@Model.Id" class="btn btn-success">
+                            <i class="bi bi-cash-coin"></i> Solicitar Crédito
+                        </a>
+                    }
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </a>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al Listado
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

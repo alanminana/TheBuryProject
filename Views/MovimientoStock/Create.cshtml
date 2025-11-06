@@ -1,0 +1,202 @@
+﻿@model TheBuryProject.ViewModels.AjusteStockViewModel
+@using TheBuryProject.Models.Enums
+
+@{
+    ViewData["Title"] = "Ajuste de Stock";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="bi bi-plus-circle"></i> Ajuste de Stock</h2>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-x-circle"></i> @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Información del Ajuste</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="ProductoId" class="form-label"></label>
+                            <select asp-for="ProductoId" class="form-select" asp-items="ViewBag.Productos" id="productoSelect">
+                                <option value="">Seleccione un producto...</option>
+                            </select>
+                            <span asp-validation-for="ProductoId" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <!-- Info del producto -->
+                    <div id="productoInfo" class="alert alert-info" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Código:</strong> <span id="productoCodigo"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Producto:</strong> <span id="productoNombre"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Stock Actual:</strong>
+                                <span id="stockActual" class="badge bg-info fs-6"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Tipo" class="form-label"></label>
+                            <select asp-for="Tipo" class="form-select" id="tipoSelect">
+                                <option value="">Seleccione un tipo...</option>
+                                <option value="@((int)TipoMovimiento.Entrada)">Entrada (Aumenta stock)</option>
+                                <option value="@((int)TipoMovimiento.Salida)">Salida (Disminuye stock)</option>
+                                <option value="@((int)TipoMovimiento.Ajuste)">Ajuste (Establece stock exacto)</option>
+                            </select>
+                            <span asp-validation-for="Tipo" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <strong>Entrada:</strong> Suma al stock actual<br />
+                                <strong>Salida:</strong> Resta del stock actual<br />
+                                <strong>Ajuste:</strong> Establece el stock al valor exacto
+                            </small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Cantidad" class="form-label"></label>
+                            <input asp-for="Cantidad" class="form-control" type="number" step="0.01" min="0" id="cantidadInput" />
+                            <span asp-validation-for="Cantidad" class="text-danger"></span>
+                            <small id="stockResultado" class="form-text"></small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="Referencia" class="form-label"></label>
+                            <input asp-for="Referencia" class="form-control" placeholder="Ej: Factura #12345, Nota de devolución, etc." />
+                            <span asp-validation-for="Referencia" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="Motivo" class="form-label"></label>
+                            <textarea asp-for="Motivo" class="form-control" rows="3"
+                                      placeholder="Describa el motivo del ajuste (requerido)"></textarea>
+                            <span asp-validation-for="Motivo" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> Registrar Ajuste
+                        </button>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        let stockActual = 0;
+
+        // Cuando cambia el producto
+        $('#productoSelect').on('change', async function() {
+            const productoId = $(this).val();
+
+            if (productoId) {
+                try {
+                    const response = await fetch(`/MovimientoStock/GetProductoInfo/${productoId}`);
+                    const data = await response.json();
+
+                    $('#productoCodigo').text(data.codigo || '-');
+                    $('#productoNombre').text(data.nombre);
+                    $('#stockActual').text(data.stockActual);
+                    stockActual = data.stockActual;
+
+                    $('#productoInfo').show();
+                    calcularStockResultante();
+                } catch (error) {
+                    console.error('Error al obtener info del producto:', error);
+                }
+            } else {
+                $('#productoInfo').hide();
+                stockActual = 0;
+            }
+        });
+
+        // Cuando cambia el tipo o cantidad
+        $('#tipoSelect, #cantidadInput').on('change keyup', function() {
+            calcularStockResultante();
+        });
+
+        function calcularStockResultante() {
+            const tipo = $('#tipoSelect').val();
+            const cantidad = parseFloat($('#cantidadInput').val()) || 0;
+            const productoId = $('#productoSelect').val();
+
+            if (!productoId || !tipo || cantidad === 0) {
+                $('#stockResultado').text('');
+                return;
+            }
+
+            let nuevoStock = 0;
+            let mensaje = '';
+            let clase = '';
+
+            switch(tipo) {
+                case '0': // Entrada
+                    nuevoStock = stockActual + cantidad;
+                    mensaje = `Stock resultante: ${nuevoStock.toFixed(2)} (actual: ${stockActual} + ${cantidad})`;
+                    clase = 'text-success';
+                    break;
+                case '1': // Salida
+                    nuevoStock = stockActual - cantidad;
+                    if (nuevoStock < 0) {
+                        mensaje = `⚠️ Stock insuficiente. Stock actual: ${stockActual}`;
+                        clase = 'text-danger';
+                    } else {
+                        mensaje = `Stock resultante: ${nuevoStock.toFixed(2)} (actual: ${stockActual} - ${cantidad})`;
+                        clase = 'text-warning';
+                    }
+                    break;
+                case '2': // Ajuste
+                    nuevoStock = cantidad;
+                    const diferencia = cantidad - stockActual;
+                    mensaje = `Stock se establecerá en: ${nuevoStock.toFixed(2)} (diferencia: ${diferencia >= 0 ? '+' : ''}${diferencia.toFixed(2)})`;
+                    clase = 'text-info';
+                    break;
+            }
+
+            $('#stockResultado').text(mensaje).removeClass('text-success text-danger text-warning text-info').addClass(clase);
+        }
+
+        // Si hay producto pre-seleccionado, cargar su info
+        $(document).ready(function() {
+            const productoIdInicial = $('#productoSelect').val();
+            if (productoIdInicial) {
+                $('#productoSelect').trigger('change');
+            }
+        });
+    </script>
+}

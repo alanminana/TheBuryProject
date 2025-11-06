@@ -2,7 +2,7 @@
 @using TheBuryProject.Models.Enums
 
 @{
-    ViewData["Title"] = "Kardex - " + ViewBag.Producto.Nombre;
+    ViewData["Title"] = "Kardex";
     var producto = ViewBag.Producto as TheBuryProject.Models.Entities.Producto;
 }
 
@@ -10,105 +10,114 @@
     <div class="col-md-12">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2>
-                <i class="bi bi-graph-up"></i> Kardex - @producto.Codigo
+                <i class="bi bi-graph-up"></i> Kardex - @(producto?.Codigo ?? "")
             </h2>
-            <div>
-                <a asp-controller="Producto" asp-action="Details" asp-route-id="@producto.Id" class="btn btn-info">
-                    <i class="bi bi-info-circle"></i> Ver Producto
-                </a>
+            <div class="d-flex gap-2">
+                @if (producto != null)
+                {
+                    <a asp-controller="Producto" asp-action="Details" asp-route-id="@producto.Id" class="btn btn-info">
+                        <i class="bi bi-info-circle"></i> Ver Producto
+                    </a>
+                    <a asp-action="Create" asp-route-productoId="@producto.Id" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Nuevo Ajuste
+                    </a>
+                }
                 <a asp-action="Index" class="btn btn-secondary">
                     <i class="bi bi-arrow-left"></i> Volver
                 </a>
             </div>
         </div>
 
-        <!-- Info del Producto -->
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Información del Producto</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <strong>Código:</strong> @producto.Codigo
-                    </div>
-                    <div class="col-md-3">
-                        <strong>Nombre:</strong> @producto.Nombre
-                    </div>
-                    <div class="col-md-2">
-                        <strong>Stock Actual:</strong>
-                        <span class="badge @(producto.StockActual <= producto.StockMinimo ? "bg-danger" : "bg-success") fs-6">
-                            @producto.StockActual.ToString("N2")
-                        </span>
-                    </div>
-                    <div class="col-md-2">
-                        <strong>Stock Mínimo:</strong> @producto.StockMinimo.ToString("N2")
-                    </div>
-                    <div class="col-md-2">
-                        <strong>Total Movimientos:</strong> @Model.Count()
+        @if (producto != null)
+        {
+            <!-- Información del Producto -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-box-seam"></i> Información del Producto</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Código:</strong> @producto.Codigo
+                        </div>
+                        <div class="col-md-5">
+                            <strong>Nombre:</strong> @producto.Nombre
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Stock Actual:</strong>
+                            <span class="badge @(producto.StockActual <= producto.StockMinimo ? "bg-danger" : "bg-success") fs-6">
+                                @producto.StockActual
+                            </span>
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Stock Mínimo:</strong> @producto.StockMinimo
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        }
 
-        <!-- Kardex -->
+        <!-- Historial de Movimientos -->
         <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Historial de Movimientos</h5>
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Historial de Movimientos (@Model.Count())
+                </h5>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Fecha</th>
-                                <th class="text-center">Tipo</th>
-                                <th class="text-end">Cantidad</th>
-                                <th class="text-end">Stock Anterior</th>
-                                <th class="text-end">Stock Nuevo</th>
-                                <th>Referencia</th>
-                                <th>Motivo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model.Any())
-                            {
+            <div class="card-body p-0">
+                @if (Model.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha y Hora</th>
+                                    <th>Tipo</th>
+                                    <th class="text-end">Cantidad</th>
+                                    <th class="text-end">Stock Anterior</th>
+                                    <th class="text-end">Stock Nuevo</th>
+                                    <th>Referencia</th>
+                                    <th>Motivo</th>
+                                    <th>Usuario</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                 @foreach (var mov in Model)
                                 {
-                                    <tr class="@(mov.Tipo == TipoMovimiento.Entrada ? "table-success" : mov.Tipo == TipoMovimiento.Salida ? "table-danger" : "table-warning")">
+                                    var tipoBadge = mov.Tipo switch
+                                    {
+                                        TipoMovimiento.Entrada => "bg-success",
+                                        TipoMovimiento.Salida => "bg-danger",
+                                        TipoMovimiento.Ajuste => "bg-warning",
+                                        _ => "bg-secondary"
+                                    };
+
+                                    var tipoIcon = mov.Tipo switch
+                                    {
+                                        TipoMovimiento.Entrada => "bi-arrow-down-circle",
+                                        TipoMovimiento.Salida => "bi-arrow-up-circle",
+                                        TipoMovimiento.Ajuste => "bi-gear",
+                                        _ => "bi-question-circle"
+                                    };
+
+                                    <tr>
+                                        <td>@mov.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
                                         <td>
-                                            <small>@mov.Fecha.ToString("dd/MM/yyyy")</small><br />
-                                            <small class="text-muted">@mov.Fecha.ToString("HH:mm:ss")</small>
-                                        </td>
-                                        <td class="text-center">
-                                            @switch (mov.Tipo)
-                                            {
-                                                case TipoMovimiento.Entrada:
-                                                    <span class="badge bg-success"><i class="bi bi-arrow-down"></i> Entrada</span>
-                                                    break;
-                                                case TipoMovimiento.Salida:
-                                                    <span class="badge bg-danger"><i class="bi bi-arrow-up"></i> Salida</span>
-                                                    break;
-                                                case TipoMovimiento.Ajuste:
-                                                    <span class="badge bg-warning"><i class="bi bi-wrench"></i> Ajuste</span>
-                                                    break;
-                                            }
+                                            <span class="badge @tipoBadge">
+                                                <i class="bi @tipoIcon"></i> @mov.Tipo.ToString()
+                                            </span>
                                         </td>
                                         <td class="text-end">
-                                            @if (mov.Tipo == TipoMovimiento.Entrada || (mov.Tipo == TipoMovimiento.Ajuste && mov.Cantidad > 0))
-                                            {
-                                                <span class="text-success fw-bold">+@mov.Cantidad.ToString("N2")</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-danger fw-bold">-@Math.Abs(mov.Cantidad).ToString("N2")</span>
-                                            }
+                                            <strong>@mov.Cantidad</strong>
                                         </td>
-                                        <td class="text-end">@mov.StockAnterior.ToString("N2")</td>
-                                        <td class="text-end"><strong>@mov.StockNuevo.ToString("N2")</strong></td>
+                                        <td class="text-end">@mov.StockAnterior</td>
+                                        <td class="text-end">
+                                            <strong class="text-primary">@mov.StockNuevo</strong>
+                                        </td>
                                         <td>
-                                            <small>
-                                                @if (!string.IsNullOrEmpty(mov.OrdenCompraNumero))
+                                            @if (!string.IsNullOrEmpty(mov.Referencia))
+                                            {
+                                                @if (mov.OrdenCompraId.HasValue)
                                                 {
                                                     <a asp-controller="OrdenCompra" asp-action="Details" asp-route-id="@mov.OrdenCompraId">
                                                         @mov.Referencia
@@ -118,24 +127,45 @@
                                                 {
                                                     @mov.Referencia
                                                 }
-                                            </small>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
                                         </td>
-                                        <td><small>@mov.Motivo</small></td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(mov.Motivo))
+                                            {
+                                                @mov.Motivo
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(mov.CreatedBy))
+                                            {
+                                                <small>@mov.CreatedBy</small>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Sistema</span>
+                                            }
+                                        </td>
                                     </tr>
                                 }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="7" class="text-center py-4">
-                                        <i class="bi bi-inbox display-4 text-muted"></i>
-                                        <p class="text-muted mt-2">No hay movimientos registrados para este producto</p>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p>No hay movimientos registrados para este producto</p>
+                    </div>
+                }
             </div>
         </div>
     </div>

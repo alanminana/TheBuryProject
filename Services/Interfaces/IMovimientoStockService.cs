@@ -19,5 +19,11 @@ namespace TheBuryProject.Services.Interfaces
             DateTime? fechaHasta = null,
             string? orderBy = null,
             string? orderDirection = "desc");
+        Task<MovimientoStock> RegistrarAjusteAsync(
+    int productoId,
+    TipoMovimiento tipo,
+    decimal cantidad,
+    string? referencia,
+    string motivo);
     }
 }

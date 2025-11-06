@@ -85,7 +85,69 @@ namespace TheBuryProject.Services
 
             return movimiento;
         }
+        public async Task<MovimientoStock> RegistrarAjusteAsync(
+            int productoId,
+            TipoMovimiento tipo,
+            decimal cantidad,
+            string? referencia,
+            string motivo)
+        {
+            // Obtener el producto
+            var producto = await _context.Productos.FindAsync(productoId);
+            if (producto == null)
+            {
+                throw new InvalidOperationException("Producto no encontrado");
+            }
 
+            // Validar que no quede en stock negativo para salidas
+            if (tipo == TipoMovimiento.Salida && producto.StockActual < cantidad)
+            {
+                throw new InvalidOperationException(
+                    $"Stock insuficiente. Stock actual: {producto.StockActual}, cantidad solicitada: {cantidad}");
+            }
+
+            var stockAnterior = producto.StockActual;
+
+            // Calcular nuevo stock según el tipo de movimiento
+            switch (tipo)
+            {
+                case TipoMovimiento.Entrada:
+                    producto.StockActual += cantidad;
+                    break;
+                case TipoMovimiento.Salida:
+                    producto.StockActual -= cantidad;
+                    break;
+                case TipoMovimiento.Ajuste:
+                    // Para ajustes, la cantidad representa el nuevo stock total
+                    producto.StockActual = cantidad;
+                    break;
+            }
+
+            // Crear el movimiento
+            var movimiento = new MovimientoStock
+            {
+                ProductoId = productoId,
+                Tipo = tipo,
+                Cantidad = tipo == TipoMovimiento.Ajuste
+                    ? cantidad - stockAnterior  // Para ajustes, guardamos la diferencia
+                    : cantidad,
+                StockAnterior = stockAnterior,
+                StockNuevo = producto.StockActual,
+                Referencia = referencia,
+                Motivo = motivo,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = "System" // TODO: Obtener usuario actual
+            };
+
+            _context.MovimientosStock.Add(movimiento);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Ajuste de stock registrado: Producto {ProductoId}, Tipo {Tipo}, Cantidad {Cantidad}",
+                productoId, tipo, cantidad);
+
+            return movimiento;
+        }
         public async Task<IEnumerable<MovimientoStock>> SearchAsync(
             int? productoId = null,
             TipoMovimiento? tipo = null,

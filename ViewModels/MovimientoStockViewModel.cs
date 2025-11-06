@@ -45,18 +45,11 @@ namespace TheBuryProject.ViewModels
 
         [Display(Name = "Fecha")]
         public DateTime Fecha { get; set; }
-    }
 
-    public class MovimientoStockFilterViewModel
-    {
-        public int? ProductoId { get; set; }
-        public TipoMovimiento? Tipo { get; set; }
-        public DateTime? FechaDesde { get; set; }
-        public DateTime? FechaHasta { get; set; }
-        public string? OrderBy { get; set; }
-        public string? OrderDirection { get; set; } = "desc";
+        [Display(Name = "Creado")]
+        public DateTime CreatedAt { get; set; }
 
-        public IEnumerable<MovimientoStockViewModel> Movimientos { get; set; } = new List<MovimientoStockViewModel>();
-        public int TotalResultados { get; set; }
+        [Display(Name = "Creado por")]
+        public string? CreatedBy { get; set; }
     }
 }

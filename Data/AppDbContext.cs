@@ -259,6 +259,7 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
             // Configuración de MovimientoStock
+            // Configuración de MovimientoStock
             modelBuilder.Entity<MovimientoStock>(entity =>
             {
                 entity.HasOne(e => e.Producto)
@@ -284,6 +285,23 @@ namespace TheBuryProject.Data
                     .IsRowVersion();
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+            // MovimientoStock
+            modelBuilder.Entity<MovimientoStock>(entity =>
+            {
+                entity.Property(e => e.Cantidad).HasPrecision(18, 2);
+                entity.Property(e => e.StockAnterior).HasPrecision(18, 2);
+                entity.Property(e => e.StockNuevo).HasPrecision(18, 2);
+
+                entity.HasOne(e => e.Producto)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.OrdenCompra)
+                    .WithMany()
+                    .HasForeignKey(e => e.OrdenCompraId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
             // Seed de datos inicial
             SeedData(modelBuilder);
