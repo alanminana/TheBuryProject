@@ -390,35 +390,62 @@
         let datosCreditoCalculados = null;
 
         $(document).ready(function () {
+            console.log('=== INICIANDO SCRIPT DE VENTA ===');
+
             cargarTarjetas();
 
             // Inicializar fecha primera cuota
             let fechaInicial = new Date();
             fechaInicial.setMonth(fechaInicial.getMonth() + 1);
             $('#fechaPrimeraCuota').val(fechaInicial.toISOString().split('T')[0]);
+            console.log('Fecha primera cuota inicial:', $('#fechaPrimeraCuota').val());
 
             // Mostrar/ocultar secciones según tipo de pago
             $('#tipoPagoSelect').on('change', function () {
                 const tipoPago = $(this).val();
+                console.log('=== CAMBIO TIPO DE PAGO ===');
+                console.log('Tipo de pago seleccionado:', tipoPago);
+                console.log('Tipo:', typeof tipoPago);
 
+                // Ocultar todas las secciones
                 $('#creditoRow, #tarjetaRow, #chequeRow').hide();
                 $('#resultadoCreditoDiv, #advertenciaCreditoDiv').hide();
 
-                if (tipoPago === '5') { // CreditoPersonal
+                if (tipoPago === 'CreditoPersonal') { // CAMBIO AQUÍ
+                    console.log('>>> ES CREDITO PERSONAL - Mostrando sección');
                     $('#creditoRow').show();
-                    cargarCreditosCliente();
-                } else if (tipoPago === '2' || tipoPago === '3') { // Tarjeta
+
+                    const clienteId = $('#clienteSelect').val();
+                    console.log('Cliente seleccionado:', clienteId);
+
+                    if (clienteId) {
+                        cargarCreditosCliente();
+                    } else {
+                        console.warn('No hay cliente seleccionado');
+                        $('#creditoSelect').html('<option value="">Primero seleccione un cliente</option>');
+                    }
+                } else if (tipoPago === 'TarjetaDebito' || tipoPago === 'TarjetaCredito') { // CAMBIO AQUÍ
+                    console.log('>>> ES TARJETA - Mostrando sección');
                     $('#tarjetaRow').show();
-                } else if (tipoPago === '4') { // Cheque
+                } else if (tipoPago === 'Cheque') { // CAMBIO AQUÍ
+                    console.log('>>> ES CHEQUE - Mostrando sección');
                     $('#chequeRow').show();
                     $('#chequeFechaEmision').val(new Date().toISOString().split('T')[0]);
+                } else {
+                    console.log('>>> OTRO TIPO DE PAGO:', tipoPago);
                 }
             });
 
             // Cargar créditos cuando cambia el cliente
             $('#clienteSelect').on('change', function () {
+                const clienteId = $(this).val();
                 const tipoPago = $('#tipoPagoSelect').val();
-                if (tipoPago === '5') {
+                console.log('=== CAMBIO CLIENTE ===');
+                console.log('Cliente:', clienteId);
+                console.log('Tipo pago actual:', tipoPago);
+
+                if (tipoPago === 'CreditoPersonal') { // CAMBIO AQUÍ
+                    console.log('>>> Cargando créditos del cliente');
                     cargarCreditosCliente();
                 }
             });
@@ -426,9 +453,14 @@
             // Cuando se selecciona un crédito
             $('#creditoSelect').on('change', function () {
                 const creditoId = $(this).val();
+                console.log('=== CAMBIO CREDITO ===');
+                console.log('Crédito seleccionado:', creditoId);
+
                 if (creditoId) {
+                    console.log('>>> Cargando info del crédito');
                     cargarInfoCredito(creditoId);
                 } else {
+                    console.log('>>> Sin crédito seleccionado - ocultando secciones');
                     $('#infoCreditoDiv, #resultadoCreditoDiv, #advertenciaCreditoDiv').hide();
                     creditoSeleccionado = null;
                 }
@@ -437,11 +469,14 @@
             // Usar total de la venta en monto a financiar
             $('#btnUsarTotalVenta').on('click', function () {
                 const total = parseFloat($('#hiddenTotal').val()) || 0;
+                console.log('=== USAR TOTAL VENTA ===');
+                console.log('Total de la venta:', total);
                 $('#montoFinanciar').val(total.toFixed(2));
             });
 
             // Calcular crédito personal
             $('#btnCalcularCredito').on('click', function () {
+                console.log('=== BOTÓN CALCULAR CREDITO CLICKEADO ===');
                 calcularCreditoPersonal();
             });
 
@@ -483,8 +518,12 @@
             // Validar antes de enviar el formulario
             $('#formVenta').on('submit', function (e) {
                 const tipoPago = $('#tipoPagoSelect').val();
+                console.log('=== SUBMIT FORMULARIO ===');
+                console.log('Tipo de pago:', tipoPago);
 
-                if (tipoPago === '5') { // Crédito Personal
+                if (tipoPago === 'CreditoPersonal') { // CAMBIO AQUÍ
+                    console.log('Datos de crédito calculados:', datosCreditoCalculados);
+
                     if (!datosCreditoCalculados) {
                         e.preventDefault();
                         alert('Debe calcular el plan de financiamiento antes de guardar la venta');
@@ -492,16 +531,22 @@
                     }
 
                     // Guardar datos en campo oculto
-                    $('#hiddenDatosCreditoJson').val(JSON.stringify(datosCreditoCalculados));
+                    const jsonString = JSON.stringify(datosCreditoCalculados);
+                    console.log('JSON a enviar:', jsonString);
+                    $('#hiddenDatosCreditoJson').val(jsonString);
                 }
 
                 return true;
             });
+
+            console.log('=== SCRIPT INICIALIZADO CORRECTAMENTE ===');
         });
 
         function cargarTarjetas() {
+            console.log('>>> Cargando tarjetas activas...');
             $.get('@Url.Action("GetTarjetasActivas", "Venta")')
                 .done(function (tarjetas) {
+                    console.log('Tarjetas cargadas:', tarjetas);
                     tarjetasConfig = tarjetas;
                     let options = '<option value="">Seleccione tarjeta...</option>';
                     tarjetas.forEach(function (tarjeta) {
@@ -509,46 +554,72 @@
                     });
                     $('#tarjetaSelect').html(options);
                 })
-                .fail(function () {
-                    console.error('Error al cargar tarjetas');
+                .fail(function (xhr, status, error) {
+                    console.error('ERROR al cargar tarjetas:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
                 });
         }
 
         function cargarCreditosCliente() {
             const clienteId = $('#clienteSelect').val();
+            console.log('>>> Cargando créditos del cliente:', clienteId);
+
             if (!clienteId) {
+                console.warn('No hay cliente seleccionado');
                 $('#creditoSelect').html('<option value="">Primero seleccione un cliente</option>');
                 return;
             }
 
+            console.log('Llamando a GetCreditosCliente...');
             $.get('@Url.Action("GetCreditosCliente", "Venta")', { clienteId: clienteId })
                 .done(function (creditos) {
+                    console.log('Créditos recibidos:', creditos);
+                    console.log('Cantidad de créditos:', creditos.length);
+
                     let options = '<option value="">Seleccione un crédito...</option>';
                     creditos.forEach(function (credito) {
+                        console.log('  - Crédito:', credito);
                         options += `<option value="${credito.id}">${credito.detalle}</option>`;
                     });
                     $('#creditoSelect').html(options);
 
                     if (creditos.length === 0) {
+                        console.warn('No hay créditos disponibles para este cliente');
                         $('#creditoSelect').html('<option value="">No hay créditos disponibles</option>');
                     }
                 })
-                .fail(function () {
+                .fail(function (xhr, status, error) {
+                    console.error('ERROR al cargar créditos:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
                     alert('Error al cargar los créditos del cliente');
                 });
         }
 
         function cargarInfoCredito(creditoId) {
-            $.get('@Url.Action("GetCreditosCliente", "Venta")', { clienteId: $('#clienteSelect').val() })
-                .done(function (creditos) {
-                    creditoSeleccionado = creditos.find(c => c.id == creditoId);
-                    if (creditoSeleccionado) {
-                        $('#lblCreditoTotal').text('$' + creditoSeleccionado.saldoPendiente.toFixed(2));
-                        $('#lblCreditoDisponible').text('$' + creditoSeleccionado.saldoPendiente.toFixed(2));
+            console.log('>>> Cargando info del crédito:', creditoId);
+
+            $.get('@Url.Action("GetInfoCredito", "Venta")', { creditoId: creditoId })
+                .done(function (credito) {
+                    console.log('Info de crédito recibida:', credito);
+
+                    if (credito) {
+                        creditoSeleccionado = credito;
+                        $('#lblCreditoTotal').text('$' + credito.montoAprobado.toFixed(2));
+                        $('#lblCreditoDisponible').text('$' + credito.saldoPendiente.toFixed(2));
+                        $('#lblTasaCredito').text(credito.tasaInteres.toFixed(2) + '%');
                         $('#infoCreditoDiv').show();
+                        console.log('Sección de info crédito mostrada');
+                        console.log('Crédito Total:', credito.montoAprobado);
+                        console.log('Disponible:', credito.saldoPendiente);
+                        console.log('Tasa:', credito.tasaInteres);
                     }
                 })
-                .fail(function () {
+                .fail(function (xhr, status, error) {
+                    console.error('ERROR al cargar info del crédito:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
                     alert('Error al cargar información del crédito');
                 });
         }
@@ -558,6 +629,12 @@
             const monto = parseFloat($('#montoFinanciar').val()) || 0;
             const cuotas = parseInt($('#cantidadCuotasCredito').val()) || 1;
             const fechaPrimera = $('#fechaPrimeraCuota').val();
+
+            console.log('=== CALCULAR CREDITO PERSONAL ===');
+            console.log('Crédito ID:', creditoId);
+            console.log('Monto:', monto);
+            console.log('Cuotas:', cuotas);
+            console.log('Fecha primera cuota:', fechaPrimera);
 
             if (!creditoId) {
                 alert('Debe seleccionar un crédito');
@@ -577,6 +654,7 @@
             // Mostrar loading
             $('#btnCalcularCredito').prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Calculando...');
 
+            console.log('Llamando a CalcularCreditoPersonal...');
             $.get('@Url.Action("CalcularCreditoPersonal", "Venta")', {
                 creditoId: creditoId,
                 monto: monto,
@@ -584,6 +662,7 @@
                 fechaPrimeraCuota: fechaPrimera
             })
             .done(function (resultado) {
+                console.log('Resultado del cálculo:', resultado);
                 datosCreditoCalculados = resultado;
 
                 // Mostrar resultados
@@ -615,15 +694,22 @@
 
                 // Verificar si excede
                 if (resultado.saldoRestante < 0) {
+                    console.warn('El monto excede el crédito disponible');
                     $('#advertenciaCreditoDiv').show();
                     $('#msgAdvertenciaCredito').text(
                         `Necesita $${Math.abs(resultado.saldoRestante).toFixed(2)} adicionales.`
                     );
                 }
+
+                console.log('Cálculo completado exitosamente');
             })
-            .fail(function (xhr) {
-                const error = xhr.responseJSON?.error || 'Error al calcular el crédito';
-                alert(error);
+            .fail(function (xhr, status, error) {
+                console.error('ERROR al calcular crédito:', error);
+                console.error('Status:', status);
+                console.error('Response:', xhr.responseText);
+
+                const errorMsg = xhr.responseJSON?.error || 'Error al calcular el crédito';
+                alert(errorMsg);
                 $('#resultadoCreditoDiv, #tablaCuotasDiv').hide();
             })
             .always(function () {

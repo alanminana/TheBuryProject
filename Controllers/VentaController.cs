@@ -677,11 +677,14 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: API endpoint para obtener créditos disponibles del cliente
+        // GET: API endpoint para obtener créditos disponibles del cliente
         [HttpGet]
         public async Task<IActionResult> GetCreditosCliente(int clienteId)
         {
             try
             {
+                _logger.LogInformation("Obteniendo créditos para cliente {ClienteId}", clienteId);
+
                 var creditos = await _context.Creditos
                     .Where(c => c.ClienteId == clienteId
                              && c.Estado == EstadoCredito.Activo
@@ -691,10 +694,14 @@ namespace TheBuryProject.Controllers
                     {
                         id = c.Id,
                         numero = c.Numero,
+                        montoAprobado = c.MontoAprobado,
                         saldoPendiente = c.SaldoPendiente,
+                        tasaInteres = c.TasaInteres,
                         detalle = $"{c.Numero} - Saldo disponible: ${c.SaldoPendiente:N2}"
                     })
                     .ToListAsync();
+
+                _logger.LogInformation("Se encontraron {Count} créditos para cliente {ClienteId}", creditos.Count, clienteId);
 
                 return Json(creditos);
             }
@@ -702,6 +709,44 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al obtener créditos del cliente: {ClienteId}", clienteId);
                 return StatusCode(500, "Error al obtener los créditos del cliente");
+            }
+        }
+
+        // GET: API endpoint para obtener información completa de un crédito
+        [HttpGet]
+        public async Task<IActionResult> GetInfoCredito(int creditoId)
+        {
+            try
+            {
+                _logger.LogInformation("Obteniendo información del crédito {CreditoId}", creditoId);
+
+                var credito = await _context.Creditos
+                    .Where(c => c.Id == creditoId && c.Estado == EstadoCredito.Activo)
+                    .Select(c => new
+                    {
+                        id = c.Id,
+                        numero = c.Numero,
+                        montoAprobado = c.MontoAprobado,
+                        saldoPendiente = c.SaldoPendiente,
+                        tasaInteres = c.TasaInteres
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (credito == null)
+                {
+                    _logger.LogWarning("Crédito {CreditoId} no encontrado", creditoId);
+                    return NotFound(new { error = "Crédito no encontrado" });
+                }
+
+                _logger.LogInformation("Crédito {CreditoId} encontrado: {Numero}, Saldo: {Saldo}",
+                    creditoId, credito.numero, credito.saldoPendiente);
+
+                return Json(credito);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener información del crédito: {CreditoId}", creditoId);
+                return StatusCode(500, new { error = "Error al obtener información del crédito" });
             }
         }
 

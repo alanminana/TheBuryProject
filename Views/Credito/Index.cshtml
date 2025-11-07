@@ -1,21 +1,17 @@
-﻿@model List<TheBuryProject.ViewModels.ConfiguracionPagoViewModel>
+﻿@model List<TheBuryProject.ViewModels.CreditoViewModel>
 
 @{
-    ViewData["Title"] = "Configuración de Tipos de Pago";
+    ViewData["Title"] = "Créditos";
+    var filter = ViewBag.Filter as TheBuryProject.ViewModels.CreditoFilterViewModel;
 }
 
 <div class="row">
     <div class="col-md-12">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2><i class="bi bi-gear"></i> @ViewData["Title"]</h2>
+            <h2><i class="bi bi-credit-card"></i> @ViewData["Title"]</h2>
             <a asp-action="Create" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nueva Configuración
+                <i class="bi bi-plus-circle"></i> Nuevo Crédito
             </a>
-        </div>
-
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i>
-            <strong>Información:</strong> Configure aquí los tipos de pago disponibles, descuentos, recargos y condiciones especiales.
         </div>
 
         @if (TempData["Success"] != null)
@@ -34,137 +30,165 @@
             </div>
         }
 
-        <div class="row">
-            @if (Model.Any())
-            {
-                @foreach (var config in Model)
+        @if (TempData["Warning"] != null)
+        {
+            <div class="alert alert-warning alert-dismissible fade show">
+                <i class="bi bi-exclamation-triangle"></i> @TempData["Warning"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Filtros -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <form asp-action="Index" method="get">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label">Cliente</label>
+                            <input type="text" name="Cliente" class="form-control" value="@filter?.Cliente" placeholder="Nombre o documento..." />
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Estado</label>
+                            <select name="Estado" class="form-select">
+                                <option value="">Todos</option>
+                                @foreach (var estado in Enum.GetValues(typeof(TheBuryProject.Models.Enums.EstadoCredito)))
+                                {
+                                    <option value="@estado" selected="@(filter?.Estado?.ToString() == estado.ToString())">@estado</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Número</label>
+                            <input type="text" name="Numero" class="form-control" value="@filter?.Numero" placeholder="CRE-..." />
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Fecha Desde</label>
+                            <input type="date" name="FechaDesde" class="form-control" value="@filter?.FechaDesde?.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Fecha Hasta</label>
+                            <input type="date" name="FechaHasta" class="form-control" value="@filter?.FechaHasta?.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-1 mb-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de Créditos -->
+        <div class="card">
+            <div class="card-body">
+                @if (Model.Any())
                 {
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100 @(!config.Activo ? "border-danger" : "")">
-                            <div class="card-header @(config.Activo ? "bg-primary text-white" : "bg-secondary text-white")">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">
-                                        <i class="bi bi-cash-coin"></i> @config.TipoPago
-                                    </h5>
-                                    @if (config.Activo)
-                                    {
-                                        <span class="badge bg-success">Activo</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-danger">Inactivo</span>
-                                    }
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <h6 class="card-title">@config.Nombre</h6>
-                                @if (!string.IsNullOrEmpty(config.Descripcion))
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Cliente</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Monto Aprobado</th>
+                                    <th class="text-end">Saldo Pendiente</th>
+                                    <th>Cuotas</th>
+                                    <th>Fecha Aprobación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var credito in Model)
                                 {
-                                    <p class="card-text text-muted small">@config.Descripcion</p>
-                                }
-
-                                <hr />
-
-                                <div class="mb-2">
-                                    @if (config.PermiteDescuento)
-                                    {
-                                        <span class="badge bg-info">
-                                            <i class="bi bi-tag"></i> Descuento hasta @config.PorcentajeDescuentoMaximo%
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-light text-dark">
-                                            <i class="bi bi-tag"></i> Sin descuento
-                                        </span>
-                                    }
-                                </div>
-
-                                <div class="mb-2">
-                                    @if (config.TieneRecargo)
-                                    {
-                                        <span class="badge bg-warning text-dark">
-                                            <i class="bi bi-percent"></i> Recargo @config.PorcentajeRecargo%
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-light text-dark">
-                                            <i class="bi bi-percent"></i> Sin recargo
-                                        </span>
-                                    }
-                                </div>
-
-                                @if (config.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaCredito ||
-                                                        config.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaDebito)
-                                {
-                                    <div class="mt-3">
-                                        <strong>Tarjetas configuradas:</strong>
-                                        @if (config.ConfiguracionesTarjeta.Any())
-                                        {
-                                            <ul class="list-unstyled mt-2">
-                                                @foreach (var tarjeta in config.ConfiguracionesTarjeta.Take(3))
-                                                {
-                                                    <li>
-                                                        <small>
-                                                            <i class="bi bi-credit-card"></i> @tarjeta.NombreTarjeta
-                                                            @if (tarjeta.Activa)
-                                                            {
-                                                                <span class="text-success">✓</span>
-                                                            }
-                                                            else
-                                                            {
-                                                                <span class="text-danger">✗</span>
-                                                            }
-                                                        </small>
-                                                    </li>
-                                                }
-                                            </ul>
-                                            @if (config.ConfiguracionesTarjeta.Count > 3)
+                                    <tr>
+                                        <td>
+                                            <strong>@credito.Numero</strong>
+                                        </td>
+                                        <td>@credito.ClienteNombre</td>
+                                        <td>
+                                            @switch (credito.Estado)
                                             {
-                                                <small class="text-muted">+ @(config.ConfiguracionesTarjeta.Count - 3) más</small>
+                                                case TheBuryProject.Models.Enums.EstadoCredito.Solicitado:
+                                                    <span class="badge bg-warning text-dark">Solicitado</span>
+                                                    break;
+                                                case TheBuryProject.Models.Enums.EstadoCredito.Aprobado:
+                                                    <span class="badge bg-success">Aprobado</span>
+                                                    break;
+                                                case TheBuryProject.Models.Enums.EstadoCredito.Rechazado:
+                                                    <span class="badge bg-danger">Rechazado</span>
+                                                    break;
+                                                case TheBuryProject.Models.Enums.EstadoCredito.Activo:
+                                                    <span class="badge bg-primary">Activo</span>
+                                                    break;
+                                                case TheBuryProject.Models.Enums.EstadoCredito.Finalizado:
+                                                    <span class="badge bg-secondary">Finalizado</span>
+                                                    break;
+                                                case TheBuryProject.Models.Enums.EstadoCredito.Cancelado:
+                                                    <span class="badge bg-dark">Cancelado</span>
+                                                    break;
                                             }
-                                        }
-                                        else
-                                        {
-                                            <p class="text-muted small mb-0">Sin tarjetas configuradas</p>
-                                        }
-                                    </div>
+                                        </td>
+                                        <td class="text-end">@credito.MontoAprobado.ToString("C2")</td>
+                                        <td class="text-end">
+                                            <strong class="@(credito.SaldoPendiente > 0 ? "text-success" : "text-muted")">
+                                                @credito.SaldoPendiente.ToString("C2")
+                                            </strong>
+                                        </td>
+                                        <td>@credito.CantidadCuotas</td>
+                                        <td>@credito.FechaAprobacion?.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a asp-action="Details" asp-route-id="@credito.Id" class="btn btn-outline-primary" title="Ver detalles">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                @if (credito.Estado == TheBuryProject.Models.Enums.EstadoCredito.Solicitado)
+                                                {
+                                                    <a asp-action="Edit" asp-route-id="@credito.Id" class="btn btn-outline-warning" title="Editar">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
                                 }
-                            </div>
-                            <div class="card-footer bg-transparent">
-                                <div class="btn-group w-100">
-                                    <a asp-action="Details" asp-route-id="@config.Id" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i> Ver
-                                    </a>
-                                    <a asp-action="Edit" asp-route-id="@config.Id" class="btn btn-sm btn-outline-warning">
-                                        <i class="bi bi-pencil"></i> Editar
-                                    </a>
-                                    @if (config.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaCredito ||
-                                                                config.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaDebito)
-                                    {
-                                        <a asp-action="ConfigurarTarjeta" asp-route-configuracionPagoId="@config.Id" class="btn btn-sm btn-outline-info">
-                                            <i class="bi bi-credit-card"></i> Tarjetas
-                                        </a>
-                                    }
-                                </div>
-                            </div>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            <strong>Total de créditos:</strong> @Model.Count
+                        </div>
+                        <div>
+                            <strong>Saldo total disponible:</strong>
+                            <span class="text-success">
+                                @Model.Where(c => c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Activo).Sum(c => c.SaldoPendiente).ToString("C2")
+                            </span>
                         </div>
                     </div>
                 }
-            }
-            else
-            {
-                <div class="col-12">
-                    <div class="alert alert-warning text-center">
-                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-                        <p class="mt-2">No hay configuraciones de pago. Comience creando una nueva.</p>
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+                        <h5 class="text-muted mt-3">No se encontraron créditos</h5>
+                        <p class="text-muted">
+                            @if (filter != null && (!string.IsNullOrEmpty(filter.Cliente) || !string.IsNullOrEmpty(filter.Numero) || filter.Estado.HasValue))
+                            {
+                                <span>No hay créditos que coincidan con los filtros aplicados.</span>
+                            }
+                            else
+                            {
+                                <span>Aún no hay créditos registrados. Comience creando uno nuevo.</span>
+                            }
+                        </p>
                         <a asp-action="Create" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Crear Primera Configuración
+                            <i class="bi bi-plus-circle"></i> Crear Primer Crédito
                         </a>
                     </div>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
 </div>
