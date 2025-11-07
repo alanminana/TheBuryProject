@@ -1,21 +1,27 @@
 ﻿@model TheBuryProject.ViewModels.CreditoViewModel
 
 @{
-    ViewData["Title"] = "Nuevo Crédito";
+    ViewData["Title"] = "Nueva Línea de Crédito";
 }
 
 <div class="row">
     <div class="col-md-12">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2><i class="bi bi-plus-circle"></i> Nuevo Crédito</h2>
+            <h2><i class="bi bi-credit-card"></i> Nueva Línea de Crédito</h2>
             <a asp-action="Index" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Volver
             </a>
         </div>
 
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            <strong>Línea de Crédito:</strong> Se asigna un monto disponible que el cliente puede usar para realizar compras.
+            Las cuotas se generan automáticamente cuando el cliente realiza una compra usando este crédito.
+        </div>
+
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Datos del Crédito</h5>
+                <h5 class="mb-0">Datos de la Línea de Crédito</h5>
             </div>
             <div class="card-body">
                 <form asp-action="Create" method="post">
@@ -23,66 +29,40 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label asp-for="ClienteId" class="form-label"></label>
-                            <select asp-for="ClienteId" class="form-select" asp-items="ViewBag.Clientes">
+                            <label asp-for="ClienteId" class="form-label">Cliente *</label>
+                            <select asp-for="ClienteId" class="form-select" asp-items="ViewBag.Clientes" required>
                                 <option value="">Seleccione un cliente...</option>
                             </select>
                             <span asp-validation-for="ClienteId" class="text-danger"></span>
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label asp-for="Numero" class="form-label"></label>
-                            <input asp-for="Numero" class="form-control" />
-                            <span asp-validation-for="Numero" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label asp-for="MontoSolicitado" class="form-label"></label>
-                            <input asp-for="MontoSolicitado" class="form-control" type="number" step="0.01" />
+                            <label asp-for="MontoSolicitado" class="form-label">Monto del Crédito (Límite) *</label>
+                            <input asp-for="MontoSolicitado" class="form-control" type="number" step="0.01" min="0" required />
+                            <small class="form-text text-muted">Monto total que el cliente puede usar para compras</small>
                             <span asp-validation-for="MontoSolicitado" class="text-danger"></span>
                         </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label asp-for="CantidadCuotas" class="form-label"></label>
-                            <select asp-for="CantidadCuotas" class="form-select">
-                                <option value="3">3 cuotas</option>
-                                <option value="6">6 cuotas</option>
-                                <option value="12">12 cuotas</option>
-                                <option value="18">18 cuotas</option>
-                                <option value="24">24 cuotas</option>
-                                <option value="36">36 cuotas</option>
-                            </select>
-                            <span asp-validation-for="CantidadCuotas" class="text-danger"></span>
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label asp-for="TasaInteres" class="form-label"></label>
-                            <input asp-for="TasaInteres" class="form-control" type="number" step="0.01" />
-                            <small class="form-text text-muted">Tasa nominal mensual (ejemplo: 0.05 = 5%)</small>
-                            <span asp-validation-for="TasaInteres" class="text-danger"></span>
-                        </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label asp-for="FechaPrimeraCuota" class="form-label"></label>
-                            <input asp-for="FechaPrimeraCuota" class="form-control" type="date" />
-                            <span asp-validation-for="FechaPrimeraCuota" class="text-danger"></span>
+                            <label asp-for="TasaInteres" class="form-label">Tasa de Interés Mensual (%) *</label>
+                            <input asp-for="TasaInteres" class="form-control" type="number" step="0.01" min="0" max="100" required />
+                            <small class="form-text text-muted">Ejemplo: 5.00 = 5% mensual. Se aplicará a todas las compras con cuotas.</small>
+                            <span asp-validation-for="TasaInteres" class="text-danger"></span>
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <div class="form-check mt-4">
-                                <input asp-for="RequiereGarante" class="form-check-input" type="checkbox" />
-                                <label asp-for="RequiereGarante" class="form-check-label"></label>
+                            <div class="form-check mt-4 pt-2">
+                                <input asp-for="RequiereGarante" class="form-check-input" type="checkbox" id="chkRequiereGarante" />
+                                <label asp-for="RequiereGarante" class="form-check-label">Requiere Garante</label>
                             </div>
                         </div>
                     </div>
 
                     <div class="row" id="garanteSection" style="display: none;">
                         <div class="col-md-12 mb-3">
-                            <label asp-for="GaranteId" class="form-label"></label>
+                            <label asp-for="GaranteId" class="form-label">Garante</label>
                             <select asp-for="GaranteId" class="form-select" asp-items="ViewBag.Garantes">
                                 <option value="">Seleccione un garante...</option>
                             </select>
@@ -91,11 +71,29 @@
                     </div>
 
                     <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="Observaciones" class="form-label">Observaciones</label>
+                            <textarea asp-for="Observaciones" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Observaciones" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="alert alert-warning">
+                                <strong>Nota importante:</strong> La cantidad de cuotas y la fecha de inicio de pago se definirán cuando el cliente realice una compra usando este crédito.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-12">
                             <div class="d-flex justify-content-end gap-2">
-                                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                                <a asp-action="Index" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
                                 <button type="submit" class="btn btn-success">
-                                    <i class="bi bi-save"></i> Guardar Crédito
+                                    <i class="bi bi-save"></i> Crear Línea de Crédito
                                 </button>
                             </div>
                         </div>
@@ -107,12 +105,10 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
     <script>
         $(document).ready(function () {
-            $('#RequiereGarante').change(function () {
+            $('#chkRequiereGarante').on('change', function () {
                 if ($(this).is(':checked')) {
                     $('#garanteSection').show();
                 } else {
@@ -121,8 +117,7 @@
                 }
             });
 
-            // Trigger on page load
-            if ($('#RequiereGarante').is(':checked')) {
+            if ($('#chkRequiereGarante').is(':checked')) {
                 $('#garanteSection').show();
             }
         });

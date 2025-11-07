@@ -678,16 +678,31 @@ namespace TheBuryProject.Controllers
 
         // GET: API endpoint para obtener créditos disponibles del cliente
         // GET: API endpoint para obtener créditos disponibles del cliente
+        // GET: API endpoint para obtener créditos disponibles del cliente
         [HttpGet]
         public async Task<IActionResult> GetCreditosCliente(int clienteId)
         {
             try
             {
-                _logger.LogInformation("Obteniendo créditos para cliente {ClienteId}", clienteId);
+                _logger.LogInformation("=== OBTENIENDO CREDITOS PARA CLIENTE {ClienteId} ===", clienteId);
 
+                // Primero obtener TODOS los créditos del cliente para ver qué hay
+                var todosCreditosCliente = await _context.Creditos
+                    .Where(c => c.ClienteId == clienteId)
+                    .ToListAsync();
+
+                _logger.LogInformation("Total de créditos del cliente (sin filtros): {Count}", todosCreditosCliente.Count);
+
+                foreach (var c in todosCreditosCliente)
+                {
+                    _logger.LogInformation("  - Crédito {Numero}: Estado={Estado}, SaldoPendiente={Saldo}, MontoAprobado={Monto}",
+                        c.Numero, c.Estado, c.SaldoPendiente, c.MontoAprobado);
+                }
+
+                // Ahora obtener solo los créditos disponibles
                 var creditos = await _context.Creditos
                     .Where(c => c.ClienteId == clienteId
-                             && c.Estado == EstadoCredito.Activo
+                             && (c.Estado == EstadoCredito.Activo || c.Estado == EstadoCredito.Aprobado)
                              && c.SaldoPendiente > 0)
                     .OrderByDescending(c => c.FechaAprobacion)
                     .Select(c => new
@@ -701,7 +716,12 @@ namespace TheBuryProject.Controllers
                     })
                     .ToListAsync();
 
-                _logger.LogInformation("Se encontraron {Count} créditos para cliente {ClienteId}", creditos.Count, clienteId);
+                _logger.LogInformation("Se encontraron {Count} créditos disponibles para cliente {ClienteId}", creditos.Count, clienteId);
+
+                if (creditos.Count == 0)
+                {
+                    _logger.LogWarning("No hay créditos disponibles. Criterios: Estado=Activo O Aprobado, SaldoPendiente > 0");
+                }
 
                 return Json(creditos);
             }
@@ -711,7 +731,6 @@ namespace TheBuryProject.Controllers
                 return StatusCode(500, "Error al obtener los créditos del cliente");
             }
         }
-
         // GET: API endpoint para obtener información completa de un crédito
         [HttpGet]
         public async Task<IActionResult> GetInfoCredito(int creditoId)
@@ -721,25 +740,41 @@ namespace TheBuryProject.Controllers
                 _logger.LogInformation("Obteniendo información del crédito {CreditoId}", creditoId);
 
                 var credito = await _context.Creditos
-                    .Where(c => c.Id == creditoId && c.Estado == EstadoCredito.Activo)
+                    .Where(c => c.Id == creditoId
+                             && (c.Estado == EstadoCredito.Activo || c.Estado == EstadoCredito.Aprobado))
                     .Select(c => new
                     {
                         id = c.Id,
                         numero = c.Numero,
                         montoAprobado = c.MontoAprobado,
                         saldoPendiente = c.SaldoPendiente,
-                        tasaInteres = c.TasaInteres
+                        tasaInteres = c.TasaInteres,
+                        estado = c.Estado
                     })
                     .FirstOrDefaultAsync();
 
                 if (credito == null)
                 {
-                    _logger.LogWarning("Crédito {CreditoId} no encontrado", creditoId);
+                    _logger.LogWarning("Crédito {CreditoId} no encontrado o no está en estado Activo/Aprobado", creditoId);
+
+                    // Verificar si el crédito existe pero en otro estado
+                    var creditoExiste = await _context.Creditos
+                        .Where(c => c.Id == creditoId)
+                        .Select(c => new { c.Numero, c.Estado })
+                        .FirstOrDefaultAsync();
+
+                    if (creditoExiste != null)
+                    {
+                        _logger.LogWarning("El crédito {Numero} existe pero está en estado {Estado}",
+                            creditoExiste.Numero, creditoExiste.Estado);
+                        return NotFound(new { error = $"El crédito está en estado {creditoExiste.Estado} y no se puede usar" });
+                    }
+
                     return NotFound(new { error = "Crédito no encontrado" });
                 }
 
-                _logger.LogInformation("Crédito {CreditoId} encontrado: {Numero}, Saldo: {Saldo}",
-                    creditoId, credito.numero, credito.saldoPendiente);
+                _logger.LogInformation("Crédito {CreditoId} encontrado: {Numero}, Estado: {Estado}, Saldo: {Saldo}",
+                    creditoId, credito.numero, credito.estado, credito.saldoPendiente);
 
                 return Json(credito);
             }

@@ -74,31 +74,59 @@ namespace TheBuryProject.Controllers
         }
 
         // POST: Credito/Create
+        // POST: Credito/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreditoViewModel viewModel)
         {
+            _logger.LogInformation("=== INICIANDO CREACIÓN DE LÍNEA DE CRÉDITO ===");
+            _logger.LogInformation("ClienteId: {ClienteId}", viewModel.ClienteId);
+            _logger.LogInformation("MontoSolicitado: {Monto}", viewModel.MontoSolicitado);
+            _logger.LogInformation("TasaInteres: {Tasa}", viewModel.TasaInteres);
+            _logger.LogInformation("RequiereGarante: {RequiereGarante}", viewModel.RequiereGarante);
+
             try
             {
+                _logger.LogInformation("Validando ModelState...");
+
                 if (!ModelState.IsValid)
                 {
+                    _logger.LogWarning("ModelState inválido. Errores:");
+                    foreach (var key in ModelState.Keys)
+                    {
+                        var errors = ModelState[key]?.Errors;
+                        if (errors != null && errors.Count > 0)
+                        {
+                            foreach (var error in errors)
+                            {
+                                _logger.LogWarning("  - {Key}: {Error}", key, error.ErrorMessage);
+                            }
+                        }
+                    }
+
                     await CargarViewBags(viewModel.ClienteId, viewModel.GaranteId);
                     return View(viewModel);
                 }
 
+                _logger.LogInformation("ModelState válido. Llamando a CreateAsync...");
                 var credito = await _creditoService.CreateAsync(viewModel);
-                TempData["Success"] = $"Crédito {credito.Numero} creado exitosamente";
+
+                _logger.LogInformation("Línea de crédito creada exitosamente. Id: {Id}, Numero: {Numero}",
+                    credito.Id, credito.Numero);
+
+                TempData["Success"] = $"Línea de Crédito {credito.Numero} creada exitosamente";
                 return RedirectToAction(nameof(Details), new { id = credito.Id });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear crédito");
-                ModelState.AddModelError("", "Error al crear el crédito: " + ex.Message);
+                _logger.LogError(ex, "ERROR al crear línea de crédito. Mensaje: {Message}", ex.Message);
+                _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
+
+                ModelState.AddModelError("", "Error al crear la línea de crédito: " + ex.Message);
                 await CargarViewBags(viewModel.ClienteId, viewModel.GaranteId);
                 return View(viewModel);
             }
         }
-
         // GET: Credito/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
@@ -471,8 +499,10 @@ namespace TheBuryProject.Controllers
 
         private async Task CargarViewBags(int? clienteIdSeleccionado = null, int? garanteIdSeleccionado = null)
         {
+            _logger.LogInformation("Cargando ViewBags...");
+
             var clientes = await _context.Clientes
-                .Where(c => c.Activo)
+                .Where(c => !c.IsDeleted && c.Activo)
                 .OrderBy(c => c.Apellido)
                 .ThenBy(c => c.Nombre)
                 .Select(c => new
@@ -482,11 +512,11 @@ namespace TheBuryProject.Controllers
                 })
                 .ToListAsync();
 
+            _logger.LogInformation("Clientes cargados: {Count}", clientes.Count);
             ViewBag.Clientes = new SelectList(clientes, "Id", "NombreCompleto", clienteIdSeleccionado);
 
-            // Garantes - usando la tabla Clientes también (puedes tener una tabla separada si quieres)
             var garantes = await _context.Clientes
-                .Where(c => c.Activo)
+                .Where(c => !c.IsDeleted && c.Activo)
                 .OrderBy(c => c.Apellido)
                 .ThenBy(c => c.Nombre)
                 .Select(c => new
@@ -496,9 +526,9 @@ namespace TheBuryProject.Controllers
                 })
                 .ToListAsync();
 
+            _logger.LogInformation("Garantes cargados: {Count}", garantes.Count);
             ViewBag.Garantes = new SelectList(garantes, "Id", "NombreCompleto", garanteIdSeleccionado);
         }
-
         #endregion
     }
 }

@@ -756,8 +756,8 @@ namespace TheBuryProject.Services
             if (credito == null)
                 throw new InvalidOperationException("Crédito no encontrado");
 
-            if (credito.Estado != EstadoCredito.Activo)
-                throw new InvalidOperationException("El crédito no está activo");
+            if (credito.Estado != EstadoCredito.Activo && credito.Estado != EstadoCredito.Aprobado)
+                throw new InvalidOperationException("El crédito debe estar en estado Activo o Aprobado");
 
             // Calcular saldo disponible
             var creditoDisponible = credito.SaldoPendiente;
