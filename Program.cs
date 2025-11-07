@@ -50,6 +50,7 @@ builder.Services.AddScoped<IMovimientoStockService, MovimientoStockService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<ICreditoService, CreditoService>();
 builder.Services.AddScoped<IVentaService, VentaService>();
+builder.Services.AddScoped<IConfiguracionPagoService, ConfiguracionPagoService>();
 
 builder.Services.AddScoped<IChequeService, ChequeService>();
 

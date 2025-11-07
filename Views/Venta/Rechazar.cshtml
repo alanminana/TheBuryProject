@@ -1,0 +1,68 @@
+﻿@model TheBuryProject.ViewModels.VentaViewModel
+
+@{
+    ViewData["Title"] = "Rechazar Venta";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="bi bi-x-circle"></i> Rechazar Venta</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Atención:</strong> Está por rechazar esta venta. Esta acción no se puede deshacer.
+                </div>
+
+                <h5 class="mb-3">Datos de la Venta</h5>
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="30%">Número:</th>
+                        <td>@Model.Numero</td>
+                    </tr>
+                    <tr>
+                        <th>Cliente:</th>
+                        <td>@Model.ClienteNombre (@Model.ClienteDocumento)</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha:</th>
+                        <td>@Model.FechaVenta.ToString("dd/MM/yyyy")</td>
+                    </tr>
+                    <tr>
+                        <th>Total:</th>
+                        <td><strong>@Model.Total.ToString("C2")</strong></td>
+                    </tr>
+                </table>
+
+                @if (!string.IsNullOrEmpty(Model.MotivoAutorizacion))
+                {
+                    <div class="alert alert-info">
+                        <strong>Motivo de la solicitud:</strong><br />
+                        @Model.MotivoAutorizacion
+                    </div>
+                }
+
+                <form asp-action="Rechazar" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label class="form-label"><span class="text-danger">*</span> Motivo del Rechazo</label>
+                        <textarea name="motivo" class="form-control" rows="4" required placeholder="Ingrese el motivo por el cual rechaza esta venta"></textarea>
+                        <small class="text-muted">Este campo es obligatorio</small>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-x-lg"></i> Rechazar Venta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

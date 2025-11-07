@@ -156,7 +156,9 @@ namespace TheBuryProject.Helpers
             CreateMap<CuotaViewModel, Cuota>()
                 .ForMember(d => d.Credito, o => o.Ignore());
 
+            // =======================
             // Mappings para Ventas
+            // =======================
             CreateMap<Venta, VentaViewModel>()
                 .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src => $"{src.Cliente.Apellido}, {src.Cliente.Nombre}"))
                 .ForMember(dest => dest.ClienteDocumento, opt => opt.MapFrom(src => src.Cliente.NumeroDocumento))
@@ -183,6 +185,56 @@ namespace TheBuryProject.Helpers
 
             CreateMap<FacturaViewModel, Factura>()
                 .ForMember(dest => dest.Venta, opt => opt.Ignore());
+
+            // =======================
+            // ConfiguracionPago
+            // =======================
+            CreateMap<ConfiguracionPago, ConfiguracionPagoViewModel>()
+                .ForMember(d => d.ConfiguracionesTarjeta, o => o.MapFrom(s => s.ConfiguracionesTarjeta));
+
+            CreateMap<ConfiguracionPagoViewModel, ConfiguracionPago>()
+                .ForMember(d => d.ConfiguracionesTarjeta, o => o.Ignore());
+
+            // =======================
+            // ConfiguracionTarjeta
+            // =======================
+            CreateMap<ConfiguracionTarjeta, ConfiguracionTarjetaViewModel>();
+
+            CreateMap<ConfiguracionTarjetaViewModel, ConfiguracionTarjeta>()
+                .ForMember(d => d.ConfiguracionPago, o => o.Ignore());
+
+            // =======================
+            // DatosTarjeta
+            // =======================
+            CreateMap<DatosTarjeta, DatosTarjetaViewModel>();
+
+            CreateMap<DatosTarjetaViewModel, DatosTarjeta>()
+                .ForMember(d => d.Venta, o => o.Ignore())
+                .ForMember(d => d.ConfiguracionTarjeta, o => o.Ignore());
+
+            // =======================
+            // DatosCheque
+            // =======================
+            CreateMap<DatosCheque, DatosChequeViewModel>();
+
+            CreateMap<DatosChequeViewModel, DatosCheque>()
+                .ForMember(d => d.Venta, o => o.Ignore());
+
+            // =======================
+            // VentaCreditoCuota
+            // =======================
+            CreateMap<VentaCreditoCuota, VentaCreditoCuotaViewModel>();
+
+            CreateMap<VentaCreditoCuotaViewModel, VentaCreditoCuota>()
+                .ForMember(d => d.Venta, o => o.Ignore())
+                .ForMember(d => d.Credito, o => o.Ignore());
+
+            // =======================
+            // DatosCreditoPersonal
+            // =======================
+            CreateMap<DatosCreditoPersonalViewModel, VentaCreditoCuota>()
+                .ForMember(d => d.Venta, o => o.Ignore())
+                .ForMember(d => d.Credito, o => o.Ignore());
         }
     }
 }
