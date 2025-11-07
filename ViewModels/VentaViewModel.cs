@@ -23,7 +23,7 @@ namespace TheBuryProject.ViewModels
         public DateTime FechaVenta { get; set; } = DateTime.Now;
 
         [Display(Name = "Estado")]
-        public EstadoVenta Estado { get; set; } = EstadoVenta.Presupuesto;
+        public EstadoVenta Estado { get; set; } = EstadoVenta.Cotizacion;
 
         [Display(Name = "Tipo de Pago")]
         [Required(ErrorMessage = "El tipo de pago es requerido")]
@@ -45,10 +45,21 @@ namespace TheBuryProject.ViewModels
         [DisplayFormat(DataFormatString = "{0:C2}")]
         public decimal Total { get; set; }
 
-        [Display(Name = "Crédito ID")]
+        [Display(Name = "Crédito Personal")]
         public int? CreditoId { get; set; }
-
         public string? CreditoNumero { get; set; }
+
+        // Autorización
+        [Display(Name = "Estado Autorización")]
+        public EstadoAutorizacionVenta EstadoAutorizacion { get; set; } = EstadoAutorizacionVenta.NoRequiere;
+
+        public bool RequiereAutorizacion { get; set; } = false;
+        public string? UsuarioSolicita { get; set; }
+        public DateTime? FechaSolicitudAutorizacion { get; set; }
+        public string? UsuarioAutoriza { get; set; }
+        public DateTime? FechaAutorizacion { get; set; }
+        public string? MotivoAutorizacion { get; set; }
+        public string? MotivoRechazo { get; set; }
 
         [Display(Name = "Vendedor")]
         [StringLength(200)]
@@ -59,7 +70,9 @@ namespace TheBuryProject.ViewModels
         [StringLength(500)]
         public string? Observaciones { get; set; }
 
+        public DateTime? FechaConfirmacion { get; set; }
         public DateTime? FechaFacturacion { get; set; }
+        public DateTime? FechaEntrega { get; set; }
         public DateTime? FechaCancelacion { get; set; }
         public string? MotivoCancelacion { get; set; }
 
@@ -67,6 +80,10 @@ namespace TheBuryProject.ViewModels
         public List<VentaDetalleViewModel> Detalles { get; set; } = new List<VentaDetalleViewModel>();
 
         public List<FacturaViewModel> Facturas { get; set; } = new List<FacturaViewModel>();
+
+        // Datos adicionales según tipo de pago
+        public DatosTarjetaViewModel? DatosTarjeta { get; set; }
+        public DatosChequeViewModel? DatosCheque { get; set; }
 
         public DateTime CreatedAt { get; set; }
     }

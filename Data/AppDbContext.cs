@@ -43,6 +43,11 @@ namespace TheBuryProject.Data
         public DbSet<Venta> Ventas { get; set; }
         public DbSet<VentaDetalle> VentaDetalles { get; set; }
         public DbSet<Factura> Facturas { get; set; }
+
+        public DbSet<ConfiguracionPago> ConfiguracionesPago { get; set; }
+        public DbSet<ConfiguracionTarjeta> ConfiguracionesTarjeta { get; set; }
+        public DbSet<DatosTarjeta> DatosTarjeta { get; set; }
+        public DbSet<DatosCheque> DatosCheque { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -538,7 +543,110 @@ namespace TheBuryProject.Data
                     CreatedBy = "System"
                 }
             );
+            // Configuración para ConfiguracionPago
+            modelBuilder.Entity<ConfiguracionPago>(entity =>
+            {
+                entity.ToTable("ConfiguracionesPago");
+                entity.HasKey(e => e.Id);
 
+                entity.Property(e => e.Nombre)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.PorcentajeDescuentoMaximo)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.PorcentajeRecargo)
+                    .HasPrecision(5, 2);
+
+                entity.HasIndex(e => e.TipoPago).IsUnique();
+
+                entity.HasMany(e => e.ConfiguracionesTarjeta)
+                    .WithOne(t => t.ConfiguracionPago)
+                    .HasForeignKey(t => t.ConfiguracionPagoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configuración para ConfiguracionTarjeta
+            modelBuilder.Entity<ConfiguracionTarjeta>(entity =>
+            {
+                entity.ToTable("ConfiguracionesTarjeta");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.NombreTarjeta)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.TasaInteresesMensual)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.PorcentajeRecargoDebito)
+                    .HasPrecision(5, 2);
+
+                entity.HasIndex(e => new { e.ConfiguracionPagoId, e.NombreTarjeta });
+            });
+
+            // Configuración para DatosTarjeta
+            modelBuilder.Entity<DatosTarjeta>(entity =>
+            {
+                entity.ToTable("DatosTarjeta");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.NombreTarjeta)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.TasaInteres)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.MontoCuota)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.MontoTotalConInteres)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.RecargoAplicado)
+                    .HasPrecision(18, 2);
+
+                entity.HasOne(e => e.Venta)
+                    .WithOne(v => v.DatosTarjeta)
+                    .HasForeignKey<DatosTarjeta>(e => e.VentaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.ConfiguracionTarjeta)
+                    .WithMany()
+                    .HasForeignKey(e => e.ConfiguracionTarjetaId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Configuración para DatosCheque
+            modelBuilder.Entity<DatosCheque>(entity =>
+            {
+                entity.ToTable("DatosCheque");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.NumeroCheque)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Banco)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.Titular)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Monto)
+                    .HasPrecision(18, 2);
+
+                entity.HasIndex(e => e.NumeroCheque);
+
+                entity.HasOne(e => e.Venta)
+                    .WithOne(v => v.DatosCheque)
+                    .HasForeignKey<DatosCheque>(e => e.VentaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
             modelBuilder.Entity<Marca>().HasData(
                 new Marca
                 {

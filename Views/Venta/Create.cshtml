@@ -1,16 +1,21 @@
 ﻿@model TheBuryProject.ViewModels.VentaViewModel
 
 @{
-    ViewData["Title"] = "Nueva Venta";
+    ViewData["Title"] = "Nueva Venta / Cotización";
 }
 
 <div class="row">
     <div class="col-md-12">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2><i class="bi bi-plus-circle"></i> Nueva Venta</h2>
+            <h2><i class="bi bi-plus-circle"></i> Nueva Venta / Cotización</h2>
             <a asp-action="Index" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Volver
             </a>
+        </div>
+
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> <strong>Tip:</strong> Las ventas se crean como <strong>Presupuesto</strong> (cotización).
+            Luego puedes confirmarlas para descontar stock y facturarlas.
         </div>
 
         <form asp-action="Create" method="post" id="formVenta">
@@ -24,7 +29,7 @@
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label asp-for="ClienteId" class="form-label"></label>
-                            <select asp-for="ClienteId" class="form-select" asp-items="ViewBag.Clientes">
+                            <select asp-for="ClienteId" class="form-select" asp-items="ViewBag.Clientes" id="clienteSelect">
                                 <option value="">Seleccione un cliente...</option>
                             </select>
                             <span asp-validation-for="ClienteId" class="text-danger"></span>
@@ -38,15 +43,27 @@
 
                         <div class="col-md-3 mb-3">
                             <label asp-for="TipoPago" class="form-label"></label>
-                            <select asp-for="TipoPago" class="form-select" asp-items="ViewBag.TiposPago">
+                            <select asp-for="TipoPago" class="form-select" asp-items="ViewBag.TiposPago" id="tipoPagoSelect">
                             </select>
                             <span asp-validation-for="TipoPago" class="text-danger"></span>
                         </div>
 
                         <div class="col-md-2 mb-3">
                             <label asp-for="Descuento" class="form-label"></label>
-                            <input asp-for="Descuento" class="form-control" type="number" step="0.01" />
+                            <input asp-for="Descuento" class="form-control" type="number" step="0.01" id="descuentoGeneral" />
                             <span asp-validation-for="Descuento" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row" id="creditoRow" style="display: none;">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="CreditoId" class="form-label">
+                                <i class="bi bi-credit-card"></i> Crédito Personal
+                            </label>
+                            <select asp-for="CreditoId" class="form-select" id="creditoSelect">
+                                <option value="">Seleccione un crédito...</option>
+                            </select>
+                            <small class="text-muted">Solo créditos con saldo disponible</small>
                         </div>
                     </div>
 
@@ -83,12 +100,12 @@
                             <input type="number" id="cantidadInput" class="form-control" value="1" min="1" />
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Precio</label>
+                            <label class="form-label">Precio Unit.</label>
                             <input type="number" id="precioInput" class="form-control" step="0.01" readonly />
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Descuento</label>
-                            <input type="number" id="descuentoInput" class="form-control" value="0" step="0.01" />
+                            <label class="form-label">Desc. (%)</label>
+                            <input type="number" id="descuentoInput" class="form-control" value="0" step="0.01" min="0" max="100" />
                         </div>
                         <div class="col-md-1 d-flex align-items-end">
                             <button type="button" id="btnAgregarProducto" class="btn btn-success w-100">
@@ -98,19 +115,20 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-bordered" id="tablaDetalles">
+                        <table class="table table-bordered" id="tablaProductos">
                             <thead class="table-light">
                                 <tr>
+                                    <th>Código</th>
                                     <th>Producto</th>
                                     <th>Cantidad</th>
                                     <th>Precio Unit.</th>
                                     <th>Descuento</th>
                                     <th>Subtotal</th>
-                                    <th style="width: 80px;">Acción</th>
+                                    <th></th>
                                 </tr>
                             </thead>
-                            <tbody id="detallesBody">
-                                <!-- Los detalles se agregan dinámicamente aquí -->
+                            <tbody id="productosBody">
+                                <!-- Los productos se agregan dinámicamente aquí -->
                             </tbody>
                         </table>
                     </div>
@@ -118,41 +136,36 @@
             </div>
 
             <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Totales</h5>
+                </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-8"></div>
-                        <div class="col-md-4">
-                            <table class="table">
-                                <tr>
-                                    <th>Subtotal:</th>
-                                    <td class="text-end"><span id="subtotalDisplay">$0.00</span></td>
-                                </tr>
-                                <tr>
-                                    <th>Descuento:</th>
-                                    <td class="text-end"><span id="descuentoDisplay">$0.00</span></td>
-                                </tr>
-                                <tr>
-                                    <th>IVA (21%):</th>
-                                    <td class="text-end"><span id="ivaDisplay">$0.00</span></td>
-                                </tr>
-                                <tr class="table-active">
-                                    <th>TOTAL:</th>
-                                    <th class="text-end"><span id="totalDisplay">$0.00</span></th>
-                                </tr>
-                            </table>
+                        <div class="col-md-3">
+                            <h5>Subtotal: <span id="lblSubtotal">$0.00</span></h5>
+                            <input type="hidden" asp-for="Subtotal" id="hiddenSubtotal" />
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Descuento: <span id="lblDescuento">$0.00</span></h5>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>IVA (21%): <span id="lblIVA">$0.00</span></h5>
+                            <input type="hidden" asp-for="IVA" id="hiddenIVA" />
+                        </div>
+                        <div class="col-md-3">
+                            <h4><strong>TOTAL: <span id="lblTotal">$0.00</span></strong></h4>
+                            <input type="hidden" asp-for="Total" id="hiddenTotal" />
                         </div>
                     </div>
                 </div>
             </div>
 
-            <input type="hidden" asp-for="Subtotal" id="subtotalHidden" />
-            <input type="hidden" asp-for="IVA" id="ivaHidden" />
-            <input type="hidden" asp-for="Total" id="totalHidden" />
-
             <div class="d-flex justify-content-end gap-2">
-                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-save"></i> Guardar Venta
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Guardar Presupuesto
                 </button>
             </div>
         </form>
@@ -160,121 +173,193 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
 
     <script>
-        let detalles = [];
-        let detalleIndex = 0;
+        let productosSeleccionados = [];
+        let stockDisponible = {};
 
         $(document).ready(function () {
-            // Cuando se selecciona un producto, obtener su precio
-            $('#productoSelect').change(function () {
+            // Mostrar/ocultar selector de crédito según tipo de pago
+            $('#tipoPagoSelect').on('change', function () {
+                const tipoPago = $(this).val();
+                if (tipoPago === '5') { // CreditoPersonal = 5
+                    $('#creditoRow').show();
+                    cargarCreditosCliente();
+                } else {
+                    $('#creditoRow').hide();
+                    $('#creditoSelect').val('');
+                }
+            });
+
+            // Cargar créditos cuando cambia el cliente
+            $('#clienteSelect').on('change', function () {
+                const tipoPago = $('#tipoPagoSelect').val();
+                if (tipoPago === '5') {
+                    cargarCreditosCliente();
+                }
+            });
+
+            // Cuando se selecciona un producto
+            $('#productoSelect').on('change', function () {
                 const productoId = $(this).val();
                 if (productoId) {
-                    $.get('@Url.Action("GetProductoPrecio", "Venta")', { productoId: productoId }, function (data) {
-                        $('#precioInput').val(data.precioVenta.toFixed(2));
-                    });
+                    cargarPrecioProducto(productoId);
+                } else {
+                    $('#precioInput').val('');
+                    $('#cantidadInput').val(1);
+                    $('#descuentoInput').val(0);
                 }
             });
 
             // Agregar producto
-            $('#btnAgregarProducto').click(function () {
-                const productoId = $('#productoSelect').val();
-                const productoTexto = $('#productoSelect option:selected').text();
-                const cantidad = parseInt($('#cantidadInput').val());
-                const precio = parseFloat($('#precioInput').val());
-                const descuento = parseFloat($('#descuentoInput').val()) || 0;
-
-                if (!productoId || cantidad <= 0 || precio <= 0) {
-                    alert('Por favor complete todos los campos correctamente');
-                    return;
-                }
-
-                const subtotal = (cantidad * precio) - descuento;
-
-                const detalle = {
-                    index: detalleIndex++,
-                    ProductoId: productoId,
-                    ProductoNombre: productoTexto,
-                    Cantidad: cantidad,
-                    PrecioUnitario: precio,
-                    Descuento: descuento,
-                    Subtotal: subtotal
-                };
-
-                detalles.push(detalle);
-                agregarFilaDetalle(detalle);
-                calcularTotales();
-
-                // Limpiar campos
-                $('#productoSelect').val('');
-                $('#cantidadInput').val(1);
-                $('#precioInput').val('');
-                $('#descuentoInput').val(0);
+            $('#btnAgregarProducto').on('click', function () {
+                agregarProducto();
             });
 
-            // Guardar formulario
-            $('#formVenta').submit(function (e) {
-                // Limpiar detalles anteriores
-                $('input[name^="Detalles"]').remove();
-
-                // Agregar detalles al formulario
-                detalles.forEach((detalle, index) => {
-                    $(this).append(`<input type="hidden" name="Detalles[${index}].ProductoId" value="${detalle.ProductoId}" />`);
-                    $(this).append(`<input type="hidden" name="Detalles[${index}].Cantidad" value="${detalle.Cantidad}" />`);
-                    $(this).append(`<input type="hidden" name="Detalles[${index}].PrecioUnitario" value="${detalle.PrecioUnitario}" />`);
-                    $(this).append(`<input type="hidden" name="Detalles[${index}].Descuento" value="${detalle.Descuento}" />`);
-                    $(this).append(`<input type="hidden" name="Detalles[${index}].Subtotal" value="${detalle.Subtotal}" />`);
-                });
+            // Recalcular cuando cambia el descuento general
+            $('#descuentoGeneral').on('change', function () {
+                calcularTotales();
             });
         });
 
-        function agregarFilaDetalle(detalle) {
-            const fila = `
-                <tr data-index="${detalle.index}">
-                    <td>${detalle.ProductoNombre}</td>
-                    <td>${detalle.Cantidad}</td>
-                    <td>$${detalle.PrecioUnitario.toFixed(2)}</td>
-                    <td>$${detalle.Descuento.toFixed(2)}</td>
-                    <td>$${detalle.Subtotal.toFixed(2)}</td>
-                    <td>
-                        <button type="button" class="btn btn-sm btn-danger" onclick="eliminarDetalle(${detalle.index})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-            $('#detallesBody').append(fila);
+        function cargarCreditosCliente() {
+            const clienteId = $('#clienteSelect').val();
+            if (!clienteId) {
+                $('#creditoSelect').html('<option value="">Primero seleccione un cliente</option>');
+                return;
+            }
+
+            $.get('@Url.Action("GetCreditosCliente", "Venta")', { clienteId: clienteId })
+                .done(function (creditos) {
+                    let options = '<option value="">Seleccione un crédito...</option>';
+                    creditos.forEach(function (credito) {
+                        options += `<option value="${credito.id}">${credito.detalle}</option>`;
+                    });
+                    $('#creditoSelect').html(options);
+
+                    if (creditos.length === 0) {
+                        $('#creditoSelect').html('<option value="">No hay créditos disponibles</option>');
+                    }
+                })
+                .fail(function () {
+                    alert('Error al cargar los créditos del cliente');
+                });
         }
 
-        function eliminarDetalle(index) {
-            detalles = detalles.filter(d => d.index !== index);
-            $(`tr[data-index="${index}"]`).remove();
+        function cargarPrecioProducto(productoId) {
+            $.get('@Url.Action("GetProductoPrecio", "Venta")', { productoId: productoId })
+                .done(function (data) {
+                    $('#precioInput').val(data.precioVenta);
+                    stockDisponible[productoId] = data.stockActual;
+                })
+                .fail(function () {
+                    alert('Error al cargar el precio del producto');
+                });
+        }
+
+        function agregarProducto() {
+            const productoId = $('#productoSelect').val();
+            const productoTexto = $('#productoSelect option:selected').text();
+            const cantidad = parseInt($('#cantidadInput').val());
+            const precio = parseFloat($('#precioInput').val());
+            const descuentoPct = parseFloat($('#descuentoInput').val()) || 0;
+
+            if (!productoId) {
+                alert('Debe seleccionar un producto');
+                return;
+            }
+
+            if (cantidad <= 0) {
+                alert('La cantidad debe ser mayor a 0');
+                return;
+            }
+
+            if (stockDisponible[productoId] < cantidad) {
+                alert(`Stock insuficiente. Disponible: ${stockDisponible[productoId]}`);
+                return;
+            }
+
+            // Extraer código y nombre del producto
+            const partes = productoTexto.split(' - ');
+            const codigo = partes[0];
+            const nombre = partes[1] ? partes[1].split(' (Stock:')[0] : productoTexto;
+
+            const descuentoMonto = (precio * cantidad * descuentoPct) / 100;
+            const subtotal = (precio * cantidad) - descuentoMonto;
+
+            productosSeleccionados.push({
+                productoId: productoId,
+                codigo: codigo,
+                nombre: nombre,
+                cantidad: cantidad,
+                precioUnitario: precio,
+                descuento: descuentoMonto,
+                subtotal: subtotal
+            });
+
+            actualizarTablaProductos();
             calcularTotales();
+
+            // Limpiar campos
+            $('#productoSelect').val('');
+            $('#cantidadInput').val(1);
+            $('#precioInput').val('');
+            $('#descuentoInput').val(0);
+        }
+
+        function eliminarProducto(index) {
+            productosSeleccionados.splice(index, 1);
+            actualizarTablaProductos();
+            calcularTotales();
+        }
+
+        function actualizarTablaProductos() {
+            let html = '';
+            productosSeleccionados.forEach(function (prod, index) {
+                html += `
+                    <tr>
+                        <td>${prod.codigo}</td>
+                        <td>${prod.nombre}</td>
+                        <td>${prod.cantidad}</td>
+                        <td>$${prod.precioUnitario.toFixed(2)}</td>
+                        <td>$${prod.descuento.toFixed(2)}</td>
+                        <td>$${prod.subtotal.toFixed(2)}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="eliminarProducto(${index})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                        <input type="hidden" name="Detalles[${index}].ProductoId" value="${prod.productoId}" />
+                        <input type="hidden" name="Detalles[${index}].Cantidad" value="${prod.cantidad}" />
+                        <input type="hidden" name="Detalles[${index}].PrecioUnitario" value="${prod.precioUnitario}" />
+                        <input type="hidden" name="Detalles[${index}].Descuento" value="${prod.descuento}" />
+                        <input type="hidden" name="Detalles[${index}].Subtotal" value="${prod.subtotal}" />
+                    </tr>
+                `;
+            });
+            $('#productosBody').html(html);
         }
 
         function calcularTotales() {
-            const subtotal = detalles.reduce((sum, d) => sum + d.Subtotal, 0);
-            const descuentoGlobal = parseFloat($('#Descuento').val()) || 0;
-            const subtotalConDescuento = subtotal - descuentoGlobal;
+            let subtotal = 0;
+            productosSeleccionados.forEach(function (prod) {
+                subtotal += prod.subtotal;
+            });
+
+            const descuentoGeneral = parseFloat($('#descuentoGeneral').val()) || 0;
+            const subtotalConDescuento = subtotal - descuentoGeneral;
             const iva = subtotalConDescuento * 0.21;
             const total = subtotalConDescuento + iva;
 
-            $('#subtotalDisplay').text('$' + subtotal.toFixed(2));
-            $('#descuentoDisplay').text('$' + descuentoGlobal.toFixed(2));
-            $('#ivaDisplay').text('$' + iva.toFixed(2));
-            $('#totalDisplay').text('$' + total.toFixed(2));
+            $('#lblSubtotal').text('$' + subtotal.toFixed(2));
+            $('#lblDescuento').text('$' + descuentoGeneral.toFixed(2));
+            $('#lblIVA').text('$' + iva.toFixed(2));
+            $('#lblTotal').text('$' + total.toFixed(2));
 
-            $('#subtotalHidden').val(subtotal.toFixed(2));
-            $('#ivaHidden').val(iva.toFixed(2));
-            $('#totalHidden').val(total.toFixed(2));
+            $('#hiddenSubtotal').val(subtotal.toFixed(2));
+            $('#hiddenIVA').val(iva.toFixed(2));
+            $('#hiddenTotal').val(total.toFixed(2));
         }
-
-        // Recalcular cuando cambie el descuento global
-        $('#Descuento').on('input', function () {
-            calcularTotales();
-        });
     </script>
 }
