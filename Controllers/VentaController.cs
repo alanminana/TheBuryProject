@@ -201,6 +201,7 @@ namespace TheBuryProject.Controllers
             }
         }
         // GET: Venta/Create
+        [HttpGet]
         public async Task<IActionResult> Create()
         {
             await CargarViewBags();
