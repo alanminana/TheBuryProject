@@ -29,9 +29,8 @@ namespace TheBuryProject.ViewModels
         public decimal TasaInteres { get; set; }
 
         [Display(Name = "Cantidad de Cuotas")]
-        [Required(ErrorMessage = "La cantidad de cuotas es requerida")]
-        [Range(1, 60, ErrorMessage = "Las cuotas deben estar entre 1 y 60")]
-        public int CantidadCuotas { get; set; }
+        // Ya no es requerido - las cuotas se definen al momento de la venta
+        public int? CantidadCuotas { get; set; }
 
         [Display(Name = "Monto por Cuota")]
         public decimal MontoCuota { get; set; }
