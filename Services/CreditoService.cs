@@ -213,16 +213,17 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var tasaDecimal = modelo.TasaInteres / 100;
-                modelo.MontoCuota = CalcularMontoCuotaSistemaFrances(modelo.Monto, tasaDecimal, modelo.CantidadCuotas);
+                // La tasa ya viene como decimal (ejemplo: 0.05 = 5%)
+                var tasaDecimal = modelo.TasaInteresMensual;
+                modelo.MontoCuota = CalcularMontoCuotaSistemaFrances(modelo.MontoSolicitado, tasaDecimal, modelo.CantidadCuotas);
                 modelo.TotalAPagar = modelo.MontoCuota * modelo.CantidadCuotas;
-                modelo.TotalIntereses = modelo.TotalAPagar - modelo.Monto;
+                modelo.TotalIntereses = modelo.TotalAPagar - modelo.MontoSolicitado;
                 modelo.CFTEA = CalcularCFTEA(tasaDecimal);
 
                 // Generar plan de pagos
                 modelo.PlanPagos = new List<CuotaSimuladaViewModel>();
-                var fechaCuota = modelo.FechaPrimeraCuota ?? DateTime.Now.AddMonths(1);
-                var saldoCapital = modelo.Monto;
+                var fechaCuota = DateTime.Now.AddMonths(1);
+                var saldoCapital = modelo.MontoSolicitado;
 
                 for (int i = 1; i <= modelo.CantidadCuotas; i++)
                 {
