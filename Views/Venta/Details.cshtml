@@ -1,0 +1,264 @@
+﻿@model TheBuryProject.ViewModels.VentaViewModel
+
+@{
+    ViewData["Title"] = "Detalle de Venta";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="bi bi-info-circle"></i> Detalle de Venta</h2>
+            <div>
+                @if (Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Presupuesto)
+                {
+                    <form asp-action="Confirmar" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-info" onclick="return confirm('¿Está seguro de confirmar esta venta? Se descontará el stock.')">
+                            <i class="bi bi-check-circle"></i> Confirmar Venta
+                        </button>
+                    </form>
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                }
+                @if (Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Confirmada)
+                {
+                    <a asp-action="Facturar" asp-route-id="@Model.Id" class="btn btn-success">
+                        <i class="bi bi-receipt"></i> Facturar
+                    </a>
+                }
+                @if (Model.Estado != TheBuryProject.Models.Enums.EstadoVenta.Cancelada)
+                {
+                    <a asp-action="Cancelar" asp-route-id="@Model.Id" class="btn btn-danger">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                }
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-x-circle"></i> @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Información General</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">Número:</dt>
+                            <dd class="col-sm-8"><strong>@Model.Numero</strong></dd>
+
+                            <dt class="col-sm-4">Fecha:</dt>
+                            <dd class="col-sm-8">@Model.FechaVenta.ToString("dd/MM/yyyy")</dd>
+
+                            <dt class="col-sm-4">Cliente:</dt>
+                            <dd class="col-sm-8">
+                                @Model.ClienteNombre<br />
+                                <small class="text-muted">@Model.ClienteDocumento</small>
+                            </dd>
+
+                            <dt class="col-sm-4">Estado:</dt>
+                            <dd class="col-sm-8">
+                                @{
+                                    var estadoBadgeClass = Model.Estado.ToString() switch
+                                    {
+                                        "Presupuesto" => "bg-secondary",
+                                        "Confirmada" => "bg-info",
+                                        "Facturada" => "bg-success",
+                                        "Entregada" => "bg-primary",
+                                        "Cancelada" => "bg-danger",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @estadoBadgeClass fs-6">@Model.Estado</span>
+                            </dd>
+
+                            <dt class="col-sm-4">Tipo de Pago:</dt>
+                            <dd class="col-sm-8">@Model.TipoPago</dd>
+
+                            @if (Model.CreditoId.HasValue)
+                            {
+                                <dt class="col-sm-4">Crédito:</dt>
+                                <dd class="col-sm-8">
+                                    <a asp-controller="Credito" asp-action="Details" asp-route-id="@Model.CreditoId" class="text-decoration-none">
+                                        <i class="bi bi-credit-card"></i> @Model.CreditoNumero
+                                    </a>
+                                </dd>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.VendedorNombre))
+                            {
+                                <dt class="col-sm-4">Vendedor:</dt>
+                                <dd class="col-sm-8">@Model.VendedorNombre</dd>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.Observaciones))
+                            {
+                                <dt class="col-sm-4">Observaciones:</dt>
+                                <dd class="col-sm-8">@Model.Observaciones</dd>
+                            }
+
+                            <dt class="col-sm-4">Fecha Creación:</dt>
+                            <dd class="col-sm-8">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                @if (Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Cancelada)
+                {
+                    <div class="card mb-3 border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">Información de Cancelación</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">Fecha:</dt>
+                                <dd class="col-sm-8">@Model.FechaCancelacion?.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                                <dt class="col-sm-4">Motivo:</dt>
+                                <dd class="col-sm-8">@Model.MotivoCancelacion</dd>
+                            </dl>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Totales</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th>Subtotal:</th>
+                                <td class="text-end">@Model.Subtotal.ToString("C")</td>
+                            </tr>
+                            <tr>
+                                <th>Descuento:</th>
+                                <td class="text-end text-danger">-@Model.Descuento.ToString("C")</td>
+                            </tr>
+                            <tr>
+                                <th>IVA (21%):</th>
+                                <td class="text-end">@Model.IVA.ToString("C")</td>
+                            </tr>
+                            <tr class="border-top">
+                                <th class="fs-5">TOTAL:</th>
+                                <th class="text-end fs-4 text-success">@Model.Total.ToString("C")</th>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-box-seam"></i> Productos</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-end">Precio Unitario</th>
+                                <th class="text-end">Descuento</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detalle in Model.Detalles)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@detalle.ProductoNombre</strong><br />
+                                        @if (!string.IsNullOrEmpty(detalle.ProductoCodigo))
+                                        {
+                                            <small class="text-muted">Código: @detalle.ProductoCodigo</small>
+                                        }
+                                    </td>
+                                    <td class="text-center">@detalle.Cantidad</td>
+                                    <td class="text-end">@detalle.PrecioUnitario.ToString("C")</td>
+                                    <td class="text-end">@detalle.Descuento.ToString("C")</td>
+                                    <td class="text-end"><strong>@detalle.Subtotal.ToString("C")</strong></td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="4" class="text-end">TOTAL:</th>
+                                <th class="text-end">@Model.Total.ToString("C")</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Facturas != null && Model.Facturas.Any())
+        {
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="bi bi-receipt"></i> Facturas</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Tipo</th>
+                                    <th>Fecha Emisión</th>
+                                    <th>Total</th>
+                                    <th>CAE</th>
+                                    <th class="text-center">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var factura in Model.Facturas)
+                                {
+                                    <tr>
+                                        <td><strong>@factura.Numero</strong></td>
+                                        <td>Factura @factura.Tipo</td>
+                                        <td>@factura.FechaEmision.ToString("dd/MM/yyyy")</td>
+                                        <td>@factura.Total.ToString("C")</td>
+                                        <td>@(factura.CAE ?? "-")</td>
+                                        <td class="text-center">
+                                            @if (factura.Anulada)
+                                            {
+                                                <span class="badge bg-danger">Anulada</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success">Vigente</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

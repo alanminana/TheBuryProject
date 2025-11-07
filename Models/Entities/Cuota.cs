@@ -5,7 +5,7 @@ using TheBuryProject.Models.Enums;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Representa una cuota de un crédito
+    /// Representa una cuota individual de un crédito
     /// </summary>
     public class Cuota : BaseEntity
     {
@@ -15,30 +15,36 @@ namespace TheBuryProject.Models.Entities
         public int NumeroCuota { get; set; }
 
         [Required]
+        public decimal MontoCapital { get; set; }
+
+        [Required]
+        public decimal MontoInteres { get; set; }
+
+        [Required]
+        public decimal MontoTotal { get; set; }
+
+        [Required]
         public DateTime FechaVencimiento { get; set; }
-
-        [Required]
-        [Range(0, double.MaxValue)]
-        public decimal MontoOriginal { get; set; }
-
-        [Required]
-        [Range(0, double.MaxValue)]
-        public decimal MontoPendiente { get; set; }
-
-        [Range(0, double.MaxValue)]
-        public decimal MontoPagado { get; set; } = 0;
 
         public DateTime? FechaPago { get; set; }
 
-        [Required]
-        public EstadoCuota Estado { get; set; } = EstadoCuota.Pendiente;
+        public decimal MontoPagado { get; set; } = 0;
 
-        public int? DiasAtraso { get; set; }
+        public decimal MontoPunitorio { get; set; } = 0;
+
+        public EstadoCuota Estado { get; set; } = EstadoCuota.Pendiente;
 
         [StringLength(500)]
         public string? Observaciones { get; set; }
 
-        // Navegación
+        // Datos de pago
+        [StringLength(50)]
+        public string? MedioPago { get; set; }
+
+        [StringLength(100)]
+        public string? ComprobantePago { get; set; }
+
+        // Navigation Properties
         public virtual Credito Credito { get; set; } = null!;
     }
 }

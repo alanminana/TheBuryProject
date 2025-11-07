@@ -155,6 +155,36 @@ namespace TheBuryProject.Helpers
 
             CreateMap<CuotaViewModel, Cuota>()
                 .ForMember(d => d.Credito, o => o.Ignore());
+
+            // Mappings para Ventas
+            CreateMap<Venta, VentaViewModel>()
+                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src => src.Cliente.Nombre))
+                .ForMember(dest => dest.ClienteApellido, opt => opt.MapFrom(src => src.Cliente.Apellido))
+                .ForMember(dest => dest.ClienteDocumento, opt => opt.MapFrom(src => src.Cliente.Documento))
+                .ForMember(dest => dest.CreditoNumero, opt => opt.MapFrom(src => src.Credito != null ? src.Credito.Numero : null))
+                .ForMember(dest => dest.Detalles, opt => opt.MapFrom(src => src.Detalles))
+                .ForMember(dest => dest.Facturas, opt => opt.MapFrom(src => src.Facturas));
+
+            CreateMap<VentaViewModel, Venta>()
+                .ForMember(dest => dest.Cliente, opt => opt.Ignore())
+                .ForMember(dest => dest.Credito, opt => opt.Ignore())
+                .ForMember(dest => dest.Detalles, opt => opt.Ignore())
+                .ForMember(dest => dest.Facturas, opt => opt.Ignore());
+
+            CreateMap<VentaDetalle, VentaDetalleViewModel>()
+                .ForMember(dest => dest.ProductoNombre, opt => opt.MapFrom(src => src.Producto.Nombre))
+                .ForMember(dest => dest.ProductoCodigo, opt => opt.MapFrom(src => src.Producto.Codigo))
+                .ForMember(dest => dest.StockDisponible, opt => opt.MapFrom(src => src.Producto.StockActual));
+
+            CreateMap<VentaDetalleViewModel, VentaDetalle>()
+                .ForMember(dest => dest.Producto, opt => opt.Ignore())
+                .ForMember(dest => dest.Venta, opt => opt.Ignore());
+
+            CreateMap<Factura, FacturaViewModel>()
+                .ForMember(dest => dest.VentaNumero, opt => opt.MapFrom(src => src.Venta.Numero));
+
+            CreateMap<FacturaViewModel, Factura>()
+                .ForMember(dest => dest.Venta, opt => opt.Ignore());
         }
     }
 }

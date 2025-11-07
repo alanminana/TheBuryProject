@@ -40,7 +40,9 @@ namespace TheBuryProject.Data
         public DbSet<Credito> Creditos { get; set; }
         public DbSet<Garante> Garantes { get; set; }
         public DbSet<Cuota> Cuotas { get; set; }
-
+        public DbSet<Venta> Ventas { get; set; }
+        public DbSet<VentaDetalle> VentaDetalles { get; set; }
+        public DbSet<Factura> Facturas { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -406,6 +408,102 @@ namespace TheBuryProject.Data
                     .IsRowVersion();
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // Configuración para Venta
+            modelBuilder.Entity<Venta>(entity =>
+            {
+                entity.ToTable("Ventas");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Numero)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.Subtotal)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Descuento)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.IVA)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Total)
+                    .HasPrecision(18, 2);
+
+                entity.HasIndex(e => e.Numero).IsUnique();
+                entity.HasIndex(e => e.FechaVenta);
+                entity.HasIndex(e => e.Estado);
+
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Credito)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreditoId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
+
+                entity.HasMany(e => e.Detalles)
+                    .WithOne(d => d.Venta)
+                    .HasForeignKey(d => d.VentaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(e => e.Facturas)
+                    .WithOne(f => f.Venta)
+                    .HasForeignKey(f => f.VentaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configuración para VentaDetalle
+            modelBuilder.Entity<VentaDetalle>(entity =>
+            {
+                entity.ToTable("VentaDetalles");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.PrecioUnitario)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Descuento)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Subtotal)
+                    .HasPrecision(18, 2);
+
+                entity.HasOne(e => e.Venta)
+                    .WithMany(v => v.Detalles)
+                    .HasForeignKey(e => e.VentaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Producto)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Configuración para Factura
+            modelBuilder.Entity<Factura>(entity =>
+            {
+                entity.ToTable("Facturas");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Numero)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.CAE)
+                    .HasMaxLength(50);
+
+                entity.HasIndex(e => e.Numero).IsUnique();
+                entity.HasIndex(e => e.CAE);
+
+                entity.HasOne(e => e.Venta)
+                    .WithMany(v => v.Facturas)
+                    .HasForeignKey(e => e.VentaId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
             // Seed de datos inicial
             SeedData(modelBuilder);

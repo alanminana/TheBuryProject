@@ -7,21 +7,17 @@ namespace TheBuryProject.ViewModels
         [Display(Name = "Monto del Crédito")]
         [Required(ErrorMessage = "El monto es requerido")]
         [Range(1000, 10000000, ErrorMessage = "El monto debe estar entre $1.000 y $10.000.000")]
-        public decimal Monto { get; set; }
+        public decimal MontoSolicitado { get; set; }
 
-        [Display(Name = "Tasa de Interés Mensual (%)")]
+        [Display(Name = "Tasa de Interés Mensual")]
         [Required(ErrorMessage = "La tasa de interés es requerida")]
-        [Range(0, 100, ErrorMessage = "La tasa debe estar entre 0% y 100%")]
-        public decimal TasaInteres { get; set; }
+        [Range(0, 1, ErrorMessage = "La tasa debe estar entre 0 y 1 (ejemplo: 0.05 = 5%)")]
+        public decimal TasaInteresMensual { get; set; }
 
         [Display(Name = "Cantidad de Cuotas")]
         [Required(ErrorMessage = "La cantidad de cuotas es requerida")]
         [Range(1, 60, ErrorMessage = "Las cuotas deben estar entre 1 y 60")]
         public int CantidadCuotas { get; set; }
-
-        [Display(Name = "Fecha Primera Cuota")]
-        [DataType(DataType.Date)]
-        public DateTime? FechaPrimeraCuota { get; set; }
 
         // Resultados de la simulación
         public decimal MontoCuota { get; set; }

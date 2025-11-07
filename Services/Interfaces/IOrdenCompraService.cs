@@ -25,6 +25,6 @@ namespace TheBuryProject.Services.Interfaces
         Task<decimal> CalcularTotalOrdenAsync(int ordenId);
 
         // NUEVO: Método para recepcionar
-        Task<OrdenCompra> RecepcionarAsync(int ordenId, List<CreditoViewModel> detallesRecepcion);
+        Task<OrdenCompra> RecepcionarAsync(int ordenId, List<RecepcionDetalleViewModel> detallesRecepcion);
     }
 }

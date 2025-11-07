@@ -1,0 +1,185 @@
+﻿@model IEnumerable<TheBuryProject.ViewModels.VentaViewModel>
+
+@{
+    ViewData["Title"] = "Ventas";
+    var filter = ViewBag.Filter as TheBuryProject.ViewModels.VentaFilterViewModel;
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="bi bi-cart-check"></i> Ventas</h2>
+            <a asp-action="Create" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Nueva Venta
+            </a>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros de Búsqueda</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Index" method="get">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Número</label>
+                            <input type="text" name="Numero" class="form-control" value="@filter?.Numero" placeholder="VTA-202411-000001" />
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Cliente</label>
+                            <input type="text" name="Cliente" class="form-control" value="@filter?.Cliente" placeholder="Nombre o DNI..." />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Estado</label>
+                            <select name="Estado" class="form-select" asp-items="ViewBag.Estados">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Tipo Pago</label>
+                            <select name="TipoPago" class="form-select" asp-items="ViewBag.TiposPago">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Desde</label>
+                            <input type="date" name="FechaDesde" class="form-control" value="@filter?.FechaDesde?.ToString("yyyy-MM-dd")" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Hasta</label>
+                            <input type="date" name="FechaHasta" class="form-control" value="@filter?.FechaHasta?.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Monto Mínimo</label>
+                            <input type="number" name="MontoMinimo" class="form-control" value="@filter?.MontoMinimo" step="0.01" />
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">Monto Máximo</label>
+                            <input type="number" name="MontoMaximo" class="form-control" value="@filter?.MontoMaximo" step="0.01" />
+                        </div>
+                        <div class="col-md-3 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-x-circle"></i> @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Resultados -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-list"></i> Listado de Ventas</h5>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Tipo Pago</th>
+                                    <th>Total</th>
+                                    <th class="text-center">Estado</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var venta in Model)
+                                {
+                                    <tr>
+                                        <td><strong>@venta.Numero</strong></td>
+                                        <td>@venta.FechaVenta.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            @venta.ClienteNombre<br />
+                                            <small class="text-muted">@venta.ClienteDocumento</small>
+                                        </td>
+                                        <td>
+                                            @venta.TipoPago
+                                            @if (venta.CreditoId.HasValue)
+                                            {
+                                                <br />
+                                    
+                                                <small class="text-info"><i class="bi bi-credit-card"></i> @venta.CreditoNumero</small>
+                                            }
+                                        </td>
+                                        <td><strong>@venta.Total.ToString("C")</strong></td>
+                                        <td class="text-center">
+                                            @{
+                                                var estadoBadgeClass = venta.Estado.ToString() switch
+                                                {
+                                                    "Presupuesto" => "bg-secondary",
+                                                    "Confirmada" => "bg-info",
+                                                    "Facturada" => "bg-success",
+                                                    "Entregada" => "bg-primary",
+                                                    "Cancelada" => "bg-danger",
+                                                    _ => "bg-secondary"
+                                                };
+                                            }
+                                            <span class="badge @estadoBadgeClass">@venta.Estado</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group" role="group">
+                                                <a asp-action="Details" asp-route-id="@venta.Id"
+                                                   class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                @if (venta.Estado == TheBuryProject.Models.Enums.EstadoVenta.Presupuesto)
+                                                {
+                                                    <a asp-action="Edit" asp-route-id="@venta.Id"
+                                                       class="btn btn-sm btn-outline-warning" title="Editar">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <a asp-action="Delete" asp-route-id="@venta.Id"
+                                                       class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                        <i class="bi bi-trash"></i>
+                                                    </a>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p>No se encontraron ventas</p>
+                        <a asp-action="Create" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Crear Primera Venta
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

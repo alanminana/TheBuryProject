@@ -283,7 +283,7 @@ namespace TheBuryProject.Services
                 .AnyAsync(o => o.Numero == numero && (excludeId == null || o.Id != excludeId.Value));
         }
 
-        public async Task<OrdenCompra> RecepcionarAsync(int ordenId, List<CreditoViewModel> detallesRecepcion)
+        public async Task<OrdenCompra> RecepcionarAsync(int ordenId, List<RecepcionDetalleViewModel> detallesRecepcion)
         {
             var orden = await GetByIdAsync(ordenId);
             if (orden == null)

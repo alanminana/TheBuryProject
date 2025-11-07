@@ -95,10 +95,8 @@ namespace TheBuryProject.Services
 
             // Validar que no tenga créditos activos
             var tieneCreditosActivos = await _context.Creditos
-                .AnyAsync(c => c.ClienteId == id &&
-                    (c.Estado == Models.Enums.EstadoCredito.Vigente ||
-                     c.Estado == Models.Enums.EstadoCredito.EnMora));
-
+         .AnyAsync(c => c.ClienteId == id &&
+    c.Estado == Models.Enums.EstadoCredito.Activo);
             if (tieneCreditosActivos)
             {
                 throw new InvalidOperationException(
@@ -152,8 +150,7 @@ namespace TheBuryProject.Services
             if (conCreditosActivos.HasValue && conCreditosActivos.Value)
             {
                 query = query.Where(c => c.Creditos.Any(cr =>
-                    cr.Estado == Models.Enums.EstadoCredito.Vigente ||
-                    cr.Estado == Models.Enums.EstadoCredito.EnMora));
+     cr.Estado == Models.Enums.EstadoCredito.Activo));
             }
 
             if (puntajeMinimo.HasValue)

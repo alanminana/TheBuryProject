@@ -1,0 +1,127 @@
+﻿@model TheBuryProject.ViewModels.FacturaViewModel
+
+@{
+    ViewData["Title"] = "Facturar Venta";
+    var venta = ViewBag.Venta as TheBuryProject.ViewModels.VentaViewModel;
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="bi bi-receipt"></i> Facturar Venta</h2>
+            <a asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+
+        @if (venta != null)
+        {
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Información de la Venta</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Número:</dt>
+                                <dd class="col-sm-8">@venta.Numero</dd>
+
+                                <dt class="col-sm-4">Cliente:</dt>
+                                <dd class="col-sm-8">@venta.ClienteNombre</dd>
+
+                                <dt class="col-sm-4">Fecha:</dt>
+                                <dd class="col-sm-8">@venta.FechaVenta.ToString("dd/MM/yyyy")</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Subtotal:</th>
+                                    <td class="text-end">@venta.Subtotal.ToString("C")</td>
+                                </tr>
+                                <tr>
+                                    <th>IVA:</th>
+                                    <td class="text-end">@venta.IVA.ToString("C")</td>
+                                </tr>
+                                <tr class="table-active">
+                                    <th>Total:</th>
+                                    <th class="text-end">@venta.Total.ToString("C")</th>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <form asp-action="Facturar" method="post">
+            <input type="hidden" asp-for="VentaId" />
+            <input type="hidden" asp-for="Subtotal" />
+            <input type="hidden" asp-for="IVA" />
+            <input type="hidden" asp-for="Total" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Datos de la Factura</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Numero" class="form-label"></label>
+                            <input asp-for="Numero" class="form-control" placeholder="0001-00000001" />
+                            <span asp-validation-for="Numero" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="Tipo" class="form-label"></label>
+                            <select asp-for="Tipo" class="form-select" asp-items="ViewBag.TiposFactura">
+                            </select>
+                            <span asp-validation-for="Tipo" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="PuntoVenta" class="form-label"></label>
+                            <input asp-for="PuntoVenta" class="form-control" placeholder="0001" />
+                            <span asp-validation-for="PuntoVenta" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="FechaEmision" class="form-label"></label>
+                            <input asp-for="FechaEmision" class="form-control" type="date" />
+                            <span asp-validation-for="FechaEmision" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="CAE" class="form-label"></label>
+                            <input asp-for="CAE" class="form-control" placeholder="Código de Autorización Electrónico" />
+                            <span asp-validation-for="CAE" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="FechaVencimientoCAE" class="form-label"></label>
+                            <input asp-for="FechaVencimientoCAE" class="form-control" type="date" />
+                            <span asp-validation-for="FechaVencimientoCAE" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-receipt"></i> Generar Factura
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

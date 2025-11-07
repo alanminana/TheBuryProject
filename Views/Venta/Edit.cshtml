@@ -1,0 +1,303 @@
+﻿@model TheBuryProject.ViewModels.VentaViewModel
+
+@{
+    ViewData["Title"] = "Editar Venta";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="bi bi-pencil"></i> Editar Venta</h2>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+
+        <form asp-action="Edit" method="post" id="formVenta">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="Numero" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Datos de la Venta</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="ClienteId" class="form-label"></label>
+                            <select asp-for="ClienteId" class="form-select" asp-items="ViewBag.Clientes">
+                                <option value="">Seleccione un cliente...</option>
+                            </select>
+                            <span asp-validation-for="ClienteId" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="FechaVenta" class="form-label"></label>
+                            <input asp-for="FechaVenta" class="form-control" type="date" />
+                            <span asp-validation-for="FechaVenta" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="TipoPago" class="form-label"></label>
+                            <select asp-for="TipoPago" class="form-select" asp-items="ViewBag.TiposPago">
+                            </select>
+                            <span asp-validation-for="TipoPago" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-2 mb-3">
+                            <label asp-for="Descuento" class="form-label"></label>
+                            <input asp-for="Descuento" class="form-control" type="number" step="0.01" />
+                            <span asp-validation-for="Descuento" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="VendedorNombre" class="form-label"></label>
+                            <input asp-for="VendedorNombre" class="form-control" />
+                            <span asp-validation-for="VendedorNombre" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Observaciones" class="form-label"></label>
+                            <textarea asp-for="Observaciones" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="Observaciones" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Productos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            <label class="form-label">Producto</label>
+                            <select id="productoSelect" class="form-select" asp-items="ViewBag.Productos">
+                                <option value="">Seleccione un producto...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Cantidad</label>
+                            <input type="number" id="cantidadInput" class="form-control" value="1" min="1" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Precio</label>
+                            <input type="number" id="precioInput" class="form-control" step="0.01" readonly />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Descuento</label>
+                            <input type="number" id="descuentoInput" class="form-control" value="0" step="0.01" />
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="button" id="btnAgregarProducto" class="btn btn-success w-100">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="tablaDetalles">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Unit.</th>
+                                    <th>Descuento</th>
+                                    <th>Subtotal</th>
+                                    <th style="width: 80px;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detallesBody">
+                                @foreach (var detalle in Model.Detalles)
+                                {
+                                    <tr data-index="@detalle.Id">
+                                        <td>@detalle.ProductoNombre</td>
+                                        <td>@detalle.Cantidad</td>
+                                        <td>$@detalle.PrecioUnitario.ToString("F2")</td>
+                                        <td>$@detalle.Descuento.ToString("F2")</td>
+                                        <td>$@detalle.Subtotal.ToString("F2")</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="eliminarDetalle(@detalle.Id)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8"></div>
+                        <div class="col-md-4">
+                            <table class="table">
+                                <tr>
+                                    <th>Subtotal:</th>
+                                    <td class="text-end"><span id="subtotalDisplay">$0.00</span></td>
+                                </tr>
+                                <tr>
+                                    <th>Descuento:</th>
+                                    <td class="text-end"><span id="descuentoDisplay">$0.00</span></td>
+                                </tr>
+                                <tr>
+                                    <th>IVA (21%):</th>
+                                    <td class="text-end"><span id="ivaDisplay">$0.00</span></td>
+                                </tr>
+                                <tr class="table-active">
+                                    <th>TOTAL:</th>
+                                    <th class="text-end"><span id="totalDisplay">$0.00</span></th>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="hidden" asp-for="Subtotal" id="subtotalHidden" />
+            <input type="hidden" asp-for="IVA" id="ivaHidden" />
+            <input type="hidden" asp-for="Total" id="totalHidden" />
+
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-save"></i> Actualizar Venta
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        let detalles = @Html.Raw(Json.Serialize(Model.Detalles.Select(d => new {
+            index = d.Id,
+            ProductoId = d.ProductoId,
+            ProductoNombre = d.ProductoNombre,
+            Cantidad = d.Cantidad,
+            PrecioUnitario = d.PrecioUnitario,
+            Descuento = d.Descuento,
+            Subtotal = d.Subtotal,
+            Id = d.Id
+        })));
+        
+        let detalleIndex = Math.max(...detalles.map(d => d.index)) + 1;
+
+        $(document).ready(function () {
+            calcularTotales();
+
+            $('#productoSelect').change(function () {
+                const productoId = $(this).val();
+                if (productoId) {
+                    $.get('@Url.Action("GetProductoPrecio", "Venta")', { productoId: productoId }, function (data) {
+                        $('#precioInput').val(data.precioVenta.toFixed(2));
+                    });
+                }
+            });
+
+            $('#btnAgregarProducto').click(function () {
+                const productoId = $('#productoSelect').val();
+                const productoTexto = $('#productoSelect option:selected').text();
+                const cantidad = parseInt($('#cantidadInput').val());
+                const precio = parseFloat($('#precioInput').val());
+                const descuento = parseFloat($('#descuentoInput').val()) || 0;
+
+                if (!productoId || cantidad <= 0 || precio <= 0) {
+                    alert('Por favor complete todos los campos correctamente');
+                    return;
+                }
+
+                const subtotal = (cantidad * precio) - descuento;
+
+                const detalle = {
+                    index: detalleIndex++,
+                    ProductoId: productoId,
+                    ProductoNombre: productoTexto,
+                    Cantidad: cantidad,
+                    PrecioUnitario: precio,
+                    Descuento: descuento,
+                    Subtotal: subtotal,
+                    Id: 0
+                };
+
+                detalles.push(detalle);
+                agregarFilaDetalle(detalle);
+                calcularTotales();
+
+                $('#productoSelect').val('');
+                $('#cantidadInput').val(1);
+                $('#precioInput').val('');
+                $('#descuentoInput').val(0);
+            });
+
+            $('#formVenta').submit(function (e) {
+                $('input[name^="Detalles"]').remove();
+
+                detalles.forEach((detalle, index) => {
+                    if (detalle.Id > 0) {
+                        $(this).append(`<input type="hidden" name="Detalles[${index}].Id" value="${detalle.Id}" />`);
+                    }
+                    $(this).append(`<input type="hidden" name="Detalles[${index}].ProductoId" value="${detalle.ProductoId}" />`);
+                    $(this).append(`<input type="hidden" name="Detalles[${index}].Cantidad" value="${detalle.Cantidad}" />`);
+                    $(this).append(`<input type="hidden" name="Detalles[${index}].PrecioUnitario" value="${detalle.PrecioUnitario}" />`);
+                    $(this).append(`<input type="hidden" name="Detalles[${index}].Descuento" value="${detalle.Descuento}" />`);
+                    $(this).append(`<input type="hidden" name="Detalles[${index}].Subtotal" value="${detalle.Subtotal}" />`);
+                });
+            });
+
+            $('#Descuento').on('input', function () {
+                calcularTotales();
+            });
+        });
+
+        function agregarFilaDetalle(detalle) {
+            const fila = `
+                <tr data-index="${detalle.index}">
+                    <td>${detalle.ProductoNombre}</td>
+                    <td>${detalle.Cantidad}</td>
+                    <td>$${detalle.PrecioUnitario.toFixed(2)}</td>
+                    <td>$${detalle.Descuento.toFixed(2)}</td>
+                    <td>$${detalle.Subtotal.toFixed(2)}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="eliminarDetalle(${detalle.index})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            $('#detallesBody').append(fila);
+        }
+
+        function eliminarDetalle(index) {
+            detalles = detalles.filter(d => d.index !== index);
+            $(`tr[data-index="${index}"]`).remove();
+            calcularTotales();
+        }
+
+        function calcularTotales() {
+            const subtotal = detalles.reduce((sum, d) => sum + d.Subtotal, 0);
+            const descuentoGlobal = parseFloat($('#Descuento').val()) || 0;
+            const subtotalConDescuento = subtotal - descuentoGlobal;
+            const iva = subtotalConDescuento * 0.21;
+            const total = subtotalConDescuento + iva;
+
+            $('#subtotalDisplay').text('$' + subtotal.toFixed(2));
+            $('#descuentoDisplay').text('$' + descuentoGlobal.toFixed(2));
+            $('#ivaDisplay').text('$' + iva.toFixed(2));
+            $('#totalDisplay').text('$' + total.toFixed(2));
+
+            $('#subtotalHidden').val(subtotal.toFixed(2));
+            $('#ivaHidden').val(iva.toFixed(2));
+            $('#totalHidden').val(total.toFixed(2));
+        }
+    </script>
+}

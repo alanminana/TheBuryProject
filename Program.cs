@@ -49,6 +49,7 @@ builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();  // ← A
 builder.Services.AddScoped<IMovimientoStockService, MovimientoStockService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<ICreditoService, CreditoService>();
+builder.Services.AddScoped<IVentaService, VentaService>();
 
 builder.Services.AddScoped<IChequeService, ChequeService>();
 

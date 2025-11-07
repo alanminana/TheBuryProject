@@ -80,30 +80,46 @@
                                         <i class="bi bi-arrow-left-right"></i> Kardex / Stock
                                     </a>
                                 </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Venta" asp-action="Index">
+                                <i class="bi bi-cart-check"></i> Ventas
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" id="ventasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-cart-check"></i> Ventas
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="ventasDropdown">
                                 <li>
-                                    <a class="dropdown-item" asp-controller="Credito" asp-action="Index">
-                                        <i class="fas fa-list"></i> Lista de Créditos
+                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index">
+                                        <i class="bi bi-list-ul"></i> Listado de Ventas
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" asp-controller="Credito" asp-action="Create">
-                                        <i class="fas fa-plus"></i> Nuevo Crédito
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Credito" asp-action="Simular">
-                                        <i class="fas fa-calculator"></i> Simular Crédito
+                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Create">
+                                        <i class="bi bi-plus-circle"></i> Nueva Venta
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <a class="dropdown-item" asp-controller="Credito" asp-action="CuotasVencidas">
-                                        <i class="fas fa-exclamation-triangle"></i> Cuotas Vencidas
+                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index" asp-route-estado="Presupuesto">
+                                        <i class="bi bi-file-earmark-text"></i> Presupuestos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index" asp-route-estado="Confirmada">
+                                        <i class="bi bi-check-circle"></i> Ventas Confirmadas
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index" asp-route-estado="Facturada">
+                                        <i class="bi bi-receipt"></i> Ventas Facturadas
                                     </a>
                                 </li>
                             </ul>
                         </li>
-
                         <!-- Clientes Dropdown -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -113,6 +129,28 @@
                                 <li>
                                     <a class="dropdown-item" asp-controller="Cliente" asp-action="Index">
                                         <i class="bi bi-person-lines-fill"></i> Clientes
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Credito" asp-action="Index">
+                                        <i class="bi bi-cash-coin"></i> Lista de Créditos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Credito" asp-action="Create">
+                                        <i class="bi bi-plus-circle"></i> Nuevo Crédito
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Credito" asp-action="Simular">
+                                        <i class="bi bi-calculator"></i> Simular Crédito
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Credito" asp-action="CuotasVencidas">
+                                        <i class="bi bi-exclamation-triangle"></i> Cuotas Vencidas
                                     </a>
                                 </li>
                             </ul>

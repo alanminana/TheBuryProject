@@ -1,613 +1,586 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
+using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Services
 {
     public class CreditoService : ICreditoService
     {
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
+        private readonly ILogger<CreditoService> _logger;
 
-        public CreditoService(AppDbContext context)
+        public CreditoService(AppDbContext context, IMapper mapper, ILogger<CreditoService> logger)
         {
             _context = context;
+            _mapper = mapper;
+            _logger = logger;
         }
 
         #region CRUD Básico
 
-        public async Task<Credito?> GetByIdAsync(int id)
+        public async Task<List<CreditoViewModel>> GetAllAsync(CreditoFilterViewModel? filter = null)
         {
-            return await _context.Creditos
-                .Include(c => c.Cliente)
-                .Include(c => c.Garante)
-                    .ThenInclude(g => g.GaranteCliente)
-                .Include(c => c.Cuotas)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            try
+            {
+                var query = _context.Creditos
+                    .Include(c => c.Cliente)
+                    .Include(c => c.Garante)
+                    .Include(c => c.Cuotas)
+                    .AsQueryable();
+
+                // Aplicar filtros
+                if (filter != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(filter.Numero))
+                        query = query.Where(c => c.Numero.Contains(filter.Numero));
+
+                    if (!string.IsNullOrWhiteSpace(filter.Cliente))
+                        query = query.Where(c =>
+                            c.Cliente.NumeroDocumento.Contains(filter.Cliente) ||
+                            c.Cliente.Nombre.Contains(filter.Cliente) ||
+                            c.Cliente.Apellido.Contains(filter.Cliente));
+
+                    if (filter.Estado.HasValue)
+                        query = query.Where(c => c.Estado == filter.Estado.Value);
+
+                    if (filter.FechaDesde.HasValue)
+                        query = query.Where(c => c.FechaSolicitud >= filter.FechaDesde.Value);
+
+                    if (filter.FechaHasta.HasValue)
+                        query = query.Where(c => c.FechaSolicitud <= filter.FechaHasta.Value);
+
+                    if (filter.MontoMinimo.HasValue)
+                        query = query.Where(c => c.MontoAprobado >= filter.MontoMinimo.Value);
+
+                    if (filter.MontoMaximo.HasValue)
+                        query = query.Where(c => c.MontoAprobado <= filter.MontoMaximo.Value);
+
+                    if (filter.SoloCuotasVencidas)
+                        query = query.Where(c => c.Cuotas.Any(cu =>
+                            cu.Estado == EstadoCuota.Vencida ||
+                            (cu.Estado == EstadoCuota.Pendiente && cu.FechaVencimiento < DateTime.Now)));
+                }
+
+                var creditos = await query
+                    .OrderByDescending(c => c.CreatedAt)
+                    .ToListAsync();
+
+                var viewModels = _mapper.Map<List<CreditoViewModel>>(creditos);
+
+                // Mapear nombres manualmente
+                foreach (var vm in viewModels)
+                {
+                    var credito = creditos.First(c => c.Id == vm.Id);
+                    vm.ClienteNombre = $"{credito.Cliente.Apellido}, {credito.Cliente.Nombre}";
+                    if (credito.Garante != null)
+                        vm.GaranteNombre = $"{credito.Garante.Apellido}, {credito.Garante.Nombre}";
+                }
+
+                return viewModels;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener créditos");
+                throw;
+            }
         }
 
-        public async Task<Credito?> GetByNumeroAsync(string numero)
+        public async Task<CreditoViewModel?> GetByIdAsync(int id)
         {
-            return await _context.Creditos
-                .Include(c => c.Cliente)
-                .Include(c => c.Garante)
-                .Include(c => c.Cuotas)
-                .FirstOrDefaultAsync(c => c.Numero == numero);
+            try
+            {
+                var credito = await _context.Creditos
+                    .Include(c => c.Cliente)
+                    .Include(c => c.Garante)
+                    .Include(c => c.Cuotas.OrderBy(cu => cu.NumeroCuota))
+                    .FirstOrDefaultAsync(c => c.Id == id);
+
+                if (credito == null)
+                    return null;
+
+                var viewModel = _mapper.Map<CreditoViewModel>(credito);
+                viewModel.ClienteNombre = $"{credito.Cliente.Apellido}, {credito.Cliente.Nombre}";
+                if (credito.Garante != null)
+                    viewModel.GaranteNombre = $"{credito.Garante.Apellido}, {credito.Garante.Nombre}";
+
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener crédito por ID: {Id}", id);
+                throw;
+            }
         }
 
-        public async Task<IEnumerable<Credito>> GetAllAsync()
+        public async Task<CreditoViewModel> CreateAsync(CreditoViewModel viewModel)
         {
-            return await _context.Creditos
-                .Include(c => c.Cliente)
-                .Include(c => c.Garante)
-                .Include(c => c.Cuotas)
-                .OrderByDescending(c => c.FechaSolicitud)
-                .ToListAsync();
+            try
+            {
+                // Obtener cliente para validaciones
+                var cliente = await _context.Clientes.FindAsync(viewModel.ClienteId);
+                if (cliente == null)
+                    throw new Exception("Cliente no encontrado");
+
+                // Generar número de crédito
+                viewModel.Numero = await GenerarNumeroCreditoAsync();
+                viewModel.PuntajeRiesgoInicial = cliente.PuntajeRiesgo;
+                viewModel.Estado = EstadoCredito.Solicitado;
+                viewModel.FechaSolicitud = DateTime.Now;
+
+                // Calcular valores financieros
+                var tasaDecimal = viewModel.TasaInteres / 100;
+                viewModel.MontoCuota = CalcularMontoCuotaSistemaFrances(
+                    viewModel.MontoSolicitado,
+                    tasaDecimal,
+                    viewModel.CantidadCuotas);
+
+                viewModel.TotalAPagar = viewModel.MontoCuota * viewModel.CantidadCuotas;
+                viewModel.CFTEA = CalcularCFTEA(tasaDecimal);
+                viewModel.SaldoPendiente = viewModel.MontoSolicitado;
+
+                var credito = _mapper.Map<Credito>(viewModel);
+                _context.Creditos.Add(credito);
+                await _context.SaveChangesAsync();
+
+                viewModel.Id = credito.Id;
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear crédito");
+                throw;
+            }
         }
 
-        public async Task<Credito> CreateAsync(Credito credito)
+        public async Task<bool> UpdateAsync(CreditoViewModel viewModel)
         {
-            // Generar número automático si no tiene
-            if (string.IsNullOrWhiteSpace(credito.Numero))
+            try
             {
-                credito.Numero = await GenerarNumeroAsync();
-            }
+                var credito = await _context.Creditos.FindAsync(viewModel.Id);
+                if (credito == null)
+                    return false;
 
-            // Validar número único
-            if (await ExisteNumeroAsync(credito.Numero))
+                _mapper.Map(viewModel, credito);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
             {
-                throw new InvalidOperationException($"Ya existe un crédito con el número {credito.Numero}");
+                _logger.LogError(ex, "Error al actualizar crédito: {Id}", viewModel.Id);
+                throw;
             }
-
-            // Obtener datos del cliente
-            var cliente = await _context.Clientes.FindAsync(credito.ClienteId);
-            if (cliente == null)
-            {
-                throw new InvalidOperationException("Cliente no encontrado");
-            }
-
-            credito.PuntajeRiesgoInicial = cliente.PuntajeRiesgo;
-            credito.SueldoCliente = cliente.Sueldo;
-
-            // Calcular monto total y cuota
-            credito.MontoTotal = CalcularMontoTotal(credito.MontoSolicitado, credito.CantidadCuotas, credito.TasaInteres);
-            credito.MontoCuota = CalcularMontoCuota(credito.MontoTotal, credito.CantidadCuotas, credito.TasaInteres);
-
-            if (credito.SueldoCliente.HasValue && credito.SueldoCliente.Value > 0)
-            {
-                credito.PorcentajeSueldo = CalcularPorcentajeSueldo(credito.MontoCuota, credito.SueldoCliente.Value);
-            }
-
-            _context.Creditos.Add(credito);
-            await _context.SaveChangesAsync();
-
-            return credito;
-        }
-
-        public async Task<Credito> UpdateAsync(Credito credito)
-        {
-            var existing = await _context.Creditos.FindAsync(credito.Id);
-            if (existing == null)
-            {
-                throw new InvalidOperationException("Crédito no encontrado");
-            }
-
-            // Validar número único
-            if (await ExisteNumeroAsync(credito.Numero, credito.Id))
-            {
-                throw new InvalidOperationException($"Ya existe un crédito con el número {credito.Numero}");
-            }
-
-            // Recalcular montos si cambiaron parámetros
-            credito.MontoTotal = CalcularMontoTotal(credito.MontoAprobado > 0 ? credito.MontoAprobado : credito.MontoSolicitado,
-                credito.CantidadCuotas, credito.TasaInteres);
-            credito.MontoCuota = CalcularMontoCuota(credito.MontoTotal, credito.CantidadCuotas, credito.TasaInteres);
-
-            if (credito.SueldoCliente.HasValue && credito.SueldoCliente.Value > 0)
-            {
-                credito.PorcentajeSueldo = CalcularPorcentajeSueldo(credito.MontoCuota, credito.SueldoCliente.Value);
-            }
-
-            _context.Entry(existing).CurrentValues.SetValues(credito);
-            await _context.SaveChangesAsync();
-
-            return credito;
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var credito = await _context.Creditos
-                .Include(c => c.Cuotas)
-                .FirstOrDefaultAsync(c => c.Id == id);
-
-            if (credito == null) return false;
-
-            // Solo permitir eliminar créditos en estado Solicitado o Rechazado
-            if (credito.Estado != EstadoCredito.Solicitado && credito.Estado != EstadoCredito.Rechazado)
+            try
             {
-                throw new InvalidOperationException("Solo se pueden eliminar créditos en estado Solicitado o Rechazado");
+                var credito = await _context.Creditos
+                    .Include(c => c.Cuotas)
+                    .FirstOrDefaultAsync(c => c.Id == id);
+
+                if (credito == null)
+                    return false;
+
+                // Solo se puede eliminar si está en estado Solicitado y no tiene cuotas pagadas
+                if (credito.Estado != EstadoCredito.Solicitado)
+                    throw new Exception("Solo se pueden eliminar créditos en estado Solicitado");
+
+                if (credito.Cuotas.Any(c => c.Estado == EstadoCuota.Pagada))
+                    throw new Exception("No se puede eliminar un crédito con cuotas pagadas");
+
+                _context.Creditos.Remove(credito);
+                await _context.SaveChangesAsync();
+                return true;
             }
-
-            credito.IsDeleted = true;
-            await _context.SaveChangesAsync();
-
-            return true;
-        }
-
-        #endregion
-
-        #region Búsqueda y Filtrado
-
-        public async Task<IEnumerable<Credito>> SearchAsync(
-            string? searchTerm = null,
-            int? clienteId = null,
-            EstadoCredito? estado = null,
-            DateTime? fechaDesde = null,
-            DateTime? fechaHasta = null,
-            decimal? montoMinimo = null,
-            decimal? montoMaximo = null,
-            bool soloEnMora = false,
-            string orderBy = "FechaSolicitud",
-            string orderDirection = "DESC")
-        {
-            var query = _context.Creditos
-                .Include(c => c.Cliente)
-                .Include(c => c.Garante)
-                .Include(c => c.Cuotas)
-                .AsQueryable();
-
-            // Filtro por término de búsqueda
-            if (!string.IsNullOrWhiteSpace(searchTerm))
+            catch (Exception ex)
             {
-                searchTerm = searchTerm.ToLower();
-                query = query.Where(c =>
-                    c.Numero.ToLower().Contains(searchTerm) ||
-                    c.Cliente.NombreCompleto.ToLower().Contains(searchTerm) ||
-                    c.Cliente.NumeroDocumento.Contains(searchTerm));
-            }
-
-            // Filtro por cliente
-            if (clienteId.HasValue)
-            {
-                query = query.Where(c => c.ClienteId == clienteId.Value);
-            }
-
-            // Filtro por estado
-            if (estado.HasValue)
-            {
-                query = query.Where(c => c.Estado == estado.Value);
-            }
-
-            // Filtro por fechas
-            if (fechaDesde.HasValue)
-            {
-                query = query.Where(c => c.FechaSolicitud >= fechaDesde.Value);
-            }
-
-            if (fechaHasta.HasValue)
-            {
-                query = query.Where(c => c.FechaSolicitud <= fechaHasta.Value);
-            }
-
-            // Filtro por montos
-            if (montoMinimo.HasValue)
-            {
-                query = query.Where(c => c.MontoAprobado >= montoMinimo.Value || c.MontoSolicitado >= montoMinimo.Value);
-            }
-
-            if (montoMaximo.HasValue)
-            {
-                query = query.Where(c => c.MontoAprobado <= montoMaximo.Value || c.MontoSolicitado <= montoMaximo.Value);
-            }
-
-            // Filtro solo en mora
-            if (soloEnMora)
-            {
-                query = query.Where(c => c.Estado == EstadoCredito.EnMora);
-            }
-
-            // Ordenamiento
-            query = orderBy switch
-            {
-                "Numero" => orderDirection == "ASC" ? query.OrderBy(c => c.Numero) : query.OrderByDescending(c => c.Numero),
-                "Cliente" => orderDirection == "ASC" ? query.OrderBy(c => c.Cliente.NombreCompleto) : query.OrderByDescending(c => c.Cliente.NombreCompleto),
-                "Monto" => orderDirection == "ASC" ? query.OrderBy(c => c.MontoAprobado) : query.OrderByDescending(c => c.MontoAprobado),
-                "Estado" => orderDirection == "ASC" ? query.OrderBy(c => c.Estado) : query.OrderByDescending(c => c.Estado),
-                _ => orderDirection == "ASC" ? query.OrderBy(c => c.FechaSolicitud) : query.OrderByDescending(c => c.FechaSolicitud)
-            };
-
-            return await query.ToListAsync();
-        }
-
-        public async Task<IEnumerable<Credito>> GetByClienteIdAsync(int clienteId)
-        {
-            return await _context.Creditos
-                .Include(c => c.Cuotas)
-                .Where(c => c.ClienteId == clienteId)
-                .OrderByDescending(c => c.FechaSolicitud)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Credito>> GetCreditosActivosAsync()
-        {
-            return await _context.Creditos
-                .Include(c => c.Cliente)
-                .Include(c => c.Cuotas)
-                .Where(c => c.Estado == EstadoCredito.Vigente || c.Estado == EstadoCredito.EnMora)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Credito>> GetCreditosEnMoraAsync()
-        {
-            return await _context.Creditos
-                .Include(c => c.Cliente)
-                .Include(c => c.Cuotas)
-                .Where(c => c.Estado == EstadoCredito.EnMora)
-                .ToListAsync();
-        }
-
-        #endregion
-
-        #region Evaluación de Crédito
-
-        public async Task<(bool aprobado, string motivo, decimal tasaSugerida)> EvaluarCreditoAsync(
-            int clienteId,
-            decimal montoSolicitado,
-            int cantidadCuotas,
-            int? garanteId = null)
-        {
-            var cliente = await _context.Clientes.FindAsync(clienteId);
-            if (cliente == null)
-            {
-                return (false, "Cliente no encontrado", 0);
-            }
-
-            bool tieneGarante = garanteId.HasValue;
-            decimal tasaSugerida = CalcularTasaSugerida(cliente.PuntajeRiesgo, tieneGarante);
-
-            // Calcular montos
-            decimal montoTotal = CalcularMontoTotal(montoSolicitado, cantidadCuotas, tasaSugerida);
-            decimal montoCuota = CalcularMontoCuota(montoTotal, cantidadCuotas, tasaSugerida);
-
-            // Validar documentación
-            if (!cliente.TieneReciboSueldo && !tieneGarante)
-            {
-                return (false, "El cliente debe presentar recibo de sueldo o tener un garante válido", tasaSugerida);
-            }
-
-            // Validar sueldo (regla del 30%)
-            if (cliente.Sueldo.HasValue && cliente.Sueldo.Value > 0)
-            {
-                decimal porcentajeSueldo = CalcularPorcentajeSueldo(montoCuota, cliente.Sueldo.Value);
-
-                if (porcentajeSueldo <= 30)
-                {
-                    return (true, "Aprobado: La cuota representa el " + porcentajeSueldo.ToString("N2") + "% del sueldo", tasaSugerida);
-                }
-                else if (tieneGarante)
-                {
-                    // Validar garante
-                    var garante = await _context.Garantes
-                        .Include(g => g.GaranteCliente)
-                        .FirstOrDefaultAsync(g => g.Id == garanteId.Value);
-
-                    if (garante?.GaranteCliente != null)
-                    {
-                        return (true, "Aprobado: Con garante válido (cliente " + garante.GaranteCliente.NombreCompleto + ")", tasaSugerida);
-                    }
-                    else if (garante != null)
-                    {
-                        return (true, "Aprobado: Con garante externo (" + garante.Apellido + ", " + garante.Nombre + ")", tasaSugerida);
-                    }
-                    else
-                    {
-                        return (false, "Garante no válido", tasaSugerida);
-                    }
-                }
-                else
-                {
-                    return (false, "Rechazado: La cuota representa el " + porcentajeSueldo.ToString("N2") + "% del sueldo (máximo 30%) y no tiene garante", tasaSugerida);
-                }
-            }
-            else
-            {
-                // Sin sueldo, requiere garante
-                if (tieneGarante)
-                {
-                    return (true, "Aprobado: Con garante válido", tasaSugerida);
-                }
-                else
-                {
-                    return (false, "Rechazado: El cliente no tiene sueldo declarado y no presenta garante", tasaSugerida);
-                }
+                _logger.LogError(ex, "Error al eliminar crédito: {Id}", id);
+                throw;
             }
         }
 
         #endregion
 
-        #region Cálculos
+        #region Operaciones de Crédito
 
-        public decimal CalcularMontoCuota(decimal montoTotal, int cantidadCuotas, decimal tasaInteres)
+        public async Task<SimularCreditoViewModel> SimularCreditoAsync(SimularCreditoViewModel modelo)
         {
-            if (cantidadCuotas <= 0) return 0;
-
-            // Sistema francés (cuota fija)
-            if (tasaInteres == 0)
+            try
             {
-                return montoTotal / cantidadCuotas;
-            }
+                // La tasa ya viene como decimal (ejemplo: 0.05 = 5%)
+                var tasaDecimal = modelo.TasaInteresMensual;
+                modelo.MontoCuota = CalcularMontoCuotaSistemaFrances(modelo.MontoSolicitado, tasaDecimal, modelo.CantidadCuotas);
+                modelo.TotalAPagar = modelo.MontoCuota * modelo.CantidadCuotas;
+                modelo.TotalIntereses = modelo.TotalAPagar - modelo.MontoSolicitado;
+                modelo.CFTEA = CalcularCFTEA(tasaDecimal);
 
-            decimal tasaMensual = tasaInteres / 100;
-            decimal cuota = montoTotal * (tasaMensual * (decimal)Math.Pow((double)(1 + tasaMensual), cantidadCuotas)) /
-                            ((decimal)Math.Pow((double)(1 + tasaMensual), cantidadCuotas) - 1);
+                // Generar plan de pagos
+                modelo.PlanPagos = new List<CuotaSimuladaViewModel>();
+                var fechaCuota = DateTime.Now.AddMonths(1);
+                var saldoCapital = modelo.MontoSolicitado;
+
+                for (int i = 1; i <= modelo.CantidadCuotas; i++)
+                {
+                    var interes = saldoCapital * tasaDecimal;
+                    var capital = modelo.MontoCuota - interes;
+                    saldoCapital -= capital;
+
+                    modelo.PlanPagos.Add(new CuotaSimuladaViewModel
+                    {
+                        NumeroCuota = i,
+                        FechaVencimiento = fechaCuota,
+                        MontoCapital = Math.Round(capital, 2),
+                        MontoInteres = Math.Round(interes, 2),
+                        MontoTotal = Math.Round(modelo.MontoCuota, 2),
+                        SaldoCapital = Math.Round(Math.Max(0, saldoCapital), 2)
+                    });
+
+                    fechaCuota = fechaCuota.AddMonths(1);
+                }
+
+                return modelo;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al simular crédito");
+                throw;
+            }
+        }
+
+        public async Task<bool> AprobarCreditoAsync(int creditoId, string aprobadoPor)
+        {
+            try
+            {
+                var credito = await _context.Creditos
+                    .Include(c => c.Cuotas)
+                    .FirstOrDefaultAsync(c => c.Id == creditoId);
+
+                if (credito == null)
+                    return false;
+
+                if (credito.Estado != EstadoCredito.Solicitado)
+                    throw new Exception("Solo se pueden aprobar créditos en estado Solicitado");
+
+                credito.Estado = EstadoCredito.Aprobado;
+                credito.FechaAprobacion = DateTime.Now;
+                credito.AprobadoPor = aprobadoPor;
+                credito.MontoAprobado = credito.MontoSolicitado;
+
+                // Generar cuotas si no existen
+                if (!credito.Cuotas.Any())
+                {
+                    await GenerarCuotasAsync(credito);
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al aprobar crédito: {Id}", creditoId);
+                throw;
+            }
+        }
+
+        public async Task<bool> RechazarCreditoAsync(int creditoId, string motivo)
+        {
+            try
+            {
+                var credito = await _context.Creditos.FindAsync(creditoId);
+                if (credito == null)
+                    return false;
+
+                credito.Estado = EstadoCredito.Rechazado;
+                credito.Observaciones = $"Rechazado: {motivo}";
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al rechazar crédito: {Id}", creditoId);
+                throw;
+            }
+        }
+
+        public async Task<bool> CancelarCreditoAsync(int creditoId, string motivo)
+        {
+            try
+            {
+                var credito = await _context.Creditos
+                    .Include(c => c.Cuotas)
+                    .FirstOrDefaultAsync(c => c.Id == creditoId);
+
+                if (credito == null)
+                    return false;
+
+                credito.Estado = EstadoCredito.Cancelado;
+                credito.FechaFinalizacion = DateTime.Now;
+                credito.Observaciones = $"Cancelado: {motivo}";
+
+                // Cancelar cuotas pendientes
+                foreach (var cuota in credito.Cuotas.Where(c => c.Estado == EstadoCuota.Pendiente))
+                {
+                    cuota.Estado = EstadoCuota.Cancelada;
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cancelar crédito: {Id}", creditoId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Operaciones de Cuotas
+
+        public async Task<List<CuotaViewModel>> GetCuotasByCreditoAsync(int creditoId)
+        {
+            try
+            {
+                var cuotas = await _context.Cuotas
+                    .Where(c => c.CreditoId == creditoId)
+                    .OrderBy(c => c.NumeroCuota)
+                    .ToListAsync();
+
+                return _mapper.Map<List<CuotaViewModel>>(cuotas);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener cuotas del crédito: {CreditoId}", creditoId);
+                throw;
+            }
+        }
+
+        public async Task<CuotaViewModel?> GetCuotaByIdAsync(int cuotaId)
+        {
+            try
+            {
+                var cuota = await _context.Cuotas
+                    .Include(c => c.Credito)
+                        .ThenInclude(cr => cr.Cliente)
+                    .FirstOrDefaultAsync(c => c.Id == cuotaId);
+
+                if (cuota == null)
+                    return null;
+
+                return _mapper.Map<CuotaViewModel>(cuota);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener cuota por ID: {Id}", cuotaId);
+                throw;
+            }
+        }
+
+        public async Task<bool> PagarCuotaAsync(PagarCuotaViewModel pago)
+        {
+            try
+            {
+                var cuota = await _context.Cuotas
+                    .Include(c => c.Credito)
+                    .FirstOrDefaultAsync(c => c.Id == pago.CuotaId);
+
+                if (cuota == null)
+                    return false;
+
+                if (cuota.Estado == EstadoCuota.Pagada)
+                    throw new Exception("La cuota ya está pagada");
+
+                // Calcular punitorio si está vencida
+                if (DateTime.Now > cuota.FechaVencimiento && cuota.Estado != EstadoCuota.Pagada)
+                {
+                    var diasAtraso = (DateTime.Now - cuota.FechaVencimiento).Days;
+                    // Aplicar 2% mensual de punitorio (ejemplo)
+                    cuota.MontoPunitorio = cuota.MontoTotal * 0.02m * (diasAtraso / 30m);
+                }
+
+                cuota.MontoPagado += pago.MontoPagado;
+                cuota.FechaPago = pago.FechaPago;
+                cuota.MedioPago = pago.MedioPago;
+                cuota.ComprobantePago = pago.ComprobantePago;
+
+                if (!string.IsNullOrWhiteSpace(pago.Observaciones))
+                    cuota.Observaciones = pago.Observaciones;
+
+                var totalACobrar = cuota.MontoTotal + cuota.MontoPunitorio;
+
+                if (cuota.MontoPagado >= totalACobrar)
+                {
+                    cuota.Estado = EstadoCuota.Pagada;
+                }
+                else if (cuota.MontoPagado > 0)
+                {
+                    cuota.Estado = EstadoCuota.Parcial;
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Actualizar saldo del crédito
+                await RecalcularSaldoCreditoAsync(cuota.CreditoId);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al pagar cuota: {CuotaId}", pago.CuotaId);
+                throw;
+            }
+        }
+
+        public async Task<List<CuotaViewModel>> GetCuotasVencidasAsync()
+        {
+            try
+            {
+                var cuotas = await _context.Cuotas
+                    .Include(c => c.Credito)
+                        .ThenInclude(cr => cr.Cliente)
+                    .Where(c => c.FechaVencimiento < DateTime.Now &&
+                               (c.Estado == EstadoCuota.Pendiente || c.Estado == EstadoCuota.Parcial || c.Estado == EstadoCuota.Vencida))
+                    .OrderBy(c => c.FechaVencimiento)
+                    .ToListAsync();
+
+                return _mapper.Map<List<CuotaViewModel>>(cuotas);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener cuotas vencidas");
+                throw;
+            }
+        }
+
+        public async Task ActualizarEstadoCuotasAsync()
+        {
+            try
+            {
+                var cuotasVencidas = await _context.Cuotas
+                    .Where(c => c.FechaVencimiento < DateTime.Now &&
+                               c.Estado == EstadoCuota.Pendiente)
+                    .ToListAsync();
+
+                foreach (var cuota in cuotasVencidas)
+                {
+                    cuota.Estado = EstadoCuota.Vencida;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar estado de cuotas");
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Cálculos Financieros
+
+        public decimal CalcularMontoCuotaSistemaFrances(decimal monto, decimal tasaMensual, int cantidadCuotas)
+        {
+            if (tasaMensual == 0)
+                return monto / cantidadCuotas;
+
+            // Fórmula del Sistema Francés: C = P * [i * (1 + i)^n] / [(1 + i)^n - 1]
+            var factor = Math.Pow((double)(1 + tasaMensual), cantidadCuotas);
+            var cuota = monto * (tasaMensual * (decimal)factor) / ((decimal)factor - 1);
 
             return Math.Round(cuota, 2);
         }
 
-        public decimal CalcularMontoTotal(decimal montoSolicitado, int cantidadCuotas, decimal tasaInteres)
+        public decimal CalcularCFTEA(decimal tasaMensual)
         {
-            if (tasaInteres == 0) return montoSolicitado;
-
-            decimal tasaMensual = tasaInteres / 100;
-            decimal montoTotal = montoSolicitado * (decimal)Math.Pow((double)(1 + tasaMensual), cantidadCuotas);
-
-            return Math.Round(montoTotal, 2);
+            // CFTEA = (1 + tasa_mensual)^12 - 1
+            var cftea = (decimal)Math.Pow((double)(1 + tasaMensual), 12) - 1;
+            return Math.Round(cftea * 100, 2); // Retornar como porcentaje
         }
 
-        public decimal CalcularTasaSugerida(decimal puntajeRiesgo, bool tieneGarante)
+        public async Task<bool> RecalcularSaldoCreditoAsync(int creditoId)
         {
-            // Base: 5% mensual
-            decimal tasaBase = 5.0m;
-
-            // Ajuste por puntaje de riesgo (0-10)
-            // Puntaje alto (8-10) = reduce tasa
-            // Puntaje bajo (0-3) = aumenta tasa
-            decimal ajustePorRiesgo = 0;
-
-            if (puntajeRiesgo >= 8)
-                ajustePorRiesgo = -2.0m; // Excelente: 3%
-            else if (puntajeRiesgo >= 6)
-                ajustePorRiesgo = -1.0m; // Bueno: 4%
-            else if (puntajeRiesgo >= 4)
-                ajustePorRiesgo = 0; // Regular: 5%
-            else if (puntajeRiesgo >= 2)
-                ajustePorRiesgo = 2.0m; // Malo: 7%
-            else
-                ajustePorRiesgo = 4.0m; // Muy malo: 9%
-
-            // Ajuste por garante: -0.5%
-            decimal ajustePorGarante = tieneGarante ? -0.5m : 0;
-
-            decimal tasaFinal = tasaBase + ajustePorRiesgo + ajustePorGarante;
-
-            // Limitar entre 2% y 15%
-            return Math.Max(2.0m, Math.Min(15.0m, tasaFinal));
-        }
-
-        public decimal CalcularPorcentajeSueldo(decimal montoCuota, decimal sueldo)
-        {
-            if (sueldo <= 0) return 100;
-            return Math.Round((montoCuota / sueldo) * 100, 2);
-        }
-
-        #endregion
-
-        #region Gestión de Estado
-
-        public async Task<Credito> AprobarAsync(int creditoId, decimal montoAprobado, decimal tasaInteres, int cantidadCuotas, string aprobadoPor)
-        {
-            var credito = await GetByIdAsync(creditoId);
-            if (credito == null)
+            try
             {
-                throw new InvalidOperationException("Crédito no encontrado");
-            }
+                var credito = await _context.Creditos
+                    .Include(c => c.Cuotas)
+                    .FirstOrDefaultAsync(c => c.Id == creditoId);
 
-            if (credito.Estado != EstadoCredito.Solicitado && credito.Estado != EstadoCredito.EnEvaluacion)
-            {
-                throw new InvalidOperationException("Solo se pueden aprobar créditos en estado Solicitado o En Evaluación");
-            }
+                if (credito == null)
+                    return false;
 
-            credito.Estado = EstadoCredito.Aprobado;
-            credito.MontoAprobado = montoAprobado;
-            credito.TasaInteres = tasaInteres;
-            credito.CantidadCuotas = cantidadCuotas;
-            credito.MontoTotal = CalcularMontoTotal(montoAprobado, cantidadCuotas, tasaInteres);
-            credito.MontoCuota = CalcularMontoCuota(credito.MontoTotal, cantidadCuotas, tasaInteres);
-            credito.FechaAprobacion = DateTime.UtcNow;
-            credito.AprobadoPor = aprobadoPor;
+                // Calcular saldo pendiente (capital + intereses no pagados)
+                credito.SaldoPendiente = credito.Cuotas
+                    .Where(c => c.Estado != EstadoCuota.Pagada && c.Estado != EstadoCuota.Cancelada)
+                    .Sum(c => c.MontoTotal - c.MontoPagado);
 
-            await _context.SaveChangesAsync();
-
-            return credito;
-        }
-
-        public async Task<Credito> RechazarAsync(int creditoId, string motivo, string rechazadoPor)
-        {
-            var credito = await GetByIdAsync(creditoId);
-            if (credito == null)
-            {
-                throw new InvalidOperationException("Crédito no encontrado");
-            }
-
-            credito.Estado = EstadoCredito.Rechazado;
-            credito.MotivoRechazo = motivo;
-            credito.RechazadoPor = rechazadoPor;
-            credito.FechaRechazo = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return credito;
-        }
-
-        public async Task<Credito> DesembolsarAsync(int creditoId)
-        {
-            var credito = await GetByIdAsync(creditoId);
-            if (credito == null)
-            {
-                throw new InvalidOperationException("Crédito no encontrado");
-            }
-
-            if (credito.Estado != EstadoCredito.Aprobado)
-            {
-                throw new InvalidOperationException("Solo se pueden desembolsar créditos aprobados");
-            }
-
-            credito.Estado = EstadoCredito.Vigente;
-            credito.FechaDesembolso = DateTime.UtcNow;
-
-            // Generar plan de cuotas
-            await GenerarPlanCuotasAsync(creditoId, DateTime.UtcNow.AddMonths(1));
-
-            await _context.SaveChangesAsync();
-
-            return credito;
-        }
-
-        public async Task<Credito> FinalizarAsync(int creditoId)
-        {
-            var credito = await GetByIdAsync(creditoId);
-            if (credito == null)
-            {
-                throw new InvalidOperationException("Crédito no encontrado");
-            }
-
-            credito.Estado = EstadoCredito.Finalizado;
-            credito.FechaFinalizacion = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return credito;
-        }
-
-        public async Task<Credito> MarcarEnMoraAsync(int creditoId)
-        {
-            var credito = await GetByIdAsync(creditoId);
-            if (credito == null)
-            {
-                throw new InvalidOperationException("Crédito no encontrado");
-            }
-
-            credito.Estado = EstadoCredito.EnMora;
-
-            await _context.SaveChangesAsync();
-
-            return credito;
-        }
-
-        #endregion
-
-        #region Plan de Cuotas
-
-        public async Task<IEnumerable<Cuota>> GenerarPlanCuotasAsync(int creditoId, DateTime fechaInicio)
-        {
-            var credito = await GetByIdAsync(creditoId);
-            if (credito == null)
-            {
-                throw new InvalidOperationException("Crédito no encontrado");
-            }
-
-            // Verificar si ya tiene cuotas
-            if (credito.Cuotas.Any())
-            {
-                throw new InvalidOperationException("El crédito ya tiene un plan de cuotas generado");
-            }
-
-            var cuotas = new List<Cuota>();
-
-            for (int i = 1; i <= credito.CantidadCuotas; i++)
-            {
-                var cuota = new Cuota
+                // Verificar si todas las cuotas están pagadas
+                if (credito.Cuotas.All(c => c.Estado == EstadoCuota.Pagada || c.Estado == EstadoCuota.Cancelada))
                 {
-                    CreditoId = creditoId,
-                    NumeroCuota = i,
-                    FechaVencimiento = fechaInicio.AddMonths(i - 1),
-                    MontoOriginal = credito.MontoCuota,
-                    MontoPendiente = credito.MontoCuota,
-                    MontoPagado = 0,
-                    Estado = EstadoCuota.Pendiente
-                };
+                    credito.Estado = EstadoCredito.Finalizado;
+                    credito.FechaFinalizacion = DateTime.Now;
+                }
+                else if (credito.Estado == EstadoCredito.Aprobado && credito.Cuotas.Any(c => c.Estado == EstadoCuota.Pagada))
+                {
+                    credito.Estado = EstadoCredito.Activo;
+                }
 
-                cuotas.Add(cuota);
-                _context.Cuotas.Add(cuota);
+                await _context.SaveChangesAsync();
+                return true;
             }
-
-            await _context.SaveChangesAsync();
-
-            return cuotas;
-        }
-
-        public async Task<IEnumerable<Cuota>> GetCuotasByCreditoIdAsync(int creditoId)
-        {
-            return await _context.Cuotas
-                .Where(c => c.CreditoId == creditoId)
-                .OrderBy(c => c.NumeroCuota)
-                .ToListAsync();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al recalcular saldo del crédito: {CreditoId}", creditoId);
+                throw;
+            }
         }
 
         #endregion
 
-        #region Validaciones
+        #region Métodos Privados
 
-        public async Task<bool> ClienteTieneCreditosActivosAsync(int clienteId)
-        {
-            return await _context.Creditos
-                .AnyAsync(c => c.ClienteId == clienteId &&
-                              (c.Estado == EstadoCredito.Vigente || c.Estado == EstadoCredito.EnMora));
-        }
-
-        public async Task<bool> ExisteNumeroAsync(string numero, int? excludeId = null)
-        {
-            var query = _context.Creditos.Where(c => c.Numero == numero);
-
-            if (excludeId.HasValue)
-            {
-                query = query.Where(c => c.Id != excludeId.Value);
-            }
-
-            return await query.AnyAsync();
-        }
-
-        public async Task<string> GenerarNumeroAsync()
+        private async Task<string> GenerarNumeroCreditoAsync()
         {
             var ultimoCredito = await _context.Creditos
                 .OrderByDescending(c => c.Id)
                 .FirstOrDefaultAsync();
 
-            int siguienteNumero = 1;
+            var numero = ultimoCredito != null ? ultimoCredito.Id + 1 : 1;
+            return $"CRE-{DateTime.Now:yyyyMM}-{numero:D6}";
+        }
 
-            if (ultimoCredito != null && ultimoCredito.Numero.StartsWith("CR-"))
+        private async Task GenerarCuotasAsync(Credito credito)
+        {
+            var tasaDecimal = credito.TasaInteres / 100;
+            var fechaCuota = credito.FechaPrimeraCuota ?? DateTime.Now.AddMonths(1);
+            var saldoCapital = credito.MontoAprobado;
+
+            for (int i = 1; i <= credito.CantidadCuotas; i++)
             {
-                var numeroActual = ultimoCredito.Numero.Replace("CR-", "");
-                if (int.TryParse(numeroActual, out int numero))
+                var interes = saldoCapital * tasaDecimal;
+                var capital = credito.MontoCuota - interes;
+                saldoCapital -= capital;
+
+                var cuota = new Cuota
                 {
-                    siguienteNumero = numero + 1;
-                }
+                    CreditoId = credito.Id,
+                    NumeroCuota = i,
+                    MontoCapital = Math.Round(capital, 2),
+                    MontoInteres = Math.Round(interes, 2),
+                    MontoTotal = Math.Round(credito.MontoCuota, 2),
+                    FechaVencimiento = fechaCuota,
+                    Estado = EstadoCuota.Pendiente
+                };
+
+                _context.Cuotas.Add(cuota);
+                fechaCuota = fechaCuota.AddMonths(1);
             }
-
-            return $"CR-{siguienteNumero:D6}";
-        }
-
-        #endregion
-
-        #region Estadísticas
-
-        public async Task<decimal> GetTotalAdeudadoByClienteAsync(int clienteId)
-        {
-            var creditos = await _context.Creditos
-                .Include(c => c.Cuotas)
-                .Where(c => c.ClienteId == clienteId &&
-                           (c.Estado == EstadoCredito.Vigente || c.Estado == EstadoCredito.EnMora))
-                .ToListAsync();
-
-            return creditos.Sum(c => c.Cuotas.Sum(cu => cu.MontoPendiente));
-        }
-
-        public async Task<int> GetCantidadCreditosActivosByClienteAsync(int clienteId)
-        {
-            return await _context.Creditos
-                .CountAsync(c => c.ClienteId == clienteId &&
-                                (c.Estado == EstadoCredito.Vigente || c.Estado == EstadoCredito.EnMora));
         }
 
         #endregion
