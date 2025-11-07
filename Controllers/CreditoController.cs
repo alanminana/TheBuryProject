@@ -8,7 +8,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize]
+    [AllowAnonymous]
     public class CreditoController : Controller
     {
         private readonly ICreditoService _creditoService;
@@ -33,8 +33,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al listar crÃ©ditos");
-                TempData["Error"] = "Error al cargar los crÃ©ditos";
+                _logger.LogError(ex, "Error al listar créditos");
+                TempData["Error"] = "Error al cargar los créditos";
                 return View(new List<CreditoViewModel>());
             }
         }
@@ -47,7 +47,7 @@ namespace TheBuryProject.Controllers
                 var credito = await _creditoService.GetByIdAsync(id);
                 if (credito == null)
                 {
-                    TempData["Error"] = "CrÃ©dito no encontrado";
+                    TempData["Error"] = "Crédito no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -55,8 +55,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener detalles del crÃ©dito: {Id}", id);
-                TempData["Error"] = "Error al cargar el crÃ©dito";
+                _logger.LogError(ex, "Error al obtener detalles del crédito: {Id}", id);
+                TempData["Error"] = "Error al cargar el crédito";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -68,7 +68,7 @@ namespace TheBuryProject.Controllers
             return View(new CreditoViewModel
             {
                 FechaSolicitud = DateTime.Now,
-                TasaInteres = 5.0m, // Tasa por defecto 5%
+                TasaInteres = 0.05m, // Tasa por defecto 5%
                 CantidadCuotas = 12 // 12 cuotas por defecto
             });
         }
@@ -87,13 +87,13 @@ namespace TheBuryProject.Controllers
                 }
 
                 var credito = await _creditoService.CreateAsync(viewModel);
-                TempData["Success"] = $"CrÃ©dito {credito.Numero} creado exitosamente";
+                TempData["Success"] = $"Crédito {credito.Numero} creado exitosamente";
                 return RedirectToAction(nameof(Details), new { id = credito.Id });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear crÃ©dito");
-                ModelState.AddModelError("", "Error al crear el crÃ©dito: " + ex.Message);
+                _logger.LogError(ex, "Error al crear crédito");
+                ModelState.AddModelError("", "Error al crear el crédito: " + ex.Message);
                 await CargarViewBags(viewModel.ClienteId, viewModel.GaranteId);
                 return View(viewModel);
             }
@@ -107,14 +107,14 @@ namespace TheBuryProject.Controllers
                 var credito = await _creditoService.GetByIdAsync(id);
                 if (credito == null)
                 {
-                    TempData["Error"] = "CrÃ©dito no encontrado";
+                    TempData["Error"] = "Crédito no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Solo se puede editar si estÃ¡ en Solicitado
+                // Solo se puede editar si está en Solicitado
                 if (credito.Estado != Models.Enums.EstadoCredito.Solicitado)
                 {
-                    TempData["Error"] = "Solo se pueden editar crÃ©ditos en estado Solicitado";
+                    TempData["Error"] = "Solo se pueden editar créditos en estado Solicitado";
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
@@ -123,8 +123,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar crÃ©dito para editar: {Id}", id);
-                TempData["Error"] = "Error al cargar el crÃ©dito";
+                _logger.LogError(ex, "Error al cargar crédito para editar: {Id}", id);
+                TempData["Error"] = "Error al cargar el crédito";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -151,19 +151,19 @@ namespace TheBuryProject.Controllers
                 var resultado = await _creditoService.UpdateAsync(viewModel);
                 if (resultado)
                 {
-                    TempData["Success"] = "CrÃ©dito actualizado exitosamente";
+                    TempData["Success"] = "Crédito actualizado exitosamente";
                     return RedirectToAction(nameof(Details), new { id });
                 }
                 else
                 {
-                    TempData["Error"] = "No se pudo actualizar el crÃ©dito";
+                    TempData["Error"] = "No se pudo actualizar el crédito";
                     return RedirectToAction(nameof(Index));
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar crÃ©dito: {Id}", id);
-                ModelState.AddModelError("", "Error al actualizar el crÃ©dito: " + ex.Message);
+                _logger.LogError(ex, "Error al actualizar crédito: {Id}", id);
+                ModelState.AddModelError("", "Error al actualizar el crédito: " + ex.Message);
                 await CargarViewBags(viewModel.ClienteId, viewModel.GaranteId);
                 return View(viewModel);
             }
@@ -177,7 +177,7 @@ namespace TheBuryProject.Controllers
                 var credito = await _creditoService.GetByIdAsync(id);
                 if (credito == null)
                 {
-                    TempData["Error"] = "CrÃ©dito no encontrado";
+                    TempData["Error"] = "Crédito no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -185,8 +185,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar crÃ©dito para eliminar: {Id}", id);
-                TempData["Error"] = "Error al cargar el crÃ©dito";
+                _logger.LogError(ex, "Error al cargar crédito para eliminar: {Id}", id);
+                TempData["Error"] = "Error al cargar el crédito";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -201,17 +201,17 @@ namespace TheBuryProject.Controllers
                 var resultado = await _creditoService.DeleteAsync(id);
                 if (resultado)
                 {
-                    TempData["Success"] = "CrÃ©dito eliminado exitosamente";
+                    TempData["Success"] = "Crédito eliminado exitosamente";
                 }
                 else
                 {
-                    TempData["Error"] = "No se pudo eliminar el crÃ©dito";
+                    TempData["Error"] = "No se pudo eliminar el crédito";
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar crÃ©dito: {Id}", id);
-                TempData["Error"] = "Error al eliminar el crÃ©dito: " + ex.Message;
+                _logger.LogError(ex, "Error al eliminar crédito: {Id}", id);
+                TempData["Error"] = "Error al eliminar el crédito: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Index));
@@ -222,9 +222,8 @@ namespace TheBuryProject.Controllers
         {
             return View(new SimularCreditoViewModel
             {
-                TasaInteres = 5.0m,
-                CantidadCuotas = 12,
-                FechaPrimeraCuota = DateTime.Now.AddMonths(1)
+                TasaInteresMensual = 0.05m,
+                CantidadCuotas = 12
             });
         }
 
@@ -245,8 +244,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al simular crÃ©dito");
-                ModelState.AddModelError("", "Error al simular el crÃ©dito: " + ex.Message);
+                _logger.LogError(ex, "Error al simular crédito");
+                ModelState.AddModelError("", "Error al simular el crédito: " + ex.Message);
                 return View(modelo);
             }
         }
@@ -263,17 +262,17 @@ namespace TheBuryProject.Controllers
 
                 if (resultado)
                 {
-                    TempData["Success"] = "CrÃ©dito aprobado exitosamente";
+                    TempData["Success"] = "Crédito aprobado exitosamente";
                 }
                 else
                 {
-                    TempData["Error"] = "No se pudo aprobar el crÃ©dito";
+                    TempData["Error"] = "No se pudo aprobar el crédito";
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al aprobar crÃ©dito: {Id}", id);
-                TempData["Error"] = "Error al aprobar el crÃ©dito: " + ex.Message;
+                _logger.LogError(ex, "Error al aprobar crédito: {Id}", id);
+                TempData["Error"] = "Error al aprobar el crédito: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Details), new { id });
@@ -282,31 +281,33 @@ namespace TheBuryProject.Controllers
         // POST: Credito/Rechazar/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Rechazar(int id, string motivo)
+        public async Task<IActionResult> Rechazar(int id)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(motivo))
+                var credito = await _creditoService.GetByIdAsync(id);
+                if (credito == null)
                 {
-                    TempData["Error"] = "Debe indicar el motivo del rechazo";
+                    TempData["Error"] = "Crédito no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                if (credito.Estado != Models.Enums.EstadoCredito.Solicitado)
+                {
+                    TempData["Error"] = "Solo se pueden rechazar créditos en estado Solicitado";
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
-                var resultado = await _creditoService.RechazarCreditoAsync(id, motivo);
+                // Cambiar estado a Rechazado
+                credito.Estado = Models.Enums.EstadoCredito.Rechazado;
+                await _creditoService.UpdateAsync(credito);
 
-                if (resultado)
-                {
-                    TempData["Success"] = "CrÃ©dito rechazado";
-                }
-                else
-                {
-                    TempData["Error"] = "No se pudo rechazar el crÃ©dito";
-                }
+                TempData["Success"] = "Crédito rechazado";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al rechazar crÃ©dito: {Id}", id);
-                TempData["Error"] = "Error al rechazar el crÃ©dito: " + ex.Message;
+                _logger.LogError(ex, "Error al rechazar crédito: {Id}", id);
+                TempData["Error"] = "Error al rechazar el crédito: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Details), new { id });
@@ -315,31 +316,27 @@ namespace TheBuryProject.Controllers
         // POST: Credito/Cancelar/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Cancelar(int id, string motivo)
+        public async Task<IActionResult> Cancelar(int id)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(motivo))
+                var credito = await _creditoService.GetByIdAsync(id);
+                if (credito == null)
                 {
-                    TempData["Error"] = "Debe indicar el motivo de la cancelaciÃ³n";
-                    return RedirectToAction(nameof(Details), new { id });
+                    TempData["Error"] = "Crédito no encontrado";
+                    return RedirectToAction(nameof(Index));
                 }
 
-                var resultado = await _creditoService.CancelarCreditoAsync(id, motivo);
+                // Cambiar estado a Cancelado
+                credito.Estado = Models.Enums.EstadoCredito.Cancelado;
+                await _creditoService.UpdateAsync(credito);
 
-                if (resultado)
-                {
-                    TempData["Success"] = "CrÃ©dito cancelado";
-                }
-                else
-                {
-                    TempData["Error"] = "No se pudo cancelar el crÃ©dito";
-                }
+                TempData["Success"] = "Crédito cancelado";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cancelar crÃ©dito: {Id}", id);
-                TempData["Error"] = "Error al cancelar el crÃ©dito: " + ex.Message;
+                _logger.LogError(ex, "Error al cancelar crédito: {Id}", id);
+                TempData["Error"] = "Error al cancelar el crédito: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Details), new { id });
@@ -350,33 +347,38 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                var cuota = await _creditoService.GetCuotaByIdAsync(id);
-                if (cuota == null)
+                var credito = await _creditoService.GetByIdAsync(id);
+                if (credito == null)
                 {
-                    TempData["Error"] = "Cuota no encontrada";
+                    TempData["Error"] = "Crédito no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Obtener cuotas pendientes
+                var cuotasPendientes = credito.Cuotas
+                    .Where(c => c.Estado == Models.Enums.EstadoCuota.Pendiente || c.Estado == Models.Enums.EstadoCuota.Vencida)
+                    .OrderBy(c => c.NumeroCuota)
+                    .Select(c => new SelectListItem
+                    {
+                        Value = c.Id.ToString(),
+                        Text = $"Cuota #{c.NumeroCuota} - Vto: {c.FechaVencimiento:dd/MM/yyyy} - {c.MontoTotal:C}"
+                    })
+                    .ToList();
+
+                ViewBag.Cuotas = cuotasPendientes;
+
                 var modelo = new PagarCuotaViewModel
                 {
-                    CuotaId = cuota.Id,
-                    NumeroCuota = cuota.NumeroCuota,
-                    MontoCuota = cuota.MontoTotal,
-                    MontoPunitorio = cuota.MontoPunitorio,
-                    TotalAPagar = cuota.SaldoPendiente,
-                    MontoPagado = cuota.SaldoPendiente,
-                    FechaPago = DateTime.Now,
-                    FechaVencimiento = cuota.FechaVencimiento,
-                    EstaVencida = cuota.EstaVencida,
-                    DiasAtraso = cuota.DiasAtraso
+                    CreditoId = credito.Id,
+                    FechaPago = DateTime.Now
                 };
 
                 return View(modelo);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar cuota para pagar: {Id}", id);
-                TempData["Error"] = "Error al cargar la cuota";
+                _logger.LogError(ex, "Error al cargar pago de cuota: {Id}", id);
+                TempData["Error"] = "Error al cargar el formulario";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -390,6 +392,17 @@ namespace TheBuryProject.Controllers
             {
                 if (!ModelState.IsValid)
                 {
+                    var credito = await _creditoService.GetByIdAsync(modelo.CreditoId);
+                    var cuotasPendientes = credito.Cuotas
+                        .Where(c => c.Estado == Models.Enums.EstadoCuota.Pendiente || c.Estado == Models.Enums.EstadoCuota.Vencida)
+                        .OrderBy(c => c.NumeroCuota)
+                        .Select(c => new SelectListItem
+                        {
+                            Value = c.Id.ToString(),
+                            Text = $"Cuota #{c.NumeroCuota} - Vto: {c.FechaVencimiento:dd/MM/yyyy} - {c.MontoTotal:C}"
+                        })
+                        .ToList();
+                    ViewBag.Cuotas = cuotasPendientes;
                     return View(modelo);
                 }
 
@@ -398,13 +411,7 @@ namespace TheBuryProject.Controllers
                 if (resultado)
                 {
                     TempData["Success"] = "Pago registrado exitosamente";
-
-                    // Obtener el crÃ©dito asociado para redirigir a detalles
-                    var cuota = await _context.Cuotas.FindAsync(modelo.CuotaId);
-                    if (cuota != null)
-                    {
-                        return RedirectToAction(nameof(Details), new { id = cuota.CreditoId });
-                    }
+                    return RedirectToAction(nameof(Details), new { id = modelo.CreditoId });
                 }
                 else
                 {
@@ -415,7 +422,6 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al pagar cuota");
                 ModelState.AddModelError("", "Error al registrar el pago: " + ex.Message);
-                return View(modelo);
             }
 
             return RedirectToAction(nameof(Index));
@@ -426,9 +432,32 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                await _creditoService.ActualizarEstadoCuotasAsync();
-                var cuotas = await _creditoService.GetCuotasVencidasAsync();
-                return View(cuotas);
+                var cuotas = await _context.Cuotas
+                    .Include(c => c.Credito)
+                        .ThenInclude(cr => cr.Cliente)
+                    .Where(c => c.Estado == Models.Enums.EstadoCuota.Vencida ||
+                               (c.Estado == Models.Enums.EstadoCuota.Pendiente && c.FechaVencimiento < DateTime.Today))
+                    .OrderBy(c => c.FechaVencimiento)
+                    .ToListAsync();
+
+                var cuotasViewModel = cuotas.Select(c => new CuotaViewModel
+                {
+                    Id = c.Id,
+                    CreditoId = c.CreditoId,
+                    CreditoNumero = c.Credito.Numero,
+                    ClienteNombre = $"{c.Credito.Cliente.Apellido}, {c.Credito.Cliente.Nombre}",
+                    NumeroCuota = c.NumeroCuota,
+                    MontoCapital = c.MontoCapital,
+                    MontoInteres = c.MontoInteres,
+                    MontoTotal = c.MontoTotal,
+                    FechaVencimiento = c.FechaVencimiento,
+                    MontoPagado = c.MontoPagado,
+                    MontoPunitorio = c.MontoPunitorio,
+                    Estado = c.Estado,
+                    MedioPago = c.MedioPago
+                }).ToList();
+
+                return View(cuotasViewModel);
             }
             catch (Exception ex)
             {
@@ -438,7 +467,7 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        #region MÃ©todos Privados
+        #region Métodos Privados
 
         private async Task CargarViewBags(int? clienteIdSeleccionado = null, int? garanteIdSeleccionado = null)
         {
@@ -455,13 +484,15 @@ namespace TheBuryProject.Controllers
 
             ViewBag.Clientes = new SelectList(clientes, "Id", "NombreCompleto", clienteIdSeleccionado);
 
-            var garantes = await _context.Garantes
-                .OrderBy(g => g.Apellido)
-                .ThenBy(g => g.Nombre)
-                .Select(g => new
+            // Garantes - usando la tabla Clientes también (puedes tener una tabla separada si quieres)
+            var garantes = await _context.Clientes
+                .Where(c => c.Activo)
+                .OrderBy(c => c.Apellido)
+                .ThenBy(c => c.Nombre)
+                .Select(c => new
                 {
-                    g.Id,
-                    NombreCompleto = $"{g.Apellido}, {g.Nombre} - DNI: {g.NumeroDocumento}"
+                    c.Id,
+                    NombreCompleto = $"{c.Apellido}, {c.Nombre} - DNI: {c.NumeroDocumento}"
                 })
                 .ToListAsync();
 

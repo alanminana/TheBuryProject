@@ -1,9 +1,12 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace TheBuryProject.ViewModels
 {
     public class PagarCuotaViewModel
     {
+        // NUEVA PROPIEDAD
+        public int CreditoId { get; set; }
+
         public int CuotaId { get; set; }
 
         [Display(Name = "Número de Cuota")]

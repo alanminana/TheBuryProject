@@ -1,0 +1,75 @@
+﻿@model TheBuryProject.ViewModels.VentaViewModel
+
+@{
+    ViewData["Title"] = "Cancelar Venta";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="bi bi-x-circle"></i> Cancelar Venta</h2>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>¿Está seguro de que desea cancelar esta venta?</strong>
+            <p class="mb-0">
+                @if (Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Confirmada ||
+                                Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Facturada)
+                {
+                    <span>El stock será devuelto al inventario.</span>
+                }
+            </p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">Datos de la Venta</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Número:</dt>
+                    <dd class="col-sm-9">@Model.Numero</dd>
+
+                    <dt class="col-sm-3">Fecha:</dt>
+                    <dd class="col-sm-9">@Model.FechaVenta.ToString("dd/MM/yyyy")</dd>
+
+                    <dt class="col-sm-3">Cliente:</dt>
+                    <dd class="col-sm-9">@Model.ClienteNombre</dd>
+
+                    <dt class="col-sm-3">Estado:</dt>
+                    <dd class="col-sm-9">@Model.Estado</dd>
+
+                    <dt class="col-sm-3">Total:</dt>
+                    <dd class="col-sm-9"><strong>@Model.Total.ToString("C")</strong></dd>
+                </dl>
+            </div>
+        </div>
+
+        <form asp-action="Cancelar" method="post">
+            <input type="hidden" asp-for="Id" />
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="motivo" class="form-label">
+                            <strong>Motivo de Cancelación <span class="text-danger">*</span></strong>
+                        </label>
+                        <textarea id="motivo" name="motivo" class="form-control" rows="4" required
+                                  placeholder="Indique el motivo de la cancelación..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Volver</a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-x-circle"></i> Confirmar Cancelación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

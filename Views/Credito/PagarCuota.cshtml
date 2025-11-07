@@ -1,0 +1,149 @@
+﻿@model TheBuryProject.ViewModels.PagarCuotaViewModel
+
+@{
+    ViewData["Title"] = "Pagar Cuota";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2><i class="fas fa-money-bill-wave"></i> Registrar Pago de Cuota</h2>
+        </div>
+    </div>
+
+    <form asp-action="PagarCuota" method="post">
+        <input type="hidden" asp-for="CuotaId" />
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Información de la Cuota</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Cuota Nro:</dt>
+                            <dd class="col-sm-7"><strong>@Model.NumeroCuota</strong></dd>
+
+                            @if (!string.IsNullOrEmpty(Model.NumeroCreditoTexto))
+                            {
+                                <dt class="col-sm-5">Crédito:</dt>
+                                <dd class="col-sm-7">@Model.NumeroCreditoTexto</dd>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.ClienteNombre))
+                            {
+                                <dt class="col-sm-5">Cliente:</dt>
+                                <dd class="col-sm-7">@Model.ClienteNombre</dd>
+                            }
+
+                            <dt class="col-sm-5">Monto Cuota:</dt>
+                            <dd class="col-sm-7">@Model.MontoCuota.ToString("C2")</dd>
+
+                            <dt class="col-sm-5">Punitorio:</dt>
+                            <dd class="col-sm-7 @(Model.MontoPunitorio > 0 ? "text-danger" : "")">
+                                @Model.MontoPunitorio.ToString("C2")
+                            </dd>
+
+                            <dt class="col-sm-5">Total a Pagar:</dt>
+                            <dd class="col-sm-7"><strong class="text-primary">@Model.TotalAPagar.ToString("C2")</strong></dd>
+
+                            <dt class="col-sm-5">Vencimiento:</dt>
+                            <dd class="col-sm-7">@Model.FechaVencimiento.ToString("dd/MM/yyyy")</dd>
+
+                            @if (Model.EstaVencida)
+                            {
+                                <dt class="col-sm-5">Estado:</dt>
+                                <dd class="col-sm-7">
+                                    <span class="badge bg-danger">Vencida</span>
+                                    <br /><small>@Model.DiasAtraso días de atraso</small>
+                                </dd>
+                            }
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Datos del Pago</h5>
+                    </div>
+                    <div class="card-body">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="MontoPagado" class="form-label"></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input asp-for="MontoPagado" class="form-control" type="number" step="0.01" />
+                                    </div>
+                                    <span asp-validation-for="MontoPagado" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="FechaPago" class="form-label"></label>
+                                    <input asp-for="FechaPago" class="form-control" type="date" />
+                                    <span asp-validation-for="FechaPago" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="MedioPago" class="form-label"></label>
+                                    <select asp-for="MedioPago" class="form-select">
+                                        <option value="Efectivo">Efectivo</option>
+                                        <option value="Transferencia">Transferencia</option>
+                                        <option value="Cheque">Cheque</option>
+                                        <option value="Tarjeta Débito">Tarjeta de Débito</option>
+                                        <option value="Tarjeta Crédito">Tarjeta de Crédito</option>
+                                    </select>
+                                    <span asp-validation-for="MedioPago" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ComprobantePago" class="form-label"></label>
+                                    <input asp-for="ComprobantePago" class="form-control" type="text" placeholder="Nro de recibo, transferencia, etc." />
+                                    <span asp-validation-for="ComprobantePago" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label asp-for="Observaciones" class="form-label"></label>
+                                    <textarea asp-for="Observaciones" class="form-control" rows="3"></textarea>
+                                    <span asp-validation-for="Observaciones" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check"></i> Registrar Pago
+                        </button>
+                        <a href="javascript:history.back()" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

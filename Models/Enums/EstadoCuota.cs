@@ -1,4 +1,4 @@
-namespace TheBuryProject.Models.Enums
+﻿namespace TheBuryProject.Models.Enums
 {
     /// <summary>
     /// Estado de una cuota de crédito

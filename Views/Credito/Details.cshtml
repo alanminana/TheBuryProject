@@ -1,0 +1,296 @@
+﻿@model TheBuryProject.ViewModels.CreditoViewModel
+
+@{
+    ViewData["Title"] = "Detalle del Crédito";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h2><i class="fas fa-file-invoice-dollar"></i> Detalle del Crédito</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            @if (Model.Estado == TheBuryProject.Models.Enums.EstadoCredito.Solicitado)
+            {
+                <form asp-action="Aprobar" method="post" style="display: inline;">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-success" onclick="return confirm('¿Está seguro de aprobar este crédito?')">
+                        <i class="fas fa-check"></i> Aprobar
+                    </button>
+                </form>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rechazarModal">
+                    <i class="fas fa-times"></i> Rechazar
+                </button>
+            }
+            @if (Model.Estado == TheBuryProject.Models.Enums.EstadoCredito.Activo || Model.Estado == TheBuryProject.Models.Enums.EstadoCredito.Aprobado)
+            {
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cancelarModal">
+                    <i class="fas fa-ban"></i> Cancelar Crédito
+                </button>
+            }
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Información General -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información General</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Número:</dt>
+                        <dd class="col-sm-8"><strong>@Model.Numero</strong></dd>
+
+                        <dt class="col-sm-4">Cliente:</dt>
+                        <dd class="col-sm-8">@Model.ClienteNombre</dd>
+
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dd class="col-sm-8">
+                            @switch (Model.Estado)
+                            {
+                                case TheBuryProject.Models.Enums.EstadoCredito.Solicitado:
+                                    <span class="badge bg-info">Solicitado</span>
+                                    break;
+                                case TheBuryProject.Models.Enums.EstadoCredito.Aprobado:
+                                    <span class="badge bg-success">Aprobado</span>
+                                    break;
+                                case TheBuryProject.Models.Enums.EstadoCredito.Activo:
+                                    <span class="badge bg-primary">Activo</span>
+                                    break;
+                                case TheBuryProject.Models.Enums.EstadoCredito.Finalizado:
+                                    <span class="badge bg-secondary">Finalizado</span>
+                                    break;
+                                case TheBuryProject.Models.Enums.EstadoCredito.Rechazado:
+                                    <span class="badge bg-danger">Rechazado</span>
+                                    break;
+                                case TheBuryProject.Models.Enums.EstadoCredito.Cancelado:
+                                    <span class="badge bg-warning">Cancelado</span>
+                                    break;
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Fecha Solicitud:</dt>
+                        <dd class="col-sm-8">@Model.FechaSolicitud.ToString("dd/MM/yyyy")</dd>
+
+                        @if (Model.FechaAprobacion.HasValue)
+                        {
+                            <dt class="col-sm-4">Fecha Aprobación:</dt>
+                            <dd class="col-sm-8">@Model.FechaAprobacion.Value.ToString("dd/MM/yyyy")</dd>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.AprobadoPor))
+                        {
+                            <dt class="col-sm-4">Aprobado Por:</dt>
+                            <dd class="col-sm-8">@Model.AprobadoPor</dd>
+                        }
+
+                        <dt class="col-sm-4">Puntaje de Riesgo:</dt>
+                        <dd class="col-sm-8">
+                            <strong>@Model.PuntajeRiesgoInicial.ToString("N2")</strong>/10
+                        </dd>
+
+                        @if (Model.RequiereGarante && !string.IsNullOrEmpty(Model.GaranteNombre))
+                        {
+                            <dt class="col-sm-4">Garante:</dt>
+                            <dd class="col-sm-8">@Model.GaranteNombre</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-dollar-sign"></i> Información Financiera</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Monto Solicitado:</dt>
+                        <dd class="col-sm-7">@Model.MontoSolicitado.ToString("C2")</dd>
+
+                        <dt class="col-sm-5">Monto Aprobado:</dt>
+                        <dd class="col-sm-7"><strong>@Model.MontoAprobado.ToString("C2")</strong></dd>
+
+                        <dt class="col-sm-5">Tasa de Interés:</dt>
+                        <dd class="col-sm-7">@Model.TasaInteres.ToString("N2")% mensual</dd>
+
+                        <dt class="col-sm-5">CFTEA:</dt>
+                        <dd class="col-sm-7">@Model.CFTEA.ToString("N2")%</dd>
+
+                        <dt class="col-sm-5">Cantidad de Cuotas:</dt>
+                        <dd class="col-sm-7">@Model.CantidadCuotas cuotas</dd>
+
+                        <dt class="col-sm-5">Monto por Cuota:</dt>
+                        <dd class="col-sm-7"><strong>@Model.MontoCuota.ToString("C2")</strong></dd>
+
+                        <dt class="col-sm-5">Total a Pagar:</dt>
+                        <dd class="col-sm-7">@Model.TotalAPagar.ToString("C2")</dd>
+
+                        <dt class="col-sm-5">Saldo Pendiente:</dt>
+                        <dd class="col-sm-7">
+                            <strong class="text-danger">@Model.SaldoPendiente.ToString("C2")</strong>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plan de Cuotas -->
+    @if (Model.Cuotas != null && Model.Cuotas.Any())
+    {
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-list"></i> Plan de Cuotas</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Cuota</th>
+                                <th>Vencimiento</th>
+                                <th>Capital</th>
+                                <th>Interés</th>
+                                <th>Total</th>
+                                <th>Punitorio</th>
+                                <th>Pagado</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cuota in Model.Cuotas.OrderBy(c => c.NumeroCuota))
+                            {
+                                <tr class="@(cuota.EstaVencida && cuota.Estado != TheBuryProject.Models.Enums.EstadoCuota.Pagada ? "table-danger" : "")">
+                                    <td><strong>@cuota.NumeroCuota</strong></td>
+                                    <td>@cuota.FechaVencimiento.ToString("dd/MM/yyyy")</td>
+                                    <td>@cuota.MontoCapital.ToString("C2")</td>
+                                    <td>@cuota.MontoInteres.ToString("C2")</td>
+                                    <td><strong>@cuota.MontoTotal.ToString("C2")</strong></td>
+                                    <td>@cuota.MontoPunitorio.ToString("C2")</td>
+                                    <td>@cuota.MontoPagado.ToString("C2")</td>
+                                    <td>
+                                        @switch (cuota.Estado)
+                                        {
+                                            case TheBuryProject.Models.Enums.EstadoCuota.Pendiente:
+                                                <span class="badge bg-warning">Pendiente</span>
+                                                break;
+                                            case TheBuryProject.Models.Enums.EstadoCuota.Pagada:
+                                                <span class="badge bg-success">Pagada</span>
+                                                break;
+                                            case TheBuryProject.Models.Enums.EstadoCuota.Vencida:
+                                                <span class="badge bg-danger">Vencida</span>
+                                                break;
+                                            case TheBuryProject.Models.Enums.EstadoCuota.Parcial:
+                                                <span class="badge bg-info">Parcial</span>
+                                                break;
+                                            case TheBuryProject.Models.Enums.EstadoCuota.Cancelada:
+                                                <span class="badge bg-secondary">Cancelada</span>
+                                                break;
+                                        }
+                                        @if (cuota.EstaVencida && cuota.Estado != TheBuryProject.Models.Enums.EstadoCuota.Pagada)
+                                        {
+                                            <br />
+                                
+                                            <small class="text-danger">(@cuota.DiasAtraso días)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (cuota.Estado != TheBuryProject.Models.Enums.EstadoCuota.Pagada && cuota.Estado != TheBuryProject.Models.Enums.EstadoCuota.Cancelada)
+                                        {
+                                            <a asp-action="PagarCuota" asp-route-id="@cuota.Id" class="btn btn-sm btn-success">
+                                                <i class="fas fa-money-bill"></i> Pagar
+                                            </a>
+                                        }
+                                        else if (cuota.Estado == TheBuryProject.Models.Enums.EstadoCuota.Pagada)
+                                        {
+                                            <small>Pagada: @cuota.FechaPago?.ToString("dd/MM/yyyy")</small>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.Observaciones))
+    {
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-comment"></i> Observaciones</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">@Model.Observaciones</p>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal Rechazar -->
+<div class="modal fade" id="rechazarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="Rechazar" method="post">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Rechazar Crédito</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="motivo" class="form-label">Motivo del rechazo:</label>
+                        <textarea name="motivo" id="motivo" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Rechazar Crédito</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Cancelar -->
+<div class="modal fade" id="cancelarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form asp-action="Cancelar" method="post">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title">Cancelar Crédito</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="motivoCancelar" class="form-label">Motivo de la cancelación:</label>
+                        <textarea name="motivo" id="motivoCancelar" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-warning">Cancelar Crédito</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

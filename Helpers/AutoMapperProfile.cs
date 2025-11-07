@@ -124,16 +124,67 @@ namespace TheBuryProject.Helpers
                         ? (int)((DateTime.Today - s.FechaNacimiento.Value).TotalDays / 365.25)
                         : (int?)null))
                 .ForMember(d => d.CreditosActivos, o => o.MapFrom(s => s.Creditos.Count(c =>
-                    c.Estado == EstadoCredito.Vigente ||
-                    c.Estado == EstadoCredito.EnMora)))
+                    c.Estado == EstadoCredito.Activo)))
                 .ForMember(d => d.TotalAdeudado, o => o.MapFrom(s => s.Creditos
-                    .Where(c => c.Estado == EstadoCredito.Vigente || c.Estado == EstadoCredito.EnMora)
-                    .Sum(c => c.MontoAprobado)));
+                    .Where(c => c.Estado == EstadoCredito.Activo)
+                    .Sum(c => c.SaldoPendiente)));
 
             CreateMap<ClienteViewModel, Cliente>()
                 .ForMember(d => d.Creditos, o => o.Ignore())
                 .ForMember(d => d.ComoGarante, o => o.Ignore());
 
+            // =======================
+            // Credito
+            // =======================
+            CreateMap<Credito, CreditoViewModel>()
+                .ForMember(d => d.ClienteNombre, o => o.MapFrom(s =>
+                    s.Cliente != null ? $"{s.Cliente.Apellido}, {s.Cliente.Nombre}" : null))
+                .ForMember(d => d.GaranteNombre, o => o.MapFrom(s =>
+                    s.Garante != null ? $"{s.Garante.Apellido}, {s.Garante.Nombre}" : null))
+                .ForMember(d => d.Cuotas, o => o.MapFrom(s => s.Cuotas));
+
+            CreateMap<CreditoViewModel, Credito>()
+                .ForMember(d => d.Cliente, o => o.Ignore())
+                .ForMember(d => d.Garante, o => o.Ignore())
+                .ForMember(d => d.Cuotas, o => o.Ignore());
+
+            // =======================
+            // Cuota
+            // =======================
+            CreateMap<Cuota, CuotaViewModel>();
+
+            CreateMap<CuotaViewModel, Cuota>()
+                .ForMember(d => d.Credito, o => o.Ignore());
+
+            // Mappings para Ventas
+            CreateMap<Venta, VentaViewModel>()
+                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src => src.Cliente.Nombre))
+                .ForMember(dest => dest.ClienteApellido, opt => opt.MapFrom(src => src.Cliente.Apellido))
+                .ForMember(dest => dest.ClienteDocumento, opt => opt.MapFrom(src => src.Cliente.Documento))
+                .ForMember(dest => dest.CreditoNumero, opt => opt.MapFrom(src => src.Credito != null ? src.Credito.Numero : null))
+                .ForMember(dest => dest.Detalles, opt => opt.MapFrom(src => src.Detalles))
+                .ForMember(dest => dest.Facturas, opt => opt.MapFrom(src => src.Facturas));
+
+            CreateMap<VentaViewModel, Venta>()
+                .ForMember(dest => dest.Cliente, opt => opt.Ignore())
+                .ForMember(dest => dest.Credito, opt => opt.Ignore())
+                .ForMember(dest => dest.Detalles, opt => opt.Ignore())
+                .ForMember(dest => dest.Facturas, opt => opt.Ignore());
+
+            CreateMap<VentaDetalle, VentaDetalleViewModel>()
+                .ForMember(dest => dest.ProductoNombre, opt => opt.MapFrom(src => src.Producto.Nombre))
+                .ForMember(dest => dest.ProductoCodigo, opt => opt.MapFrom(src => src.Producto.Codigo))
+                .ForMember(dest => dest.StockDisponible, opt => opt.MapFrom(src => src.Producto.StockActual));
+
+            CreateMap<VentaDetalleViewModel, VentaDetalle>()
+                .ForMember(dest => dest.Producto, opt => opt.Ignore())
+                .ForMember(dest => dest.Venta, opt => opt.Ignore());
+
+            CreateMap<Factura, FacturaViewModel>()
+                .ForMember(dest => dest.VentaNumero, opt => opt.MapFrom(src => src.Venta.Numero));
+
+            CreateMap<FacturaViewModel, Factura>()
+                .ForMember(dest => dest.Venta, opt => opt.Ignore());
         }
     }
 }

@@ -5,7 +5,7 @@ using TheBuryProject.Models.Enums;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Representa una cuota individual de un crédito
+    /// Representa una cuota individual de un cr�dito
     /// </summary>
     public class Cuota : BaseEntity
     {
@@ -39,10 +39,10 @@ namespace TheBuryProject.Models.Entities
 
         // Datos de pago
         [StringLength(50)]
-        public string? MedioPago { get; set; } // Efectivo, Transferencia, Cheque, etc.
+        public string? MedioPago { get; set; }
 
         [StringLength(100)]
-        public string? ComprobantePago { get; set; } // Número de comprobante/recibo
+        public string? ComprobantePago { get; set; }
 
         // Navigation Properties
         public virtual Credito Credito { get; set; } = null!;

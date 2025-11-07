@@ -1,3 +1,6 @@
+﻿using System.ComponentModel.DataAnnotations;
+using TheBuryProject.Models.Enums;
+
 using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Enums;
 
@@ -9,6 +12,10 @@ namespace TheBuryProject.ViewModels
 
         [Display(Name = "Crédito")]
         public int CreditoId { get; set; }
+
+        // NUEVAS PROPIEDADES
+        public string CreditoNumero { get; set; } = string.Empty;
+        public string ClienteNombre { get; set; } = string.Empty;
 
         [Display(Name = "Cuota Nro.")]
         public int NumeroCuota { get; set; }

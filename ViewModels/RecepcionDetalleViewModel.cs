@@ -1,4 +1,6 @@
-﻿namespace TheBuryProject.ViewModels
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace TheBuryProject.ViewModels
 {
     /// <summary>
     /// ViewModel para recepcionar un detalle de orden de compra

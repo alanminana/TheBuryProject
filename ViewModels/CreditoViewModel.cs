@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.ViewModels
