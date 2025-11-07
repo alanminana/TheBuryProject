@@ -93,7 +93,7 @@ namespace TheBuryProject.Services
                 return false;
 
             configuracion.IsDeleted = true;
-            configuracion.DeletedAt = DateTime.Now;
+            configuracion.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
             return true;

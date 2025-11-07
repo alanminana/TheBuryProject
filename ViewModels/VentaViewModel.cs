@@ -84,6 +84,7 @@ namespace TheBuryProject.ViewModels
         // Datos adicionales según tipo de pago
         public DatosTarjetaViewModel? DatosTarjeta { get; set; }
         public DatosChequeViewModel? DatosCheque { get; set; }
+        public DatosCreditoPersonalViewModel? DatosCreditoPersonal { get; set; }  // NUEVO
 
         public DateTime CreatedAt { get; set; }
     }

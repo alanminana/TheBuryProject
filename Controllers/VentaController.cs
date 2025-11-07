@@ -99,7 +99,107 @@ namespace TheBuryProject.Controllers
                 TipoPago = TipoPago.Efectivo
             });
         }
+        // POST: Venta/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(VentaViewModel viewModel, string? DatosCreditoPersonalJson)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    await CargarViewBags(viewModel.ClienteId);
+                    return View(viewModel);
+                }
 
+                // Validar que tenga al menos un detalle
+                if (viewModel.Detalles == null || !viewModel.Detalles.Any())
+                {
+                    ModelState.AddModelError("", "Debe agregar al menos un producto a la venta");
+                    await CargarViewBags(viewModel.ClienteId);
+                    return View(viewModel);
+                }
+
+                // Si es crédito personal, parsear los datos del JSON
+                if (viewModel.TipoPago == TipoPago.CreditoPersonal && !string.IsNullOrEmpty(DatosCreditoPersonalJson))
+                {
+                    try
+                    {
+                        var datosCredito = System.Text.Json.JsonSerializer.Deserialize<DatosCreditoPersonalViewModel>(
+                            DatosCreditoPersonalJson,
+                            new System.Text.Json.JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            }
+                        );
+
+                        if (datosCredito != null)
+                        {
+                            viewModel.DatosCreditoPersonal = datosCredito;
+                            viewModel.CreditoId = datosCredito.CreditoId;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error al parsear datos de crédito personal");
+                        ModelState.AddModelError("", "Error al procesar los datos de crédito personal");
+                        await CargarViewBags(viewModel.ClienteId);
+                        return View(viewModel);
+                    }
+                }
+
+                // Validar crédito personal si aplica
+                if (viewModel.TipoPago == TipoPago.CreditoPersonal)
+                {
+                    if (!viewModel.CreditoId.HasValue)
+                    {
+                        ModelState.AddModelError("", "Debe seleccionar un crédito personal");
+                        await CargarViewBags(viewModel.ClienteId);
+                        return View(viewModel);
+                    }
+
+                    if (viewModel.DatosCreditoPersonal == null || !viewModel.DatosCreditoPersonal.Cuotas.Any())
+                    {
+                        ModelState.AddModelError("", "Debe calcular el plan de financiamiento antes de guardar");
+                        await CargarViewBags(viewModel.ClienteId);
+                        return View(viewModel);
+                    }
+
+                    // Validar disponibilidad
+                    var disponible = await _ventaService.ValidarDisponibilidadCreditoAsync(
+                        viewModel.CreditoId.Value,
+                        viewModel.DatosCreditoPersonal.MontoAFinanciar
+                    );
+
+                    if (!disponible)
+                    {
+                        ModelState.AddModelError("", "El monto a financiar supera el crédito disponible");
+                        await CargarViewBags(viewModel.ClienteId);
+                        return View(viewModel);
+                    }
+                }
+
+                var venta = await _ventaService.CreateAsync(viewModel);
+
+                if (venta.RequiereAutorizacion)
+                {
+                    TempData["Warning"] = $"Venta {venta.Numero} creada. Requiere autorización antes de confirmar.";
+                }
+                else
+                {
+                    TempData["Success"] = $"Venta {venta.Numero} creada exitosamente";
+                }
+
+                return RedirectToAction(nameof(Details), new { id = venta.Id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear venta");
+                ModelState.AddModelError("", "Error al crear la venta: " + ex.Message);
+                await CargarViewBags(viewModel.ClienteId);
+                return View(viewModel);
+            }
+        }
         // GET: Venta/Create
         public async Task<IActionResult> Create()
         {
@@ -723,5 +823,66 @@ namespace TheBuryProject.Controllers
         }
 
         #endregion
+        // GET: API endpoint para calcular crédito personal
+        [HttpGet]
+        public async Task<IActionResult> CalcularCreditoPersonal(int creditoId, decimal monto, int cuotas, string fechaPrimeraCuota)
+        {
+            try
+            {
+                if (!DateTime.TryParse(fechaPrimeraCuota, out DateTime fecha))
+                    fecha = DateTime.Today.AddMonths(1);
+
+                var resultado = await _ventaService.CalcularCreditoPersonalAsync(creditoId, monto, cuotas, fecha);
+
+                return Json(new
+                {
+                    creditoNumero = resultado.CreditoNumero,
+                    creditoTotalAsignado = resultado.CreditoTotalAsignado,
+                    creditoDisponible = resultado.CreditoDisponible,
+                    montoAFinanciar = resultado.MontoAFinanciar,
+                    cantidadCuotas = resultado.CantidadCuotas,
+                    montoCuota = resultado.MontoCuota,
+                    tasaInteres = resultado.TasaInteresMensual,
+                    totalAPagar = resultado.TotalAPagar,
+                    interesTotal = resultado.InteresTotal,
+                    saldoRestante = resultado.SaldoRestante,
+                    cuotas = resultado.Cuotas.Select(c => new
+                    {
+                        numeroCuota = c.NumeroCuota,
+                        fechaVencimiento = c.FechaVencimiento.ToString("dd/MM/yyyy"),
+                        monto = c.Monto,
+                        saldo = c.Saldo
+                    })
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al calcular crédito personal");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        // GET: API endpoint para validar disponibilidad de crédito
+        [HttpGet]
+        public async Task<IActionResult> ValidarCreditoDisponible(int creditoId, decimal monto)
+        {
+            try
+            {
+                var disponible = await _ventaService.ValidarDisponibilidadCreditoAsync(creditoId, monto);
+
+                return Json(new
+                {
+                    disponible = disponible,
+                    mensaje = disponible
+                        ? "Crédito suficiente"
+                        : "Crédito insuficiente para este monto"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al validar crédito");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
     }
 }

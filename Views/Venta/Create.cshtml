@@ -1,35 +1,42 @@
 ﻿@model TheBuryProject.ViewModels.VentaViewModel
 
 @{
-    ViewData["Title"] = "Nueva Venta / Cotización";
+    ViewData["Title"] = Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Cotizacion ? "Nueva Cotización" : "Nueva Venta";
+    var esCotizacion = Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Cotizacion;
 }
 
 <div class="row">
     <div class="col-md-12">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2><i class="bi bi-plus-circle"></i> Nueva Venta / Cotización</h2>
+            <h2>
+                <i class="bi bi-@(esCotizacion ? "file-earmark-text" : "plus-circle")"></i>
+                @ViewData["Title"]
+            </h2>
             <a asp-action="Index" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Volver
             </a>
         </div>
 
         <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> <strong>Tip:</strong> Las ventas se crean como <strong>Presupuesto</strong> (cotización).
-            Luego puedes confirmarlas para descontar stock y facturarlas.
+            <i class="bi bi-info-circle"></i>
+            <strong>@(esCotizacion ? "Cotización:" : "Venta:")</strong>
+            @(esCotizacion ? "Las cotizaciones son presupuestos sin compromiso que puedes convertir en ventas después." :
+                        "Las ventas se crean como Presupuesto. Confirma la venta para descontar stock y luego facturar.")
         </div>
 
         <form asp-action="Create" method="post" id="formVenta">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <input type="hidden" asp-for="Estado" />
 
             <div class="card mb-3">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Datos de la Venta</h5>
+                    <h5 class="mb-0">Datos Generales</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label asp-for="ClienteId" class="form-label"></label>
-                            <select asp-for="ClienteId" class="form-select" asp-items="ViewBag.Clientes" id="clienteSelect">
+                            <select asp-for="ClienteId" class="form-select" asp-items="ViewBag.Clientes" id="clienteSelect" required>
                                 <option value="">Seleccione un cliente...</option>
                             </select>
                             <span asp-validation-for="ClienteId" class="text-danger"></span>
@@ -43,7 +50,7 @@
 
                         <div class="col-md-3 mb-3">
                             <label asp-for="TipoPago" class="form-label"></label>
-                            <select asp-for="TipoPago" class="form-select" asp-items="ViewBag.TiposPago" id="tipoPagoSelect">
+                            <select asp-for="TipoPago" class="form-select" asp-items="ViewBag.TiposPago" id="tipoPagoSelect" required>
                             </select>
                             <span asp-validation-for="TipoPago" class="text-danger"></span>
                         </div>
@@ -55,15 +62,216 @@
                         </div>
                     </div>
 
+                    <!-- Sección Crédito Personal -->
                     <div class="row" id="creditoRow" style="display: none;">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-12">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Crédito Personal:</strong> Seleccione un crédito y configure las condiciones de financiamiento.
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
                             <label asp-for="CreditoId" class="form-label">
                                 <i class="bi bi-credit-card"></i> Crédito Personal
                             </label>
-                            <select asp-for="CreditoId" class="form-select" id="creditoSelect">
+                            <select asp-for="CreditoId" class="form-select" id="creditoSelect" required>
                                 <option value="">Seleccione un crédito...</option>
                             </select>
-                            <small class="text-muted">Solo créditos con saldo disponible</small>
+                            <small class="text-muted">Solo créditos activos con saldo</small>
+                        </div>
+
+                        <!-- Información del Crédito -->
+                        <div class="col-md-12" id="infoCreditoDiv" style="display: none;">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <h6 class="text-muted">Información del Crédito</h6>
+                                            <p class="mb-1"><strong>Crédito Total:</strong> <span id="lblCreditoTotal">$0.00</span></p>
+                                            <p class="mb-1"><strong>Disponible:</strong> <span id="lblCreditoDisponible" class="text-success">$0.00</span></p>
+                                            <p class="mb-0"><strong>Tasa Mensual:</strong> <span id="lblTasaCredito">0%</span></p>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <h6 class="text-muted">Configurar Financiamiento</h6>
+                                            <div class="row">
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="form-label">Monto a Financiar</label>
+                                                    <input type="number" id="montoFinanciar" class="form-control" step="0.01" min="0" placeholder="0.00" />
+                                                    <button type="button" class="btn btn-sm btn-link p-0" id="btnUsarTotalVenta">
+                                                        Usar total de la venta
+                                                    </button>
+                                                </div>
+                                                <div class="col-md-3 mb-2">
+                                                    <label class="form-label">Cantidad Cuotas</label>
+                                                    <input type="number" id="cantidadCuotasCredito" class="form-control" min="1" max="120" value="1" />
+                                                </div>
+                                                <div class="col-md-3 mb-2">
+                                                    <label class="form-label">Primera Cuota</label>
+                                                    <input type="date" id="fechaPrimeraCuota" class="form-control" />
+                                                </div>
+                                                <div class="col-md-2 mb-2 d-flex align-items-end">
+                                                    <button type="button" class="btn btn-primary w-100" id="btnCalcularCredito">
+                                                        <i class="bi bi-calculator"></i> Calcular
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resultados del Cálculo -->
+                        <div class="col-md-12" id="resultadoCreditoDiv" style="display: none;">
+                            <div class="card border-success mb-3">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="bi bi-check-circle"></i> Plan de Financiamiento</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <p class="mb-1"><strong>Monto a Financiar:</strong></p>
+                                            <h5 class="text-primary" id="lblMontoFinanciado">$0.00</h5>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <p class="mb-1"><strong>Cuotas:</strong></p>
+                                            <h5 id="lblCantCuotas">0</h5>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <p class="mb-1"><strong>Valor Cuota:</strong></p>
+                                            <h5 class="text-success" id="lblValorCuota">$0.00</h5>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <p class="mb-1"><strong>Total a Pagar:</strong></p>
+                                            <h5 id="lblTotalPagar">$0.00</h5>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <p class="mb-0 text-muted">
+                                                <small><strong>Interés Total:</strong> $<span id="lblInteresTotal">0.00</span></small>
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            <p class="mb-0">
+                                                <small>
+                                                    <strong>Saldo Restante:</strong>
+                                                    <span id="lblSaldoRestante" class="badge bg-info">$0.00</span>
+                                                </small>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tabla de Cuotas -->
+                                    <div class="mt-3" id="tablaCuotasDiv" style="display: none;">
+                                        <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCuotas">
+                                            <i class="bi bi-chevron-down"></i> Ver calendario de cuotas
+                                        </button>
+                                        <div class="collapse" id="collapseCuotas">
+                                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                                <table class="table table-sm table-striped">
+                                                    <thead class="table-dark sticky-top">
+                                                        <tr>
+                                                            <th>Cuota</th>
+                                                            <th>Vencimiento</th>
+                                                            <th class="text-end">Monto</th>
+                                                            <th class="text-end">Saldo</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="cuotasTableBody">
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Campos ocultos para enviar al servidor -->
+                                    <input type="hidden" id="hiddenDatosCreditoJson" name="DatosCreditoPersonalJson" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advertencia si excede -->
+                        <div class="col-md-12" id="advertenciaCreditoDiv" style="display: none;">
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>¡Atención!</strong> El monto ingresado supera el crédito disponible.
+                                <span id="msgAdvertenciaCredito"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección Tarjeta -->
+                    <div class="row" id="tarjetaRow" style="display: none;">
+                        <div class="col-md-12 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-credit-card-2-front"></i> Datos de Tarjeta</h6>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-2">
+                                            <label class="form-label">Tarjeta</label>
+                                            <select id="tarjetaSelect" class="form-select">
+                                                <option value="">Seleccione tarjeta...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 mb-2" id="cuotasDiv" style="display: none;">
+                                            <label class="form-label">Cuotas</label>
+                                            <select id="cuotasSelect" class="form-select">
+                                                <option value="1">1 cuota</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 mb-2">
+                                            <label class="form-label">Nro. Autorización</label>
+                                            <input type="text" id="nroAutorizacion" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div id="infoCuotas" class="mt-2" style="display: none;">
+                                        <div class="alert alert-info mb-0">
+                                            <strong>Monto por cuota:</strong> $<span id="lblMontoCuota">0.00</span><br />
+                                            <strong>Total con interés:</strong> $<span id="lblMontoTotal">0.00</span><br />
+                                            <strong>Interés:</strong> $<span id="lblInteres">0.00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección Cheque -->
+                    <div class="row" id="chequeRow" style="display: none;">
+                        <div class="col-md-12 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-bank"></i> Datos del Cheque</h6>
+                                    <div class="row">
+                                        <div class="col-md-3 mb-2">
+                                            <label class="form-label">Número de Cheque</label>
+                                            <input type="text" id="chequenumero" class="form-control" />
+                                        </div>
+                                        <div class="col-md-3 mb-2">
+                                            <label class="form-label">Banco</label>
+                                            <input type="text" id="chequeBanco" class="form-control" />
+                                        </div>
+                                        <div class="col-md-3 mb-2">
+                                            <label class="form-label">Titular</label>
+                                            <input type="text" id="chequeTitular" class="form-control" />
+                                        </div>
+                                        <div class="col-md-3 mb-2">
+                                            <label class="form-label">CUIT</label>
+                                            <input type="text" id="chequeCUIT" class="form-control" />
+                                        </div>
+                                        <div class="col-md-3 mb-2">
+                                            <label class="form-label">Fecha Emisión</label>
+                                            <input type="date" id="chequeFechaEmision" class="form-control" />
+                                        </div>
+                                        <div class="col-md-3 mb-2">
+                                            <label class="form-label">Fecha Vencimiento</label>
+                                            <input type="date" id="chequeFechaVencimiento" class="form-control" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -165,30 +373,45 @@
                     <i class="bi bi-x-circle"></i> Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save"></i> Guardar Presupuesto
+                    <i class="bi bi-save"></i> @(esCotizacion ? "Guardar Cotización" : "Guardar Venta")
                 </button>
             </div>
         </form>
     </div>
 </div>
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
     <script>
         let productosSeleccionados = [];
         let stockDisponible = {};
+        let tarjetasConfig = [];
+        let creditoSeleccionado = null;
+        let datosCreditoCalculados = null;
 
         $(document).ready(function () {
-            // Mostrar/ocultar selector de crédito según tipo de pago
+            cargarTarjetas();
+
+            // Inicializar fecha primera cuota
+            let fechaInicial = new Date();
+            fechaInicial.setMonth(fechaInicial.getMonth() + 1);
+            $('#fechaPrimeraCuota').val(fechaInicial.toISOString().split('T')[0]);
+
+            // Mostrar/ocultar secciones según tipo de pago
             $('#tipoPagoSelect').on('change', function () {
                 const tipoPago = $(this).val();
-                if (tipoPago === '5') { // CreditoPersonal = 5
+
+                $('#creditoRow, #tarjetaRow, #chequeRow').hide();
+                $('#resultadoCreditoDiv, #advertenciaCreditoDiv').hide();
+
+                if (tipoPago === '5') { // CreditoPersonal
                     $('#creditoRow').show();
                     cargarCreditosCliente();
-                } else {
-                    $('#creditoRow').hide();
-                    $('#creditoSelect').val('');
+                } else if (tipoPago === '2' || tipoPago === '3') { // Tarjeta
+                    $('#tarjetaRow').show();
+                } else if (tipoPago === '4') { // Cheque
+                    $('#chequeRow').show();
+                    $('#chequeFechaEmision').val(new Date().toISOString().split('T')[0]);
                 }
             });
 
@@ -198,6 +421,28 @@
                 if (tipoPago === '5') {
                     cargarCreditosCliente();
                 }
+            });
+
+            // Cuando se selecciona un crédito
+            $('#creditoSelect').on('change', function () {
+                const creditoId = $(this).val();
+                if (creditoId) {
+                    cargarInfoCredito(creditoId);
+                } else {
+                    $('#infoCreditoDiv, #resultadoCreditoDiv, #advertenciaCreditoDiv').hide();
+                    creditoSeleccionado = null;
+                }
+            });
+
+            // Usar total de la venta en monto a financiar
+            $('#btnUsarTotalVenta').on('click', function () {
+                const total = parseFloat($('#hiddenTotal').val()) || 0;
+                $('#montoFinanciar').val(total.toFixed(2));
+            });
+
+            // Calcular crédito personal
+            $('#btnCalcularCredito').on('click', function () {
+                calcularCreditoPersonal();
             });
 
             // Cuando se selecciona un producto
@@ -212,6 +457,19 @@
                 }
             });
 
+            // Cuando se selecciona una tarjeta
+            $('#tarjetaSelect').on('change', function () {
+                const tarjetaId = $(this).val();
+                if (tarjetaId) {
+                    configurarTarjeta(tarjetaId);
+                }
+            });
+
+            // Cuando cambian las cuotas de tarjeta
+            $('#cuotasSelect').on('change', function () {
+                calcularCuotasTarjeta();
+            });
+
             // Agregar producto
             $('#btnAgregarProducto').on('click', function () {
                 agregarProducto();
@@ -221,7 +479,40 @@
             $('#descuentoGeneral').on('change', function () {
                 calcularTotales();
             });
+
+            // Validar antes de enviar el formulario
+            $('#formVenta').on('submit', function (e) {
+                const tipoPago = $('#tipoPagoSelect').val();
+
+                if (tipoPago === '5') { // Crédito Personal
+                    if (!datosCreditoCalculados) {
+                        e.preventDefault();
+                        alert('Debe calcular el plan de financiamiento antes de guardar la venta');
+                        return false;
+                    }
+
+                    // Guardar datos en campo oculto
+                    $('#hiddenDatosCreditoJson').val(JSON.stringify(datosCreditoCalculados));
+                }
+
+                return true;
+            });
         });
+
+        function cargarTarjetas() {
+            $.get('@Url.Action("GetTarjetasActivas", "Venta")')
+                .done(function (tarjetas) {
+                    tarjetasConfig = tarjetas;
+                    let options = '<option value="">Seleccione tarjeta...</option>';
+                    tarjetas.forEach(function (tarjeta) {
+                        options += `<option value="${tarjeta.id}">${tarjeta.nombre} (${tarjeta.tipo === 0 ? 'Débito' : 'Crédito'})</option>`;
+                    });
+                    $('#tarjetaSelect').html(options);
+                })
+                .fail(function () {
+                    console.error('Error al cargar tarjetas');
+                });
+        }
 
         function cargarCreditosCliente() {
             const clienteId = $('#clienteSelect').val();
@@ -245,6 +536,142 @@
                 .fail(function () {
                     alert('Error al cargar los créditos del cliente');
                 });
+        }
+
+        function cargarInfoCredito(creditoId) {
+            $.get('@Url.Action("GetCreditosCliente", "Venta")', { clienteId: $('#clienteSelect').val() })
+                .done(function (creditos) {
+                    creditoSeleccionado = creditos.find(c => c.id == creditoId);
+                    if (creditoSeleccionado) {
+                        $('#lblCreditoTotal').text('$' + creditoSeleccionado.saldoPendiente.toFixed(2));
+                        $('#lblCreditoDisponible').text('$' + creditoSeleccionado.saldoPendiente.toFixed(2));
+                        $('#infoCreditoDiv').show();
+                    }
+                })
+                .fail(function () {
+                    alert('Error al cargar información del crédito');
+                });
+        }
+
+        function calcularCreditoPersonal() {
+            const creditoId = $('#creditoSelect').val();
+            const monto = parseFloat($('#montoFinanciar').val()) || 0;
+            const cuotas = parseInt($('#cantidadCuotasCredito').val()) || 1;
+            const fechaPrimera = $('#fechaPrimeraCuota').val();
+
+            if (!creditoId) {
+                alert('Debe seleccionar un crédito');
+                return;
+            }
+
+            if (monto <= 0) {
+                alert('El monto a financiar debe ser mayor a cero');
+                return;
+            }
+
+            if (cuotas < 1 || cuotas > 120) {
+                alert('La cantidad de cuotas debe estar entre 1 y 120');
+                return;
+            }
+
+            // Mostrar loading
+            $('#btnCalcularCredito').prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Calculando...');
+
+            $.get('@Url.Action("CalcularCreditoPersonal", "Venta")', {
+                creditoId: creditoId,
+                monto: monto,
+                cuotas: cuotas,
+                fechaPrimeraCuota: fechaPrimera
+            })
+            .done(function (resultado) {
+                datosCreditoCalculados = resultado;
+
+                // Mostrar resultados
+                $('#lblMontoFinanciado').text('$' + resultado.montoAFinanciar.toFixed(2));
+                $('#lblCantCuotas').text(resultado.cantidadCuotas);
+                $('#lblValorCuota').text('$' + resultado.montoCuota.toFixed(2));
+                $('#lblTotalPagar').text('$' + resultado.totalAPagar.toFixed(2));
+                $('#lblInteresTotal').text(resultado.interesTotal.toFixed(2));
+                $('#lblSaldoRestante').text('$' + resultado.saldoRestante.toFixed(2));
+                $('#lblTasaCredito').text(resultado.tasaInteres.toFixed(2) + '%');
+
+                // Llenar tabla de cuotas
+                let cuotasHtml = '';
+                resultado.cuotas.forEach(function (cuota) {
+                    cuotasHtml += `
+                        <tr>
+                            <td>${cuota.numeroCuota}</td>
+                            <td>${cuota.fechaVencimiento}</td>
+                            <td class="text-end">$${cuota.monto.toFixed(2)}</td>
+                            <td class="text-end">$${cuota.saldo.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                $('#cuotasTableBody').html(cuotasHtml);
+                $('#tablaCuotasDiv').show();
+
+                $('#resultadoCreditoDiv').show();
+                $('#advertenciaCreditoDiv').hide();
+
+                // Verificar si excede
+                if (resultado.saldoRestante < 0) {
+                    $('#advertenciaCreditoDiv').show();
+                    $('#msgAdvertenciaCredito').text(
+                        `Necesita $${Math.abs(resultado.saldoRestante).toFixed(2)} adicionales.`
+                    );
+                }
+            })
+            .fail(function (xhr) {
+                const error = xhr.responseJSON?.error || 'Error al calcular el crédito';
+                alert(error);
+                $('#resultadoCreditoDiv, #tablaCuotasDiv').hide();
+            })
+            .always(function () {
+                $('#btnCalcularCredito').prop('disabled', false).html('<i class="bi bi-calculator"></i> Calcular');
+            });
+        }
+
+        function configurarTarjeta(tarjetaId) {
+            const tarjeta = tarjetasConfig.find(t => t.id == tarjetaId);
+            if (!tarjeta) return;
+
+            if (tarjeta.permiteCuotas && tarjeta.cantidadMaximaCuotas > 1) {
+                let options = '';
+                for (let i = 1; i <= tarjeta.cantidadMaximaCuotas; i++) {
+                    options += `<option value="${i}">${i} cuota${i > 1 ? 's' : ''}</option>`;
+                }
+                $('#cuotasSelect').html(options);
+                $('#cuotasDiv').show();
+            } else {
+                $('#cuotasDiv').hide();
+                $('#infoCuotas').hide();
+            }
+        }
+
+        function calcularCuotasTarjeta() {
+            const tarjetaId = $('#tarjetaSelect').val();
+            const cuotas = $('#cuotasSelect').val();
+            const total = parseFloat($('#hiddenTotal').val()) || 0;
+
+            if (!tarjetaId || !cuotas || cuotas == 1) {
+                $('#infoCuotas').hide();
+                return;
+            }
+
+            $.get('@Url.Action("CalcularCuotasTarjeta", "Venta")', {
+                tarjetaId: tarjetaId,
+                monto: total,
+                cuotas: cuotas
+            })
+            .done(function (resultado) {
+                $('#lblMontoCuota').text(resultado.montoCuota.toFixed(2));
+                $('#lblMontoTotal').text(resultado.montoTotal.toFixed(2));
+                $('#lblInteres').text(resultado.interes.toFixed(2));
+                $('#infoCuotas').show();
+            })
+            .fail(function () {
+                alert('Error al calcular las cuotas');
+            });
         }
 
         function cargarPrecioProducto(productoId) {
@@ -280,10 +707,10 @@
                 return;
             }
 
-            // Extraer código y nombre del producto
             const partes = productoTexto.split(' - ');
             const codigo = partes[0];
-            const nombre = partes[1] ? partes[1].split(' (Stock:')[0] : productoTexto;
+            const nombreCompleto = partes[1] || productoTexto;
+            const nombre = nombreCompleto.split(' (Stock:')[0];
 
             const descuentoMonto = (precio * cantidad * descuentoPct) / 100;
             const subtotal = (precio * cantidad) - descuentoMonto;
@@ -301,7 +728,6 @@
             actualizarTablaProductos();
             calcularTotales();
 
-            // Limpiar campos
             $('#productoSelect').val('');
             $('#cantidadInput').val(1);
             $('#precioInput').val('');
@@ -360,6 +786,11 @@
             $('#hiddenSubtotal').val(subtotal.toFixed(2));
             $('#hiddenIVA').val(iva.toFixed(2));
             $('#hiddenTotal').val(total.toFixed(2));
+
+            const cuotas = $('#cuotasSelect').val();
+            if (cuotas && cuotas > 1) {
+                calcularCuotasTarjeta();
+            }
         }
     </script>
 }

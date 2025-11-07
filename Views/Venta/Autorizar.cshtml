@@ -1,0 +1,106 @@
+﻿@model TheBuryProject.ViewModels.VentaViewModel
+
+@{
+    ViewData["Title"] = "Autorizar Venta";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="bi bi-check-circle"></i> Autorizar Venta</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Atención:</strong> Está por autorizar una venta que excede el límite de crédito del cliente.
+                </div>
+
+                <h5 class="mb-3">Datos de la Venta</h5>
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="30%">Número:</th>
+                        <td>@Model.Numero</td>
+                    </tr>
+                    <tr>
+                        <th>Cliente:</th>
+                        <td>@Model.ClienteNombre (@Model.ClienteDocumento)</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha:</th>
+                        <td>@Model.FechaVenta.ToString("dd/MM/yyyy")</td>
+                    </tr>
+                    <tr>
+                        <th>Tipo de Pago:</th>
+                        <td>@Model.TipoPago</td>
+                    </tr>
+                    <tr>
+                        <th>Total:</th>
+                        <td><strong class="text-success">@Model.Total.ToString("C2")</strong></td>
+                    </tr>
+                </table>
+
+                @if (!string.IsNullOrEmpty(Model.MotivoAutorizacion))
+                {
+                    <div class="alert alert-info">
+                        <strong>Motivo de la solicitud:</strong><br />
+                        @Model.MotivoAutorizacion
+                    </div>
+                }
+
+                @if (Model.FechaSolicitudAutorizacion.HasValue)
+                {
+                    <p class="text-muted">
+                        <small>
+                            Solicitada por: <strong>@Model.UsuarioSolicita</strong><br />
+                            Fecha: @Model.FechaSolicitudAutorizacion.Value.ToString("dd/MM/yyyy HH:mm")
+                        </small>
+                    </p>
+                }
+
+                <h5 class="mt-4 mb-3">Productos</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-end">Precio</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detalle in Model.Detalles)
+                            {
+                                <tr>
+                                    <td>@detalle.ProductoCodigo - @detalle.ProductoNombre</td>
+                                    <td class="text-center">@detalle.Cantidad</td>
+                                    <td class="text-end">@detalle.PrecioUnitario.ToString("C2")</td>
+                                    <td class="text-end">@detalle.Subtotal.ToString("C2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <form asp-action="Autorizar" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones de Autorización</label>
+                        <textarea name="motivo" class="form-control" rows="3" placeholder="Ingrese observaciones adicionales (opcional)"></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-lg"></i> Autorizar Venta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

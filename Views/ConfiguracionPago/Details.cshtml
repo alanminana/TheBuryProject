@@ -1,0 +1,244 @@
+﻿@model TheBuryProject.ViewModels.ConfiguracionPagoViewModel
+
+@{
+    ViewData["Title"] = "Detalles de Configuración";
+}
+
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="bi bi-gear"></i> @ViewData["Title"]</h2>
+            <div class="btn-group">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="bi bi-check-circle"></i> @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <div class="card mb-3">
+            <div class="card-header @(Model.Activo ? "bg-primary" : "bg-secondary") text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">@Model.TipoPago</h4>
+                    @if (Model.Activo)
+                    {
+                        <span class="badge bg-success">Activo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Inactivo</span>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table">
+                            <tr>
+                                <th width="40%">Nombre:</th>
+                                <td><strong>@Model.Nombre</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Tipo:</th>
+                                <td>@Model.TipoPago</td>
+                            </tr>
+                            <tr>
+                                <th>Estado:</th>
+                                <td>
+                                    @if (Model.Activo)
+                                    {
+                                        <span class="badge bg-success">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                    }
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table">
+                            <tr>
+                                <th width="40%">Permite Descuento:</th>
+                                <td>
+                                    @if (Model.PermiteDescuento)
+                                    {
+                                        <span class="text-success">
+                                            <i class="bi bi-check-circle"></i> Sí
+                                            @if (Model.PorcentajeDescuentoMaximo.HasValue)
+                                            {
+                                                <span>(hasta @Model.PorcentajeDescuentoMaximo%)</span>
+                                            }
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted"><i class="bi bi-x-circle"></i> No</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Tiene Recargo:</th>
+                                <td>
+                                    @if (Model.TieneRecargo)
+                                    {
+                                        <span class="text-warning">
+                                            <i class="bi bi-exclamation-triangle"></i> Sí
+                                            @if (Model.PorcentajeRecargo.HasValue)
+                                            {
+                                                <span>(@Model.PorcentajeRecargo%)</span>
+                                            }
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted"><i class="bi bi-x-circle"></i> No</span>
+                                    }
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Descripcion))
+                {
+                    <hr />
+                    <div class="alert alert-info mb-0">
+                        <strong>Descripción:</strong><br />
+                        @Model.Descripcion
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (Model.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaCredito ||
+                Model.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaDebito)
+        {
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-credit-card"></i> Tarjetas Configuradas
+                        </h5>
+                        <a asp-action="ConfigurarTarjeta" asp-route-configuracionPagoId="@Model.Id" class="btn btn-sm btn-light">
+                            <i class="bi bi-plus-circle"></i> Agregar Tarjeta
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.ConfiguracionesTarjeta.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tarjeta</th>
+                                        <th>Tipo</th>
+                                        <th>Cuotas</th>
+                                        <th>Interés</th>
+                                        <th>Recargo Débito</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var tarjeta in Model.ConfiguracionesTarjeta)
+                                    {
+                                        <tr>
+                                            <td><strong>@tarjeta.NombreTarjeta</strong></td>
+                                            <td>
+                                                @if (tarjeta.TipoTarjeta == TheBuryProject.Models.Enums.TipoTarjeta.Credito)
+                                                {
+                                                    <span class="badge bg-warning text-dark">Crédito</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-primary">Débito</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (tarjeta.PermiteCuotas)
+                                                {
+                                                    <span>Hasta @tarjeta.CantidadMaximaCuotas cuotas</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">No</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (tarjeta.TipoCuota == TheBuryProject.Models.Enums.TipoCuotaTarjeta.ConInteres && tarjeta.TasaInteresesMensual.HasValue)
+                                                {
+                                                    <span class="text-danger">@tarjeta.TasaInteresesMensual%</span>
+                                                }
+                                                else if (tarjeta.TipoCuota == TheBuryProject.Models.Enums.TipoCuotaTarjeta.SinInteres)
+                                                {
+                                                    <span class="text-success">Sin interés</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (tarjeta.TieneRecargoDebito && tarjeta.PorcentajeRecargoDebito.HasValue)
+                                                {
+                                                    <span class="text-warning">@tarjeta.PorcentajeRecargoDebito%</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (tarjeta.Activa)
+                                                {
+                                                    <span class="badge bg-success">Activa</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Inactiva</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-warning" title="Editar">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-danger" title="Eliminar">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-credit-card" style="font-size: 3rem;"></i>
+                            <p class="mt-2">No hay tarjetas configuradas</p>
+                            <a asp-action="ConfigurarTarjeta" asp-route-configuracionPagoId="@Model.Id" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Agregar Primera Tarjeta
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

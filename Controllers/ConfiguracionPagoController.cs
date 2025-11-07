@@ -251,6 +251,8 @@ namespace TheBuryProject.Controllers
 
         // GET: API para calcular cuotas
         [HttpGet]
+        // GET: API para calcular cuotas
+        [HttpGet]
         public async Task<IActionResult> CalcularCuotas(int tarjetaId, decimal monto, int cuotas)
         {
             try
@@ -273,9 +275,9 @@ namespace TheBuryProject.Controllers
                 else
                 {
                     var tasaDecimal = (tarjeta.TasaInteresesMensual ?? 0) / 100;
-                    var montoCuotaCalc = monto * (tasaDecimal * Math.Pow((double)(1 + tasaDecimal), cuotas)) /
-                                         (Math.Pow((double)(1 + tasaDecimal), cuotas) - 1);
-                    montoCuota = (decimal)montoCuotaCalc;
+                    // CORREGIDO con cast explícito a decimal
+                    var factor = (decimal)Math.Pow((double)(1 + tasaDecimal), cuotas);
+                    montoCuota = monto * (tasaDecimal * factor) / (factor - 1);
                     montoTotal = montoCuota * cuotas;
                 }
 

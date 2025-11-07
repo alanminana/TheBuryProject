@@ -15,7 +15,6 @@ namespace TheBuryProject.Data
             : base(options)
         {
         }
-
         // DbSets - Cada uno representa una tabla en la base de datos
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<Marca> Marcas { get; set; }
@@ -38,16 +37,19 @@ namespace TheBuryProject.Data
         // Clientes y Créditos
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<Credito> Creditos { get; set; }
-        public DbSet<Garante> Garantes { get; set; }
         public DbSet<Cuota> Cuotas { get; set; }
+        public DbSet<Garante> Garantes { get; set; }
+
+        // Ventas
         public DbSet<Venta> Ventas { get; set; }
         public DbSet<VentaDetalle> VentaDetalles { get; set; }
         public DbSet<Factura> Facturas { get; set; }
-
         public DbSet<ConfiguracionPago> ConfiguracionesPago { get; set; }
         public DbSet<ConfiguracionTarjeta> ConfiguracionesTarjeta { get; set; }
         public DbSet<DatosTarjeta> DatosTarjeta { get; set; }
         public DbSet<DatosCheque> DatosCheque { get; set; }
+        public DbSet<VentaCreditoCuota> VentaCreditoCuotas { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -69,7 +71,35 @@ namespace TheBuryProject.Data
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
+            // Configuración para VentaCreditoCuota
+            modelBuilder.Entity<VentaCreditoCuota>(entity =>
+            {
+                entity.ToTable("VentaCreditoCuotas");
+                entity.HasKey(e => e.Id);
 
+                entity.Property(e => e.Monto)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Saldo)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.MontoPagado)
+                    .HasPrecision(18, 2);
+
+                entity.HasIndex(e => new { e.VentaId, e.NumeroCuota });
+                entity.HasIndex(e => e.FechaVencimiento);
+                entity.HasIndex(e => e.Pagada);
+
+                entity.HasOne(e => e.Venta)
+                    .WithMany(v => v.VentaCreditoCuotas)
+                    .HasForeignKey(e => e.VentaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Credito)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreditoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
             // Configuración de Marca
             modelBuilder.Entity<Marca>(entity =>
             {
