@@ -1,16 +1,15 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.ViewModels
 {
     public class CreditoFilterViewModel
     {
-        [Display(Name = "Buscar")]
-        public string? SearchTerm { get; set; }
+        [Display(Name = "Número de Crédito")]
+        public string? Numero { get; set; }
 
-        [Display(Name = "Cliente")]
-        public int? ClienteId { get; set; }
+        [Display(Name = "Cliente (DNI o Nombre)")]
+        public string? Cliente { get; set; }
 
         [Display(Name = "Estado")]
         public EstadoCredito? Estado { get; set; }
@@ -29,20 +28,13 @@ namespace TheBuryProject.ViewModels
         [Display(Name = "Monto Máximo")]
         public decimal? MontoMaximo { get; set; }
 
-        [Display(Name = "Solo en Mora")]
-        public bool SoloEnMora { get; set; }
+        [Display(Name = "Solo con cuotas vencidas")]
+        public bool SoloCuotasVencidas { get; set; }
 
-        [Display(Name = "Ordenar por")]
-        public string OrderBy { get; set; } = "FechaSolicitud";
+        [Display(Name = "Página")]
+        public int PageNumber { get; set; } = 1;
 
-        [Display(Name = "Dirección")]
-        public string OrderDirection { get; set; } = "DESC";
-
-        // Resultados
-        public IEnumerable<CreditoViewModel> Results { get; set; } = new List<CreditoViewModel>();
-
-        // Dropdowns
-        public SelectList? Clientes { get; set; }
-        public SelectList? Estados { get; set; }
+        [Display(Name = "Registros por página")]
+        public int PageSize { get; set; } = 20;
     }
 }

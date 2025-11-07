@@ -7,127 +7,84 @@ namespace TheBuryProject.ViewModels
     {
         public int Id { get; set; }
 
-        [Display(Name = "Número de Crédito")]
-        public string Numero { get; set; } = string.Empty;
-
-        // Cliente
+        [Display(Name = "Cliente")]
+        [Required(ErrorMessage = "Debe seleccionar un cliente")]
         public int ClienteId { get; set; }
 
-        [Display(Name = "Cliente")]
-        public string? ClienteNombre { get; set; }
+        [Display(Name = "Número de Crédito")]
+        public string? Numero { get; set; }
 
-        [Display(Name = "Documento")]
-        public string? ClienteDocumento { get; set; }
-
-        // Montos
         [Display(Name = "Monto Solicitado")]
-        [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = false)]
+        [Required(ErrorMessage = "El monto solicitado es requerido")]
+        [Range(1000, 10000000, ErrorMessage = "El monto debe estar entre $1.000 y $10.000.000")]
         public decimal MontoSolicitado { get; set; }
 
         [Display(Name = "Monto Aprobado")]
-        [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = false)]
+        [Range(0, 10000000, ErrorMessage = "El monto debe estar entre $0 y $10.000.000")]
         public decimal MontoAprobado { get; set; }
 
-        [Display(Name = "Monto Total a Pagar")]
-        [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = false)]
-        public decimal MontoTotal { get; set; }
+        [Display(Name = "Tasa de Interés Mensual (%)")]
+        [Required(ErrorMessage = "La tasa de interés es requerida")]
+        [Range(0, 100, ErrorMessage = "La tasa debe estar entre 0% y 100%")]
+        public decimal TasaInteres { get; set; }
 
-        // Cuotas
         [Display(Name = "Cantidad de Cuotas")]
+        [Required(ErrorMessage = "La cantidad de cuotas es requerida")]
+        [Range(1, 60, ErrorMessage = "Las cuotas deben estar entre 1 y 60")]
         public int CantidadCuotas { get; set; }
 
         [Display(Name = "Monto por Cuota")]
-        [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = false)]
         public decimal MontoCuota { get; set; }
 
-        [Display(Name = "Tasa de Interés (%)")]
-        [DisplayFormat(DataFormatString = "{0:N2}%", ApplyFormatInEditMode = false)]
-        public decimal TasaInteres { get; set; }
+        [Display(Name = "CFTEA (%)")]
+        public decimal CFTEA { get; set; }
 
-        // Estado
+        [Display(Name = "Total a Pagar")]
+        public decimal TotalAPagar { get; set; }
+
+        [Display(Name = "Saldo Pendiente")]
+        public decimal SaldoPendiente { get; set; }
+
         [Display(Name = "Estado")]
         public EstadoCredito Estado { get; set; }
 
-        [Display(Name = "Estado")]
-        public string EstadoDescripcion => Estado.ToString();
-
-        // Fechas
         [Display(Name = "Fecha de Solicitud")]
-        [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}", ApplyFormatInEditMode = false)]
-        public DateTime FechaSolicitud { get; set; }
+        [DataType(DataType.Date)]
+        public DateTime FechaSolicitud { get; set; } = DateTime.Now;
 
         [Display(Name = "Fecha de Aprobación")]
-        [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}", ApplyFormatInEditMode = false)]
+        [DataType(DataType.Date)]
         public DateTime? FechaAprobacion { get; set; }
 
-        [Display(Name = "Fecha de Desembolso")]
-        [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}", ApplyFormatInEditMode = false)]
-        public DateTime? FechaDesembolso { get; set; }
-
         [Display(Name = "Fecha de Finalización")]
-        [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}", ApplyFormatInEditMode = false)]
+        [DataType(DataType.Date)]
         public DateTime? FechaFinalizacion { get; set; }
 
-        // Evaluación
-        [Display(Name = "Puntaje de Riesgo")]
-        [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = false)]
+        [Display(Name = "Fecha Primera Cuota")]
+        [DataType(DataType.Date)]
+        public DateTime? FechaPrimeraCuota { get; set; }
+
+        [Display(Name = "Puntaje de Riesgo Inicial")]
         public decimal PuntajeRiesgoInicial { get; set; }
 
-        [Display(Name = "Sueldo del Cliente")]
-        [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = false)]
-        public decimal? SueldoCliente { get; set; }
-
-        [Display(Name = "% del Sueldo")]
-        [DisplayFormat(DataFormatString = "{0:N2}%", ApplyFormatInEditMode = false)]
-        public decimal? PorcentajeSueldo { get; set; }
-
-        [Display(Name = "Tiene Garante")]
-        public bool TieneGarante { get; set; }
-
+        [Display(Name = "Garante")]
         public int? GaranteId { get; set; }
 
-        [Display(Name = "Garante")]
-        public string? GaranteNombre { get; set; }
+        [Display(Name = "Requiere Garante")]
+        public bool RequiereGarante { get; set; }
 
-        // Aprobación/Rechazo
         [Display(Name = "Aprobado Por")]
         public string? AprobadoPor { get; set; }
 
-        [Display(Name = "Rechazado Por")]
-        public string? RechazadoPor { get; set; }
-
-        [Display(Name = "Fecha de Rechazo")]
-        [DisplayFormat(DataFormatString = "{0:dd/MM/yyyy}", ApplyFormatInEditMode = false)]
-        public DateTime? FechaRechazo { get; set; }
-
-        [Display(Name = "Motivo de Rechazo")]
-        public string? MotivoRechazo { get; set; }
-
         [Display(Name = "Observaciones")]
+        [DataType(DataType.MultilineText)]
         public string? Observaciones { get; set; }
 
-        // Calculados
-        [Display(Name = "Cuotas Pagadas")]
-        public int CuotasPagadas { get; set; }
+        // Propiedades de navegación para las vistas
+        public string? ClienteNombre { get; set; }
+        public string? GaranteNombre { get; set; }
 
-        [Display(Name = "Cuotas Pendientes")]
-        public int CuotasPendientes { get; set; }
-
-        [Display(Name = "Monto Pagado")]
-        [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = false)]
-        public decimal MontoPagado { get; set; }
-
-        [Display(Name = "Saldo Pendiente")]
-        [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = false)]
-        public decimal SaldoPendiente { get; set; }
-
-        [Display(Name = "Días en Mora")]
-        public int? DiasEnMora { get; set; }
-
-        // Auditoría
-        public DateTime CreatedAt { get; set; }
-        public string? CreatedBy { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public string? UpdatedBy { get; set; }
+        // Lista de cuotas
+        public List<CuotaViewModel>? Cuotas { get; set; }
     }
 }
