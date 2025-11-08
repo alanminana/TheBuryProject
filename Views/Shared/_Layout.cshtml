@@ -11,89 +11,83 @@
     <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true">
 </head>
 
-<body>
-    <div class="layout-container">
-        <!-- Sidebar -->
-        <nav id="sidebar" class="sidebar d-flex flex-column p-2">
-            <a class="navbar-brand mb-3" asp-controller="Home" asp-action="Index">
-                <i class="bi bi-shop text-primary"></i><span class="ms-2 fw-bold">TheBuryProject</span>
+<body class="bg-dark text-light">
+    <!-- Navbar Horizontal -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-body-tertiary shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold text-primary" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-shop"></i> TheBuryProject
             </a>
 
-            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-                <!-- CLIENTE -->
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="Cliente" asp-action="Index">
-                        <i class="bi bi-people"></i><span> Clientes</span>
-                    </a>
-                </li>
+            <div class="collapse navbar-collapse" id="navbarMenu">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- CLIENTES -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Cliente" asp-action="Index">
+                            <i class="bi bi-people me-1"></i>Clientes
+                        </a>
+                    </li>
 
-                <!-- CRÉDITO -->
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="Credito" asp-action="Index">
-                        <i class="bi bi-cash-coin"></i><span> Créditos</span>
-                    </a>
-                </li>
-           
-                <!-- PRODUCTOS + STOCK -->
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="Producto" asp-action="Index">
-                        <i class="bi bi-box-seam"></i><span> Productos</span>
-                    </a>
-                </li>
-        
-                <!-- PROVEEDORES -->
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="Proveedor" asp-action="Index">
-                        <i class="bi bi-truck"></i><span> Proveedores</span>
-                    </a>
-                </li>
+                    <!-- CRÉDITOS -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Credito" asp-action="Index">
+                            <i class="bi bi-credit-card me-1"></i>Créditos
+                        </a>
+                    </li>
 
-                <!-- CONFIGURACIÓN -->
-                <li class="nav-item">
-                    <a class="nav-link" asp-controller="ConfiguracionPago" asp-action="Index">
-                        <i class="bi bi-gear"></i><span> Configuración</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+                    <!-- PRODUCTOS -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Producto" asp-action="Index">
+                            <i class="bi bi-box-seam me-1"></i>Productos
+                        </a>
+                    </li>
 
-        <!-- Panel Principal -->
-        <div class="main-wrapper d-flex flex-column flex-grow-1">
-            <!-- Topbar -->
-            <div class="topbar">
-                <div class="d-flex align-items-center gap-2">
-                    <button id="toggleSidebar" class="btn btn-sm btn-outline-light d-none d-lg-inline">
-                        <i class="bi bi-list"></i>
-                    </button>
-                    <button id="mobileToggle" class="btn btn-sm btn-outline-light d-lg-none">
-                        <i class="bi bi-list"></i>
-                    </button>
-                    <div class="input-group input-group-sm ms-2">
-                        <span class="input-group-text bg-dark border-0 text-secondary">
-                            <i class="bi bi-search"></i>
-                        </span>
-                        <input type="text" class="form-control bg-dark border-0 text-light" placeholder="Buscar...">
-                    </div>
-                </div>
+                    <!-- VENTAS -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Venta" asp-action="Index">
+                            <i class="bi bi-cart-check me-1"></i>Ventas
+                        </a>
+                    </li>
+
+                    <!-- PROVEEDORES -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Proveedor" asp-action="Index">
+                            <i class="bi bi-truck me-1"></i>Proveedores
+                        </a>
+                    </li>
+
+                    <!-- CONFIGURACIÓN -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="ConfiguracionPago" asp-action="Index">
+                            <i class="bi bi-gear me-1"></i>Configuración
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Buscador y perfil -->
+                <form class="d-flex me-3" role="search">
+                    <input class="form-control form-control-sm bg-dark text-light border-0" type="search" placeholder="Buscar..." aria-label="Buscar">
+                </form>
                 <div class="d-flex align-items-center gap-3">
-                    <i class="bi bi-bell text-light"></i>
-                    <i class="bi bi-person-circle text-light"></i>
+                    <i class="bi bi-bell"></i>
+                    <i class="bi bi-person-circle"></i>
                 </div>
             </div>
-
-            <!-- Contenido -->
-            <main role="main" class="main-content">
-                @RenderBody()
-            </main>
-
-            <footer>
-                &copy; @DateTime.Now.Year - TheBuryProject
-            </footer>
         </div>
-    </div>
+    </nav>
 
-    <div id="overlay" class="overlay"></div>
+    <!-- Contenido principal -->
+    <main class="container-fluid mt-4">
+        @RenderBody()
+    </main>
+
+    <footer class="text-center py-3 text-secondary border-top mt-4">
+        &copy; @DateTime.Now.Year - TheBuryProject
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

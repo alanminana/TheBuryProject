@@ -19,51 +19,59 @@
 
             <!-- Filtros -->
             <div class="card bg-dark border-0 shadow-sm mb-4">
-                <div class="card-header bg-primary text-light">
-                    <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtros de Búsqueda</h5>
+                <div class="card-header bg-body-secondary text-light border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="bi bi-funnel me-2"></i>Filtros de Búsqueda
+                    </h5>
+                    <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCliente">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
                 </div>
-                <div class="card-body">
-                    <form asp-action="Index" method="get" class="row g-3 align-items-end">
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Búsqueda</label>
-                            <input type="text" name="SearchTerm" class="form-control bg-body-secondary text-light border-0"
-                                   value="@Model.SearchTerm"
-                                   placeholder="Nombre, DNI, teléfono, email..." />
-                        </div>
 
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold">Tipo Documento</label>
-                            <select name="TipoDocumento" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.TiposDocumento">
-                                <option value="">Todos</option>
-                            </select>
-                        </div>
+                <div class="collapse" id="filtrosCliente">
+                    <div class="card-body">
+                        <form asp-action="Index" method="get" class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Búsqueda</label>
+                                <input type="text" name="SearchTerm" class="form-control bg-body-secondary text-light border-0"
+                                       value="@Model.SearchTerm"
+                                       placeholder="Nombre, DNI, teléfono, email..." />
+                            </div>
 
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold">Estado</label>
-                            <select name="SoloActivos" class="form-select bg-body-secondary text-light border-0">
-                                <option value="">Todos</option>
-                                <option value="true" selected="@(Model.SoloActivos == true)">Solo Activos</option>
-                                <option value="false" selected="@(Model.SoloActivos == false)">Solo Inactivos</option>
-                            </select>
-                        </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Tipo Documento</label>
+                                <select name="TipoDocumento" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.TiposDocumento">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
 
-                        <div class="col-md-2">
-                            <label class="form-label fw-semibold">Puntaje Mínimo</label>
-                            <input type="number" name="PuntajeMinimo"
-                                   class="form-control bg-body-secondary text-light border-0"
-                                   value="@Model.PuntajeMinimo"
-                                   min="0" max="10" step="0.1" />
-                        </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Estado</label>
+                                <select name="SoloActivos" class="form-select bg-body-secondary text-light border-0">
+                                    <option value="">Todos</option>
+                                    <option value="true" selected="@(Model.SoloActivos == true)">Solo Activos</option>
+                                    <option value="false" selected="@(Model.SoloActivos == false)">Solo Inactivos</option>
+                                </select>
+                            </div>
 
-                        <div class="col-md-2 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary flex-fill">
-                                <i class="bi bi-search"></i> Buscar
-                            </button>
-                            <a asp-action="Index" class="btn btn-outline-light flex-fill">
-                                <i class="bi bi-x-circle"></i> Limpiar
-                            </a>
-                        </div>
-                    </form>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Puntaje Mínimo</label>
+                                <input type="number" name="PuntajeMinimo"
+                                       class="form-control bg-body-secondary text-light border-0"
+                                       value="@Model.PuntajeMinimo"
+                                       min="0" max="10" step="0.1" />
+                            </div>
+
+                            <div class="col-md-2 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-fill">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                                <a asp-action="Index" class="btn btn-outline-light flex-fill">
+                                    <i class="bi bi-x-circle"></i> Limpiar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
 
@@ -123,7 +131,6 @@
                                                 @if (cliente.Edad.HasValue)
                                                 {
                                                     <br />
-                                        
                                                     <small class="text-muted">@cliente.Edad años</small>
                                                 }
                                             </td>
@@ -139,7 +146,6 @@
                                                 @if (!string.IsNullOrEmpty(cliente.Localidad))
                                                 {
                                                     <br />
-                                        
                                                     <small class="text-muted">@cliente.Localidad</small>
                                                 }
                                             </td>

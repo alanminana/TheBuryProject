@@ -1,4 +1,6 @@
-﻿model List<TheBuryProject.ViewModels.VentaViewModel>
+﻿@model List<TheBuryProject.ViewModels.VentaViewModel>
+@using System.Linq
+
 @{
     ViewData["Title"] = "Ventas y Cotizaciones";
     var filter = ViewBag.Filter as TheBuryProject.ViewModels.VentaFilterViewModel;
@@ -29,7 +31,7 @@
                 </button>
             </div>
 
-            <div class="collapse @(filter != null && (filter.ClienteId.HasValue || !string.IsNullOrEmpty(filter.Numero) || filter.Estado.HasValue || filter.EstadoAutorizacion.HasValue) ? "show" : "")" id="filtrosCollapse">
+            <div class="collapse" id="filtrosCollapse">
                 <div class="card-body">
                     <form asp-action="Index" method="get" class="row g-3">
                         <div class="col-md-3">
