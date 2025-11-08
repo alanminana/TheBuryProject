@@ -1,4 +1,26 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿document.addEventListener("DOMContentLoaded", () => {
+    const sidebar = document.getElementById("sidebar");
+    const toggleBtn = document.getElementById("toggleSidebar");
+    const overlay = document.getElementById("overlay");
+    const mobileBtn = document.getElementById("mobileToggle");
 
-// Write your JavaScript code.
+    if (toggleBtn) {
+        toggleBtn.addEventListener("click", () => {
+            sidebar.classList.toggle("collapsed");
+        });
+    }
+
+    if (mobileBtn) {
+        mobileBtn.addEventListener("click", () => {
+            sidebar.classList.toggle("show");
+            overlay.classList.toggle("show");
+        });
+    }
+
+    if (overlay) {
+        overlay.addEventListener("click", () => {
+            sidebar.classList.remove("show");
+            overlay.classList.remove("show");
+        });
+    }
+});

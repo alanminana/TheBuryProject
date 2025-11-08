@@ -1,66 +1,67 @@
 ﻿@model List<TheBuryProject.ViewModels.CuotaViewModel>
-
 @{
     ViewData["Title"] = "Cuotas Vencidas";
 }
 
-<div class="container-fluid">
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <h2 class="text-danger"><i class="fas fa-exclamation-triangle"></i> Cuotas Vencidas</h2>
-        </div>
-        <div class="col-md-6 text-end">
-            <a asp-action="Index" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver a Créditos
-            </a>
-        </div>
+<section class="container-fluid py-4 text-light">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0 text-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Cuotas Vencidas
+        </h2>
+        <a asp-action="Index" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left me-2"></i>Volver a Créditos
+        </a>
     </div>
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show">
-            @TempData["Success"]
+        <div class="alert alert-success alert-dismissible fade show shadow-sm">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
     @if (Model.Any())
     {
-        <div class="alert alert-warning">
-            <i class="fas fa-info-circle"></i>
+        <div class="alert alert-warning bg-opacity-25 border-warning text-light shadow-sm">
+            <i class="bi bi-info-circle me-2"></i>
             <strong>Total de cuotas vencidas: @Model.Count</strong>
         </div>
 
-        <div class="card">
-            <div class="card-body">
+        <div class="card bg-dark border-0 shadow-sm">
+            <div class="card-header bg-danger text-light py-3">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Listado de Cuotas Vencidas
+                </h5>
+            </div>
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark">
+                    <table class="table table-dark table-hover align-middle mb-0">
+                        <thead class="bg-secondary text-light">
                             <tr>
                                 <th>Crédito</th>
-                                <th>Cuota Nro</th>
+                                <th>Cuota N°</th>
                                 <th>Vencimiento</th>
                                 <th>Días Atraso</th>
                                 <th>Monto</th>
                                 <th>Punitorio</th>
                                 <th>Total Adeudado</th>
                                 <th>Estado</th>
-                                <th>Acciones</th>
+                                <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var cuota in Model.OrderBy(c => c.FechaVencimiento))
                             {
-                                <tr class="@(cuota.DiasAtraso > 30 ? "table-danger" : "table-warning")">
-                                    <td>@cuota.CreditoId</td>
-                                    <td><strong>@cuota.NumeroCuota</strong></td>
+                                var filaClase = cuota.DiasAtraso > 30 ? "table-danger" : "table-warning";
+                                <tr class="@filaClase text-dark">
+                                    <td class="fw-semibold">@cuota.CreditoId</td>
+                                    <td><span class="badge bg-dark text-light">@cuota.NumeroCuota</span></td>
                                     <td>@cuota.FechaVencimiento.ToString("dd/MM/yyyy")</td>
-                                    <td>
-                                        <span class="badge bg-danger">@cuota.DiasAtraso días</span>
-                                    </td>
+                                    <td><span class="badge bg-danger">@cuota.DiasAtraso días</span></td>
                                     <td>@cuota.MontoTotal.ToString("C2")</td>
                                     <td class="text-danger">@cuota.MontoPunitorio.ToString("C2")</td>
-                                    <td><strong>@cuota.SaldoPendiente.ToString("C2")</strong></td>
+                                    <td class="fw-bold">@cuota.SaldoPendiente.ToString("C2")</td>
                                     <td>
                                         @switch (cuota.Estado)
                                         {
@@ -68,20 +69,24 @@
                                                 <span class="badge bg-danger">Vencida</span>
                                                 break;
                                             case TheBuryProject.Models.Enums.EstadoCuota.Parcial:
-                                                <span class="badge bg-warning">Parcial</span>
+                                                <span class="badge bg-warning text-dark">Parcial</span>
                                                 break;
                                             default:
                                                 <span class="badge bg-secondary">@cuota.Estado</span>
                                                 break;
                                         }
                                     </td>
-                                    <td>
-                                        <a asp-action="PagarCuota" asp-route-id="@cuota.Id" class="btn btn-sm btn-success">
-                                            <i class="fas fa-money-bill"></i> Pagar
-                                        </a>
-                                        <a asp-controller="Credito" asp-action="Details" asp-route-id="@cuota.CreditoId" class="btn btn-sm btn-info">
-                                            <i class="fas fa-eye"></i> Ver Crédito
-                                        </a>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="PagarCuota" asp-route-id="@cuota.Id"
+                                               class="btn btn-success text-dark fw-semibold" title="Registrar Pago">
+                                                <i class="bi bi-cash-coin"></i> Pagar
+                                            </a>
+                                            <a asp-controller="Credito" asp-action="Details" asp-route-id="@cuota.CreditoId"
+                                               class="btn btn-outline-info" title="Ver Crédito">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             }
@@ -93,15 +98,15 @@
     }
     else
     {
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-                <h4>¡Excelente!</h4>
-                <p class="text-muted">No hay cuotas vencidas en este momento</p>
-                <a asp-action="Index" class="btn btn-primary mt-3">
-                    <i class="fas fa-list"></i> Ver todos los créditos
+        <div class="card bg-dark border-0 shadow-sm text-center py-5">
+            <div class="card-body">
+                <i class="bi bi-check-circle-fill text-success display-4 mb-3"></i>
+                <h4 class="fw-bold">Sin cuotas vencidas</h4>
+                <p class="text-secondary mb-3">Todos los pagos están al día.</p>
+                <a asp-action="Index" class="btn btn-info text-dark fw-semibold">
+                    <i class="bi bi-list-check me-2"></i>Ver Créditos
                 </a>
             </div>
         </div>
     }
-</div>
+</section>

@@ -1,52 +1,53 @@
 ﻿@model TheBuryProject.ViewModels.FacturaViewModel
-
 @{
     ViewData["Title"] = "Facturar Venta";
     var venta = ViewBag.Venta as TheBuryProject.ViewModels.VentaViewModel;
 }
 
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2><i class="bi bi-receipt"></i> Facturar Venta</h2>
-            <a asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-secondary">
+<section class="container-fluid px-0">
+    <div class="col-lg-8 mx-auto">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0"><i class="bi bi-receipt text-success me-2"></i> Facturar Venta</h2>
+            <a asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Volver
             </a>
         </div>
 
+        <!-- Información de la Venta -->
         @if (venta != null)
         {
-            <div class="card mb-3">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Información de la Venta</h5>
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-surface-soft border-bottom border-dark-subtle d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-cart-check me-2 text-info"></i> Información de la Venta</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <dl class="row">
-                                <dt class="col-sm-4">Número:</dt>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4 fw-semibold text-muted">Número:</dt>
                                 <dd class="col-sm-8">@venta.Numero</dd>
 
-                                <dt class="col-sm-4">Cliente:</dt>
+                                <dt class="col-sm-4 fw-semibold text-muted">Cliente:</dt>
                                 <dd class="col-sm-8">@venta.ClienteNombre</dd>
 
-                                <dt class="col-sm-4">Fecha:</dt>
+                                <dt class="col-sm-4 fw-semibold text-muted">Fecha:</dt>
                                 <dd class="col-sm-8">@venta.FechaVenta.ToString("dd/MM/yyyy")</dd>
                             </dl>
                         </div>
                         <div class="col-md-6">
-                            <table class="table table-sm">
+                            <table class="table table-sm mb-0">
                                 <tr>
-                                    <th>Subtotal:</th>
+                                    <th class="text-muted">Subtotal</th>
                                     <td class="text-end">@venta.Subtotal.ToString("C")</td>
                                 </tr>
                                 <tr>
-                                    <th>IVA:</th>
+                                    <th class="text-muted">IVA</th>
                                     <td class="text-end">@venta.IVA.ToString("C")</td>
                                 </tr>
-                                <tr class="table-active">
-                                    <th>Total:</th>
-                                    <th class="text-end">@venta.Total.ToString("C")</th>
+                                <tr class="table-dark">
+                                    <th>Total</th>
+                                    <th class="text-end text-success">@venta.Total.ToString("C")</th>
                                 </tr>
                             </table>
                         </div>
@@ -55,70 +56,73 @@
             </div>
         }
 
-        <form asp-action="Facturar" method="post">
+        <!-- Formulario Factura -->
+        <form asp-action="Facturar" method="post" novalidate>
             <input type="hidden" asp-for="VentaId" />
             <input type="hidden" asp-for="Subtotal" />
             <input type="hidden" asp-for="IVA" />
             <input type="hidden" asp-for="Total" />
+
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-            <div class="card mb-3">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Datos de la Factura</h5>
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2 text-success"></i> Datos de la Factura</h5>
                 </div>
+
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="Numero" class="form-label"></label>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Numero" class="form-label fw-semibold"></label>
                             <input asp-for="Numero" class="form-control" placeholder="0001-00000001" />
-                            <span asp-validation-for="Numero" class="text-danger"></span>
+                            <span asp-validation-for="Numero" class="text-danger small"></span>
                         </div>
 
-                        <div class="col-md-3 mb-3">
-                            <label asp-for="Tipo" class="form-label"></label>
-                            <select asp-for="Tipo" class="form-select" asp-items="ViewBag.TiposFactura">
-                            </select>
-                            <span asp-validation-for="Tipo" class="text-danger"></span>
+                        <div class="col-md-3">
+                            <label asp-for="Tipo" class="form-label fw-semibold"></label>
+                            <select asp-for="Tipo" class="form-select" asp-items="ViewBag.TiposFactura"></select>
+                            <span asp-validation-for="Tipo" class="text-danger small"></span>
                         </div>
 
-                        <div class="col-md-3 mb-3">
-                            <label asp-for="PuntoVenta" class="form-label"></label>
+                        <div class="col-md-3">
+                            <label asp-for="PuntoVenta" class="form-label fw-semibold"></label>
                             <input asp-for="PuntoVenta" class="form-control" placeholder="0001" />
-                            <span asp-validation-for="PuntoVenta" class="text-danger"></span>
+                            <span asp-validation-for="PuntoVenta" class="text-danger small"></span>
                         </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label asp-for="FechaEmision" class="form-label"></label>
+                        <div class="col-md-4">
+                            <label asp-for="FechaEmision" class="form-label fw-semibold"></label>
                             <input asp-for="FechaEmision" class="form-control" type="date" />
-                            <span asp-validation-for="FechaEmision" class="text-danger"></span>
+                            <span asp-validation-for="FechaEmision" class="text-danger small"></span>
                         </div>
 
-                        <div class="col-md-4 mb-3">
-                            <label asp-for="CAE" class="form-label"></label>
+                        <div class="col-md-4">
+                            <label asp-for="CAE" class="form-label fw-semibold"></label>
                             <input asp-for="CAE" class="form-control" placeholder="Código de Autorización Electrónico" />
-                            <span asp-validation-for="CAE" class="text-danger"></span>
+                            <span asp-validation-for="CAE" class="text-danger small"></span>
                         </div>
 
-                        <div class="col-md-4 mb-3">
-                            <label asp-for="FechaVencimientoCAE" class="form-label"></label>
+                        <div class="col-md-4">
+                            <label asp-for="FechaVencimientoCAE" class="form-label fw-semibold"></label>
                             <input asp-for="FechaVencimientoCAE" class="form-control" type="date" />
-                            <span asp-validation-for="FechaVencimientoCAE" class="text-danger"></span>
+                            <span asp-validation-for="FechaVencimientoCAE" class="text-danger small"></span>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Botones -->
             <div class="d-flex justify-content-end gap-2">
-                <a asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-success">
+                <a asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-success px-4">
                     <i class="bi bi-receipt"></i> Generar Factura
                 </button>
             </div>
         </form>
     </div>
-</div>
+</section>
 
 @section Scripts {
     @{

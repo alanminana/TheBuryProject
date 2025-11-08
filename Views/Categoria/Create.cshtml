@@ -1,44 +1,45 @@
 ﻿@model TheBuryProject.ViewModels.CategoriaViewModel
-
 @{
     ViewData["Title"] = "Nueva Categoría";
 }
 
-<div class="container py-5">
+<section class="container-fluid py-4 text-light">
     <div class="row justify-content-center">
         <div class="col-lg-8">
+
             <div class="mb-4">
-                <a asp-action="Index" class="text-decoration-none">
-                    <i class="bi bi-arrow-left me-2"></i>Volver al listado
+                <a asp-action="Index" class="btn btn-outline-light">
+                    <i class="bi bi-arrow-left"></i> Volver al listado
                 </a>
             </div>
 
-            <div class="card border-0 shadow-lg">
-                <div class="card-header bg-primary text-white py-3">
-                    <h4 class="mb-0 fw-bold">
+            <div class="card bg-dark border-0 shadow-sm">
+                <div class="card-header bg-primary text-light py-3">
+                    <h4 class="mb-0 fw-semibold">
                         <i class="bi bi-plus-circle me-2"></i>Nueva Categoría
                     </h4>
                 </div>
+
                 <div class="card-body p-4">
-                    <form asp-action="Create" method="post">
+                    <form asp-action="Create" method="post" class="needs-validation" novalidate>
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            <div>Por favor, corregí los errores antes de continuar</div>
+                            <div>Por favor, corregí los errores antes de continuar.</div>
                         </div>
 
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <div class="form-floating">
-                                    <input asp-for="Codigo" class="form-control" id="floatingCodigo" placeholder="Código" />
+                                    <input asp-for="Codigo" class="form-control bg-dark text-light border-secondary" id="floatingCodigo" placeholder="Código" />
                                     <label for="floatingCodigo">Código *</label>
                                     <span asp-validation-for="Codigo" class="text-danger small"></span>
                                 </div>
-                                <div class="form-text">Ej: ELEC, FRIO, AUDIO</div>
+                                <div class="form-text text-secondary">Ej: ELEC, FRIO, AUDIO</div>
                             </div>
 
                             <div class="col-md-8">
                                 <div class="form-floating">
-                                    <input asp-for="Nombre" class="form-control" id="floatingNombre" placeholder="Nombre" />
+                                    <input asp-for="Nombre" class="form-control bg-dark text-light border-secondary" id="floatingNombre" placeholder="Nombre" />
                                     <label for="floatingNombre">Nombre *</label>
                                     <span asp-validation-for="Nombre" class="text-danger small"></span>
                                 </div>
@@ -46,7 +47,7 @@
 
                             <div class="col-12">
                                 <div class="form-floating">
-                                    <textarea asp-for="Descripcion" class="form-control" id="floatingDescripcion" placeholder="Descripción" style="height: 100px"></textarea>
+                                    <textarea asp-for="Descripcion" class="form-control bg-dark text-light border-secondary" id="floatingDescripcion" placeholder="Descripción" style="height: 100px"></textarea>
                                     <label for="floatingDescripcion">Descripción (opcional)</label>
                                     <span asp-validation-for="Descripcion" class="text-danger small"></span>
                                 </div>
@@ -54,37 +55,37 @@
 
                             <div class="col-12">
                                 <div class="form-floating">
-                                    <select asp-for="ParentId" class="form-select" id="floatingParent" asp-items="ViewBag.Categorias">
+                                    <select asp-for="ParentId" class="form-select bg-dark text-light border-secondary" id="floatingParent" asp-items="ViewBag.Categorias">
                                         <option value="">-- Categoría raíz (sin padre) --</option>
                                     </select>
                                     <label for="floatingParent">Categoría Padre</label>
                                     <span asp-validation-for="ParentId" class="text-danger small"></span>
                                 </div>
-                                <div class="form-text">Dejá vacío para crear una categoría principal</div>
+                                <div class="form-text text-secondary">Dejá vacío para crear una categoría principal</div>
                             </div>
 
                             <div class="col-12">
-                                <div class="card bg-light border-0">
+                                <div class="card bg-secondary bg-opacity-10 border-secondary mt-2">
                                     <div class="card-body">
                                         <div class="form-check form-switch">
-                                            <input asp-for="ControlSerieDefault" class="form-check-input" type="checkbox" role="switch" id="switchControlSerie" />
+                                            <input asp-for="ControlSerieDefault" class="form-check-input" type="checkbox" id="switchControlSerie" />
                                             <label class="form-check-label fw-medium" for="switchControlSerie">
                                                 Control de Serie por Defecto
                                             </label>
                                         </div>
-                                        <div class="form-text mt-2">
+                                        <div class="form-text text-secondary mt-2">
                                             <i class="bi bi-info-circle me-1"></i>
-                                            Si está activo, los productos de esta categoría requerirán número de serie
+                                            Si está activo, los productos de esta categoría requerirán número de serie.
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <hr class="my-4" />
+                        <hr class="my-4 border-secondary" />
 
-                        <div class="d-flex gap-2 justify-content-end">
-                            <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-4">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
                                 <i class="bi bi-x-circle me-2"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary btn-lg px-4">
@@ -94,13 +95,12 @@
                     </form>
                 </div>
             </div>
+
         </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 }

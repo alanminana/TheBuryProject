@@ -1,170 +1,166 @@
 ﻿@model List<TheBuryProject.ViewModels.ConfiguracionPagoViewModel>
-
 @{
     ViewData["Title"] = "Configuración de Tipos de Pago";
 }
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2><i class="bi bi-gear"></i> @ViewData["Title"]</h2>
-            <a asp-action="Create" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nueva Configuración
-            </a>
+<section class="container-fluid py-4 text-light">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-gear text-info me-2"></i>@ViewData["Title"]
+        </h2>
+        <a asp-action="Create" class="btn btn-success btn-lg shadow-sm">
+            <i class="bi bi-plus-circle me-2"></i>Nueva Configuración
+        </a>
+    </div>
+
+    <div class="alert alert-info bg-opacity-10 border-info text-light">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Información:</strong> Configure los tipos de pago disponibles, descuentos, recargos y condiciones especiales.
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
+    }
 
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i>
-            <strong>Información:</strong> Configure aquí los tipos de pago disponibles, descuentos, recargos y condiciones especiales.
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm">
+            <i class="bi bi-x-circle-fill me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
+    }
 
-        @if (TempData["Success"] != null)
+    <div class="row g-4">
+        @if (Model.Any())
         {
-            <div class="alert alert-success alert-dismissible fade show">
-                <i class="bi bi-check-circle"></i> @TempData["Success"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show">
-                <i class="bi bi-x-circle"></i> @TempData["Error"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-
-        <div class="row">
-            @if (Model.Any())
+            @foreach (var config in Model)
             {
-                @foreach (var config in Model)
-                {
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100 @(!config.Activo ? "border-danger" : "")">
-                            <div class="card-header @(config.Activo ? "bg-primary text-white" : "bg-secondary text-white")">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">
-                                        <i class="bi bi-cash-coin"></i> @config.TipoPago
-                                    </h5>
-                                    @if (config.Activo)
-                                    {
-                                        <span class="badge bg-success">Activo</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-danger">Inactivo</span>
-                                    }
-                                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 bg-dark border-0 shadow-sm @(config.Activo ? "" : "border-danger")">
+                        <div class="card-header @(config.Activo ? "bg-primary text-light" : "bg-secondary text-light")">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-cash-coin me-2"></i>@config.TipoPago
+                                </h5>
+                                <span class="badge @(config.Activo ? "bg-success" : "bg-danger")">
+                                    @(config.Activo ? "Activo" : "Inactivo")
+                                </span>
                             </div>
-                            <div class="card-body">
-                                <h6 class="card-title">@config.Nombre</h6>
-                                @if (!string.IsNullOrEmpty(config.Descripcion))
+                        </div>
+
+                        <div class="card-body">
+                            <h6 class="fw-semibold">@config.Nombre</h6>
+                            @if (!string.IsNullOrEmpty(config.Descripcion))
+                            {
+                                <p class="text-muted small">@config.Descripcion</p>
+                            }
+
+                            <hr class="border-secondary" />
+
+                            <div class="mb-2">
+                                @if (config.PermiteDescuento)
                                 {
-                                    <p class="card-text text-muted small">@config.Descripcion</p>
+                                    <span class="badge bg-info text-dark">
+                                        <i class="bi bi-tag"></i> Descuento hasta @config.PorcentajeDescuentoMaximo%
+                                    </span>
                                 }
+                                else
+                                {
+                                    <span class="badge bg-body-secondary text-light">
+                                        <i class="bi bi-tag"></i> Sin descuento
+                                    </span>
+                                }
+                            </div>
 
-                                <hr />
+                            <div class="mb-2">
+                                @if (config.TieneRecargo)
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-percent"></i> Recargo @config.PorcentajeRecargo%
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-body-secondary text-light">
+                                        <i class="bi bi-percent"></i> Sin recargo
+                                    </span>
+                                }
+                            </div>
 
-                                <div class="mb-2">
-                                    @if (config.PermiteDescuento)
+                            @if (config.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaCredito ||
+                                                config.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaDebito)
+                            {
+                                <div class="mt-3">
+                                    <strong>Tarjetas configuradas:</strong>
+                                    @if (config.ConfiguracionesTarjeta.Any())
                                     {
-                                        <span class="badge bg-info">
-                                            <i class="bi bi-tag"></i> Descuento hasta @config.PorcentajeDescuentoMaximo%
-                                        </span>
+                                        <ul class="list-unstyled mt-2 mb-0">
+                                            @foreach (var tarjeta in config.ConfiguracionesTarjeta.Take(3))
+                                            {
+                                                <li class="small">
+                                                    <i class="bi bi-credit-card"></i> @tarjeta.NombreTarjeta
+                                                    @if (tarjeta.Activa)
+                                                    {
+                                                        <span class="text-success">✓</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-danger">✗</span>
+                                                    }
+                                                </li>
+                                            }
+                                        </ul>
+                                        @if (config.ConfiguracionesTarjeta.Count > 3)
+                                        {
+                                            <small class="text-muted">+ @(config.ConfiguracionesTarjeta.Count - 3) más</small>
+                                        }
                                     }
                                     else
                                     {
-                                        <span class="badge bg-light text-dark">
-                                            <i class="bi bi-tag"></i> Sin descuento
-                                        </span>
+                                        <p class="text-muted small mb-0">Sin tarjetas configuradas</p>
                                     }
                                 </div>
+                            }
+                        </div>
 
-                                <div class="mb-2">
-                                    @if (config.TieneRecargo)
-                                    {
-                                        <span class="badge bg-warning text-dark">
-                                            <i class="bi bi-percent"></i> Recargo @config.PorcentajeRecargo%
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-light text-dark">
-                                            <i class="bi bi-percent"></i> Sin recargo
-                                        </span>
-                                    }
-                                </div>
-
+                        <div class="card-footer bg-dark border-0">
+                            <div class="d-flex gap-2">
+                                <a asp-action="Details" asp-route-id="@config.Id" class="btn btn-sm btn-outline-info flex-fill">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@config.Id" class="btn btn-sm btn-outline-warning flex-fill text-dark">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
                                 @if (config.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaCredito ||
                                                         config.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaDebito)
                                 {
-                                    <div class="mt-3">
-                                        <strong>Tarjetas configuradas:</strong>
-                                        @if (config.ConfiguracionesTarjeta.Any())
-                                        {
-                                            <ul class="list-unstyled mt-2">
-                                                @foreach (var tarjeta in config.ConfiguracionesTarjeta.Take(3))
-                                                {
-                                                    <li>
-                                                        <small>
-                                                            <i class="bi bi-credit-card"></i> @tarjeta.NombreTarjeta
-                                                            @if (tarjeta.Activa)
-                                                            {
-                                                                <span class="text-success">✓</span>
-                                                            }
-                                                            else
-                                                            {
-                                                                <span class="text-danger">✗</span>
-                                                            }
-                                                        </small>
-                                                    </li>
-                                                }
-                                            </ul>
-                                            @if (config.ConfiguracionesTarjeta.Count > 3)
-                                            {
-                                                <small class="text-muted">+ @(config.ConfiguracionesTarjeta.Count - 3) más</small>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <p class="text-muted small mb-0">Sin tarjetas configuradas</p>
-                                        }
-                                    </div>
+                                    <a asp-action="ConfigurarTarjeta" asp-route-configuracionPagoId="@config.Id"
+                                       class="btn btn-sm btn-outline-light flex-fill">
+                                        <i class="bi bi-credit-card"></i> Tarjetas
+                                    </a>
                                 }
-                            </div>
-                            <div class="card-footer bg-transparent">
-                                <div class="btn-group w-100">
-                                    <a asp-action="Details" asp-route-id="@config.Id" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i> Ver
-                                    </a>
-                                    <a asp-action="Edit" asp-route-id="@config.Id" class="btn btn-sm btn-outline-warning">
-                                        <i class="bi bi-pencil"></i> Editar
-                                    </a>
-                                    @if (config.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaCredito ||
-                                                                config.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaDebito)
-                                    {
-                                        <a asp-action="ConfigurarTarjeta" asp-route-configuracionPagoId="@config.Id" class="btn btn-sm btn-outline-info">
-                                            <i class="bi bi-credit-card"></i> Tarjetas
-                                        </a>
-                                    }
-                                </div>
                             </div>
                         </div>
                     </div>
-                }
-            }
-            else
-            {
-                <div class="col-12">
-                    <div class="alert alert-warning text-center">
-                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-                        <p class="mt-2">No hay configuraciones de pago. Comience creando una nueva.</p>
-                        <a asp-action="Create" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Crear Primera Configuración
-                        </a>
-                    </div>
                 </div>
             }
-        </div>
+        }
+        else
+        {
+            <div class="col-12 text-center">
+                <div class="py-5">
+                    <i class="bi bi-inbox text-secondary" style="font-size:3rem;"></i>
+                    <h5 class="text-muted mt-3">No hay configuraciones de pago</h5>
+                    <p class="text-muted">Comience creando una nueva configuración.</p>
+                    <a asp-action="Create" class="btn btn-success btn-lg">
+                        <i class="bi bi-plus-circle"></i> Crear Primera Configuración
+                    </a>
+                </div>
+            </div>
+        }
     </div>
-</div>
+</section>

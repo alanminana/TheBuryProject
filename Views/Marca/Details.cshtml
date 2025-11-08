@@ -1,101 +1,89 @@
 ﻿@model TheBuryProject.ViewModels.MarcaViewModel
-
 @{
     ViewData["Title"] = "Detalles de Marca";
 }
 
-<div class="container py-5">
+<section class="container-fluid py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="mb-4">
-                <a asp-action="Index" class="text-decoration-none">
+                <a asp-action="Index" class="text-decoration-none text-light">
                     <i class="bi bi-arrow-left me-2"></i>Volver al listado
                 </a>
             </div>
 
-            <div class="card border-0 shadow-lg">
-                <div class="card-header bg-info-subtle border-info py-3">
-                    <h4 class="mb-0 fw-bold text-info-emphasis">
+            <div class="card bg-dark border-0 shadow-sm">
+                <div class="card-header bg-info text-dark py-3">
+                    <h4 class="mb-0 fw-bold">
                         <i class="bi bi-info-circle me-2"></i>Detalles de Marca
                     </h4>
                 </div>
-                <div class="card-body p-4">
+
+                <div class="card-body text-light p-4">
                     <div class="row g-4">
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="text-muted small text-uppercase fw-semibold mb-2">Código</label>
-                                <div class="d-flex align-items-center">
-                                    <span class="badge bg-primary fs-6 px-3 py-2">@Model.Codigo</span>
-                                </div>
+                            <label class="text-muted small text-uppercase fw-semibold mb-2">Código</label>
+                            <div>
+                                <span class="badge bg-primary fs-6 px-3 py-2">@Model.Codigo</span>
                             </div>
                         </div>
 
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="text-muted small text-uppercase fw-semibold mb-2">País de Origen</label>
-                                <div>
-                                    @if (!string.IsNullOrEmpty(Model.PaisOrigen))
-                                    {
-                                        <span class="badge bg-info-subtle text-info-emphasis fs-6 px-3 py-2">
-                                            <i class="bi bi-flag-fill me-1"></i>@Model.PaisOrigen
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted fst-italic">Sin especificar</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <label class="text-muted small text-uppercase fw-semibold mb-2">Nombre</label>
-                                <p class="fs-5 fw-medium mb-0">@Model.Nombre</p>
-                            </div>
-                        </div>
-
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <label class="text-muted small text-uppercase fw-semibold mb-2">Descripción</label>
-                                @if (!string.IsNullOrEmpty(Model.Descripcion))
+                            <label class="text-muted small text-uppercase fw-semibold mb-2">País de Origen</label>
+                            <div>
+                                @if (!string.IsNullOrEmpty(Model.PaisOrigen))
                                 {
-                                    <p class="mb-0">@Model.Descripcion</p>
+                                    <span class="badge bg-info text-dark fs-6 px-3 py-2">
+                                        <i class="bi bi-flag me-1"></i>@Model.PaisOrigen
+                                    </span>
                                 }
                                 else
                                 {
-                                    <p class="text-muted fst-italic mb-0">Sin descripción</p>
+                                    <span class="text-muted fst-italic">Sin especificar</span>
                                 }
                             </div>
                         </div>
 
                         <div class="col-12">
-                            <div class="mb-3">
-                                <label class="text-muted small text-uppercase fw-semibold mb-2">Marca Padre</label>
-                                <div>
-                                    @if (!string.IsNullOrEmpty(Model.ParentNombre))
-                                    {
-                                        <span class="badge bg-secondary-subtle text-secondary-emphasis fs-6 px-3 py-2">
-                                            <i class="bi bi-diagram-3 me-1"></i>@Model.ParentNombre
-                                        </span>
-                                        <p class="text-muted small mb-0 mt-2">Esta es una submarca</p>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-primary-subtle text-primary-emphasis fs-6 px-3 py-2">
-                                            <i class="bi bi-star-fill me-1"></i>Marca Principal
-                                        </span>
-                                        <p class="text-muted small mb-0 mt-2">Esta es una marca principal (sin marca padre)</p>
-                                    }
-                                </div>
-                            </div>
+                            <label class="text-muted small text-uppercase fw-semibold mb-2">Nombre</label>
+                            <p class="fs-5 fw-semibold mb-0">@Model.Nombre</p>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="text-muted small text-uppercase fw-semibold mb-2">Descripción</label>
+                            @if (!string.IsNullOrEmpty(Model.Descripcion))
+                            {
+                                <p class="mb-0">@Model.Descripcion</p>
+                            }
+                            else
+                            {
+                                <p class="text-muted fst-italic mb-0">Sin descripción</p>
+                            }
+                        </div>
+
+                        <div class="col-12">
+                            <label class="text-muted small text-uppercase fw-semibold mb-2">Marca Padre</label>
+                            @if (!string.IsNullOrEmpty(Model.ParentNombre))
+                            {
+                                <span class="badge bg-secondary text-light fs-6 px-3 py-2">
+                                    <i class="bi bi-diagram-3 me-1"></i>@Model.ParentNombre
+                                </span>
+                                <p class="text-muted small mt-2 mb-0">Esta es una submarca</p>
+                            }
+                            else
+                            {
+                                <span class="badge bg-primary text-light fs-6 px-3 py-2">
+                                    <i class="bi bi-star-fill me-1"></i>Marca Principal
+                                </span>
+                                <p class="text-muted small mt-2 mb-0">Marca principal (sin marca padre)</p>
+                            }
                         </div>
                     </div>
 
                     <hr class="my-4" />
 
-                    <div class="d-flex gap-2 justify-content-end flex-wrap">
-                        <a asp-action="Index" class="btn btn-outline-secondary px-4">
+                    <div class="d-flex justify-content-end flex-wrap gap-2">
+                        <a asp-action="Index" class="btn btn-outline-light px-4">
                             <i class="bi bi-arrow-left-circle me-2"></i>Volver
                         </a>
                         <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning px-4">
@@ -109,4 +97,4 @@
             </div>
         </div>
     </div>
-</div>
+</section>

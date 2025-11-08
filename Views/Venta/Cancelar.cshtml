@@ -1,75 +1,96 @@
 ﻿@model TheBuryProject.ViewModels.VentaViewModel
-
 @{
     ViewData["Title"] = "Cancelar Venta";
 }
 
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2><i class="bi bi-x-circle"></i> Cancelar Venta</h2>
-            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+<section class="container-fluid px-0">
+    <div class="col-lg-8 mx-auto">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0"><i class="bi bi-x-circle text-danger me-2"></i> Cancelar Venta</h2>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Volver
             </a>
         </div>
 
-        <div class="alert alert-warning">
-            <i class="bi bi-exclamation-triangle"></i>
+        <!-- Alerta principal -->
+        <div class="alert alert-warning border-0">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
             <strong>¿Está seguro de que desea cancelar esta venta?</strong>
             <p class="mb-0">
                 @if (Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Confirmada ||
-                                Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Facturada)
+                     Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Facturada)
                 {
                     <span>El stock será devuelto al inventario.</span>
                 }
             </p>
         </div>
 
-        <div class="card mb-3">
-            <div class="card-header bg-warning">
-                <h5 class="mb-0">Datos de la Venta</h5>
+        <!-- Datos de la venta -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
+                <h5 class="mb-0 text-warning"><i class="bi bi-receipt me-2"></i> Datos de la Venta</h5>
             </div>
             <div class="card-body">
-                <dl class="row">
-                    <dt class="col-sm-3">Número:</dt>
+                <dl class="row mb-0">
+                    <dt class="col-sm-3 text-muted">Número:</dt>
                     <dd class="col-sm-9">@Model.Numero</dd>
 
-                    <dt class="col-sm-3">Fecha:</dt>
+                    <dt class="col-sm-3 text-muted">Fecha:</dt>
                     <dd class="col-sm-9">@Model.FechaVenta.ToString("dd/MM/yyyy")</dd>
 
-                    <dt class="col-sm-3">Cliente:</dt>
+                    <dt class="col-sm-3 text-muted">Cliente:</dt>
                     <dd class="col-sm-9">@Model.ClienteNombre</dd>
 
-                    <dt class="col-sm-3">Estado:</dt>
-                    <dd class="col-sm-9">@Model.Estado</dd>
+                    <dt class="col-sm-3 text-muted">Estado:</dt>
+                    <dd class="col-sm-9">
+                        <span class="badge 
+                            @(Model.Estado switch {
+                                TheBuryProject.Models.Enums.EstadoVenta.Cotizacion => "bg-light text-dark",
+                                TheBuryProject.Models.Enums.EstadoVenta.Presupuesto => "bg-info",
+                                TheBuryProject.Models.Enums.EstadoVenta.Confirmada => "bg-success",
+                                TheBuryProject.Models.Enums.EstadoVenta.Facturada => "bg-warning text-dark",
+                                TheBuryProject.Models.Enums.EstadoVenta.Cancelada => "bg-danger",
+                                _ => "bg-secondary"
+                            })">
+                            @Model.Estado
+                        </span>
+                    </dd>
 
-                    <dt class="col-sm-3">Total:</dt>
-                    <dd class="col-sm-9"><strong>@Model.Total.ToString("C")</strong></dd>
+                    <dt class="col-sm-3 text-muted">Total:</dt>
+                    <dd class="col-sm-9 fw-semibold text-success">@Model.Total.ToString("C")</dd>
                 </dl>
             </div>
         </div>
 
+        <!-- Motivo de cancelación -->
         <form asp-action="Cancelar" method="post">
             <input type="hidden" asp-for="Id" />
 
-            <div class="card mb-3">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
+                    <h5 class="mb-0 text-danger"><i class="bi bi-chat-left-text me-2"></i> Motivo de Cancelación</h5>
+                </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label for="motivo" class="form-label">
-                            <strong>Motivo de Cancelación <span class="text-danger">*</span></strong>
+                        <label for="motivo" class="form-label fw-semibold">
+                            Motivo <span class="text-danger">*</span>
                         </label>
                         <textarea id="motivo" name="motivo" class="form-control" rows="4" required
-                                  placeholder="Indique el motivo de la cancelación..."></textarea>
+                                  placeholder="Describa brevemente el motivo de la cancelación..."></textarea>
                     </div>
                 </div>
             </div>
 
+            <!-- Botones -->
             <div class="d-flex justify-content-end gap-2">
-                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Volver</a>
-                <button type="submit" class="btn btn-danger">
-                    <i class="bi bi-x-circle"></i> Confirmar Cancelación
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Volver
+                </a>
+                <button type="submit" class="btn btn-danger px-4">
+                    <i class="bi bi-x-octagon"></i> Confirmar Cancelación
                 </button>
             </div>
         </form>
     </div>
-</div>
+</section>

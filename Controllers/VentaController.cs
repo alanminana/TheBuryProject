@@ -89,6 +89,9 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Venta/Cotizar
+        [HttpGet]
+
+
         public async Task<IActionResult> Cotizar()
         {
             await CargarViewBags();
@@ -201,6 +204,7 @@ namespace TheBuryProject.Controllers
             }
         }
         // GET: Venta/Create
+        [HttpGet]
         public async Task<IActionResult> Create()
         {
             await CargarViewBags();
@@ -211,50 +215,7 @@ namespace TheBuryProject.Controllers
                 TipoPago = TipoPago.Efectivo
             });
         }
-
-        // POST: Venta/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(VentaViewModel viewModel)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    await CargarViewBags(viewModel.ClienteId);
-                    return View(viewModel);
-                }
-
-                // Validar que tenga al menos un detalle
-                if (viewModel.Detalles == null || !viewModel.Detalles.Any())
-                {
-                    ModelState.AddModelError("", "Debe agregar al menos un producto a la venta");
-                    await CargarViewBags(viewModel.ClienteId);
-                    return View(viewModel);
-                }
-
-                var venta = await _ventaService.CreateAsync(viewModel);
-
-                if (venta.RequiereAutorizacion)
-                {
-                    TempData["Warning"] = $"Venta {venta.Numero} creada. Requiere autorización antes de confirmar.";
-                }
-                else
-                {
-                    TempData["Success"] = $"Venta {venta.Numero} creada exitosamente";
-                }
-
-                return RedirectToAction(nameof(Details), new { id = venta.Id });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al crear venta");
-                ModelState.AddModelError("", "Error al crear la venta: " + ex.Message);
-                await CargarViewBags(viewModel.ClienteId);
-                return View(viewModel);
-            }
-        }
-
+     
         // GET: Venta/Edit/5
         public async Task<IActionResult> Edit(int id)
         {

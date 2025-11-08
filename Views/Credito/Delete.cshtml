@@ -1,59 +1,62 @@
 ﻿@model TheBuryProject.ViewModels.CreditoViewModel
-
 @{
     ViewData["Title"] = "Eliminar Crédito";
 }
 
-<div class="container-fluid">
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <h2 class="text-danger"><i class="fas fa-trash"></i> Eliminar Crédito</h2>
-        </div>
+<section class="container-fluid py-4 text-light">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-danger mb-0">
+            <i class="bi bi-trash3-fill me-2"></i>Eliminar Crédito
+        </h2>
+        <a asp-action="Index" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left me-2"></i>Volver
+        </a>
     </div>
 
-    <div class="alert alert-danger">
-        <i class="fas fa-exclamation-triangle"></i>
-        <strong>¡Atención!</strong> Esta acción no se puede deshacer. ¿Está seguro de que desea eliminar este crédito?
+    <div class="alert alert-danger bg-opacity-25 border-danger text-light shadow-sm">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>¡Atención!</strong> Esta acción es irreversible. El crédito será marcado como eliminado y no podrá restaurarse.
     </div>
 
-    <div class="card">
-        <div class="card-header bg-danger text-white">
-            <h5 class="mb-0">Información del Crédito</h5>
+    <div class="card bg-dark border-0 shadow-lg">
+        <div class="card-header bg-danger text-light py-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2"></i>Información del Crédito</h5>
         </div>
-        <div class="card-body">
-            <dl class="row">
-                <dt class="col-sm-3">Número:</dt>
-                <dd class="col-sm-9">@Model.Numero</dd>
 
-                <dt class="col-sm-3">Cliente:</dt>
-                <dd class="col-sm-9">@Model.ClienteNombre</dd>
+        <div class="card-body p-4">
+            <dl class="row mb-0">
+                <dt class="col-sm-3 text-secondary">Número</dt>
+                <dd class="col-sm-9 fw-semibold">@Model.Numero</dd>
 
-                <dt class="col-sm-3">Monto Solicitado:</dt>
+                <dt class="col-sm-3 text-secondary">Cliente</dt>
+                <dd class="col-sm-9 fw-semibold">@Model.ClienteNombre</dd>
+
+                <dt class="col-sm-3 text-secondary">Monto Solicitado</dt>
                 <dd class="col-sm-9">@Model.MontoSolicitado.ToString("C2")</dd>
 
-                <dt class="col-sm-3">Cantidad de Cuotas:</dt>
+                <dt class="col-sm-3 text-secondary">Cantidad de Cuotas</dt>
                 <dd class="col-sm-9">@Model.CantidadCuotas</dd>
 
-                <dt class="col-sm-3">Estado:</dt>
+                <dt class="col-sm-3 text-secondary">Estado</dt>
                 <dd class="col-sm-9">
-                    <span class="badge bg-info">@Model.Estado.ToString()</span>
+                    <span class="badge bg-info text-dark fw-semibold">@Model.Estado.ToString()</span>
                 </dd>
 
-                <dt class="col-sm-3">Fecha de Solicitud:</dt>
+                <dt class="col-sm-3 text-secondary">Fecha de Solicitud</dt>
                 <dd class="col-sm-9">@Model.FechaSolicitud.ToString("dd/MM/yyyy")</dd>
             </dl>
         </div>
 
-        <div class="card-footer">
-            <form asp-action="Delete" method="post">
+        <div class="card-footer bg-dark border-0 d-flex justify-content-end gap-2 py-3">
+            <form asp-action="Delete" method="post" class="d-inline">
                 <input type="hidden" asp-for="Id" />
-                <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-trash"></i> Confirmar Eliminación
+                <button type="submit" class="btn btn-danger btn-lg px-4 fw-semibold">
+                    <i class="bi bi-trash3-fill me-2"></i>Confirmar Eliminación
                 </button>
-                <a asp-action="Index" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
             </form>
+            <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
+                <i class="bi bi-x-circle me-2"></i>Cancelar
+            </a>
         </div>
     </div>
-</div>
+</section>

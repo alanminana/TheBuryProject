@@ -1,77 +1,85 @@
 ﻿@model TheBuryProject.ViewModels.ClienteViewModel
-
 @{
     ViewData["Title"] = "Eliminar Cliente";
 }
 
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card border-danger">
-            <div class="card-header bg-danger text-white">
-                <h4 class="mb-0">
-                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
-                </h4>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-warning">
-                    <i class="bi bi-info-circle"></i>
-                    <strong>Atención:</strong> Está a punto de eliminar este cliente. Esta acción no se puede deshacer.
+<section class="container-fluid py-4 text-light">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="card bg-dark border-0 shadow-sm">
+                <div class="card-header bg-danger text-light">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
+                    </h4>
                 </div>
 
-                <h5 class="mb-3">¿Está seguro que desea eliminar el siguiente cliente?</h5>
-
-                <dl class="row">
-                    <dt class="col-sm-4">Nombre Completo</dt>
-                    <dd class="col-sm-8"><strong>@Model.NombreCompleto</strong></dd>
-
-                    <dt class="col-sm-4">Documento</dt>
-                    <dd class="col-sm-8">@Model.TipoDocumento @Model.NumeroDocumento</dd>
-
-                    <dt class="col-sm-4">Teléfono</dt>
-                    <dd class="col-sm-8">@Model.Telefono</dd>
-
-                    <dt class="col-sm-4">Email</dt>
-                    <dd class="col-sm-8">@(Model.Email ?? "-")</dd>
-
-                    <dt class="col-sm-4">Domicilio</dt>
-                    <dd class="col-sm-8">@Model.Domicilio</dd>
-
-                    <dt class="col-sm-4">Créditos Activos</dt>
-                    <dd class="col-sm-8">
-                        @if (Model.CreditosActivos > 0)
-                        {
-                            <span class="badge bg-warning">@Model.CreditosActivos créditos activos</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-success">Sin créditos activos</span>
-                        }
-                    </dd>
-                </dl>
-
-                @if (Model.CreditosActivos > 0)
-                {
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-circle"></i>
-                        <strong>Error:</strong> No se puede eliminar un cliente con créditos activos.
+                <div class="card-body">
+                    <div class="alert alert-warning text-dark">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Atención:</strong> Está a punto de eliminar este cliente. Esta acción no se puede deshacer.
                     </div>
-                }
 
-                <form asp-action="Delete" method="post">
-                    <input type="hidden" asp-for="Id" />
-                    <div class="d-flex gap-2 justify-content-end">
-                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary btn-lg">
-                            <i class="bi bi-x-circle"></i> Cancelar
-                        </a>
-                        @if (Model.CreditosActivos == 0)
-                        {
-                            <button type="submit" class="btn btn-danger btn-lg">
-                                <i class="bi bi-trash"></i> Eliminar Cliente
-                            </button>
-                        }
-                    </div>
-                </form>
+                    <h5 class="mb-3">¿Está seguro que desea eliminar el siguiente cliente?</h5>
+
+                    <dl class="row mb-4">
+                        <dt class="col-sm-4 text-secondary">Nombre Completo</dt>
+                        <dd class="col-sm-8 fw-bold">@Model.NombreCompleto</dd>
+
+                        <dt class="col-sm-4 text-secondary">Documento</dt>
+                        <dd class="col-sm-8">@Model.TipoDocumento @Model.NumeroDocumento</dd>
+
+                        <dt class="col-sm-4 text-secondary">Teléfono</dt>
+                        <dd class="col-sm-8">@Model.Telefono</dd>
+
+                        <dt class="col-sm-4 text-secondary">Email</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Email) ? "-" : Model.Email)</dd>
+
+                        <dt class="col-sm-4 text-secondary">Domicilio</dt>
+                        <dd class="col-sm-8">@Model.Domicilio</dd>
+
+                        <dt class="col-sm-4 text-secondary">Créditos Activos</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.CreditosActivos > 0)
+                            {
+                                <span class="badge bg-warning text-dark">
+                                    @Model.CreditosActivos crédito(s) activo(s)
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Sin créditos activos</span>
+                            }
+                        </dd>
+                    </dl>
+
+                    @if (Model.CreditosActivos > 0)
+                    {
+                        <div class="alert alert-danger d-flex align-items-center">
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>
+                            <div>
+                                <strong>No se puede eliminar</strong>: el cliente tiene créditos activos.
+                            </div>
+                        </div>
+                    }
+
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-light px-4">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            @if (Model.CreditosActivos == 0)
+                            {
+                                <button type="submit" class="btn btn-danger px-4">
+                                    <i class="bi bi-trash me-1"></i>Eliminar Cliente
+                                </button>
+                            }
+                        </div>
+                    </form>
+                </div>
             </div>
+
         </div>
     </div>
-</div>
+</section>

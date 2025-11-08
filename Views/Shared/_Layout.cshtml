@@ -1,243 +1,101 @@
 ﻿<!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-bs-theme="dark">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] - TheBuryProject</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/TheBuryProject.styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/dark-theme.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true">
 </head>
+
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="bi bi-shop text-primary"></i> TheBuryProject
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">
-                                <i class="bi bi-house-door"></i> Inicio
-                            </a>
-                        </li>
+    <div class="layout-container">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="sidebar d-flex flex-column p-2">
+            <a class="navbar-brand mb-3" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-shop text-primary"></i><span class="ms-2 fw-bold">TheBuryProject</span>
+            </a>
 
-                        <!-- Catálogo Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-grid"></i> Catálogo
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Producto" asp-action="Index">
-                                        <i class="bi bi-box-seam"></i> Productos
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Categoria" asp-action="Index">
-                                        <i class="bi bi-folder"></i> Categorías
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Marca" asp-action="Index">
-                                        <i class="bi bi-tag"></i> Marcas
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-dark" href="#" id="ventasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-cart-check"></i> Ventas
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="ventasDropdown">
-                                <li><h6 class="dropdown-header">Operaciones</h6></li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Cotizar">
-                                        <i class="bi bi-file-earmark-text"></i> Nueva Cotización
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Create">
-                                        <i class="bi bi-plus-circle"></i> Nueva Venta
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><h6 class="dropdown-header">Consultas</h6></li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index">
-                                        <i class="bi bi-list-ul"></i> Todas las Ventas
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index" asp-route-estado="0">
-                                        <i class="bi bi-file-earmark"></i> Cotizaciones
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index" asp-route-estado="1">
-                                        <i class="bi bi-file-text"></i> Presupuestos
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index" asp-route-estado="2">
-                                        <i class="bi bi-check-circle"></i> Confirmadas
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index" asp-route-estado="3">
-                                        <i class="bi bi-receipt"></i> Facturadas
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><h6 class="dropdown-header">Autorizaciones</h6></li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index" asp-route-estadoAutorizacion="1">
-                                        <i class="bi bi-exclamation-triangle text-warning"></i> Pendientes de Autorización
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+            
 
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-dark" href="#" id="configuracionDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-gear"></i> Configuración
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="configuracionDropdown">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="ConfiguracionPago" asp-action="Index">
-                                        <i class="bi bi-cash-coin"></i> Tipos de Pago
-                                    </a>
-                                </li>
-                                <!-- Aquí puedes agregar más opciones de configuración en el futuro -->
-                            </ul>
-                        </li>
-                        <!-- Proveedores Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-truck"></i> Proveedores
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Proveedor" asp-action="Index">
-                                        <i class="bi bi-building"></i> Proveedores
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="OrdenCompra" asp-action="Index">
-                                        <i class="bi bi-cart"></i> Órdenes de Compra
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Cheque" asp-action="Index">
-                                        <i class="bi bi-credit-card"></i> Cheques
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="MovimientoStock" asp-action="Index">
-                                        <i class="bi bi-arrow-left-right"></i> Kardex / Stock
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Venta" asp-action="Index">
-                                <i class="bi bi-cart-check"></i> Ventas
-                            </a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-dark" href="#" id="ventasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-cart-check"></i> Ventas
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="ventasDropdown">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index">
-                                        <i class="bi bi-list-ul"></i> Listado de Ventas
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Create">
-                                        <i class="bi bi-plus-circle"></i> Nueva Venta
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index" asp-route-estado="Presupuesto">
-                                        <i class="bi bi-file-earmark-text"></i> Presupuestos
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index" asp-route-estado="Confirmada">
-                                        <i class="bi bi-check-circle"></i> Ventas Confirmadas
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Venta" asp-action="Index" asp-route-estado="Facturada">
-                                        <i class="bi bi-receipt"></i> Ventas Facturadas
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <!-- Clientes Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-people"></i> Clientes
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Cliente" asp-action="Index">
-                                        <i class="bi bi-person-lines-fill"></i> Clientes
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Credito" asp-action="Index">
-                                        <i class="bi bi-cash-coin"></i> Lista de Créditos
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Credito" asp-action="Create">
-                                        <i class="bi bi-plus-circle"></i> Nuevo Crédito
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Credito" asp-action="Simular">
-                                        <i class="bi bi-calculator"></i> Simular Crédito
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Credito" asp-action="CuotasVencidas">
-                                        <i class="bi bi-exclamation-triangle"></i> Cuotas Vencidas
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
+                <!-- CLIENTE -->
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Cliente" asp-action="Index">
+                        <i class="bi bi-people"></i><span> Clientes</span>
+                    </a>
+                </li>
+
+                <!-- CRÉDITO -->
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Credito" asp-action="Index">
+                        <i class="bi bi-cash-coin"></i><span> Créditos</span>
+                    </a>
+                </li>
+           
+                <!-- PRODUCTOS + STOCK -->
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Producto" asp-action="Index">
+                        <i class="bi bi-box-seam"></i><span> Productos</span>
+                    </a>
+                </li>
+        
+                <!-- PROVEEDORES -->
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Proveedor" asp-action="Index">
+                        <i class="bi bi-truck"></i><span> Proveedores</span>
+                    </a>
+                </li>
+
+                <!-- CONFIGURACIÓN -->
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="ConfiguracionPago" asp-action="Index">
+                        <i class="bi bi-gear"></i><span> Configuración</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Panel Principal -->
+        <div class="main-wrapper d-flex flex-column flex-grow-1">
+            <!-- Topbar -->
+            <div class="topbar">
+                <div class="d-flex align-items-center gap-2">
+                    <button id="toggleSidebar" class="btn btn-sm btn-outline-light d-none d-lg-inline">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <button id="mobileToggle" class="btn btn-sm btn-outline-light d-lg-none">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <div class="input-group input-group-sm ms-2">
+                        <span class="input-group-text bg-dark border-0 text-secondary">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control bg-dark border-0 text-light" placeholder="Buscar...">
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-bell text-light"></i>
+                    <i class="bi bi-person-circle text-light"></i>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container-fluid">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+
+            <!-- Contenido -->
+            <main role="main" class="main-content">
+                @RenderBody()
+            </main>
+
+            <footer>
+                &copy; @DateTime.Now.Year - TheBuryProject
+            </footer>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted mt-5">
-        <div class="container">
-            &copy; @DateTime.Now.Year - TheBuryProject
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <div id="overlay" class="overlay"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

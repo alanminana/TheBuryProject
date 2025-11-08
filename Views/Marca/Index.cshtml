@@ -1,19 +1,21 @@
 ﻿@model TheBuryProject.ViewModels.MarcaFilterViewModel
-
 @{
     ViewData["Title"] = "Marcas";
 }
 
-<div class="container-fluid py-4">
+<section class="container-fluid py-4 text-light">
     <div class="row align-items-center mb-4">
         <div class="col">
-            <h1 class="h3 mb-0 fw-bold">
-                <i class="bi bi-award text-primary"></i> Gestión de Marcas
+            <h1 class="h3 mb-1 fw-bold">
+                <i class="bi bi-award text-info"></i> Gestión de Marcas
             </h1>
-            <p class="text-muted mb-0">Administrá las marcas de productos del sistema</p>
+            <p class="text-secondary mb-0">Administrá las marcas de productos registradas</p>
         </div>
-        <div class="col-auto">
-            <a asp-action="Create" class="btn btn-primary btn-lg shadow-sm">
+        <div class="col-auto d-flex gap-2">
+            <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-light fw-semibold shadow-sm">
+                <i class="bi bi-arrow-left me-2"></i>Volver al Catálogo
+            </a>
+            <a asp-action="Create" class="btn btn-info text-dark fw-semibold btn-lg shadow-sm">
                 <i class="bi bi-plus-circle me-2"></i>Nueva Marca
             </a>
         </div>
@@ -22,8 +24,7 @@
     @if (TempData["Success"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            @TempData["Success"]
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
@@ -31,16 +32,15 @@
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            @TempData["Error"]
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
-    <!-- Formulario de Búsqueda y Filtros -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white border-bottom">
-            <button class="btn btn-link text-decoration-none text-dark w-100 text-start p-0"
+    <!-- Filtros -->
+    <div class="card bg-dark border-0 shadow-sm mb-4">
+        <div class="card-header bg-secondary text-light border-bottom">
+            <button class="btn btn-link text-decoration-none text-light w-100 text-start p-0"
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#filtrosCollapse">
@@ -52,45 +52,38 @@
                 </div>
             </button>
         </div>
+
         <div class="collapse show" id="filtrosCollapse">
             <div class="card-body">
                 <form asp-action="Index" method="get">
                     <div class="row g-3">
-                        <!-- Búsqueda de texto -->
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">
-                                <i class="bi bi-search me-1"></i>Búsqueda por texto
+                                <i class="bi bi-search me-1"></i>Buscar por texto
                             </label>
-                            <input type="text"
-                                   class="form-control"
+                            <input type="text" class="form-control bg-body-secondary text-light border-0"
                                    name="searchTerm"
                                    value="@Model.SearchTerm"
-                                   placeholder="Buscar por nombre o descripción..." />
+                                   placeholder="Nombre o descripción..." />
                         </div>
 
-                        <!-- Checkbox solo activos -->
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Opciones</label>
                             <div class="form-check">
-                                <input class="form-check-input"
-                                       type="checkbox"
+                                <input class="form-check-input" type="checkbox"
                                        name="soloActivos"
                                        id="soloActivos"
                                        value="true"
                                        @(Model.SoloActivos ? "checked" : "") />
                                 <label class="form-check-label" for="soloActivos">
-                                    <i class="bi bi-check-circle text-success me-1"></i>
-                                    Solo marcas activas
+                                    <i class="bi bi-check-circle text-success me-1"></i>Solo marcas activas
                                 </label>
                             </div>
                         </div>
 
-                        <!-- Ordenamiento -->
                         <div class="col-md-2">
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-sort-down me-1"></i>Ordenar por
-                            </label>
-                            <select class="form-select" name="orderBy">
+                            <label class="form-label fw-semibold"><i class="bi bi-sort-down me-1"></i>Ordenar</label>
+                            <select class="form-select bg-body-secondary text-light border-0" name="orderBy">
                                 <option value="nombre" selected="@(Model.OrderBy == "nombre" || string.IsNullOrEmpty(Model.OrderBy))">Nombre</option>
                                 <option value="descripcion" selected="@(Model.OrderBy == "descripcion")">Descripción</option>
                             </select>
@@ -98,20 +91,19 @@
 
                         <div class="col-md-1">
                             <label class="form-label fw-semibold">Dirección</label>
-                            <select class="form-select" name="orderDirection">
+                            <select class="form-select bg-body-secondary text-light border-0" name="orderDirection">
                                 <option value="asc" selected="@(Model.OrderDirection == "asc" || string.IsNullOrEmpty(Model.OrderDirection))">Asc</option>
                                 <option value="desc" selected="@(Model.OrderDirection == "desc")">Desc</option>
                             </select>
                         </div>
 
-                        <!-- Botones -->
                         <div class="col-12">
                             <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-info text-dark fw-semibold">
                                     <i class="bi bi-search me-2"></i>Buscar
                                 </button>
-                                <a asp-action="Index" class="btn btn-outline-secondary">
-                                    <i class="bi bi-x-circle me-2"></i>Limpiar Filtros
+                                <a asp-action="Index" class="btn btn-outline-light">
+                                    <i class="bi bi-x-circle me-2"></i>Limpiar
                                 </a>
                             </div>
                         </div>
@@ -121,116 +113,98 @@
         </div>
     </div>
 
-    <!-- Resultados -->
     @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos)
     {
-        <div class="alert alert-info d-flex align-items-center mb-3">
+        <div class="alert alert-info d-flex align-items-center mb-3 shadow-sm">
             <i class="bi bi-info-circle me-2"></i>
-            <span>
-                Se encontraron <strong>@Model.TotalResultados</strong> marcas que coinciden con los filtros aplicados
-            </span>
+            <span>Se encontraron <strong>@Model.TotalResultados</strong> marcas coincidentes</span>
         </div>
     }
 
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="fw-semibold px-4 py-3">Código</th>
-                            <th class="fw-semibold py-3">Nombre</th>
-                            <th class="fw-semibold py-3">Descripción</th>
-                            <th class="fw-semibold py-3">Marca Padre</th>
-                            <th class="fw-semibold py-3">País de Origen</th>
-                            <th class="fw-semibold py-3 text-center">Estado</th>
-                            <th class="fw-semibold text-center py-3 px-4">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.Marcas.Any())
-                        {
-                            @foreach (var marca in Model.Marcas)
-                            {
-                                <tr>
-                                    <td class="px-4">
-                                        <span class="badge bg-primary-subtle text-primary-emphasis">@marca.Codigo</span>
-                                    </td>
-                                    <td class="fw-medium">@marca.Nombre</td>
-                                    <td class="text-muted">@(marca.Descripcion ?? "-")</td>
-                                    <td class="text-muted">
-                                        @if (!string.IsNullOrEmpty(marca.ParentNombre))
-                                        {
-                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">
-                                                <i class="bi bi-diagram-3"></i> @marca.ParentNombre
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                    <td class="text-muted">@(marca.PaisOrigen ?? "-")</td>
-                                    <td class="text-center">
-                                        @if (marca.Activo)
-                                        {
-                                            <span class="badge bg-success-subtle text-success-emphasis">
-                                                <i class="bi bi-check-circle"></i> Activo
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">
-                                                <i class="bi bi-x-circle"></i> Inactivo
-                                            </span>
-                                        }
-                                    </td>
-                                    <td class="text-center px-4">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a asp-action="Details" asp-route-id="@marca.Id"
-                                               class="btn btn-outline-info"
-                                               data-bs-toggle="tooltip"
-                                               title="Ver detalles">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            <a asp-action="Edit" asp-route-id="@marca.Id"
-                                               class="btn btn-outline-warning"
-                                               data-bs-toggle="tooltip"
-                                               title="Editar">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <a asp-action="Delete" asp-route-id="@marca.Id"
-                                               class="btn btn-outline-danger"
-                                               data-bs-toggle="tooltip"
-                                               title="Eliminar">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
+    <!-- Tabla -->
+    <div class="card bg-dark border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+                <thead class="bg-secondary text-light">
+                    <tr>
+                        <th class="px-4">Código</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Marca Padre</th>
+                        <th>País de Origen</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center px-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Marcas.Any())
+                    {
+                        @foreach (var marca in Model.Marcas)
                         {
                             <tr>
-                                <td colspan="7" class="text-center py-5">
-                                    <i class="bi bi-inbox display-1 text-muted d-block mb-3"></i>
-                                    @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos)
+                                <td class="px-4">
+                                    <span class="badge bg-primary">@marca.Codigo</span>
+                                </td>
+                                <td class="fw-semibold">@marca.Nombre</td>
+                                <td class="text-muted">@(!string.IsNullOrEmpty(marca.Descripcion) ? marca.Descripcion : "-")</td>
+                                <td class="text-muted">
+                                    @if (!string.IsNullOrEmpty(marca.ParentNombre))
                                     {
-                                        <p class="text-muted mb-2">No se encontraron marcas con los filtros aplicados</p>
-                                        <a asp-action="Index" class="btn btn-outline-primary">Limpiar filtros</a>
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-diagram-3"></i> @marca.ParentNombre
+                                        </span>
                                     }
                                     else
                                     {
-                                        <p class="text-muted mb-2">No hay marcas registradas</p>
-                                        <a asp-action="Create" class="btn btn-primary">Crear la primera marca</a>
+                                        <span class="text-muted">-</span>
                                     }
+                                </td>
+                                <td class="text-muted">@(!string.IsNullOrEmpty(marca.PaisOrigen) ? marca.PaisOrigen : "-")</td>
+                                <td class="text-center">
+                                    @if (marca.Activo)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Activo
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle"></i> Inactivo
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-center px-4">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details" asp-route-id="@marca.Id"
+                                           class="btn btn-outline-info" title="Detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@marca.Id"
+                                           class="btn btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@marca.Id"
+                                           class="btn btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         }
-                    </tbody>
-                </table>
-            </div>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+                                <p class="text-muted mb-2">No se encontraron marcas</p>
+                                <a asp-action="Create" class="btn btn-info text-dark fw-semibold">Crear Marca</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -238,29 +212,27 @@
     {
         <div class="row mt-4">
             <div class="col-md-6">
-                <div class="card border-0 shadow-sm">
+                <div class="card bg-body-secondary border-0 shadow-sm">
                     <div class="card-body">
                         <h6 class="text-muted mb-2">Total Marcas</h6>
-                        <h3 class="mb-0 fw-bold">@Model.TotalResultados</h3>
+                        <h3 class="fw-bold">@Model.TotalResultados</h3>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card border-0 shadow-sm">
+                <div class="card bg-body-secondary border-0 shadow-sm">
                     <div class="card-body">
                         <h6 class="text-muted mb-2">Marcas Activas</h6>
-                        <h3 class="mb-0 fw-bold text-success">@Model.Marcas.Count(m => m.Activo)</h3>
+                        <h3 class="fw-bold text-success">@Model.Marcas.Count(m => m.Activo)</h3>
                     </div>
                 </div>
             </div>
         </div>
     }
-</div>
+</section>
 
 @section Scripts {
     <script>
-        // Inicializar tooltips de Bootstrap 5.3
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
     </script>
 }

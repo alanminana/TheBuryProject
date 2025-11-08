@@ -1,48 +1,50 @@
 ﻿@model TheBuryProject.ViewModels.VentaViewModel
-
 @{
     ViewData["Title"] = "Autorizar Venta";
 }
 
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0"><i class="bi bi-check-circle"></i> Autorizar Venta</h4>
+<section class="container-fluid px-0">
+    <div class="col-lg-8 mx-auto">
+        <!-- Encabezado -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0"><i class="bi bi-check-circle text-success me-2"></i> Autorizar Venta</h2>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+
+        <!-- Alerta -->
+        <div class="alert alert-warning border-0">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Atención:</strong> Está por autorizar una venta que excede el límite de crédito del cliente.
+        </div>
+
+        <!-- Datos de la venta -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
+                <h5 class="mb-0 text-success"><i class="bi bi-receipt me-2"></i> Datos de la Venta</h5>
             </div>
             <div class="card-body">
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Atención:</strong> Está por autorizar una venta que excede el límite de crédito del cliente.
-                </div>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Número:</dt>
+                    <dd class="col-sm-8">@Model.Numero</dd>
 
-                <h5 class="mb-3">Datos de la Venta</h5>
-                <table class="table table-bordered">
-                    <tr>
-                        <th width="30%">Número:</th>
-                        <td>@Model.Numero</td>
-                    </tr>
-                    <tr>
-                        <th>Cliente:</th>
-                        <td>@Model.ClienteNombre (@Model.ClienteDocumento)</td>
-                    </tr>
-                    <tr>
-                        <th>Fecha:</th>
-                        <td>@Model.FechaVenta.ToString("dd/MM/yyyy")</td>
-                    </tr>
-                    <tr>
-                        <th>Tipo de Pago:</th>
-                        <td>@Model.TipoPago</td>
-                    </tr>
-                    <tr>
-                        <th>Total:</th>
-                        <td><strong class="text-success">@Model.Total.ToString("C2")</strong></td>
-                    </tr>
-                </table>
+                    <dt class="col-sm-4 text-muted">Cliente:</dt>
+                    <dd class="col-sm-8">@Model.ClienteNombre (@Model.ClienteDocumento)</dd>
+
+                    <dt class="col-sm-4 text-muted">Fecha:</dt>
+                    <dd class="col-sm-8">@Model.FechaVenta.ToString("dd/MM/yyyy")</dd>
+
+                    <dt class="col-sm-4 text-muted">Tipo de Pago:</dt>
+                    <dd class="col-sm-8">@Model.TipoPago</dd>
+
+                    <dt class="col-sm-4 text-muted">Total:</dt>
+                    <dd class="col-sm-8 fw-semibold text-success">@Model.Total.ToString("C2")</dd>
+                </dl>
 
                 @if (!string.IsNullOrEmpty(Model.MotivoAutorizacion))
                 {
-                    <div class="alert alert-info">
+                    <div class="alert alert-info mt-3 mb-0">
                         <strong>Motivo de la solicitud:</strong><br />
                         @Model.MotivoAutorizacion
                     </div>
@@ -50,18 +52,23 @@
 
                 @if (Model.FechaSolicitudAutorizacion.HasValue)
                 {
-                    <p class="text-muted">
-                        <small>
-                            Solicitada por: <strong>@Model.UsuarioSolicita</strong><br />
-                            Fecha: @Model.FechaSolicitudAutorizacion.Value.ToString("dd/MM/yyyy HH:mm")
-                        </small>
+                    <p class="text-muted small mt-2 mb-0">
+                        Solicitada por: <strong>@Model.UsuarioSolicita</strong><br />
+                        Fecha: @Model.FechaSolicitudAutorizacion.Value.ToString("dd/MM/yyyy HH:mm")
                     </p>
                 }
+            </div>
+        </div>
 
-                <h5 class="mt-4 mb-3">Productos</h5>
+        <!-- Productos -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
+                <h5 class="mb-0 text-info"><i class="bi bi-box-seam me-2"></i> Productos</h5>
+            </div>
+            <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead class="table-light">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-dark">
                             <tr>
                                 <th>Producto</th>
                                 <th class="text-center">Cantidad</th>
@@ -82,25 +89,32 @@
                         </tbody>
                     </table>
                 </div>
-
-                <form asp-action="Autorizar" asp-route-id="@Model.Id" method="post">
-                    @Html.AntiForgeryToken()
-
-                    <div class="mb-3">
-                        <label class="form-label">Observaciones de Autorización</label>
-                        <textarea name="motivo" class="form-control" rows="3" placeholder="Ingrese observaciones adicionales (opcional)"></textarea>
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-2">
-                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
-                        </a>
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-lg"></i> Autorizar Venta
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
+
+        <!-- Formulario -->
+        <form asp-action="Autorizar" asp-route-id="@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
+                    <h5 class="mb-0 text-success"><i class="bi bi-chat-left-text me-2"></i> Observaciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="motivo" class="form-label fw-semibold">Observaciones de Autorización</label>
+                        <textarea id="motivo" name="motivo" class="form-control" rows="3" placeholder="Ingrese observaciones adicionales (opcional)"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-success px-4">
+                    <i class="bi bi-check-lg"></i> Autorizar Venta
+                </button>
+            </div>
+        </form>
     </div>
-</div>
+</section>

@@ -1,82 +1,82 @@
 ﻿@model TheBuryProject.ViewModels.OrdenCompraViewModel
-
 @{
     ViewData["Title"] = "Nueva Orden de Compra";
 }
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>
-                <i class="bi bi-cart-plus"></i> Nueva Orden de Compra
-            </h2>
-            <a asp-action="Index" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver al listado
-            </a>
-        </div>
+<section class="container-fluid py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-light fw-bold">
+                    <i class="bi bi-cart-plus me-2 text-primary"></i>Nueva Orden de Compra
+                </h2>
+                <a asp-action="Index" class="btn btn-outline-light">
+                    <i class="bi bi-arrow-left me-2"></i>Volver al listado
+                </a>
+            </div>
 
-        <form asp-action="Create" method="post" id="ordenCompraForm">
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <form asp-action="Create" method="post" id="ordenCompraForm">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>Corrige los errores antes de continuar</div>
+                </div>
 
-            <div class="row">
-                <!-- Columna principal -->
-                <div class="col-md-8">
-                    <!-- Datos generales -->
-                    <div class="card mb-3">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Datos Generales</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label asp-for="Numero" class="form-label"></label>
-                                    <input asp-for="Numero" class="form-control" />
-                                    <span asp-validation-for="Numero" class="text-danger"></span>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label asp-for="ProveedorId" class="form-label"></label>
-                                    <select asp-for="ProveedorId" class="form-select" asp-items="ViewBag.Proveedores">
-                                        <option value="">Seleccione un proveedor</option>
-                                    </select>
-                                    <span asp-validation-for="ProveedorId" class="text-danger"></span>
+                <div class="row g-4">
+                    <!-- COLUMNA PRINCIPAL -->
+                    <div class="col-lg-8">
+                        <!-- DATOS GENERALES -->
+                        <div class="card bg-dark border-0 shadow-sm mb-4">
+                            <div class="card-header bg-primary border-0">
+                                <h5 class="fw-bold text-dark mb-0"><i class="bi bi-info-circle me-2"></i>Datos Generales</h5>
+                            </div>
+                            <div class="card-body text-light">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label asp-for="Numero" class="form-label fw-semibold text-light"></label>
+                                        <input asp-for="Numero" class="form-control bg-body-secondary text-light border-0" />
+                                        <span asp-validation-for="Numero" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="ProveedorId" class="form-label fw-semibold text-light"></label>
+                                        <select asp-for="ProveedorId" id="ProveedorId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Proveedores">
+                                            <option value="">Seleccione un proveedor</option>
+                                        </select>
+                                        <span asp-validation-for="ProveedorId" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="FechaEmision" class="form-label fw-semibold text-light"></label>
+                                        <input asp-for="FechaEmision" type="date" class="form-control bg-body-secondary text-light border-0" />
+                                        <span asp-validation-for="FechaEmision" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="FechaEntregaEstimada" class="form-label fw-semibold text-light"></label>
+                                        <input asp-for="FechaEntregaEstimada" type="date" class="form-control bg-body-secondary text-light border-0" />
+                                        <span asp-validation-for="FechaEntregaEstimada" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label asp-for="Estado" class="form-label fw-semibold text-light"></label>
+                                        <select asp-for="Estado" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Estados"></select>
+                                        <span asp-validation-for="Estado" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-12">
+                                        <label asp-for="Observaciones" class="form-label fw-semibold text-light"></label>
+                                        <textarea asp-for="Observaciones" rows="3" class="form-control bg-body-secondary text-light border-0"></textarea>
+                                        <span asp-validation-for="Observaciones" class="text-danger small"></span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <label asp-for="FechaEmision" class="form-label"></label>
-                                    <input asp-for="FechaEmision" class="form-control" type="date" />
-                                    <span asp-validation-for="FechaEmision" class="text-danger"></span>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label asp-for="FechaEntregaEstimada" class="form-label"></label>
-                                    <input asp-for="FechaEntregaEstimada" class="form-control" type="date" />
-                                    <span asp-validation-for="FechaEntregaEstimada" class="text-danger"></span>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label asp-for="Estado" class="form-label"></label>
-                                    <select asp-for="Estado" class="form-select" asp-items="ViewBag.Estados"></select>
-                                    <span asp-validation-for="Estado" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label asp-for="Observaciones" class="form-label"></label>
-                                <textarea asp-for="Observaciones" class="form-control" rows="3"></textarea>
-                                <span asp-validation-for="Observaciones" class="text-danger"></span>
-                            </div>
                         </div>
-                    </div>
 
-                    <!-- Detalles de productos -->
-                    <div class="card mb-3">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0"><i class="bi bi-box-seam"></i> Productos</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <div class="row">
+                        <!-- PRODUCTOS -->
+                        <div class="card bg-dark border-0 shadow-sm mb-4">
+                            <div class="card-header bg-success border-0">
+                                <h5 class="fw-bold text-dark mb-0"><i class="bi bi-box-seam me-2"></i>Productos</h5>
+                            </div>
+                            <div class="card-body text-light">
+                                <div class="row g-3 align-items-end mb-3">
                                     <div class="col-md-5">
-                                        <label class="form-label">Producto</label>
-                                        <select id="productoSelect" class="form-select">
+                                        <label class="form-label text-light fw-semibold">Producto</label>
+                                        <select id="productoSelect" class="form-select bg-body-secondary text-light border-0">
                                             <option value="">Seleccione un producto</option>
                                             @foreach (var item in (SelectList)ViewBag.Productos)
                                             {
@@ -85,284 +85,187 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3">
-                                        <label class="form-label">Cantidad</label>
-                                        <input type="number" id="cantidadInput" class="form-control" step="0.01" min="0.01" value="1" />
+                                        <label class="form-label text-light fw-semibold">Cantidad</label>
+                                        <input id="cantidadInput" type="number" step="0.01" min="0.01" value="1" class="form-control bg-body-secondary text-light border-0" />
                                     </div>
                                     <div class="col-md-3">
-                                        <label class="form-label">Precio Unit.</label>
-                                        <input type="number" id="precioInput" class="form-control" step="0.01" min="0.01" value="0" />
+                                        <label class="form-label text-light fw-semibold">Precio Unit.</label>
+                                        <input id="precioInput" type="number" step="0.01" min="0.01" value="0" class="form-control bg-body-secondary text-light border-0" />
                                     </div>
-                                    <div class="col-md-1 d-flex align-items-end">
+                                    <div class="col-md-1 d-grid">
                                         <button type="button" class="btn btn-success" onclick="agregarDetalle()">
                                             <i class="bi bi-plus"></i>
                                         </button>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="table-responsive">
-                                <table class="table table-sm" id="detallesTable">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Producto</th>
-                                            <th class="text-end">Cantidad</th>
-                                            <th class="text-end">Precio Unit.</th>
-                                            <th class="text-end">Subtotal</th>
-                                            <th class="text-center">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="detallesBody">
-                                        <tr id="emptyRow">
-                                            <td colspan="5" class="text-center text-muted">
-                                                No hay productos agregados
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-striped align-middle" id="detallesTable">
+                                        <thead class="table-secondary text-dark">
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-end">Cantidad</th>
+                                                <th class="text-end">Precio Unit.</th>
+                                                <th class="text-end">Subtotal</th>
+                                                <th class="text-center">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="detallesBody">
+                                            <tr id="emptyRow">
+                                                <td colspan="5" class="text-center text-secondary fst-italic">
+                                                    No hay productos agregados
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- COLUMNA LATERAL -->
+                    <div class="col-lg-4">
+                        <div class="card bg-dark border-0 shadow-sm mb-4 sticky-top" style="top: 20px;">
+                            <div class="card-header bg-info border-0">
+                                <h5 class="fw-bold text-dark mb-0"><i class="bi bi-calculator me-2"></i>Totales</h5>
+                            </div>
+                            <div class="card-body text-light">
+                                <label asp-for="Descuento" class="form-label fw-semibold text-light"></label>
+                                <input asp-for="Descuento" type="number" step="0.01" min="0" value="0"
+                                       onchange="calcularTotales()" class="form-control bg-body-secondary text-light border-0" />
+                                <span asp-validation-for="Descuento" class="text-danger small"></span>
+
+                                <hr class="border-secondary" />
+
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-6">Subtotal:</dt>
+                                    <dd class="col-sm-6 text-end" id="subtotalDisplay">$0.00</dd>
+                                    <dt class="col-sm-6">Descuento:</dt>
+                                    <dd class="col-sm-6 text-end" id="descuentoDisplay">$0.00</dd>
+                                    <dt class="col-sm-6">IVA (21%):</dt>
+                                    <dd class="col-sm-6 text-end" id="ivaDisplay">$0.00</dd>
+                                    <dt class="col-sm-6 border-top pt-2 fw-bold">Total:</dt>
+                                    <dd class="col-sm-6 text-end border-top pt-2">
+                                        <strong class="fs-5 text-info" id="totalDisplay">$0.00</strong>
+                                    </dd>
+                                </dl>
+
+                                <input type="hidden" asp-for="Subtotal" id="subtotalHidden" />
+                                <input type="hidden" asp-for="Iva" id="ivaHidden" />
+                                <input type="hidden" asp-for="Total" id="totalHidden" />
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary text-dark fw-semibold btn-lg">
+                                <i class="bi bi-save me-2"></i>Guardar Orden
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-light btn-lg">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
                         </div>
                     </div>
                 </div>
-
-                <!-- Columna lateral - Totales -->
-                <div class="col-md-4">
-                    <div class="card mb-3 sticky-top" style="top: 20px;">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0"><i class="bi bi-calculator"></i> Totales</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label asp-for="Descuento" class="form-label"></label>
-                                <input asp-for="Descuento" class="form-control" type="number" step="0.01" min="0" value="0" onchange="calcularTotales()" />
-                                <span asp-validation-for="Descuento" class="text-danger"></span>
-                            </div>
-
-                            <hr />
-
-                            <dl class="row mb-0">
-                                <dt class="col-sm-6">Subtotal:</dt>
-                                <dd class="col-sm-6 text-end" id="subtotalDisplay">$0.00</dd>
-
-                                <dt class="col-sm-6">Descuento:</dt>
-                                <dd class="col-sm-6 text-end" id="descuentoDisplay">$0.00</dd>
-
-                                <dt class="col-sm-6">IVA (21%):</dt>
-                                <dd class="col-sm-6 text-end" id="ivaDisplay">$0.00</dd>
-
-                                <dt class="col-sm-6 border-top pt-2"><strong>Total:</strong></dt>
-                                <dd class="col-sm-6 text-end border-top pt-2">
-                                    <strong class="fs-5 text-primary" id="totalDisplay">$0.00</strong>
-                                </dd>
-                            </dl>
-
-                            <input type="hidden" asp-for="Subtotal" id="subtotalHidden" />
-                            <input type="hidden" asp-for="Iva" id="ivaHidden" />
-                            <input type="hidden" asp-for="Total" id="totalHidden" />
-                        </div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-save"></i> Guardar Orden
-                        </button>
-                        <a asp-action="Index" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-
     <script>
-        let detalles = [];
-        let detalleIndex = 0;
-        let productosProveedor = [];
-
-        // ⭐ CARGAR PRODUCTOS CUANDO SE SELECCIONA UN PROVEEDOR
+        /* --- Lógica de detalles y totales idéntica --- */
+        let detalles = [], detalleIndex = 0, productosProveedor = [];
         document.getElementById('ProveedorId').addEventListener('change', async function() {
             const proveedorId = this.value;
             const productoSelect = document.getElementById('productoSelect');
-
-            // Limpiar select de productos
             productoSelect.innerHTML = '<option value="">Seleccione un producto</option>';
             productosProveedor = [];
-
-            if (!proveedorId) {
-                return;
-            }
+            if (!proveedorId) return;
 
             try {
-                // Mostrar loading
                 productoSelect.disabled = true;
-                productoSelect.innerHTML = '<option value="">Cargando productos...</option>';
-
-                // Obtener productos del proveedor
+                productoSelect.innerHTML = '<option>Cargando...</option>';
                 const response = await fetch(`/Proveedor/GetProductos/${proveedorId}`);
                 const data = await response.json();
-
-                console.log('Respuesta del servidor:', data); // DEBUG
-
-                if (data.error) {
-                    alert(data.error);
-                    productoSelect.innerHTML = '<option value="">No hay productos disponibles</option>';
-                    productoSelect.disabled = false;
-                    return;
-                }
-
                 if (!Array.isArray(data) || data.length === 0) {
-                    alert('Este proveedor no tiene productos asociados. Por favor, asocia productos al proveedor primero.');
-                    productoSelect.innerHTML = '<option value="">No hay productos disponibles</option>';
+                    alert('Sin productos para este proveedor.');
+                    productoSelect.innerHTML = '<option>No disponibles</option>';
                     productoSelect.disabled = false;
                     return;
                 }
-
-                // Cargar productos en el select
                 productosProveedor = data;
                 productoSelect.innerHTML = '<option value="">Seleccione un producto</option>';
-                data.forEach(producto => {
-                    const option = document.createElement('option');
-                    option.value = producto.id;
-                    option.textContent = producto.nombre;
-                    option.dataset.precio = producto.precio;
-                    productoSelect.appendChild(option);
+                data.forEach(p => {
+                    const o = document.createElement('option');
+                    o.value = p.id; o.textContent = p.nombre; o.dataset.precio = p.precio;
+                    productoSelect.appendChild(o);
                 });
-
                 productoSelect.disabled = false;
-                console.log(`Cargados ${data.length} productos`); // DEBUG
-            } catch (error) {
-                console.error('Error al cargar productos:', error);
-                alert('Error al cargar los productos del proveedor: ' + error.message);
-                productoSelect.innerHTML = '<option value="">Error al cargar productos</option>';
+            } catch (err) {
+                alert('Error al cargar productos: ' + err.message);
                 productoSelect.disabled = false;
             }
         });
 
-        // Auto-completar precio al seleccionar producto
         document.getElementById('productoSelect').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            if (selectedOption.dataset.precio) {
-                document.getElementById('precioInput').value = parseFloat(selectedOption.dataset.precio).toFixed(2);
-            }
+            const opt = this.options[this.selectedIndex];
+            if (opt.dataset.precio) document.getElementById('precioInput').value = parseFloat(opt.dataset.precio).toFixed(2);
         });
 
         function agregarDetalle() {
-            const productoSelect = document.getElementById('productoSelect');
-            const productoId = productoSelect.value;
-            const productoNombre = productoSelect.options[productoSelect.selectedIndex].text;
-            const cantidad = parseFloat(document.getElementById('cantidadInput').value);
+            const s = document.getElementById('productoSelect');
+            const id = s.value, nombre = s.options[s.selectedIndex].text;
+            const cant = parseFloat(document.getElementById('cantidadInput').value);
             const precio = parseFloat(document.getElementById('precioInput').value);
+            if (!id || cant <= 0 || precio <= 0) return alert('Complete los campos.');
+            if (detalles.some(d => d.productoId == id)) return alert('Producto duplicado.');
 
-            if (!productoId || cantidad <= 0 || precio <= 0) {
-                alert('Por favor complete todos los campos correctamente');
-                return;
-            }
-
-            // Verificar si el producto ya está agregado
-            if (detalles.some(d => d.productoId == productoId)) {
-                alert('Este producto ya está agregado a la orden');
-                return;
-            }
-
-            const subtotal = cantidad * precio;
-
-            const detalle = {
-                index: detalleIndex++,
-                productoId: productoId,
-                productoNombre: productoNombre,
-                cantidad: cantidad,
-                precioUnitario: precio,
-                subtotal: subtotal
-            };
-
-            detalles.push(detalle);
-            renderDetalles();
-            calcularTotales();
-
-            // Limpiar campos
-            productoSelect.value = '';
-            document.getElementById('cantidadInput').value = '1';
-            document.getElementById('precioInput').value = '0';
+            const det = { index: detalleIndex++, productoId: id, productoNombre: nombre, cantidad: cant, precioUnitario: precio, subtotal: cant * precio };
+            detalles.push(det); renderDetalles(); calcularTotales();
+            s.value = ''; document.getElementById('cantidadInput').value = 1; document.getElementById('precioInput').value = 0;
         }
 
-        function eliminarDetalle(index) {
-            detalles = detalles.filter(d => d.index !== index);
-            renderDetalles();
-            calcularTotales();
+        function eliminarDetalle(i) {
+            detalles = detalles.filter(d => d.index !== i);
+            renderDetalles(); calcularTotales();
         }
 
         function renderDetalles() {
-            const tbody = document.getElementById('detallesBody');
-            const emptyRow = document.getElementById('emptyRow');
-
-            if (detalles.length === 0) {
-                emptyRow.style.display = '';
-                return;
-            }
-
-            emptyRow.style.display = 'none';
-            tbody.innerHTML = emptyRow.outerHTML;
-
-            detalles.forEach((detalle, idx) => {
-                const row = `
+            const body = document.getElementById('detallesBody');
+            const empty = document.getElementById('emptyRow');
+            if (detalles.length === 0) return empty.style.display = '';
+            empty.style.display = 'none'; body.innerHTML = empty.outerHTML;
+            detalles.forEach((d, idx) => {
+                body.innerHTML += `
                     <tr>
-                        <td>
-                            ${detalle.productoNombre}
-                            <input type="hidden" name="Detalles[${idx}].ProductoId" value="${detalle.productoId}" />
-                        </td>
-                        <td class="text-end">
-                            ${detalle.cantidad.toFixed(2)}
-                            <input type="hidden" name="Detalles[${idx}].Cantidad" value="${detalle.cantidad}" />
-                        </td>
-                        <td class="text-end">
-                            $${detalle.precioUnitario.toFixed(2)}
-                            <input type="hidden" name="Detalles[${idx}].PrecioUnitario" value="${detalle.precioUnitario}" />
-                        </td>
-                        <td class="text-end">
-                            <strong>$${detalle.subtotal.toFixed(2)}</strong>
-                            <input type="hidden" name="Detalles[${idx}].Subtotal" value="${detalle.subtotal}" />
-                        </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-danger" onclick="eliminarDetalle(${detalle.index})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
+                        <td>${d.productoNombre}<input type="hidden" name="Detalles[${idx}].ProductoId" value="${d.productoId}" /></td>
+                        <td class="text-end">${d.cantidad.toFixed(2)}<input type="hidden" name="Detalles[${idx}].Cantidad" value="${d.cantidad}" /></td>
+                        <td class="text-end">$${d.precioUnitario.toFixed(2)}<input type="hidden" name="Detalles[${idx}].PrecioUnitario" value="${d.precioUnitario}" /></td>
+                        <td class="text-end fw-bold">$${d.subtotal.toFixed(2)}<input type="hidden" name="Detalles[${idx}].Subtotal" value="${d.subtotal}" /></td>
+                        <td class="text-center"><button type="button" class="btn btn-sm btn-danger" onclick="eliminarDetalle(${d.index})"><i class="bi bi-trash"></i></button></td>
+                    </tr>`;
             });
         }
 
         function calcularTotales() {
-            const subtotal = detalles.reduce((sum, d) => sum + d.subtotal, 0);
+            const subtotal = detalles.reduce((s, d) => s + d.subtotal, 0);
             const descuento = parseFloat(document.getElementById('Descuento').value) || 0;
-            const subtotalConDescuento = subtotal - descuento;
-            const iva = subtotalConDescuento * 0.21;
-            const total = subtotalConDescuento + iva;
-
+            const iva = (subtotal - descuento) * 0.21;
+            const total = subtotal - descuento + iva;
             document.getElementById('subtotalDisplay').textContent = '$' + subtotal.toFixed(2);
             document.getElementById('descuentoDisplay').textContent = '$' + descuento.toFixed(2);
             document.getElementById('ivaDisplay').textContent = '$' + iva.toFixed(2);
             document.getElementById('totalDisplay').textContent = '$' + total.toFixed(2);
-
             document.getElementById('subtotalHidden').value = subtotal.toFixed(2);
             document.getElementById('ivaHidden').value = iva.toFixed(2);
             document.getElementById('totalHidden').value = total.toFixed(2);
         }
 
-        // Validar antes de enviar
-        document.getElementById('ordenCompraForm').addEventListener('submit', function(e) {
-            if (detalles.length === 0) {
-                e.preventDefault();
-                alert('Debe agregar al menos un producto a la orden');
-                return false;
-            }
+        document.getElementById('ordenCompraForm').addEventListener('submit', e => {
+            if (detalles.length === 0) { e.preventDefault(); alert('Agregue al menos un producto.'); }
         });
     </script>
 }
