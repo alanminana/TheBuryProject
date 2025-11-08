@@ -51,7 +51,10 @@ builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<ICreditoService, CreditoService>();
 builder.Services.AddScoped<IVentaService, VentaService>();
 builder.Services.AddScoped<IConfiguracionPagoService, ConfiguracionPagoService>();
-
+builder.Services.AddScoped<IEvaluacionCreditoService, EvaluacionCreditoService>();
+builder.Services.AddScoped<IDocumentoClienteService, DocumentoClienteService>(); // AGREGAR ESTA LÍNEA
+builder.Services.AddScoped<IMoraService, MoraService>();
+builder.Services.AddHostedService<MoraBackgroundService>();
 builder.Services.AddScoped<IChequeService, ChequeService>();
 
 // 5. Configuración de MVC

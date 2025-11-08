@@ -1,0 +1,104 @@
+﻿@model TheBuryProject.ViewModels.DocumentoClienteViewModel
+@{
+    ViewData["Title"] = "Subir Documento";
+}
+
+<section class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Index" class="btn btn-outline-light me-3">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="h3 fw-bold text-light mb-0">
+                        <i class="bi bi-upload text-info"></i> Subir Documento
+                    </h1>
+                    <p class="text-secondary mb-0">Adjuntar documentación del cliente</p>
+                </div>
+            </div>
+
+            <div class="alert alert-info border-0 shadow-sm">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Formatos permitidos:</strong> PDF, JPG, PNG, DOC, DOCX (máximo 5 MB)
+            </div>
+
+            <div class="card bg-dark border-0 shadow-sm">
+                <div class="card-body">
+                    <form asp-action="Upload" method="post" enctype="multipart/form-data">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="ClienteId" class="form-label text-light fw-semibold">
+                                <i class="bi bi-person me-1"></i>Cliente *
+                            </label>
+                            <select asp-for="ClienteId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Clientes" required>
+                                <option value="">Seleccione un cliente...</option>
+                            </select>
+                            <span asp-validation-for="ClienteId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="TipoDocumento" class="form-label text-light fw-semibold">
+                                <i class="bi bi-file-earmark me-1"></i>Tipo de Documento *
+                            </label>
+                            <select asp-for="TipoDocumento" class="form-select bg-body-secondary text-light border-0" required>
+                                <option value="">Seleccione el tipo...</option>
+                                <option value="1">DNI</option>
+                                <option value="2">Recibo de Sueldo</option>
+                                <option value="3">Servicio de Luz</option>
+                                <option value="4">Servicio de Gas</option>
+                                <option value="5">Servicio de Agua</option>
+                                <option value="6">Constancia CUIL</option>
+                                <option value="7">Declaración Jurada</option>
+                                <option value="8">Veraz</option>
+                                <option value="99">Otro</option>
+                            </select>
+                            <span asp-validation-for="TipoDocumento" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Archivo" class="form-label text-light fw-semibold">
+                                <i class="bi bi-paperclip me-1"></i>Archivo *
+                            </label>
+                            <input asp-for="Archivo" type="file" class="form-control bg-body-secondary text-light border-0" required
+                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                            <span asp-validation-for="Archivo" class="text-danger"></span>
+                            <small class="form-text text-muted">Tamaño máximo: 5 MB</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="FechaVencimiento" class="form-label text-light fw-semibold">
+                                <i class="bi bi-calendar me-1"></i>Fecha de Vencimiento (Opcional)
+                            </label>
+                            <input asp-for="FechaVencimiento" type="date" class="form-control bg-body-secondary text-light border-0" />
+                            <small class="form-text text-muted">Para documentos que expiran (ej: recibo de sueldo, servicios)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Observaciones" class="form-label text-light fw-semibold">
+                                <i class="bi bi-chat-left-text me-1"></i>Observaciones
+                            </label>
+                            <textarea asp-for="Observaciones" class="form-control bg-body-secondary text-light border-0" rows="3"></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-info text-dark fw-semibold">
+                                <i class="bi bi-upload me-2"></i>Subir Documento
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-light">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -49,7 +49,11 @@ namespace TheBuryProject.Data
         public DbSet<DatosTarjeta> DatosTarjeta { get; set; }
         public DbSet<DatosCheque> DatosCheque { get; set; }
         public DbSet<VentaCreditoCuota> VentaCreditoCuotas { get; set; }
-
+        public DbSet<EvaluacionCredito> EvaluacionesCredito { get; set; }
+        public DbSet<DocumentoCliente> DocumentosCliente { get; set; } // AGREGAR ESTA LÍNEA
+        public DbSet<ConfiguracionMora> ConfiguracionesMora { get; set; }
+        public DbSet<LogMora> LogsMora { get; set; }
+        public DbSet<AlertaCobranza> AlertasCobranza { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -348,7 +352,29 @@ namespace TheBuryProject.Data
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
+            // Configuración EvaluacionCredito
+            modelBuilder.Entity<EvaluacionCredito>(entity =>
+            {
+                entity.HasIndex(e => e.CreditoId);
+                entity.HasIndex(e => e.ClienteId);
+                entity.HasIndex(e => e.FechaEvaluacion);
 
+                entity.HasOne(e => e.Credito)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreditoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.PuntajeRiesgoCliente).HasPrecision(5, 2);
+                entity.Property(e => e.MontoSolicitado).HasPrecision(18, 2);
+                entity.Property(e => e.SueldoCliente).HasPrecision(18, 2);
+                entity.Property(e => e.RelacionCuotaIngreso).HasPrecision(5, 4);
+                entity.Property(e => e.PuntajeFinal).HasPrecision(5, 2);
+            });
             // Configuración de Credito
             modelBuilder.Entity<Credito>(entity =>
             {
@@ -648,7 +674,25 @@ namespace TheBuryProject.Data
                     .HasForeignKey(e => e.ConfiguracionTarjetaId)
                     .OnDelete(DeleteBehavior.SetNull);
             });
+            // Configuración de DocumentoCliente
+            modelBuilder.Entity<DocumentoCliente>(entity =>
+            {
+                entity.HasIndex(e => e.ClienteId);
+                entity.HasIndex(e => e.TipoDocumento);
+                entity.HasIndex(e => e.Estado);
+                entity.HasIndex(e => e.FechaSubida);
+                entity.HasIndex(e => e.FechaVencimiento);
 
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
             // Configuración para DatosCheque
             modelBuilder.Entity<DatosCheque>(entity =>
             {
@@ -676,6 +720,45 @@ namespace TheBuryProject.Data
                     .WithOne(v => v.DatosCheque)
                     .HasForeignKey<DatosCheque>(e => e.VentaId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+
+                // Configuración de Mora
+                modelBuilder.Entity<ConfiguracionMora>(entity =>
+                {
+                    entity.HasQueryFilter(e => !e.IsDeleted);
+                    entity.Property(e => e.TasaMoraDiaria).HasPrecision(18, 4);
+                    entity.Property(e => e.PorcentajeRecargoPrimerMes).HasPrecision(18, 2);
+                    entity.Property(e => e.PorcentajeRecargoSegundoMes).HasPrecision(18, 2);
+                    entity.Property(e => e.PorcentajeRecargoTercerMes).HasPrecision(18, 2);
+                });
+
+                modelBuilder.Entity<LogMora>(entity =>
+                {
+                    entity.HasQueryFilter(e => !e.IsDeleted);
+                    entity.Property(e => e.TotalMora).HasPrecision(18, 2);
+                });
+                modelBuilder.Entity<AlertaCobranza>(entity =>
+                {
+                    entity.HasQueryFilter(e => !e.IsDeleted);
+                    entity.HasIndex(e => e.CreditoId);
+                    entity.HasIndex(e => e.ClienteId);
+                    entity.HasIndex(e => new { e.Leida, e.Resuelta });
+
+                    entity.HasOne<Cuota>()
+                        .WithMany()
+                        .HasForeignKey(e => e.CuotaId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    entity.HasOne<Credito>()
+                        .WithMany()
+                        .HasForeignKey(e => e.CreditoId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    entity.HasOne<Cliente>()
+                        .WithMany()
+                        .HasForeignKey(e => e.ClienteId)
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
             });
             modelBuilder.Entity<Marca>().HasData(
                 new Marca

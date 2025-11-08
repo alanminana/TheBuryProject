@@ -1,0 +1,187 @@
+﻿@model ConfiguracionMoraViewModel
+
+@{
+    ViewData["Title"] = "Configuración de Mora";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-gear-fill me-2"></i>Configuración de Mora</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Volver al Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-sliders me-2"></i>Parámetros de Cálculo</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="GuardarConfiguracion" method="post">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="TasaMoraDiaria" class="form-label">Tasa de Mora Diaria (%)</label>
+                                <div class="input-group">
+                                    <input asp-for="TasaMoraDiaria" class="form-control" step="0.01" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <span asp-validation-for="TasaMoraDiaria" class="text-danger"></span>
+                                <small class="form-text text-muted">Porcentaje diario aplicado sobre el monto adeudado</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DiasGraciaMora" class="form-label">Días de Gracia</label>
+                                <input asp-for="DiasGraciaMora" class="form-control" />
+                                <span asp-validation-for="DiasGraciaMora" class="text-danger"></span>
+                                <small class="form-text text-muted">Días antes de aplicar intereses moratorios</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="mb-3"><i class="bi bi-percent me-2"></i>Recargos Mensuales</h6>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="PorcentajeRecargoPrimerMes" class="form-label">Primer Mes (%)</label>
+                                <div class="input-group">
+                                    <input asp-for="PorcentajeRecargoPrimerMes" class="form-control" step="0.01" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <span asp-validation-for="PorcentajeRecargoPrimerMes" class="text-danger"></span>
+                                <small class="form-text text-muted">1-30 días de mora</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="PorcentajeRecargoSegundoMes" class="form-label">Segundo Mes (%)</label>
+                                <div class="input-group">
+                                    <input asp-for="PorcentajeRecargoSegundoMes" class="form-control" step="0.01" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <span asp-validation-for="PorcentajeRecargoSegundoMes" class="text-danger"></span>
+                                <small class="form-text text-muted">31-60 días de mora</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="PorcentajeRecargoTercerMes" class="form-label">Tercer Mes+ (%)</label>
+                                <div class="input-group">
+                                    <input asp-for="PorcentajeRecargoTercerMes" class="form-control" step="0.01" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <span asp-validation-for="PorcentajeRecargoTercerMes" class="text-danger"></span>
+                                <small class="form-text text-muted">Más de 60 días de mora</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="mb-3"><i class="bi bi-bell me-2"></i>Alertas y Notificaciones</h6>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="DiasAntesAlertaVencimiento" class="form-label">Días de Anticipación</label>
+                                <input asp-for="DiasAntesAlertaVencimiento" class="form-control" />
+                                <span asp-validation-for="DiasAntesAlertaVencimiento" class="text-danger"></span>
+                                <small class="form-text text-muted">Días antes del vencimiento para generar alerta</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="mb-3"><i class="bi bi-clock-history me-2"></i>Programación del Job</h6>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="JobActivo" class="form-label">Estado del Job</label>
+                                <div class="form-check form-switch">
+                                    <input asp-for="JobActivo" class="form-check-input" role="switch" style="width: 3em; height: 1.5em;">
+                                    <label class="form-check-label ms-2" asp-for="JobActivo">
+                                        <span id="jobStatusText">@(Model.JobActivo ? "Activo" : "Inactivo")</span>
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">Activa o desactiva la ejecución automática</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="HoraEjecucion" class="form-label">Hora de Ejecución</label>
+                                <input asp-for="HoraEjecucion" class="form-control" type="time" />
+                                <span asp-validation-for="HoraEjecucion" class="text-danger"></span>
+                                <small class="form-text text-muted">Hora del día para ejecutar el job automáticamente</small>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Guardar Configuración
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Última Ejecución:</strong></p>
+                    <p class="text-muted">
+                        @if (Model.UltimaEjecucion.HasValue)
+                        {
+                            @Model.UltimaEjecucion.Value.ToString("dd/MM/yyyy HH:mm")
+                        }
+                        else
+                        {
+                            <span>Nunca ejecutado</span>
+                        }
+                    </p>
+
+                    <hr>
+
+                    <p class="mb-2"><strong>Próxima Ejecución:</strong></p>
+                    <p class="text-muted">
+                        @if (Model.JobActivo)
+                        {
+                            var hoy = DateTime.Today;
+                            var horaEjec = Model.HoraEjecucion ?? TimeSpan.Zero;
+                            var proximaEjecucion = hoy.Add(horaEjec);
+                            if (proximaEjecucion < DateTime.Now)
+                            {
+                                proximaEjecucion = proximaEjecucion.AddDays(1);
+                            }
+                            @proximaEjecucion.ToString("dd/MM/yyyy HH:mm")
+                        }
+                        else
+                        {
+                            <span class="text-warning">Job desactivado</span>
+                        }
+                    </p>
+
+            <div class="card shadow-sm border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Advertencia</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-0">
+                        Los cambios en la configuración de mora afectarán el cálculo de intereses
+                        para todas las cuotas vencidas a partir de la próxima ejecución del job.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('JobActivo').addEventListener('change', function() {
+            document.getElementById('jobStatusText').textContent = this.checked ? 'Activo' : 'Inactivo';
+        });
+    </script>
+}

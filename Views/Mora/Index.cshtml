@@ -1,0 +1,605 @@
+﻿5. CONTROLLERS
+Controllers/MoraController.cs
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Data;
+using TheBuryProject.Models.Enums;
+using TheBuryProject.Services.Interfaces;
+using TheBuryProject.ViewModels;
+
+namespace TheBuryProject.Controllers
+{
+    [AllowAnonymous]
+    public class MoraController : Controller
+    {
+        private readonly IMoraService _moraService;
+        private readonly AppDbContext _context;
+        private readonly ILogger<MoraController>
+    _logger;
+
+    public MoraController(
+    IMoraService moraService,
+    AppDbContext context,
+    ILogger<MoraController>
+        logger)
+        {
+        _moraService = moraService;
+        _context = context;
+        _logger = logger;
+        }
+
+        // GET: Mora
+        public async Task<IActionResult>
+            Index()
+            {
+            try
+            {
+            var config = await _moraService.GetConfiguracionAsync();
+            var alertas = await _moraService.GetAlertasActivasAsync();
+            var logs = await _moraService.GetLogsAsync(10);
+
+            ViewBag.Config = config;
+            ViewBag.Logs = logs;
+
+            return View(alertas);
+            }
+            catch (Exception ex)
+            {
+            _logger.LogError(ex, "Error al cargar dashboard de mora");
+            TempData["Error"] = "Error al cargar el dashboard";
+            return View(new List<AlertaCobranzaViewModel>
+                ());
+                }
+                }
+
+                // GET: Mora/Configuracion
+                public async Task<IActionResult>
+                    Configuracion()
+                    {
+                    try
+                    {
+                    var config = await _moraService.GetConfiguracionAsync();
+                    return View(config);
+                    }
+                    catch (Exception ex)
+                    {
+                    _logger.LogError(ex, "Error al cargar configuración");
+                    TempData["Error"] = "Error al cargar la configuración";
+                    return RedirectToAction(nameof(Index));
+                    }
+                    }
+
+                    // POST: Mora/Configuracion
+                    [HttpPost]
+                    [ValidateAntiForgeryToken]
+                    public async Task<IActionResult>
+                        Configuracion(ConfiguracionMoraViewModel viewModel)
+                        {
+                        try
+                        {
+                        if (!ModelState.IsValid)
+                        {
+                        return View(viewModel);
+                        }
+
+                        await _moraService.SaveConfiguracionAsync(viewModel);
+
+                        TempData["Success"] = "Configuración guardada exitosamente";
+                        return RedirectToAction(nameof(Index));
+                        }
+                        catch (Exception ex)
+                        {
+                        _logger.LogError(ex, "Error al guardar configuración");
+                        ModelState.AddModelError("", "Error al guardar configuración: " + ex.Message);
+                        return View(viewModel);
+                        }
+                        }
+
+                        // POST: Mora/EjecutarJob
+                        [HttpPost]
+                        [ValidateAntiForgeryToken]
+                        public async Task<IActionResult>
+                            EjecutarJob()
+                            {
+                            try
+                            {
+                            _logger.LogInformation("Ejecución manual del job de mora");
+
+                            var log = await _moraService.ProcesarMoraAsync();
+
+                            if (log.Exitoso)
+                            {
+                            TempData["Success"] = $"Job ejecutado exitosamente. {log.Detalle}";
+                            }
+                            else
+                            {
+                            TempData["Error"] = $"Error en el job: {log.ErrorMensaje}";
+                            }
+
+                            return RedirectToAction(nameof(Index));
+                            }
+                            catch (Exception ex)
+                            {
+                            _logger.LogError(ex, "Error al ejecutar job");
+                            TempData["Error"] = "Error al ejecutar el job: " + ex.Message;
+                            return RedirectToAction(nameof(Index));
+                            }
+                            }
+
+                            // GET: Mora/Alertas
+                            public async Task<IActionResult>
+                                Alertas(AlertaCobranzaFilterViewModel filtro)
+                                {
+                                try
+                                {
+                                filtro.Alertas = await _moraService.BuscarAlertasAsync(filtro);
+
+                                await CargarViewBags();
+
+                                return View(filtro);
+                                }
+                                catch (Exception ex)
+                                {
+                                _logger.LogError(ex, "Error al listar alertas");
+                                TempData["Error"] = "Error al cargar las alertas";
+                                return View(new AlertaCobranzaFilterViewModel());
+                                }
+                                }
+
+                                // POST: Mora/MarcarLeida/5
+                                [HttpPost]
+                                [ValidateAntiForgeryToken]
+                                public async Task<IActionResult>
+                                    MarcarLeida(int id)
+                                    {
+                                    try
+                                    {
+                                    var resultado = await _moraService.MarcarAlertaLeidaAsync(id, "System");
+
+                                    if (resultado)
+                                    TempData["Success"] = "Alerta marcada como leída";
+                                    else
+                                    TempData["Error"] = "No se pudo marcar la alerta";
+
+                                    return RedirectToAction(nameof(Alertas));
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                    _logger.LogError(ex, "Error al marcar alerta leída");
+                                    TempData["Error"] = "Error al marcar la alerta";
+                                    return RedirectToAction(nameof(Alertas));
+                                    }
+                                    }
+
+                                    // POST: Mora/Resolver/5
+                                    [HttpPost]
+                                    [ValidateAntiForgeryToken]
+                                    public async Task<IActionResult>
+                                        Resolver(int id, string nota)
+                                        {
+                                        try
+                                        {
+                                        if (string.IsNullOrWhiteSpace(nota))
+                                        {
+                                        TempData["Error"] = "Debe proporcionar una nota de resolución";
+                                        return RedirectToAction(nameof(Alertas));
+                                        }
+
+                                        var resultado = await _moraService.ResolverAlertaAsync(id, nota, "System");
+
+                                        if (resultado)
+                                        TempData["Success"] = "Alerta resuelta correctamente";
+                                        else
+                                        TempData["Error"] = "No se pudo resolver la alerta";
+
+                                        return RedirectToAction(nameof(Alertas));
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                        _logger.LogError(ex, "Error al resolver alerta");
+                                        TempData["Error"] = "Error al resolver la alerta";
+                                        return RedirectToAction(nameof(Alertas));
+                                        }
+                                        }
+
+                                        private async Task CargarViewBags()
+                                        {
+                                        var clientes = await _context.Clientes
+                                        .Where(c => !c.IsDeleted && c.Activo)
+                                        .OrderBy(c => c.Apellido)
+                                        .ThenBy(c => c.Nombre)
+                                        .Select(c => new
+                                        {
+                                        c.Id,
+                                        NombreCompleto = $"{c.Apellido}, {c.Nombre}"
+                                        })
+                                        .ToListAsync();
+
+                                        ViewBag.Clientes = new SelectList(clientes, "Id", "NombreCompleto");
+
+                                        ViewBag.TiposAlerta = new SelectList(Enum.GetValues(typeof(TipoAlerta))
+                                        .Cast<TipoAlerta>
+                                            ()
+                                            .Select(t => new { Value = (int)t, Text = GetTipoAlertaNombre(t) }), "Value", "Text");
+
+                                            ViewBag.Prioridades = new SelectList(new[]
+                                            {
+                                            new { Value = 1, Text = "Baja" },
+                                            new { Value = 2, Text = "Media" },
+                                            new { Value = 3, Text = "Alta" }
+                                            }, "Value", "Text");
+                                            }
+
+                                            private string GetTipoAlertaNombre(TipoAlerta tipo)
+                                            {
+                                            return tipo switch
+                                            {
+                                            TipoAlerta.ProximoVencimiento => "Próximo Vencimiento",
+                                            TipoAlerta.Vencido => "Vencido",
+                                            TipoAlerta.MoraLeve => "Mora Leve (1-15 días)",
+                                            TipoAlerta.MoraModerada => "Mora Moderada (16-30 días)",
+                                            TipoAlerta.MoraGrave => "Mora Grave (31-60 días)",
+                                            TipoAlerta.MoraCritica => "Mora Crítica (+60 días)",
+                                            TipoAlerta.CreditoEnRiesgo => "Crédito en Riesgo",
+                                            _ => "Desconocido"
+                                            };
+                                            }
+                                            }
+                                            }
+                                            6. VISTAS
+                                            Views/Mora/Index.cshtml
+@model List<TheBuryProject.ViewModels.AlertaCobranzaViewModel>
+@{
+    ViewData["Title"] = "Gestión de Mora y Cobranzas";
+    var config = ViewBag.Config as TheBuryProject.ViewModels.ConfiguracionMoraViewModel;
+    var logs = ViewBag.Logs as List<TheBuryProject.Models.Entities.LogMora>;
+}
+
+                                            <section class="container-fluid py-4">
+                                                <div class="row align-items-center mb-4">
+                                                    <div class="col">
+                                                        <h1 class="h3 fw-bold text-light mb-0">
+                                                            <i class="bi bi-exclamation-triangle text-warning"></i> Gestión de Mora y Cobranzas
+                                                        </h1>
+                                                        <p class="text-secondary mb-0">Dashboard de alertas y procesamiento automático</p>
+                                                    </div>
+                                                    <div class="col-auto d-flex gap-2">
+                                                        <a asp-action="Configuracion" class="btn btn-outline-light">
+                                                            <i class="bi bi-gear me-2"></i>Configuración
+                                                        </a>
+                                                        <form asp-action="EjecutarJob" method="post" class="d-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="btn btn-warning text-dark fw-semibold"
+                                                                    onclick="return confirm('¿Ejecutar el procesamiento de mora ahora?')">
+                                                                <i class="bi bi-play-circle me-2"></i>Ejecutar Job Ahora
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+                                                @if (TempData["Success"] != null)
+                                                {
+                                                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                                        <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+                                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                                    </div>
+                                                }
+                                                @if (TempData["Error"] != null)
+                                                {
+                                                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+                                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                                    </div>
+                                                }
+
+                                                <!-- Estadísticas Principales -->
+                                                <div class="row mb-4">
+                                                    <div class="col-md-3">
+                                                        <div class="card bg-dark border-warning shadow-sm">
+                                                            <div class="card-body">
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <h6 class="text-secondary mb-1">Alertas Activas</h6>
+                                                                        <h2 class="fw-bold text-warning mb-0">@Model.Count(a => !a.Resuelta)</h2>
+                                                                    </div>
+                                                                    <i class="bi bi-bell-fill text-warning" style="font-size: 2rem;"></i>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="card bg-dark border-danger shadow-sm">
+                                                            <div class="card-body">
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <h6 class="text-secondary mb-1">Alertas Críticas</h6>
+                                                                        <h2 class="fw-bold text-danger mb-0">@Model.Count(a => a.Prioridad == 3 && !a.Resuelta)</h2>
+                                                                    </div>
+                                                                    <i class="bi bi-exclamation-octagon-fill text-danger" style="font-size: 2rem;"></i>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="card bg-dark border-info shadow-sm">
+                                                            <div class="card-body">
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <h6 class="text-secondary mb-1">No Leídas</h6>
+                                                                        <h2 class="fw-bold text-info mb-0">@Model.Count(a => !a.Leida)</h2>
+                                                                    </div>
+                                                                    <i class="bi bi-envelope-fill text-info" style="font-size: 2rem;"></i>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="card bg-dark border-success shadow-sm">
+                                                            <div class="card-body">
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <h6 class="text-secondary mb-1">Job Activo</h6>
+                                                                        <h2 class="fw-bold text-@(config?.JobActivo == true ? "success" : "secondary") mb-0">
+                                                                            @(config?.JobActivo == true ? "SÍ" : "NO")
+                                                                        </h2>
+                                                                    </div>
+                                                                    <i class="bi bi-@(config?.JobActivo == true ? "check-circle-fill" : "x-circle-fill") text-@(config?.JobActivo == true ? "success" : "secondary")"
+                                                                       style="font-size: 2rem;"></i>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Configuración Actual -->
+                                                @if (config != null)
+                                                {
+                                                    <div class="card bg-dark border-0 shadow-sm mb-4">
+                                                        <div class="card-header bg-secondary text-light">
+                                                            <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Configuración Actual</h5>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="row">
+                                                                <div class="col-md-3">
+                                                                    <small class="text-muted">Tasa Mora Diaria</small>
+                                                                    <p class="mb-0 fw-bold">@config.TasaMoraDiaria.ToString("N2")%</p>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <small class="text-muted">Días de Gracia</small>
+                                                                    <p class="mb-0 fw-bold">@config.DiasGraciaMora días</p>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <small class="text-muted">Hora de Ejecución</small>
+                                                                    <p class="mb-0 fw-bold">@config.HoraEjecucion.ToString(@"hh\:mm")</p>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <small class="text-muted">Última Ejecución</small>
+                                                                    <p class="mb-0 fw-bold">
+                                                                        @if (config.UltimaEjecucion.HasValue)
+                                                                        {
+                                                                            @config.UltimaEjecucion.Value.ToString("dd/MM/yyyy HH:mm")
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <span class="text-muted">Nunca</span>
+                                                                        }
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            @if (!string.IsNullOrEmpty(config.UltimoResultado))
+                                                            {
+                                                                <div class="mt-3">
+                                                                    <small class="text-muted">Último Resultado:</small>
+                                                                    <p class="mb-0 text-secondary">@config.UltimoResultado</p>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                }
+
+                                                <!-- Alertas Recientes -->
+                                                <div class="card bg-dark border-0 shadow-sm mb-4">
+                                                    <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
+                                                        <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Alertas Activas Recientes</h5>
+                                                        <a asp-action="Alertas" class="btn btn-sm btn-outline-light">
+                                                            Ver Todas <i class="bi bi-arrow-right ms-1"></i>
+                                                        </a>
+                                                    </div>
+                                                    <div class="card-body p-0">
+                                                        @if (Model.Any())
+                                                        {
+                                                            <div class="table-responsive">
+                                                                <table class="table table-hover table-dark align-middle mb-0">
+                                                                    <thead class="bg-secondary">
+                                                                        <tr>
+                                                                            <th class="px-4">Cliente</th>
+                                                                            <th>Tipo</th>
+                                                                            <th>Mensaje</th>
+                                                                            <th class="text-center">Prioridad</th>
+                                                                            <th class="text-center">Estado</th>
+                                                                            <th>Fecha</th>
+                                                                            <th class="text-center px-4">Acciones</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @foreach (var alerta in Model.Take(10))
+                                                                        {
+                                                                            <tr class="@(!alerta.Leida ? "table-warning" : "")">
+                                                                                <td class="px-4">
+                                                                                    <a asp-controller="Cliente" asp-action="Details" asp-route-id="@alerta.ClienteId" class="text-info">
+                                                                                        @alerta.ClienteNombre
+                                                                                    </a>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <span class="badge bg-@alerta.ColorAlerta">
+                                                                                        <i class="bi @alerta.IconoAlerta"></i> @alerta.TipoNombre
+                                                                                    </span>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <strong>@alerta.Titulo</strong><br />
+                                                                                    <small class="text-muted">@alerta.Mensaje</small>
+                                                                                </td>
+                                                                                <td class="text-center">
+                                                                                    @if (alerta.Prioridad == 3)
+                                                                                    {
+                                                                                        <span class="badge bg-danger">Alta</span>
+                                                                                    }
+                                                                                    else if (alerta.Prioridad == 2)
+                                                                                    {
+                                                                                        <span class="badge bg-warning text-dark">Media</span>
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        <span class="badge bg-secondary">Baja</span>
+                                                                                    }
+                                                                                </td>
+                                                                                <td class="text-center">
+                                                                                    @if (alerta.Resuelta)
+                                                                                    {
+                                                                                        <span class="badge bg-success">
+                                                                                            <i class="bi bi-check-circle"></i> Resuelta
+                                                                                        </span>
+                                                                                    }
+                                                                                    else if (alerta.Leida)
+                                                                                    {
+                                                                                        <span class="badge bg-info">
+                                                                                            <i class="bi bi-eye"></i> Leída
+                                                                                        </span>
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        <span class="badge bg-warning text-dark">
+                                                                                            <i class="bi bi-envelope"></i> Nueva
+                                                                                        </span>
+                                                                                    }
+                                                                                </td>
+                                                                                <td class="text-secondary">
+                                                                                    @alerta.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                                                                </td>
+                                                                                <td class="text-center px-4">
+                                                                                    <div class="btn-group btn-group-sm">
+                                                                                        @if (!alerta.Leida)
+                                                                                        {
+                                                                                            <form asp-action="MarcarLeida" asp-route-id="@alerta.Id" method="post" class="d-inline">
+                                                                                                @Html.AntiForgeryToken()
+                                                                                                <button type="submit" class="btn btn-outline-info" title="Marcar como leída">
+                                                                                                    <i class="bi bi-eye"></i>
+                                                                                                </button>
+                                                                                            </form>
+                                                                                        }
+                                                                                        @if (!alerta.Resuelta)
+                                                                                        {
+                                                                                            <button type="button" class="btn btn-outline-success"
+                                                                                                    data-bs-toggle="modal"
+                                                                                                    data-bs-target="#resolverModal-@alerta.Id"
+                                                                                                    title="Resolver">
+                                                                                                <i class="bi bi-check-circle"></i>
+                                                                                            </button>
+                                                                                        }
+                                                                                        <a asp-controller="Credito" asp-action="Details" asp-route-id="@alerta.CreditoId"
+                                                                                           class="btn btn-outline-light" title="Ver crédito">
+                                                                                            <i class="bi bi-file-earmark-text"></i>
+                                                                                        </a>
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+
+                                                                            <!-- Modal Resolver -->
+                                                                            <div class="modal fade" id="resolverModal-@alerta.Id" tabindex="-1">
+                                                                                <div class="modal-dialog">
+                                                                                    <div class="modal-content bg-dark">
+                                                                                        <form asp-action="Resolver" asp-route-id="@alerta.Id" method="post">
+                                                                                            @Html.AntiForgeryToken()
+                                                                                            <div class="modal-header border-secondary">
+                                                                                                <h5 class="modal-title text-light">Resolver Alerta</h5>
+                                                                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                                                            </div>
+                                                                                            <div class="modal-body">
+                                                                                                <p class="text-light"><strong>@alerta.Titulo</strong></p>
+                                                                                                <p class="text-muted">@alerta.Mensaje</p>
+                                                                                                <div class="mb-3">
+                                                                                                    <label class="form-label text-light">Nota de Resolución *</label>
+                                                                                                    <textarea name="nota" class="form-control bg-body-secondary text-light border-0" rows="3" required></textarea>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div class="modal-footer border-secondary">
+                                                                                                <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                                                                                                <button type="submit" class="btn btn-success">
+                                                                                                    <i class="bi bi-check-circle me-2"></i>Resolver
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        </form>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        }
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="text-center py-5">
+                                                                <i class="bi bi-check-circle display-5 text-success d-block mb-3"></i>
+                                                                <p class="text-secondary mb-0">No hay alertas activas</p>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+
+                                                <!-- Logs de Ejecución -->
+                                                @if (logs != null && logs.Any())
+                                                {
+                                                    <div class="card bg-dark border-0 shadow-sm">
+                                                        <div class="card-header bg-secondary text-light">
+                                                            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Historial de Ejecuciones</h5>
+                                                        </div>
+                                                        <div class="card-body p-0">
+                                                            <div class="table-responsive">
+                                                                <table class="table table-sm table-dark mb-0">
+                                                                    <thead class="bg-secondary">
+                                                                        <tr>
+                                                                            <th>Fecha</th>
+                                                                            <th class="text-center">Estado</th>
+                                                                            <th class="text-end">Procesadas</th>
+                                                                            <th class="text-end">Con Mora</th>
+                                                                            <th class="text-end">Alertas</th>
+                                                                            <th class="text-end">Total Recargos</th>
+                                                                            <th>Duración</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @foreach (var log in logs)
+                                                                        {
+                                                                            <tr>
+                                                                                <td>@log.FechaEjecucion.ToString("dd/MM/yyyy HH:mm")</td>
+                                                                                <td class="text-center">
+                                                                                    @if (log.Exitoso)
+                                                                                    {
+                                                                                        <span class="badge bg-success">
+                                                                                            <i class="bi bi-check-circle"></i> Exitoso
+                                                                                        </span>
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        <span class="badge bg-danger">
+                                                                                            <i class="bi bi-x-circle"></i> Error
+                                                                                        </span>
+                                                                                    }
+                                                                                </td>
+                                                                                <td class="text-end">@log.CuotasProcesadas</td>
+                                                                                <td class="text-end">@log.CuotasConMora</td>
+                                                                                <td class="text-end">@log.AlertasGeneradas</td>
+                                                                                <td class="text-end">@log.TotalRecargosAplicados.ToString("C2")</td>
+                                                                                <td>@log.DuracionEjecucion.ToString(@"mm\:ss")</td>
+                                                                            </tr>
+                                                                        }
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </section>

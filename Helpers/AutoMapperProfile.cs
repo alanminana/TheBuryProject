@@ -235,6 +235,33 @@ namespace TheBuryProject.Helpers
             CreateMap<DatosCreditoPersonalViewModel, VentaCreditoCuota>()
                 .ForMember(d => d.Venta, o => o.Ignore())
                 .ForMember(d => d.Credito, o => o.Ignore());
+
+            // Evaluación Crédito
+            CreateMap<EvaluacionCredito, EvaluacionCreditoViewModel>()
+                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
+                    src.Cliente != null ? $"{src.Cliente.Apellido}, {src.Cliente.Nombre}" : null))
+                .ReverseMap();
+            // =======================
+            // DocumentoCliente
+            // =======================
+            CreateMap<DocumentoCliente, DocumentoClienteViewModel>()
+                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
+                    src.Cliente != null ? $"{src.Cliente.Apellido}, {src.Cliente.Nombre}" : null))
+                .ForMember(dest => dest.Archivo, opt => opt.Ignore());
+
+            CreateMap<DocumentoClienteViewModel, DocumentoCliente>()
+                .ForMember(dest => dest.Cliente, opt => opt.Ignore())
+                .ForMember(dest => dest.NombreArchivo, opt => opt.Ignore())
+                .ForMember(dest => dest.RutaArchivo, opt => opt.Ignore())
+                .ForMember(dest => dest.TipoMIME, opt => opt.Ignore())
+                .ForMember(dest => dest.TamanoBytes, opt => opt.Ignore());
+            // Mora
+            // Mora
+            CreateMap<ConfiguracionMora, ConfiguracionMoraViewModel>().ReverseMap();
+            CreateMap<AlertaCobranza, AlertaCobranzaViewModel>()
+                .ForMember(dest => dest.ClienteNombre, opt => opt.Ignore());
+            CreateMap<AlertaCobranzaViewModel, AlertaCobranza>();
+
         }
     }
 }

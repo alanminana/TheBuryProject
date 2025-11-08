@@ -1,0 +1,129 @@
+﻿@model TheBuryProject.ViewModels.EvaluacionCreditoViewModel
+
+@if (Model != null)
+{
+    <div class="card border-@Model.ColorSemaforo shadow-sm mb-4">
+        <div class="card-header bg-@Model.ColorSemaforo text-white">
+            <h5 class="mb-0">
+                <i class="bi @Model.IconoSemaforo me-2"></i>
+                Evaluación Crediticia: @Model.ResultadoTexto
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- Puntaje Final -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <h6 class="text-muted mb-2">Puntaje Final</h6>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar bg-@Model.ColorSemaforo"
+                             role="progressbar"
+                             style="width: @Model.PuntajeFinal%"
+                             aria-valuenow="@Model.PuntajeFinal"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            <strong class="fs-6">@Model.PuntajeFinal.ToString("N0") / 100</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Motivo -->
+            <div class="alert alert-@Model.ColorSemaforo border-0 mb-3">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Análisis:</strong> @Model.Motivo
+            </div>
+
+            <!-- Datos de la evaluación -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-6">Monto Solicitado:</dt>
+                        <dd class="col-sm-6">@Model.MontoSolicitado.ToString("C2")</dd>
+
+                        <dt class="col-sm-6">Puntaje Riesgo:</dt>
+                        <dd class="col-sm-6">@Model.PuntajeRiesgoCliente.ToString("N1") / 10</dd>
+
+                        @if (Model.SueldoCliente.HasValue)
+                        {
+                            <dt class="col-sm-6">Sueldo Declarado:</dt>
+                            <dd class="col-sm-6">@Model.SueldoCliente.Value.ToString("C2")</dd>
+                        }
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <dl class="row mb-0">
+                        @if (Model.RelacionCuotaIngreso.HasValue)
+                        {
+                            <dt class="col-sm-7">Compromiso Ingreso:</dt>
+                            <dd class="col-sm-5">@Model.RelacionCuotaIngreso.Value.ToString("P1")</dd>
+                        }
+
+                        <dt class="col-sm-7">Fecha Evaluación:</dt>
+                        <dd class="col-sm-5">@Model.FechaEvaluacion.ToString("dd/MM/yyyy HH:mm")</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Reglas Evaluadas -->
+            <h6 class="text-muted mb-2 mt-3">
+                <i class="bi bi-list-check me-1"></i>Criterios Evaluados
+            </h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Criterio</th>
+                            <th>Detalle</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-end">Puntos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var regla in Model.Reglas)
+                        {
+                            <tr class="@(regla.Cumple ? "" : "table-warning")">
+                                <td>
+                                    <i class="bi @(regla.Cumple ? "bi-check-circle text-success" : "bi-x-circle text-danger") me-1"></i>
+                                    @regla.Nombre
+                                </td>
+                                <td class="text-muted small">@regla.Detalle</td>
+                                <td class="text-center">
+                                    @if (regla.Cumple)
+                                    {
+                                        <span class="badge bg-success">Cumple</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">No Cumple</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge bg-@(regla.Peso >= 0 ? "primary" : "danger")">
+                                        @(regla.Peso >= 0 ? "+" : "")@regla.Peso
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>Puntaje Total:</strong></td>
+                            <td class="text-end">
+                                <strong class="text-@Model.ColorSemaforo fs-5">@Model.PuntajeFinal</strong>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Observaciones si hay -->
+            @if (!string.IsNullOrEmpty(Model.Observaciones))
+            {
+                <div class="mt-3">
+                    <h6 class="text-muted mb-2">Observaciones</h6>
+                    <p class="text-muted mb-0">@Model.Observaciones</p>
+                </div>
+            }
+        </div>
+    </div>
+}

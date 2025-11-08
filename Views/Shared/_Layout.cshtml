@@ -32,6 +32,12 @@
                         </a>
                     </li>
 
+                    <!-- Subir Doc-->
+                    <li class="nav-item">
+                        <a class="nav-link text-light" asp-controller="DocumentoCliente" asp-action="Index">
+                            <i class="bi bi-file-earmark-text me-1"></i>Documentos
+                        </a>
+                    </li>
                     <!-- CRÉDITOS -->
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Credito" asp-action="Index">
@@ -89,8 +95,11 @@
         &copy; @DateTime.Now.Year - TheBuryProject
     </footer>
 
+    <!-- JS (orden correcto) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
 </body>
 </html>

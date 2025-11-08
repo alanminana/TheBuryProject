@@ -1,0 +1,251 @@
+﻿@model TheBuryProject.ViewModels.DocumentoClienteFilterViewModel
+@{
+    ViewData["Title"] = "Documentos de Clientes";
+}
+
+<section class="container-fluid py-4">
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h3 fw-bold text-light mb-0">
+                <i class="bi bi-file-earmark-text text-info"></i> Documentos de Clientes
+            </h1>
+            <p class="text-secondary mb-0">Gestión de documentación de clientes</p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Upload" class="btn btn-info text-dark fw-semibold shadow-sm">
+                <i class="bi bi-upload me-2"></i>Subir Documento
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filtros -->
+    <div class="card bg-dark border-0 shadow-sm mb-4">
+        <div class="card-header bg-secondary text-light border-0">
+            <button class="btn btn-link text-decoration-none text-light w-100 text-start p-0"
+                    type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtros de Búsqueda</h6>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+            </button>
+        </div>
+        <div class="collapse show" id="filtrosCollapse">
+            <div class="card-body">
+                <form asp-action="Index" method="get">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label text-light fw-semibold">Cliente</label>
+                            <select name="clienteId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Clientes">
+                                <option value="">Todos los clientes</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label text-light fw-semibold">Tipo de Documento</label>
+                            <select name="tipoDocumento" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.TiposDocumento">
+                                <option value="">Todos los tipos</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label text-light fw-semibold">Estado</label>
+                            <select name="estado" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Estados">
+                                <option value="">Todos los estados</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label text-light fw-semibold">Filtros Rápidos</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="soloPendientes" id="soloPendientes"
+                                       value="true" @(Model.SoloPendientes ? "checked" : "") />
+                                <label class="form-check-label text-light" for="soloPendientes">
+                                    Solo pendientes
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="soloVencidos" id="soloVencidos"
+                                       value="true" @(Model.SoloVencidos ? "checked" : "") />
+                                <label class="form-check-label text-light" for="soloVencidos">
+                                    Solo vencidos
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label text-light fw-semibold">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-info text-dark fw-semibold w-100">
+                                    <i class="bi bi-search me-2"></i>Buscar
+                                </button>
+                                <a asp-action="Index" class="btn btn-outline-light">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultados -->
+    @if (Model.TotalResultados > 0)
+    {
+        <div class="alert alert-info border-0 shadow-sm mb-3">
+            <i class="bi bi-info-circle me-2"></i>
+            Se encontraron <strong>@Model.TotalResultados</strong> documento(s).
+        </div>
+    }
+
+    <!-- Tabla -->
+    <div class="card bg-dark border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-dark align-middle mb-0">
+                    <thead class="bg-secondary text-light">
+                        <tr>
+                            <th class="px-4">Cliente</th>
+                            <th>Tipo de Documento</th>
+                            <th>Archivo</th>
+                            <th>Tamaño</th>
+                            <th class="text-center">Estado</th>
+                            <th>Fecha Subida</th>
+                            <th>Vencimiento</th>
+                            <th class="text-center px-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Documentos.Any())
+                        {
+                            @foreach (var doc in Model.Documentos)
+                            {
+                                <tr>
+                                    <td class="px-4">
+                                        <a asp-controller="Cliente" asp-action="Details" asp-route-id="@doc.ClienteId" class="text-info">
+                                            @doc.ClienteNombre
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@doc.TipoDocumentoNombre</span>
+                                    </td>
+                                    <td>
+                                        <i class="bi bi-file-earmark me-1"></i>
+                                        @doc.NombreArchivo
+                                    </td>
+                                    <td class="text-secondary">@doc.TamanoFormateado</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-@doc.EstadoColor">
+                                            <i class="bi @doc.EstadoIcono"></i> @doc.EstadoNombre
+                                        </span>
+                                    </td>
+                                    <td class="text-secondary">@doc.FechaSubida.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-secondary">
+                                        @if (doc.FechaVencimiento.HasValue)
+                                        {
+                                            <span>@doc.FechaVencimiento.Value.ToString("dd/MM/yyyy")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center px-4">
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Details" asp-route-id="@doc.Id" class="btn btn-outline-info" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="Descargar" asp-route-id="@doc.Id" class="btn btn-outline-success" title="Descargar">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            @if (doc.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
+                                            {
+                                                <form asp-action="Delete" asp-route-id="@doc.Id" method="post" class="d-inline"
+                                                      onsubmit="return confirm('¿Está seguro de eliminar este documento?')">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5">
+                                    <i class="bi bi-inbox display-5 text-secondary d-block mb-3"></i>
+                                    <p class="text-secondary mb-2">No hay documentos disponibles</p>
+                                    <a asp-action="Upload" class="btn btn-info text-dark">Subir Documento</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    @if (Model.Documentos.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card bg-dark border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-secondary mb-2">Total Documentos</h6>
+                        <h3 class="fw-bold text-light mb-0">@Model.TotalResultados</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-secondary mb-2">Pendientes</h6>
+                        <h3 class="fw-bold text-warning mb-0">
+                            @Model.Documentos.Count(d => d.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-secondary mb-2">Verificados</h6>
+                        <h3 class="fw-bold text-success mb-0">
+                            @Model.Documentos.Count(d => d.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Verificado)
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-secondary mb-2">Rechazados</h6>
+                        <h3 class="fw-bold text-danger mb-0">
+                            @Model.Documentos.Count(d => d.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Rechazado)
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</section>

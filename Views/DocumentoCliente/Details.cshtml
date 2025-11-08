@@ -1,0 +1,244 @@
+﻿@model TheBuryProject.ViewModels.DocumentoClienteViewModel
+@{
+    ViewData["Title"] = "Detalles del Documento";
+}
+
+<section class="container py-4">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Index" class="btn btn-outline-light me-3">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="h3 fw-bold text-light mb-0">
+                        <i class="bi bi-file-earmark-text text-info"></i> Detalles del Documento
+                    </h1>
+                    <p class="text-secondary mb-0">@Model.TipoDocumentoNombre - @Model.ClienteNombre</p>
+                </div>
+            </div>
+
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="row">
+                <!-- Información Principal -->
+                <div class="col-md-7">
+                    <div class="card bg-dark border-0 shadow-sm mb-3">
+                        <div class="card-header bg-secondary text-light">
+                            <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información del Documento</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">Cliente:</dt>
+                                <dd class="col-sm-8">
+                                    <a asp-controller="Cliente" asp-action="Details" asp-route-id="@Model.ClienteId" class="text-info">
+                                        @Model.ClienteNombre
+                                    </a>
+                                </dd>
+
+                                <dt class="col-sm-4">Tipo:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-secondary">@Model.TipoDocumentoNombre</span>
+                                </dd>
+
+                                <dt class="col-sm-4">Archivo:</dt>
+                                <dd class="col-sm-8">
+                                    <i class="bi bi-file-earmark me-1"></i>@Model.NombreArchivo
+                                </dd>
+
+                                <dt class="col-sm-4">Tamaño:</dt>
+                                <dd class="col-sm-8 text-secondary">@Model.TamanoFormateado</dd>
+
+                                <dt class="col-sm-4">Estado:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-@Model.EstadoColor">
+                                        <i class="bi @Model.EstadoIcono"></i> @Model.EstadoNombre
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Fecha Subida:</dt>
+                                <dd class="col-sm-8">@Model.FechaSubida.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                                @if (Model.FechaVencimiento.HasValue)
+                                {
+                                    <dt class="col-sm-4">Vencimiento:</dt>
+                                    <dd class="col-sm-8">
+                                        @Model.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                                        @if (Model.FechaVencimiento.Value < DateTime.Today)
+                                        {
+                                            <span class="badge bg-danger ms-2">Vencido</span>
+                                        }
+                                        else if (Model.FechaVencimiento.Value < DateTime.Today.AddDays(30))
+                                        {
+                                            <span class="badge bg-warning text-dark ms-2">Próximo a vencer</span>
+                                        }
+                                    </dd>
+                                }
+
+                                @if (!string.IsNullOrEmpty(Model.Observaciones))
+                                {
+                                    <dt class="col-sm-4">Observaciones:</dt>
+                                    <dd class="col-sm-8 text-secondary">@Model.Observaciones</dd>
+                                }
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Verificación -->
+                    @if (Model.FechaVerificacion.HasValue)
+                    {
+                        <div class="card bg-dark border-0 shadow-sm mb-3">
+                            <div class="card-header bg-secondary text-light">
+                                <h5 class="mb-0"><i class="bi bi-shield-check me-2"></i>Verificación</h5>
+                            </div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4">Verificado por:</dt>
+                                    <dd class="col-sm-8">@Model.VerificadoPor</dd>
+
+                                    <dt class="col-sm-4">Fecha:</dt>
+                                    <dd class="col-sm-8">@Model.FechaVerificacion.Value.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                                    @if (!string.IsNullOrEmpty(Model.MotivoRechazo))
+                                    {
+                                        <dt class="col-sm-4">Motivo Rechazo:</dt>
+                                        <dd class="col-sm-8">
+                                            <div class="alert alert-danger mb-0">
+                                                @Model.MotivoRechazo
+                                            </div>
+                                        </dd>
+                                    }
+                                </dl>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Acciones -->
+                <div class="col-md-5">
+                    <div class="card bg-dark border-0 shadow-sm mb-3">
+                        <div class="card-header bg-secondary text-light">
+                            <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Acciones</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a asp-action="Descargar" asp-route-id="@Model.Id" class="btn btn-success">
+                                    <i class="bi bi-download me-2"></i>Descargar Archivo
+                                </a>
+
+                                @if (Model.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
+                                {
+                                    <button type="button" class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#verificarModal">
+                                        <i class="bi bi-check-circle me-2"></i>Verificar
+                                    </button>
+
+                                    <button type="button" class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#rechazarModal">
+                                        <i class="bi bi-x-circle me-2"></i>Rechazar
+                                    </button>
+
+                                    <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
+                                          onsubmit="return confirm('¿Está seguro de eliminar este documento?')">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-danger w-100">
+                                            <i class="bi bi-trash me-2"></i>Eliminar
+                                        </button>
+                                    </form>
+                                }
+
+                                <a asp-controller="Cliente" asp-action="Details" asp-route-id="@Model.ClienteId" class="btn btn-outline-light">
+                                    <i class="bi bi-person me-2"></i>Ver Cliente
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview (si es imagen) -->
+                    @if (Model.TipoMIME?.StartsWith("image/") == true)
+                    {
+                        <div class="card bg-dark border-0 shadow-sm">
+                            <div class="card-header bg-secondary text-light">
+                                <h5 class="mb-0"><i class="bi bi-image me-2"></i>Vista Previa</h5>
+                            </div>
+                            <div class="card-body">
+                                <img src="/@Model.RutaArchivo" alt="Preview" class="img-fluid rounded" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modal Verificar -->
+<div class="modal fade" id="verificarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <form asp-action="Verificar" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light">
+                        <i class="bi bi-check-circle text-success me-2"></i>Verificar Documento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-light">¿Confirma que el documento es correcto y está verificado?</p>
+                    <div class="mb-3">
+                        <label class="form-label text-light">Observaciones (opcional)</label>
+                        <textarea name="observaciones" class="form-control bg-body-secondary text-light border-0" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-2"></i>Verificar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Rechazar -->
+<div class="modal fade" id="rechazarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <form asp-action="Rechazar" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light">
+                        <i class="bi bi-x-circle text-danger me-2"></i>Rechazar Documento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-light">Indique el motivo del rechazo:</p>
+                    <div class="mb-3">
+                        <label class="form-label text-light">Motivo *</label>
+                        <textarea name="motivo" class="form-control bg-body-secondary text-light border-0" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle me-2"></i>Rechazar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

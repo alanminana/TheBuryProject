@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -12,13 +13,22 @@ namespace TheBuryProject.Controllers
     public class CreditoController : Controller
     {
         private readonly ICreditoService _creditoService;
+        private readonly IEvaluacionCreditoService _evaluacionService;
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
         private readonly ILogger<CreditoController> _logger;
 
-        public CreditoController(ICreditoService creditoService, AppDbContext context, ILogger<CreditoController> logger)
+        public CreditoController(
+            ICreditoService creditoService,
+            IEvaluacionCreditoService evaluacionService,
+            AppDbContext context,
+            IMapper mapper,
+            ILogger<CreditoController> logger)
         {
             _creditoService = creditoService;
+            _evaluacionService = evaluacionService;
             _context = context;
+            _mapper = mapper;
             _logger = logger;
         }
 
@@ -51,11 +61,15 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Obtener evaluación si existe
+                var evaluacion = await _evaluacionService.GetEvaluacionByCreditoIdAsync(id);
+                ViewBag.Evaluacion = evaluacion;
+
                 return View(credito);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener detalles del crédito: {Id}", id);
+                _logger.LogError(ex, "Error al obtener crédito {Id}", id);
                 TempData["Error"] = "Error al cargar el crédito";
                 return RedirectToAction(nameof(Index));
             }
@@ -454,7 +468,24 @@ namespace TheBuryProject.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        // GET: API endpoint para evaluar crédito en tiempo real
+        [HttpGet]
+        public async Task<IActionResult> EvaluarCredito(int clienteId, decimal montoSolicitado, int? garanteId = null)
+        {
+            try
+            {
+                _logger.LogInformation("Evaluando crédito para cliente {ClienteId}, monto {Monto}", clienteId, montoSolicitado);
 
+                var evaluacion = await _evaluacionService.EvaluarSolicitudAsync(clienteId, montoSolicitado, garanteId);
+
+                return Json(evaluacion);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al evaluar crédito");
+                return StatusCode(500, new { error = "Error al evaluar crédito: " + ex.Message });
+            }
+        }
         // GET: Credito/CuotasVencidas
         public async Task<IActionResult> CuotasVencidas()
         {

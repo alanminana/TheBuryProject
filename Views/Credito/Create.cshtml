@@ -71,6 +71,27 @@
                     </div>
                 </div>
 
+                <!-- Panel de Evaluación en Tiempo Real -->
+                <div id="panelEvaluacion" style="display: none;">
+                    <div class="card border-info shadow-sm mb-3">
+                        <div class="card-header bg-info text-dark">
+                            <h5 class="mb-0">
+                                <i class="bi bi-speedometer2 me-2"></i>
+                                Evaluación Automática
+                            </h5>
+                        </div>
+                        <div class="card-body" id="resultadoEvaluacion">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-info" role="status">
+                                    <span class="visually-hidden">Evaluando...</span>
+                                </div>
+                                <p class="text-muted mt-2">Evaluando solicitud...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
                 <div class="row g-3 mt-2">
                     <div class="col-md-12">
                         <label asp-for="Observaciones" class="form-label">Observaciones</label>
@@ -98,16 +119,143 @@
 </section>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const chk = document.getElementById("chkRequiereGarante");
-            const section = document.getElementById("garanteSection");
-            chk.addEventListener("change", () => {
-                section.style.display = chk.checked ? "block" : "none";
-                if (!chk.checked) document.getElementById("GaranteId").value = "";
+        $(document).ready(function () {
+            let evaluacionTimeout;
+
+            // Evaluar cuando cambien los campos relevantes
+            $('#ClienteId, #MontoSolicitado, #GaranteId').on('change', function () {
+                clearTimeout(evaluacionTimeout);
+                evaluacionTimeout = setTimeout(evaluarCredito, 500); // Esperar 500ms después del último cambio
             });
-            if (chk.checked) section.style.display = "block";
+
+            // Checkbox de garante
+            $('#chkRequiereGarante').on('change', function () {
+                if (!$(this).is(':checked')) {
+                    $('#GaranteId').val('');
+                }
+                evaluarCredito();
+            });
+
+            function evaluarCredito() {
+                const clienteId = $('#ClienteId').val();
+                const montoSolicitado = $('#MontoSolicitado').val();
+                const garanteId = $('#GaranteId').val();
+
+                if (!clienteId || !montoSolicitado || montoSolicitado <= 0) {
+                    $('#panelEvaluacion').hide();
+                    return;
+                }
+
+                $('#panelEvaluacion').show();
+                $('#resultadoEvaluacion').html(`
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-info" role="status">
+                            <span class="visually-hidden">Evaluando...</span>
+                        </div>
+                        <p class="text-muted mt-2">Evaluando solicitud...</p>
+                    </div>
+                `);
+
+                $.ajax({
+                    url: '@Url.Action("EvaluarCredito", "Credito")',
+                    type: 'GET',
+                    data: {
+                        clienteId: clienteId,
+                        montoSolicitado: montoSolicitado,
+                        garanteId: garanteId || null
+                    },
+                    success: function (evaluacion) {
+                        mostrarEvaluacion(evaluacion);
+                    },
+                    error: function (xhr) {
+                        $('#resultadoEvaluacion').html(`
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Error al evaluar: ${xhr.responseJSON?.error || 'Error desconocido'}
+                            </div>
+                        `);
+                    }
+                });
+            }
+
+            function mostrarEvaluacion(eval) {
+                const colorClass = eval.resultado === 2 ? 'success' : eval.resultado === 1 ? 'warning' : 'danger';
+                const icono = eval.resultado === 2 ? 'check-circle-fill' : eval.resultado === 1 ? 'exclamation-triangle-fill' : 'x-circle-fill';
+
+                let html = `
+                    <div class="alert alert-${colorClass} border-0 mb-3">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-${icono} me-2"></i>
+                            ${eval.resultadoTexto}
+                        </h5>
+                        <p class="mb-0">${eval.motivo}</p>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-2">Puntaje: ${eval.puntajeFinal.toFixed(0)} / 100</h6>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar bg-${colorClass}"
+                                     role="progressbar"
+                                     style="width: ${eval.puntajeFinal}%">
+                                    ${eval.puntajeFinal.toFixed(0)}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="text-muted mb-2">Criterios Evaluados</h6>
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Criterio</th>
+                                <th>Detalle</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-end">Puntos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                eval.reglas.forEach(regla => {
+                    const rowClass = regla.cumple ? '' : 'table-warning';
+                    const iconoRegla = regla.cumple ? 'check-circle text-success' : 'x-circle text-danger';
+                    const badge = regla.cumple ? 'success' : 'danger';
+                    const pesoClass = regla.peso >= 0 ? 'primary' : 'danger';
+                    const pesoSigno = regla.peso >= 0 ? '+' : '';
+
+                    html += `
+                        <tr class="${rowClass}">
+                            <td>
+                                <i class="bi bi-${iconoRegla} me-1"></i>
+                                ${regla.nombre}
+                            </td>
+                            <td class="text-muted small">${regla.detalle || '-'}</td>
+                            <td class="text-center">
+                                <span class="badge bg-${badge}">${regla.cumple ? 'Cumple' : 'No Cumple'}</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="badge bg-${pesoClass}">${pesoSigno}${regla.peso}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                `;
+
+                $('#resultadoEvaluacion').html(html);
+
+                // Actualizar color del card según resultado
+                $('#panelEvaluacion .card').removeClass('border-info border-success border-warning border-danger')
+                    .addClass('border-' + colorClass);
+                $('#panelEvaluacion .card-header').removeClass('bg-info bg-success bg-warning bg-danger text-dark text-white')
+                    .addClass('bg-' + colorClass)
+                    .addClass(colorClass === 'warning' ? 'text-dark' : 'text-white');
+            }
         });
     </script>
 }
