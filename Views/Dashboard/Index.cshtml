@@ -16,7 +16,6 @@
         </button>
     </div>
 
-    <!-- Alertas Importantes -->
     @if (Model.AlertasPendientes.Any())
     {
         <div class="row mb-4">
@@ -51,7 +50,7 @@
         </div>
     }
 
-    <!-- KPIs Principales - Ventas -->
+    <!-- Ventas -->
     <div class="mb-4">
         <h4 class="mb-3"><i class="bi bi-cart-check me-2"></i>Ventas</h4>
         <div class="row">
@@ -61,10 +60,10 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <p class="text-muted mb-1">Ventas Hoy</p>
-                                <h3 class="mb-0">${{Model.VentasTotalesHoy.ToString("N2")}}</h3>
+                                <h3 class="mb-0">$@Model.VentasTotalesHoy.ToString("N2")</h3>
                                 <small class="text-muted">@Model.CantidadVentasHoy ventas</small>
                             </div>
-                            <i class="bi bi-calendar-check text-primary" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                            <i class="bi bi-calendar-check text-primary" style="font-size:2.5rem;opacity:.3;"></i>
                         </div>
                     </div>
                 </div>
@@ -76,10 +75,10 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <p class="text-muted mb-1">Ventas del Mes</p>
-                                <h3 class="mb-0">${{Model.VentasTotalesMes.ToString("N2")}}</h3>
+                                <h3 class="mb-0">$@Model.VentasTotalesMes.ToString("N2")</h3>
                                 <small class="text-muted">@Model.CantidadVentasMes ventas</small>
                             </div>
-                            <i class="bi bi-calendar-month text-success" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                            <i class="bi bi-calendar-month text-success" style="font-size:2.5rem;opacity:.3;"></i>
                         </div>
                     </div>
                 </div>
@@ -91,10 +90,10 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <p class="text-muted mb-1">Ventas del Año</p>
-                                <h3 class="mb-0">${{Model.VentasTotalesAnio.ToString("N2")}}</h3>
+                                <h3 class="mb-0">$@Model.VentasTotalesAnio.ToString("N2")</h3>
                                 <small class="text-muted">Año @DateTime.Today.Year</small>
                             </div>
-                            <i class="bi bi-calendar-range text-info" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                            <i class="bi bi-calendar-range text-info" style="font-size:2.5rem;opacity:.3;"></i>
                         </div>
                     </div>
                 </div>
@@ -106,10 +105,10 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <p class="text-muted mb-1">Ticket Promedio</p>
-                                <h3 class="mb-0">${{Model.TicketPromedio.ToString("N2")}}</h3>
+                                <h3 class="mb-0">$@Model.TicketPromedio.ToString("N2")</h3>
                                 <small class="text-muted">Este mes</small>
                             </div>
-                            <i class="bi bi-receipt text-secondary" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                            <i class="bi bi-receipt text-secondary" style="font-size:2.5rem;opacity:.3;"></i>
                         </div>
                     </div>
                 </div>
@@ -117,7 +116,7 @@
         </div>
     </div>
 
-    <!-- KPIs de Créditos y Cobranza -->
+    <!-- Créditos y Cobranza -->
     <div class="mb-4">
         <h4 class="mb-3"><i class="bi bi-credit-card me-2"></i>Créditos y Cobranza</h4>
         <div class="row">
@@ -128,9 +127,9 @@
                             <div>
                                 <p class="text-muted mb-1">Créditos Activos</p>
                                 <h3 class="mb-0">@Model.CreditosActivos</h3>
-                                <small class="text-muted">${{Model.MontoTotalCreditos.ToString("N2")}}</small>
+                                <small class="text-muted">$@Model.MontoTotalCreditos.ToString("N2")</small>
                             </div>
-                            <i class="bi bi-file-text text-primary" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                            <i class="bi bi-file-text text-primary" style="font-size:2.5rem;opacity:.3;"></i>
                         </div>
                     </div>
                 </div>
@@ -142,10 +141,10 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <p class="text-muted mb-1">Saldo Pendiente</p>
-                                <h3 class="mb-0">${{Model.SaldoPendienteCobro.ToString("N2")}}</h3>
+                                <h3 class="mb-0">$@Model.SaldoPendienteCobro.ToString("N2")</h3>
                                 <small class="text-muted">Por cobrar</small>
                             </div>
-                            <i class="bi bi-hourglass-split text-warning" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                            <i class="bi bi-hourglass-split text-warning" style="font-size:2.5rem;opacity:.3;"></i>
                         </div>
                     </div>
                 </div>
@@ -157,10 +156,10 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <p class="text-muted mb-1">Cobrado Hoy</p>
-                                <h3 class="mb-0">${{Model.CobradoHoy.ToString("N2")}}</h3>
+                                <h3 class="mb-0">$@Model.CobradoHoy.ToString("N2")</h3>
                                 <small class="text-muted">Cobrado este mes: $@Model.CobradoMes.ToString("N2")</small>
                             </div>
-                            <i class="bi bi-cash-coin text-success" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                            <i class="bi bi-cash-coin text-success" style="font-size:2.5rem;opacity:.3;"></i>
                         </div>
                     </div>
                 </div>
@@ -172,10 +171,10 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <p class="text-muted mb-1">Mora Total</p>
-                                <h3 class="mb-0">${{Model.MontoMoraTotal.ToString("N2")}}</h3>
+                                <h3 class="mb-0">$@Model.MontoMoraTotal.ToString("N2")</h3>
                                 <small class="text-muted">Tasa: @Model.TasaMorosidad%</small>
                             </div>
-                            <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                            <i class="bi bi-exclamation-triangle text-danger" style="font-size:2.5rem;opacity:.3;"></i>
                         </div>
                     </div>
                 </div>
@@ -183,7 +182,7 @@
         </div>
     </div>
 
-    <!-- KPIs de Clientes y Stock -->
+    <!-- Clientes y Stock -->
     <div class="row mb-4">
         <div class="col-md-6">
             <h4 class="mb-3"><i class="bi bi-people me-2"></i>Clientes</h4>
@@ -191,7 +190,7 @@
                 <div class="col-md-4 mb-3">
                     <div class="card shadow-sm">
                         <div class="card-body text-center">
-                            <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
+                            <i class="bi bi-people-fill text-primary" style="font-size:2rem;"></i>
                             <h4 class="mt-2 mb-0">@Model.TotalClientes</h4>
                             <small class="text-muted">Total Clientes</small>
                         </div>
@@ -200,7 +199,7 @@
                 <div class="col-md-4 mb-3">
                     <div class="card shadow-sm">
                         <div class="card-body text-center">
-                            <i class="bi bi-person-check-fill text-success" style="font-size: 2rem;"></i>
+                            <i class="bi bi-person-check-fill text-success" style="font-size:2rem;"></i>
                             <h4 class="mt-2 mb-0">@Model.ClientesActivos</h4>
                             <small class="text-muted">Activos</small>
                         </div>
@@ -209,7 +208,7 @@
                 <div class="col-md-4 mb-3">
                     <div class="card shadow-sm">
                         <div class="card-body text-center">
-                            <i class="bi bi-person-plus-fill text-info" style="font-size: 2rem;"></i>
+                            <i class="bi bi-person-plus-fill text-info" style="font-size:2rem;"></i>
                             <h4 class="mt-2 mb-0">@Model.ClientesNuevosEsteMes</h4>
                             <small class="text-muted">Nuevos este mes</small>
                         </div>
@@ -224,7 +223,7 @@
                 <div class="col-md-4 mb-3">
                     <div class="card shadow-sm">
                         <div class="card-body text-center">
-                            <i class="bi bi-boxes text-primary" style="font-size: 2rem;"></i>
+                            <i class="bi bi-boxes text-primary" style="font-size:2rem;"></i>
                             <h4 class="mt-2 mb-0">@Model.ProductosTotales</h4>
                             <small class="text-muted">Total Productos</small>
                         </div>
@@ -233,7 +232,7 @@
                 <div class="col-md-4 mb-3">
                     <div class="card shadow-sm">
                         <div class="card-body text-center">
-                            <i class="bi bi-exclamation-circle-fill text-warning" style="font-size: 2rem;"></i>
+                            <i class="bi bi-exclamation-circle-fill text-warning" style="font-size:2rem;"></i>
                             <h4 class="mt-2 mb-0">@Model.ProductosBajoStock</h4>
                             <small class="text-muted">Stock Bajo</small>
                         </div>
@@ -242,7 +241,7 @@
                 <div class="col-md-4 mb-3">
                     <div class="card shadow-sm">
                         <div class="card-body text-center">
-                            <i class="bi bi-x-circle-fill text-danger" style="font-size: 2rem;"></i>
+                            <i class="bi bi-x-circle-fill text-danger" style="font-size:2rem;"></i>
                             <h4 class="mt-2 mb-0">@Model.ProductosSinStock</h4>
                             <small class="text-muted">Sin Stock</small>
                         </div>
@@ -254,7 +253,6 @@
 
     <!-- Gráficos -->
     <div class="row mb-4">
-        <!-- Gráfico de Ventas Últimos 7 Días -->
         <div class="col-md-6 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
@@ -266,7 +264,6 @@
             </div>
         </div>
 
-        <!-- Gráfico de Cobranza Últimos 30 Días -->
         <div class="col-md-6 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-success text-white">
@@ -280,7 +277,6 @@
     </div>
 
     <div class="row mb-4">
-        <!-- Gráfico de Ventas Mensuales -->
         <div class="col-md-12 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-info text-white">
@@ -294,7 +290,6 @@
     </div>
 
     <div class="row mb-4">
-        <!-- Productos Más Vendidos -->
         <div class="col-md-7 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-warning text-dark">
@@ -306,7 +301,6 @@
             </div>
         </div>
 
-        <!-- Créditos por Estado -->
         <div class="col-md-5 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-secondary text-white">
@@ -319,7 +313,7 @@
         </div>
     </div>
 
-    <!-- Indicadores de Rendimiento -->
+    <!-- Indicadores -->
     <div class="row mb-4">
         <div class="col-md-6 mb-3">
             <div class="card shadow-sm">
@@ -333,19 +327,17 @@
                             @Model.TasaMorosidad%
                         </strong>
                     </div>
-                    <div class="progress" style="height: 25px;">
+                    <div class="progress" style="height:25px;">
                         <div class="progress-bar @(Model.TasaMorosidad > 10 ? "bg-danger" : Model.TasaMorosidad > 5 ? "bg-warning" : "bg-success")"
                              role="progressbar"
-                             style="width: @Model.TasaMorosidad%"
-                             aria-valuenow="@Model.TasaMorosidad"
-                             aria-valuemin="0"
-                             aria-valuemax="100">
+                             style="width:@($"{Model.TasaMorosidad}%")"
+                             aria-valuenow="@Model.TasaMorosidad" aria-valuemin="0" aria-valuemax="100">
                             @Model.TasaMorosidad%
                         </div>
                     </div>
                     <small class="text-muted mt-2 d-block">
                         <i class="bi bi-info-circle me-1"></i>
-                        Óptimo: <5% | Aceptable: 5-10% | Crítico:>10%
+                        Óptimo: &lt;5% | Aceptable: 5–10% | Crítico: &gt;10%
                     </small>
                 </div>
             </div>
@@ -363,19 +355,17 @@
                             @Model.EfectividadCobranza%
                         </strong>
                     </div>
-                    <div class="progress" style="height: 25px;">
+                    <div class="progress" style="height:25px;">
                         <div class="progress-bar @(Model.EfectividadCobranza >= 90 ? "bg-success" : Model.EfectividadCobranza >= 70 ? "bg-warning" : "bg-danger")"
                              role="progressbar"
-                             style="width: @Model.EfectividadCobranza%"
-                             aria-valuenow="@Model.EfectividadCobranza"
-                             aria-valuemin="0"
-                             aria-valuemax="100">
+                             style="width:@($"{Model.EfectividadCobranza}%")"
+                             aria-valuenow="@Model.EfectividadCobranza" aria-valuemin="0" aria-valuemax="100">
                             @Model.EfectividadCobranza%
                         </div>
                     </div>
                     <small class="text-muted mt-2 d-block">
                         <i class="bi bi-info-circle me-1"></i>
-                        Excelente: ≥90% | Bueno: 70-89% | Necesita mejorar: <70%
+                        Excelente: ≥90% | Bueno: 70–89% | Necesita mejorar: &lt;70%
                     </small>
                 </div>
             </div>
@@ -384,33 +374,34 @@
 </div>
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
     <script>
-        // Configuración general de Chart.js
-        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+        // Configuración general Chart.js
+        Chart.defaults.font.family = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
         Chart.defaults.color = '#6c757d';
 
-        // Datos del modelo
-        const ventasUltimos7Dias = @Html.Raw(Json.Serialize(Model.VentasUltimos7Dias));
-        const ventasUltimos12Meses = @Html.Raw(Json.Serialize(Model.VentasUltimos12Meses));
-        const productosMasVendidos = @Html.Raw(Json.Serialize(Model.ProductosMasVendidos));
-        const creditosPorEstado = @Html.Raw(Json.Serialize(Model.CreditosPorEstado));
-        const cobranzaUltimos30Dias = @Html.Raw(Json.Serialize(Model.CobranzaUltimos30Dias));
+        // Datos del modelo serializados desde Razor
+        var ventasUltimos7Dias    = @Html.Raw(Json.Serialize(Model.VentasUltimos7Dias));
+        var ventasUltimos12Meses  = @Html.Raw(Json.Serialize(Model.VentasUltimos12Meses));
+        var productosMasVendidos  = @Html.Raw(Json.Serialize(Model.ProductosMasVendidos));
+        var creditosPorEstado     = @Html.Raw(Json.Serialize(Model.CreditosPorEstado));
+        var cobranzaUltimos30Dias = @Html.Raw(Json.Serialize(Model.CobranzaUltimos30Dias));
 
-        // Gráfico de Ventas - Últimos 7 Días
-        const ventasCtx = document.getElementById('ventasChart').getContext('2d');
-        const ventasChart = new Chart(ventasCtx, {
+        // Formateador numérico AR
+        var fmt = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        // ----- Ventas - Últimos 7 días -----
+        new Chart(document.getElementById('ventasChart'), {
             type: 'bar',
             data: {
-                labels: ventasUltimos7Dias.map(v => {
-                    const fecha = new Date(v.fecha);
+                labels: ventasUltimos7Dias.map(function (v) {
+                    var fecha = new Date(v.fecha);
                     return fecha.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
                 }),
                 datasets: [{
                     label: 'Monto de Ventas ($)',
-                    data: ventasUltimos7Dias.map(v => v.montoTotal),
-                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                    borderColor: 'rgba(13, 110, 253, 1)',
+                    data: ventasUltimos7Dias.map(function (v) { return v.montoTotal; }),
+                    backgroundColor: 'rgba(13,110,253,.7)',
+                    borderColor: 'rgba(13,110,253,1)',
                     borderWidth: 2,
                     borderRadius: 5
                 }]
@@ -419,18 +410,13 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                const index = context.dataIndex;
-                                const ventas = ventasUltimos7Dias[index];
+                            label: function (context) {
+                                var d = ventasUltimos7Dias[context.dataIndex];
                                 return [
-                                    'Monto: $' + ventas.montoTotal.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}),
-                                    'Cantidad: ' + ventas.cantidadVentas + ' ventas'
+                                    'Monto: $' + fmt.format(d.montoTotal),
+                                    'Cantidad: ' + d.cantidadVentas + ' ventas'
                                 ];
                             }
                         }
@@ -440,52 +426,41 @@
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: function(value) {
-                                return '$' + value.toLocaleString('es-AR');
-                            }
+                            callback: function (value) { return '$' + value.toLocaleString('es-AR'); }
                         }
                     }
                 }
             }
         });
 
-        // Gráfico de Ventas Mensuales - Últimos 12 Meses
-        const ventasMensualesCtx = document.getElementById('ventasMensualesChart').getContext('2d');
-        const ventasMensualesChart = new Chart(ventasMensualesCtx, {
+        // ----- Ventas Mensuales - 12 meses -----
+        new Chart(document.getElementById('ventasMensualesChart'), {
             type: 'line',
             data: {
-                labels: ventasUltimos12Meses.map(v => v.mesNombre),
+                labels: ventasUltimos12Meses.map(function (v) { return v.mesNombre; }),
                 datasets: [{
                     label: 'Ventas Mensuales ($)',
-                    data: ventasUltimos12Meses.map(v => v.montoTotal),
-                    backgroundColor: 'rgba(13, 202, 240, 0.2)',
-                    borderColor: 'rgba(13, 202, 240, 1)',
+                    data: ventasUltimos12Meses.map(function (v) { return v.montoTotal; }),
+                    borderColor: 'rgba(13,202,240,1)',
+                    backgroundColor: 'rgba(13,202,240,.2)',
                     borderWidth: 3,
-                    fill: true,
                     tension: 0.4,
+                    fill: true,
                     pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: 'rgba(13, 202, 240, 1)',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
+                    pointHoverRadius: 7
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                const index = context.dataIndex;
-                                const ventas = ventasUltimos12Meses[index];
+                            label: function (context) {
+                                var d = ventasUltimos12Meses[context.dataIndex];
                                 return [
-                                    'Monto: $' + ventas.montoTotal.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}),
-                                    'Cantidad: ' + ventas.cantidadVentas + ' ventas'
+                                    'Monto: $' + fmt.format(d.montoTotal),
+                                    'Cantidad: ' + d.cantidadVentas + ' ventas'
                                 ];
                             }
                         }
@@ -495,29 +470,26 @@
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: function(value) {
-                                return '$' + value.toLocaleString('es-AR');
-                            }
+                            callback: function (value) { return '$' + value.toLocaleString('es-AR'); }
                         }
                     }
                 }
             }
         });
 
-        // Gráfico de Cobranza - Últimos 30 Días
-        const cobranzaCtx = document.getElementById('cobranzaChart').getContext('2d');
-        const cobranzaChart = new Chart(cobranzaCtx, {
+        // ----- Cobranza - Últimos 30 días -----
+        new Chart(document.getElementById('cobranzaChart'), {
             type: 'line',
             data: {
-                labels: cobranzaUltimos30Dias.map(c => {
-                    const fecha = new Date(c.fecha);
+                labels: cobranzaUltimos30Dias.map(function (c) {
+                    var fecha = new Date(c.fecha);
                     return fecha.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
                 }),
                 datasets: [{
                     label: 'Cobranza Diaria ($)',
-                    data: cobranzaUltimos30Dias.map(c => c.montoCobrado),
-                    backgroundColor: 'rgba(25, 135, 84, 0.2)',
-                    borderColor: 'rgba(25, 135, 84, 1)',
+                    data: cobranzaUltimos30Dias.map(function (c) { return c.montoCobrado; }),
+                    borderColor: 'rgba(25,135,84,1)',
+                    backgroundColor: 'rgba(25,135,84,.2)',
                     borderWidth: 2,
                     fill: true,
                     tension: 0.3,
@@ -529,18 +501,13 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                const index = context.dataIndex;
-                                const cobranza = cobranzaUltimos30Dias[index];
+                            label: function (context) {
+                                var d = cobranzaUltimos30Dias[context.dataIndex];
                                 return [
-                                    'Monto: $' + cobranza.montoCobrado.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}),
-                                    'Cuotas: ' + cobranza.cuotasCobradas
+                                    'Monto: $' + fmt.format(d.montoCobrado),
+                                    'Cuotas: ' + d.cuotasCobradas
                                 ];
                             }
                         }
@@ -550,42 +517,25 @@
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: function(value) {
-                                return '$' + value.toLocaleString('es-AR');
-                            }
+                            callback: function (value) { return '$' + value.toLocaleString('es-AR'); }
                         }
                     }
                 }
             }
         });
 
-        // Gráfico de Productos Más Vendidos
-        const productosCtx = document.getElementById('productosChart').getContext('2d');
-        const productosChart = new Chart(productosCtx, {
-            type: 'horizontalBar',
+        // ----- Productos más vendidos (horizontal) -----
+        new Chart(document.getElementById('productosChart'), {
+            type: 'bar',
             data: {
-                labels: productosMasVendidos.map(p => {
-                    // Truncar nombres largos
-                    return p.productoNombre.length > 30
-                        ? p.productoNombre.substring(0, 30) + '...'
-                        : p.productoNombre;
+                labels: productosMasVendidos.map(function (p) {
+                    return p.productoNombre.length > 30 ? p.productoNombre.substring(0, 30) + '…' : p.productoNombre;
                 }),
                 datasets: [{
                     label: 'Cantidad Vendida',
-                    data: productosMasVendidos.map(p => p.cantidadVendida),
-                    backgroundColor: [
-                        'rgba(255, 193, 7, 0.7)',
-                        'rgba(255, 193, 7, 0.65)',
-                        'rgba(255, 193, 7, 0.6)',
-                        'rgba(255, 193, 7, 0.55)',
-                        'rgba(255, 193, 7, 0.5)',
-                        'rgba(255, 193, 7, 0.45)',
-                        'rgba(255, 193, 7, 0.4)',
-                        'rgba(255, 193, 7, 0.35)',
-                        'rgba(255, 193, 7, 0.3)',
-                        'rgba(255, 193, 7, 0.25)'
-                    ],
-                    borderColor: 'rgba(255, 193, 7, 1)',
+                    data: productosMasVendidos.map(function (p) { return p.cantidadVendida; }),
+                    backgroundColor: 'rgba(255,193,7,.7)',
+                    borderColor: 'rgba(255,193,7,1)',
                     borderWidth: 1
                 }]
             },
@@ -594,56 +544,46 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: false
-                    },
+                    legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                const index = context.dataIndex;
-                                const producto = productosMasVendidos[index];
+                            label: function (context) {
+                                var p = productosMasVendidos[context.dataIndex];
                                 return [
-                                    producto.productoNombre,
-                                    'Cantidad: ' + producto.cantidadVendida + ' unidades',
-                                    'Monto: $' + producto.montoTotal.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                                    p.productoNombre,
+                                    'Cantidad: ' + p.cantidadVendida + ' unidades',
+                                    'Monto: $' + fmt.format(p.montoTotal)
                                 ];
                             }
                         }
                     }
                 },
                 scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
-                    }
+                    x: { beginAtZero: true, ticks: { precision: 0 } }
                 }
             }
         });
 
-        // Gráfico de Créditos por Estado (Pie Chart)
-        const creditosCtx = document.getElementById('creditosChart').getContext('2d');
-        const creditosChart = new Chart(creditosCtx, {
+        // ----- Créditos por estado -----
+        new Chart(document.getElementById('creditosChart'), {
             type: 'doughnut',
             data: {
-                labels: creditosPorEstado.map(c => c.estado),
+                labels: creditosPorEstado.map(function (c) { return c.estado; }),
                 datasets: [{
-                    label: 'Cantidad de Créditos',
-                    data: creditosPorEstado.map(c => c.cantidad),
+                    data: creditosPorEstado.map(function (c) { return c.cantidad; }),
                     backgroundColor: [
-                        'rgba(13, 110, 253, 0.7)',   // Activo - Azul
-                        'rgba(25, 135, 84, 0.7)',    // Pagado - Verde
-                        'rgba(255, 193, 7, 0.7)',    // Pendiente - Amarillo
-                        'rgba(220, 53, 69, 0.7)',    // Vencido - Rojo
-                        'rgba(108, 117, 125, 0.7)'   // Cancelado - Gris
+                        'rgba(13,110,253,.7)',
+                        'rgba(25,135,84,.7)',
+                        'rgba(255,193,7,.7)',
+                        'rgba(220,53,69,.7)',
+                        'rgba(108,117,125,.7)'
                     ],
                     borderColor: [
-                        'rgba(13, 110, 253, 1)',
-                        'rgba(25, 135, 84, 1)',
-                        'rgba(255, 193, 7, 1)',
-                        'rgba(220, 53, 69, 1)',
-                        'rgba(108, 117, 125, 1)'
+                        'rgba(13,110,253,1)',
+                        'rgba(25,135,84,1)',
+                        'rgba(255,193,7,1)',
+                        'rgba(220,53,69,1)',
+                        'rgba(108,117,125,1)'
                     ],
                     borderWidth: 2
                 }]
@@ -652,21 +592,15 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: 'right'
-                    },
+                    legend: { position: 'right' },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                const index = context.dataIndex;
-                                const credito = creditosPorEstado[index];
-                                const total = creditosPorEstado.reduce((sum, c) => sum + c.cantidad, 0);
-                                const porcentaje = ((credito.cantidad / total) * 100).toFixed(1);
-                                return [
-                                    credito.estado + ': ' + credito.cantidad + ' créditos (' + porcentaje + '%)',
-                                    'Monto: $' + credito.montoTotal.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})
-                                ];
+                            label: function (context) {
+                                var c = creditosPorEstado[context.dataIndex];
+                                var total = 0;
+                                for (var i = 0; i < creditosPorEstado.length; i++) { total += creditosPorEstado[i].cantidad; }
+                                var pct = total ? ((c.cantidad / total) * 100).toFixed(1) : '0.0';
+                                return c.estado + ': ' + c.cantidad + ' créditos (' + pct + '%)';
                             }
                         }
                     }
@@ -674,25 +608,23 @@
             }
         });
 
-        // Auto-refresh cada 5 minutos
-        setTimeout(function() {
-            location.reload();
-        }, 300000);
+        // Auto-refresh 5 minutos
+        setTimeout(function () { location.reload(); }, 300000);
     </script>
 }
 
 <style>
     .card {
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform .2s, box-shadow .2s;
     }
 
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
         }
 
     .progress {
-        border-radius: 0.5rem;
+        border-radius: .5rem;
     }
 
     .alert {

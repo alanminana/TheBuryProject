@@ -1,9 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Enums;
 
-using System.ComponentModel.DataAnnotations;
-using TheBuryProject.Models.Enums;
-
 namespace TheBuryProject.ViewModels
 {
     public class CuotaViewModel

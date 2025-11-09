@@ -12,7 +12,7 @@ namespace TheBuryProject.Services
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<MoraBackgroundService> _logger;
-        private Timer? _timer;
+        private readonly Timer? _timer;
 
         public MoraBackgroundService(
             IServiceProvider serviceProvider,
