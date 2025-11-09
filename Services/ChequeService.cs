@@ -159,8 +159,8 @@ namespace TheBuryProject.Services
                 query = query.Where(c =>
                     c.Numero.Contains(searchTerm) ||
                     c.Banco.Contains(searchTerm) ||
-                    c.Proveedor.RazonSocial.Contains(searchTerm) ||
-                    c.Proveedor.NombreFantasia.Contains(searchTerm));
+                    (c.Proveedor != null && c.Proveedor.RazonSocial.Contains(searchTerm)) ||
+                    (c.Proveedor != null && c.Proveedor.NombreFantasia != null && c.Proveedor.NombreFantasia.Contains(searchTerm)));
             }
 
             // Filtro por proveedor
