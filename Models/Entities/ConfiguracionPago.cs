@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Configuración general de tipo de pago
     /// </summary>
-    public class ConfiguracionPago : BaseEntity
+    public class ConfiguracionPago : DashboardDtos
     {
         [Required]
         public TipoPago TipoPago { get; set; }

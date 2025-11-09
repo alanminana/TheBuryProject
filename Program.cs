@@ -44,19 +44,20 @@ builder.Services.AddSingleton<IMapper>(sp =>
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();  // ← Esta línea
-builder.Services.AddScoped<IProveedorService, ProveedorService>(); 
+builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();  // ← AGREGAR ESTA LÍNEA
 builder.Services.AddScoped<IMovimientoStockService, MovimientoStockService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<ICreditoService, CreditoService>();
 builder.Services.AddScoped<IVentaService, VentaService>();
 builder.Services.AddScoped<IConfiguracionPagoService, ConfiguracionPagoService>();
-builder.Services.AddScoped<IEvaluacionCreditoService, EvaluacionCreditoService>();
-builder.Services.AddScoped<IDocumentoClienteService, DocumentoClienteService>(); // AGREGAR ESTA LÍNEA
-builder.Services.AddScoped<IMoraService, MoraService>();
-builder.Services.AddHostedService<MoraBackgroundService>();
+
 builder.Services.AddScoped<IChequeService, ChequeService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IMoraService, MoraService>();
+
+// Servicio en background para procesamiento automático de mora
+builder.Services.AddHostedService<MoraBackgroundService>();
 
 // 5. Configuración de MVC
 builder.Services.AddControllersWithViews();

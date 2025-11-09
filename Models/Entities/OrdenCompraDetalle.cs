@@ -5,7 +5,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Detalle de items de una orden de compra
     /// </summary>
-    public class OrdenCompraDetalle : BaseEntity
+    public class OrdenCompraDetalle : DashboardDtos
     {
         /// <summary>
         /// Orden de compra asociada

@@ -1,4 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
@@ -20,6 +25,7 @@ namespace TheBuryProject.Services
         public async Task<IEnumerable<Cheque>> GetAllAsync()
         {
             return await _context.Cheques
+                .AsNoTracking()
                 .Include(c => c.Proveedor)
                 .Include(c => c.OrdenCompra)
                 .OrderByDescending(c => c.FechaEmision)
@@ -29,6 +35,7 @@ namespace TheBuryProject.Services
         public async Task<Cheque?> GetByIdAsync(int id)
         {
             return await _context.Cheques
+                .AsNoTracking()
                 .Include(c => c.Proveedor)
                 .Include(c => c.OrdenCompra)
                 .FirstOrDefaultAsync(c => c.Id == id);
@@ -36,39 +43,24 @@ namespace TheBuryProject.Services
 
         public async Task<Cheque> CreateAsync(Cheque cheque)
         {
-            // Validar que el número no exista
             if (await NumeroExisteAsync(cheque.Numero))
-            {
                 throw new InvalidOperationException($"Ya existe un cheque con el número {cheque.Numero}");
-            }
 
-            // Validar que el proveedor exista
             var proveedor = await _context.Proveedores.FindAsync(cheque.ProveedorId);
             if (proveedor == null)
-            {
                 throw new InvalidOperationException("El proveedor especificado no existe");
-            }
 
-            // Validar orden de compra si se especificó
             if (cheque.OrdenCompraId.HasValue)
             {
                 var orden = await _context.OrdenesCompra.FindAsync(cheque.OrdenCompraId.Value);
                 if (orden == null)
-                {
                     throw new InvalidOperationException("La orden de compra especificada no existe");
-                }
-
                 if (orden.ProveedorId != cheque.ProveedorId)
-                {
                     throw new InvalidOperationException("La orden de compra no pertenece al proveedor seleccionado");
-                }
             }
 
-            // Validar fechas
             if (cheque.FechaVencimiento.HasValue && cheque.FechaVencimiento.Value < cheque.FechaEmision)
-            {
                 throw new InvalidOperationException("La fecha de vencimiento no puede ser anterior a la fecha de emisión");
-            }
 
             _context.Cheques.Add(cheque);
             await _context.SaveChangesAsync();
@@ -79,22 +71,32 @@ namespace TheBuryProject.Services
 
         public async Task<Cheque> UpdateAsync(Cheque cheque)
         {
-            var chequeExistente = await GetByIdAsync(cheque.Id);
+            var chequeExistente = await _context.Cheques
+                .Include(c => c.Proveedor)
+                .Include(c => c.OrdenCompra)
+                .FirstOrDefaultAsync(c => c.Id == cheque.Id);
+
             if (chequeExistente == null)
-            {
                 throw new InvalidOperationException("El cheque no existe");
-            }
 
-            // Validar que el número no exista en otro cheque
             if (await NumeroExisteAsync(cheque.Numero, cheque.Id))
-            {
                 throw new InvalidOperationException($"Ya existe otro cheque con el número {cheque.Numero}");
-            }
 
-            // Validar fechas
             if (cheque.FechaVencimiento.HasValue && cheque.FechaVencimiento.Value < cheque.FechaEmision)
-            {
                 throw new InvalidOperationException("La fecha de vencimiento no puede ser anterior a la fecha de emisión");
+
+            // Validar proveedor y orden como en Create
+            var proveedor = await _context.Proveedores.FindAsync(cheque.ProveedorId);
+            if (proveedor == null)
+                throw new InvalidOperationException("El proveedor especificado no existe");
+
+            if (cheque.OrdenCompraId.HasValue)
+            {
+                var orden = await _context.OrdenesCompra.FindAsync(cheque.OrdenCompraId.Value);
+                if (orden == null)
+                    throw new InvalidOperationException("La orden de compra especificada no existe");
+                if (orden.ProveedorId != cheque.ProveedorId)
+                    throw new InvalidOperationException("La orden de compra no pertenece al proveedor seleccionado");
             }
 
             // Actualizar propiedades
@@ -116,17 +118,12 @@ namespace TheBuryProject.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var cheque = await GetByIdAsync(id);
+            var cheque = await _context.Cheques.FindAsync(id);
             if (cheque == null)
-            {
                 return false;
-            }
 
-            // Validar que se pueda eliminar (no debe estar cobrado)
             if (cheque.Estado == EstadoCheque.Cobrado || cheque.Estado == EstadoCheque.Depositado)
-            {
                 throw new InvalidOperationException("No se puede eliminar un cheque que está depositado o cobrado");
-            }
 
             _context.Cheques.Remove(cheque);
             await _context.SaveChangesAsync();
@@ -149,104 +146,94 @@ namespace TheBuryProject.Services
             string? orderDirection = "asc")
         {
             var query = _context.Cheques
+                .AsNoTracking()
                 .Include(c => c.Proveedor)
                 .Include(c => c.OrdenCompra)
                 .AsQueryable();
 
-            // Filtro por término de búsqueda
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 query = query.Where(c =>
                     c.Numero.Contains(searchTerm) ||
                     c.Banco.Contains(searchTerm) ||
-                    c.Proveedor.RazonSocial.Contains(searchTerm) ||
-                    c.Proveedor.NombreFantasia.Contains(searchTerm));
+                    (c.Proveedor != null && (
+                        c.Proveedor.RazonSocial.Contains(searchTerm) ||
+                        c.Proveedor.NombreFantasia.Contains(searchTerm)
+                    )));
             }
 
-            // Filtro por proveedor
             if (proveedorId.HasValue)
-            {
                 query = query.Where(c => c.ProveedorId == proveedorId.Value);
-            }
 
-            // Filtro por estado
             if (estado.HasValue)
-            {
                 query = query.Where(c => c.Estado == estado.Value);
-            }
 
-            // Filtro por rango de fechas de emisión
             if (fechaEmisionDesde.HasValue)
-            {
                 query = query.Where(c => c.FechaEmision >= fechaEmisionDesde.Value);
-            }
 
             if (fechaEmisionHasta.HasValue)
-            {
                 query = query.Where(c => c.FechaEmision <= fechaEmisionHasta.Value);
-            }
 
-            // Filtro por rango de fechas de vencimiento
             if (fechaVencimientoDesde.HasValue)
-            {
                 query = query.Where(c => c.FechaVencimiento.HasValue &&
-                    c.FechaVencimiento.Value >= fechaVencimientoDesde.Value);
-            }
+                                         c.FechaVencimiento.Value >= fechaVencimientoDesde.Value);
 
             if (fechaVencimientoHasta.HasValue)
-            {
                 query = query.Where(c => c.FechaVencimiento.HasValue &&
-                    c.FechaVencimiento.Value <= fechaVencimientoHasta.Value);
-            }
+                                         c.FechaVencimiento.Value <= fechaVencimientoHasta.Value);
 
-            // Filtro solo vencidos
             if (soloVencidos)
             {
                 var hoy = DateTime.Today;
                 query = query.Where(c => c.FechaVencimiento.HasValue &&
-                    c.FechaVencimiento.Value < hoy &&
-                    c.Estado != EstadoCheque.Cobrado &&
-                    c.Estado != EstadoCheque.Rechazado &&
-                    c.Estado != EstadoCheque.Anulado);
+                                         c.FechaVencimiento.Value < hoy &&
+                                         c.Estado != EstadoCheque.Cobrado &&
+                                         c.Estado != EstadoCheque.Rechazado &&
+                                         c.Estado != EstadoCheque.Anulado);
             }
 
-            // Filtro solo por vencer (próximos 7 días)
             if (soloPorVencer)
             {
                 var hoy = DateTime.Today;
                 var limite = hoy.AddDays(7);
                 query = query.Where(c => c.FechaVencimiento.HasValue &&
-                    c.FechaVencimiento.Value >= hoy &&
-                    c.FechaVencimiento.Value <= limite &&
-                    c.Estado != EstadoCheque.Cobrado &&
-                    c.Estado != EstadoCheque.Rechazado &&
-                    c.Estado != EstadoCheque.Anulado);
+                                         c.FechaVencimiento.Value >= hoy &&
+                                         c.FechaVencimiento.Value <= limite &&
+                                         c.Estado != EstadoCheque.Cobrado &&
+                                         c.Estado != EstadoCheque.Rechazado &&
+                                         c.Estado != EstadoCheque.Anulado);
             }
 
-            // Ordenamiento
-            query = orderBy?.ToLower() switch
+            query = (orderBy?.ToLower()) switch
             {
                 "numero" => orderDirection == "desc"
                     ? query.OrderByDescending(c => c.Numero)
                     : query.OrderBy(c => c.Numero),
+
                 "banco" => orderDirection == "desc"
                     ? query.OrderByDescending(c => c.Banco)
                     : query.OrderBy(c => c.Banco),
+
                 "proveedor" => orderDirection == "desc"
-                    ? query.OrderByDescending(c => c.Proveedor.RazonSocial)
-                    : query.OrderBy(c => c.Proveedor.RazonSocial),
+                    ? query.OrderByDescending(c => c.Proveedor != null ? c.Proveedor.RazonSocial : string.Empty)
+                    : query.OrderBy(c => c.Proveedor != null ? c.Proveedor.RazonSocial : string.Empty),
+
                 "fechaemision" => orderDirection == "desc"
                     ? query.OrderByDescending(c => c.FechaEmision)
                     : query.OrderBy(c => c.FechaEmision),
+
                 "fechavencimiento" => orderDirection == "desc"
                     ? query.OrderByDescending(c => c.FechaVencimiento)
                     : query.OrderBy(c => c.FechaVencimiento),
+
                 "monto" => orderDirection == "desc"
                     ? query.OrderByDescending(c => c.Monto)
                     : query.OrderBy(c => c.Monto),
+
                 "estado" => orderDirection == "desc"
                     ? query.OrderByDescending(c => c.Estado)
                     : query.OrderBy(c => c.Estado),
+
                 _ => query.OrderBy(c => c.FechaVencimiento ?? c.FechaEmision)
             };
 
@@ -256,6 +243,7 @@ namespace TheBuryProject.Services
         public async Task<IEnumerable<Cheque>> GetByProveedorIdAsync(int proveedorId)
         {
             return await _context.Cheques
+                .AsNoTracking()
                 .Include(c => c.OrdenCompra)
                 .Where(c => c.ProveedorId == proveedorId)
                 .OrderByDescending(c => c.FechaEmision)
@@ -265,6 +253,7 @@ namespace TheBuryProject.Services
         public async Task<IEnumerable<Cheque>> GetByOrdenCompraIdAsync(int ordenCompraId)
         {
             return await _context.Cheques
+                .AsNoTracking()
                 .Include(c => c.Proveedor)
                 .Where(c => c.OrdenCompraId == ordenCompraId)
                 .OrderByDescending(c => c.FechaEmision)
@@ -275,13 +264,14 @@ namespace TheBuryProject.Services
         {
             var hoy = DateTime.Today;
             return await _context.Cheques
+                .AsNoTracking()
                 .Include(c => c.Proveedor)
                 .Include(c => c.OrdenCompra)
                 .Where(c => c.FechaVencimiento.HasValue &&
-                    c.FechaVencimiento.Value < hoy &&
-                    c.Estado != EstadoCheque.Cobrado &&
-                    c.Estado != EstadoCheque.Rechazado &&
-                    c.Estado != EstadoCheque.Anulado)
+                            c.FechaVencimiento.Value < hoy &&
+                            c.Estado != EstadoCheque.Cobrado &&
+                            c.Estado != EstadoCheque.Rechazado &&
+                            c.Estado != EstadoCheque.Anulado)
                 .OrderBy(c => c.FechaVencimiento)
                 .ToListAsync();
         }
@@ -292,14 +282,15 @@ namespace TheBuryProject.Services
             var limite = hoy.AddDays(dias);
 
             return await _context.Cheques
+                .AsNoTracking()
                 .Include(c => c.Proveedor)
                 .Include(c => c.OrdenCompra)
                 .Where(c => c.FechaVencimiento.HasValue &&
-                    c.FechaVencimiento.Value >= hoy &&
-                    c.FechaVencimiento.Value <= limite &&
-                    c.Estado != EstadoCheque.Cobrado &&
-                    c.Estado != EstadoCheque.Rechazado &&
-                    c.Estado != EstadoCheque.Anulado)
+                            c.FechaVencimiento.Value >= hoy &&
+                            c.FechaVencimiento.Value <= limite &&
+                            c.Estado != EstadoCheque.Cobrado &&
+                            c.Estado != EstadoCheque.Rechazado &&
+                            c.Estado != EstadoCheque.Anulado)
                 .OrderBy(c => c.FechaVencimiento)
                 .ToListAsync();
         }
@@ -308,9 +299,7 @@ namespace TheBuryProject.Services
         {
             var cheque = await _context.Cheques.FindAsync(id);
             if (cheque == null)
-            {
                 return false;
-            }
 
             cheque.Estado = nuevoEstado;
             await _context.SaveChangesAsync();

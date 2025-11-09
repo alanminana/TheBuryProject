@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
@@ -11,384 +10,258 @@ namespace TheBuryProject.Services
     public class MoraService : IMoraService
     {
         private readonly AppDbContext _context;
-        private readonly IMapper _mapper;
+        private readonly ILogger<MoraService> _logger;
 
-        public MoraService(AppDbContext context, IMapper mapper)
+        public MoraService(AppDbContext context, ILogger<MoraService> logger)
         {
             _context = context;
-            _mapper = mapper;
+            _logger = logger;
         }
 
-        public async Task<ConfiguracionMoraViewModel> GetConfiguracionAsync()
+        public async Task<ConfiguracionMora> GetConfiguracionAsync()
         {
             var config = await _context.ConfiguracionesMora
-                .FirstOrDefaultAsync(c => !c.IsDeleted);
+                .Where(c => !c.IsDeleted)
+                .FirstOrDefaultAsync();
 
             if (config == null)
             {
                 config = new ConfiguracionMora
                 {
-                    TasaMoraDiaria = 0.05m,
-                    DiasGraciaMora = 3,
-                    PorcentajeRecargoPrimerMes = 5.0m,
-                    PorcentajeRecargoSegundoMes = 10.0m,
-                    PorcentajeRecargoTercerMes = 15.0m,
-                    DiasAntesAlertaVencimiento = 7,
+                    DiasGracia = 3,
+                    PorcentajeRecargo = 5.0m,
+                    CalculoAutomatico = true,
+                    NotificacionAutomatica = true,
                     JobActivo = true,
-                    HoraEjecucion = new TimeSpan(2, 0, 0)
+                    HoraEjecucion = new TimeSpan(8, 0, 0)
                 };
+
                 _context.ConfiguracionesMora.Add(config);
                 await _context.SaveChangesAsync();
             }
 
-            return _mapper.Map<ConfiguracionMoraViewModel>(config);
+            return config;
         }
 
-        public async Task SaveConfiguracionAsync(ConfiguracionMoraViewModel model)
+        public async Task<ConfiguracionMora> UpdateConfiguracionAsync(ConfiguracionMoraViewModel viewModel)
         {
-            var config = await _context.ConfiguracionesMora
-                .FirstOrDefaultAsync(c => !c.IsDeleted && c.Id == model.Id);
+            var config = await _context.ConfiguracionesMora.FindAsync(viewModel.Id);
 
             if (config == null)
             {
-                config = _mapper.Map<ConfiguracionMora>(model);
-                _context.ConfiguracionesMora.Add(config);
+                throw new InvalidOperationException("Configuración no encontrada");
             }
-            else
-            {
-                _mapper.Map(model, config);
-                config.UpdatedAt = DateTime.UtcNow;
-            }
+
+            config.DiasGracia = viewModel.DiasGracia;
+            config.PorcentajeRecargo = viewModel.PorcentajeRecargo;
+            config.CalculoAutomatico = viewModel.CalculoAutomatico;
+            config.NotificacionAutomatica = viewModel.NotificacionAutomatica;
+            config.JobActivo = viewModel.JobActivo;
+            config.HoraEjecucion = viewModel.HoraEjecucion;
 
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Configuración de mora actualizada");
+            return config;
         }
 
-        public async Task<LogMora> ProcesarMoraAsync()
+        public async Task ProcesarMoraAsync()
         {
-            var inicio = DateTime.Now;
             var log = new LogMora
             {
-                FechaEjecucion = inicio,
-                Exitoso = true
+                FechaEjecucion = DateTime.Now,
+                Exitoso = false
             };
 
             try
             {
-                var configVm = await GetConfiguracionAsync();
-                var config = await _context.ConfiguracionesMora.FindAsync(configVm.Id);
+                var config = await GetConfiguracionAsync();
+                var hoy = DateTime.Today;
+                var fechaLimite = hoy.AddDays(-config.DiasGracia);
 
-                // Obtener cuotas pendientes y vencidas
-                var cuotasPendientes = await _context.Cuotas
+                var cuotasVencidas = await _context.Cuotas
                     .Include(c => c.Credito)
-                        .ThenInclude(cr => cr.Cliente)
+                        .ThenInclude(cr => cr!.Cliente)
                     .Where(c => !c.IsDeleted &&
-                               c.Estado != EstadoCuota.Pagada &&
-                               c.Estado != EstadoCuota.Cancelada &&
-                               c.FechaVencimiento < DateTime.Today)
+                           c.Estado == EstadoCuota.Pendiente &&
+                           c.FechaVencimiento < fechaLimite)
                     .ToListAsync();
 
-                decimal totalMora = 0;
-                decimal totalRecargos = 0;
-                int alertasGeneradas = 0;
-                int cuotasConMora = 0;
+                log.CuotasProcesadas = cuotasVencidas.Count;
+                int alertasCreadas = 0;
 
-                foreach (var cuota in cuotasPendientes)
+                foreach (var cuota in cuotasVencidas)
                 {
-                    var diasVencidos = (DateTime.Today - cuota.FechaVencimiento).Days;
+                    if (cuota.Credito == null) continue;
 
-                    // Aplicar período de gracia
-                    if (diasVencidos <= config.DiasGraciaMora)
-                    {
-                        continue;
-                    }
-
-                    var diasMoraReal = diasVencidos - config.DiasGraciaMora;
-
-                    // Calcular mora diaria
-                    var moraDiaria = cuota.MontoTotal * (config.TasaMoraDiaria / 100) * diasMoraReal;
-
-                    // Determinar recargo mensual según días de mora
-                    decimal porcentajeRecargo = diasMoraReal > 60
-                        ? config.PorcentajeRecargoTercerMes
-                        : diasMoraReal > 30
-                            ? config.PorcentajeRecargoSegundoMes
-                            : config.PorcentajeRecargoPrimerMes;
-
-                    var recargoMensual = cuota.MontoTotal * (porcentajeRecargo / 100);
-
-                    // Actualizar monto punitorio
-                    cuota.MontoPunitorio = moraDiaria + recargoMensual;
-                    cuota.Estado = EstadoCuota.Vencida;
-
-                    totalMora += cuota.MontoPunitorio;
-                    totalRecargos += recargoMensual;
-                    cuotasConMora++;
-
-                    // Generar alertas según nivel de mora
-                    var tipoAlerta = DeterminarTipoAlerta(diasMoraReal);
-                    var prioridad = DeterminarPrioridad(diasMoraReal);
-
-                    // Verificar si ya existe una alerta activa para esta cuota
                     var alertaExistente = await _context.AlertasCobranza
-                        .AnyAsync(a => !a.IsDeleted &&
-                                      a.CuotaId == cuota.Id &&
-                                      !a.Resuelta);
+                        .AnyAsync(a => a.CreditoId == cuota.CreditoId &&
+                                  !a.Resuelta &&
+                                  a.Tipo == TipoAlertaCobranza.CuotaVencida);
 
                     if (!alertaExistente)
                     {
+                        var cliente = cuota.Credito.Cliente;
+                        if (cliente == null) continue;
+
+                        var diasMora = (hoy - cuota.FechaVencimiento).Days;
+                        var prioridad = CalcularPrioridad(diasMora, cuota.MontoTotal);
+
                         var alerta = new AlertaCobranza
                         {
-                            CuotaId = cuota.Id,
                             CreditoId = cuota.CreditoId,
                             ClienteId = cuota.Credito.ClienteId,
-                            Tipo = tipoAlerta,
-                            Titulo = $"Cuota {cuota.NumeroCuota} - {ObtenerDescripcionTipo(tipoAlerta)}",
-                            Mensaje = $"Cliente: {cuota.Credito.Cliente.NombreCompleto}. " +
-                                     $"Cuota #{cuota.NumeroCuota} vencida hace {diasVencidos} días. " +
-                                     $"Monto adeudado: ${cuota.MontoTotal:N2} + Mora: ${cuota.MontoPunitorio:N2}",
+                            Tipo = TipoAlertaCobranza.CuotaVencida,
                             Prioridad = prioridad,
-                            Leida = false,
+                            Mensaje = $"Cliente {cliente.Apellido}, {cliente.Nombre} tiene cuota vencida. Días de mora: {diasMora}",
+                            MontoVencido = cuota.MontoTotal,
+                            CuotasVencidas = await ContarCuotasVencidas(cuota.CreditoId),
+                            FechaAlerta = DateTime.Now,
                             Resuelta = false
                         };
 
                         _context.AlertasCobranza.Add(alerta);
-                        alertasGeneradas++;
+                        alertasCreadas++;
                     }
                 }
 
-                // Generar alertas de próximo vencimiento
-                await GenerarAlertasVencimientoAsync();
+                await GenerarAlertasProximosVencimientosAsync();
 
-                log.CuotasProcesadas = cuotasPendientes.Count;
-                log.CuotasConMora = cuotasConMora;
-                log.AlertasGeneradas = alertasGeneradas;
-                log.TotalMora = totalMora;
-                log.TotalRecargosAplicados = totalRecargos;
+                log.AlertasGeneradas = alertasCreadas;
+                log.Exitoso = true;
+                log.Mensaje = $"Proceso completado. {cuotasVencidas.Count} cuotas procesadas, {alertasCreadas} alertas generadas.";
 
-                // Actualizar última ejecución en configuración
-                config.UltimaEjecucion = DateTime.Now;
+                var configuracion = await GetConfiguracionAsync();
+                configuracion.UltimaEjecucion = DateTime.Now;
 
                 await _context.SaveChangesAsync();
+
+                _logger.LogInformation(log.Mensaje);
             }
             catch (Exception ex)
             {
-                log.Exitoso = false;
-                log.Errores = ex.Message;
+                log.Mensaje = "Error al procesar mora";
+                log.DetalleError = ex.Message + (ex.InnerException != null ? " | " + ex.InnerException.Message : string.Empty);
+
+                _logger.LogError(ex, "Error al procesar mora");
             }
-
-            var duracion = (DateTime.Now - inicio).TotalSeconds;
-            log.DuracionSegundos = (int)duracion;
-
-            _context.LogsMora.Add(log);
-            await _context.SaveChangesAsync();
-
-            return log;
+            finally
+            {
+                _context.LogsMora.Add(log);
+                await _context.SaveChangesAsync();
+            }
         }
 
-        public async Task GenerarAlertasVencimientoAsync()
+        private async Task GenerarAlertasProximosVencimientosAsync()
         {
-            var configVm = await GetConfiguracionAsync();
-            var config = await _context.ConfiguracionesMora.FindAsync(configVm.Id);
+            var hoy = DateTime.Today;
+            var proximosDias = hoy.AddDays(5);
 
-            var cuotasProximasAVencer = await _context.Cuotas
+            var cuotasPorVencer = await _context.Cuotas
                 .Include(c => c.Credito)
-                    .ThenInclude(cr => cr.Cliente)
+                    .ThenInclude(cr => cr!.Cliente)
                 .Where(c => !c.IsDeleted &&
-                           c.Estado == EstadoCuota.Pendiente &&
-                           c.FechaVencimiento > DateTime.Today &&
-                           c.FechaVencimiento <= DateTime.Today.AddDays(config.DiasAntesAlertaVencimiento))
+                       c.Estado == EstadoCuota.Pendiente &&
+                       c.FechaVencimiento >= hoy &&
+                       c.FechaVencimiento <= proximosDias)
                 .ToListAsync();
 
-            foreach (var cuota in cuotasProximasAVencer)
+            foreach (var cuota in cuotasPorVencer)
             {
-                var diasHastaVencimiento = (cuota.FechaVencimiento - DateTime.Today).Days;
+                if (cuota.Credito?.Cliente == null) continue;
 
                 var alertaExistente = await _context.AlertasCobranza
-                    .AnyAsync(a => !a.IsDeleted &&
-                                  a.CuotaId == cuota.Id &&
-                                  a.Tipo == TipoAlerta.ProximoVencimiento &&
-                                  !a.Resuelta);
+                    .AnyAsync(a => a.CreditoId == cuota.CreditoId &&
+                              !a.Resuelta &&
+                              a.Tipo == TipoAlertaCobranza.ProximoVencimiento);
 
                 if (!alertaExistente)
                 {
+                    var diasRestantes = (cuota.FechaVencimiento - hoy).Days;
+                    var cliente = cuota.Credito.Cliente;
+
                     var alerta = new AlertaCobranza
                     {
-                        CuotaId = cuota.Id,
                         CreditoId = cuota.CreditoId,
                         ClienteId = cuota.Credito.ClienteId,
-                        Tipo = TipoAlerta.ProximoVencimiento,
-                        Titulo = $"Cuota {cuota.NumeroCuota} - Próximo Vencimiento",
-                        Mensaje = $"Cliente: {cuota.Credito.Cliente.NombreCompleto}. " +
-                                 $"Cuota #{cuota.NumeroCuota} vence en {diasHastaVencimiento} días ({cuota.FechaVencimiento:dd/MM/yyyy}). " +
-                                 $"Monto: ${cuota.MontoTotal:N2}",
-                        Prioridad = 1,
-                        Leida = false,
+                        Tipo = TipoAlertaCobranza.ProximoVencimiento,
+                        Prioridad = PrioridadAlerta.Baja,
+                        Mensaje = $"Cliente {cliente.Apellido}, {cliente.Nombre} tiene cuota por vencer en {diasRestantes} días",
+                        MontoVencido = cuota.MontoTotal,
+                        CuotasVencidas = 0,
+                        FechaAlerta = DateTime.Now,
                         Resuelta = false
                     };
 
                     _context.AlertasCobranza.Add(alerta);
                 }
             }
-
-            await _context.SaveChangesAsync();
         }
 
-        public async Task<List<AlertaCobranzaViewModel>> GetAlertasActivasAsync()
+        private PrioridadAlerta CalcularPrioridad(int diasMora, decimal monto)
         {
-            var alertas = await _context.AlertasCobranza
+            if (diasMora > 30 || monto > 50000)
+                return PrioridadAlerta.Critica;
+            if (diasMora > 15 || monto > 30000)
+                return PrioridadAlerta.Alta;
+            if (diasMora > 7 || monto > 15000)
+                return PrioridadAlerta.Media;
+
+            return PrioridadAlerta.Baja;
+        }
+
+        private async Task<int> ContarCuotasVencidas(int creditoId)
+        {
+            return await _context.Cuotas
+                .CountAsync(c => !c.IsDeleted &&
+                           c.CreditoId == creditoId &&
+                           c.Estado == EstadoCuota.Pendiente &&
+                           c.FechaVencimiento < DateTime.Today);
+        }
+
+        public async Task<List<AlertaCobranza>> GetAlertasActivasAsync()
+        {
+            return await _context.AlertasCobranza
                 .Include(a => a.Cliente)
-                .Include(a => a.Cuota)
                 .Include(a => a.Credito)
                 .Where(a => !a.IsDeleted && !a.Resuelta)
                 .OrderByDescending(a => a.Prioridad)
-                .ThenByDescending(a => a.CreatedAt)
+                .ThenBy(a => a.FechaAlerta)
                 .ToListAsync();
-
-            var viewModels = _mapper.Map<List<AlertaCobranzaViewModel>>(alertas);
-
-            for (int i = 0; i < viewModels.Count; i++)
-            {
-                viewModels[i].ClienteNombre = alertas[i].Cliente.NombreCompleto;
-            }
-
-            return viewModels;
         }
 
-        public async Task<List<LogMora>> GetLogsAsync(int cantidad = 20)
+        public async Task<AlertaCobranza?> GetAlertaByIdAsync(int id)
+        {
+            return await _context.AlertasCobranza
+                .Include(a => a.Cliente)
+                .Include(a => a.Credito)
+                .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+        }
+
+        public async Task<bool> ResolverAlertaAsync(int id, string? observaciones)
+        {
+            var alerta = await _context.AlertasCobranza.FindAsync(id);
+
+            if (alerta == null || alerta.IsDeleted)
+                return false;
+
+            alerta.Resuelta = true;
+            alerta.FechaResolucion = DateTime.Now;
+            alerta.Observaciones = observaciones;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Alerta {Id} resuelta", id);
+            return true;
+        }
+
+        public async Task<List<LogMora>> GetLogsAsync(int cantidad = 50)
         {
             return await _context.LogsMora
                 .Where(l => !l.IsDeleted)
                 .OrderByDescending(l => l.FechaEjecucion)
                 .Take(cantidad)
                 .ToListAsync();
-        }
-
-        public async Task MarcarAlertaLeidaAsync(int alertaId, string usuario)
-        {
-            var alerta = await _context.AlertasCobranza.FindAsync(alertaId);
-            if (alerta != null && !alerta.IsDeleted)
-            {
-                alerta.Leida = true;
-                alerta.UpdatedAt = DateTime.UtcNow;
-                alerta.UpdatedBy = usuario;
-                await _context.SaveChangesAsync();
-            }
-        }
-
-        public async Task ResolverAlertaAsync(int alertaId, string usuario, string nota)
-        {
-            var alerta = await _context.AlertasCobranza.FindAsync(alertaId);
-            if (alerta != null && !alerta.IsDeleted)
-            {
-                alerta.Resuelta = true;
-                alerta.Leida = true;
-                alerta.UpdatedAt = DateTime.UtcNow;
-                alerta.UpdatedBy = usuario;
-                if (!string.IsNullOrEmpty(nota))
-                {
-                    alerta.Mensaje += $" | Resolución: {nota}";
-                }
-                await _context.SaveChangesAsync();
-            }
-        }
-
-        public async Task ActualizarMoraCuotaAsync(int cuotaId)
-        {
-            var cuota = await _context.Cuotas
-                .Include(c => c.Credito)
-                .FirstOrDefaultAsync(c => c.Id == cuotaId && !c.IsDeleted);
-
-            if (cuota == null || cuota.Estado == EstadoCuota.Pagada || cuota.Estado == EstadoCuota.Cancelada)
-                return;
-
-            var configVm = await GetConfiguracionAsync();
-            var config = await _context.ConfiguracionesMora.FindAsync(configVm.Id);
-
-            var diasVencidos = (DateTime.Today - cuota.FechaVencimiento).Days;
-
-            if (diasVencidos <= config.DiasGraciaMora)
-            {
-                cuota.MontoPunitorio = 0;
-                return;
-            }
-
-            var diasMoraReal = diasVencidos - config.DiasGraciaMora;
-            var moraDiaria = cuota.MontoTotal * (config.TasaMoraDiaria / 100) * diasMoraReal;
-
-            decimal porcentajeRecargo = diasMoraReal > 60
-                ? config.PorcentajeRecargoTercerMes
-                : diasMoraReal > 30
-                    ? config.PorcentajeRecargoSegundoMes
-                    : config.PorcentajeRecargoPrimerMes;
-
-            var recargoMensual = cuota.MontoTotal * (porcentajeRecargo / 100);
-            cuota.MontoPunitorio = moraDiaria + recargoMensual;
-            cuota.Estado = EstadoCuota.Vencida;
-
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<decimal> CalcularRecargoMoraAsync(int cuotaId)
-        {
-            var cuota = await _context.Cuotas.FindAsync(cuotaId);
-            if (cuota == null || cuota.Estado == EstadoCuota.Pagada)
-                return 0;
-
-            var configVm = await GetConfiguracionAsync();
-            var config = await _context.ConfiguracionesMora.FindAsync(configVm.Id);
-
-            var diasVencidos = (DateTime.Today - cuota.FechaVencimiento).Days;
-
-            if (diasVencidos <= config.DiasGraciaMora)
-                return 0;
-
-            var diasMoraReal = diasVencidos - config.DiasGraciaMora;
-            var moraDiaria = cuota.MontoTotal * (config.TasaMoraDiaria / 100) * diasMoraReal;
-
-            decimal porcentajeRecargo = diasMoraReal > 60
-                ? config.PorcentajeRecargoTercerMes
-                : diasMoraReal > 30
-                    ? config.PorcentajeRecargoSegundoMes
-                    : config.PorcentajeRecargoPrimerMes;
-
-            var recargoMensual = cuota.MontoTotal * (porcentajeRecargo / 100);
-
-            return moraDiaria + recargoMensual;
-        }
-
-        private TipoAlerta DeterminarTipoAlerta(int diasMora)
-        {
-            if (diasMora <= 15)
-                return TipoAlerta.MoraLeve;
-            else if (diasMora <= 30)
-                return TipoAlerta.MoraModerada;
-            else if (diasMora <= 60)
-                return TipoAlerta.MoraGrave;
-            else
-                return TipoAlerta.MoraCritica;
-        }
-
-        private int DeterminarPrioridad(int diasMora)
-        {
-            if (diasMora <= 15)
-                return 1; // Baja
-            else if (diasMora <= 30)
-                return 2; // Media
-            else
-                return 3; // Alta
-        }
-
-        private string ObtenerDescripcionTipo(TipoAlerta tipo)
-        {
-            return tipo switch
-            {
-                TipoAlerta.ProximoVencimiento => "Próximo Vencimiento",
-                TipoAlerta.MoraLeve => "Mora Leve (1-15 días)",
-                TipoAlerta.MoraModerada => "Mora Moderada (16-30 días)",
-                TipoAlerta.MoraGrave => "Mora Grave (31-60 días)",
-                TipoAlerta.MoraCritica => "Mora Crítica (+60 días)",
-                _ => "Desconocido"
-            };
         }
     }
 }

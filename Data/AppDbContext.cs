@@ -50,7 +50,7 @@ namespace TheBuryProject.Data
         public DbSet<DatosCheque> DatosCheque { get; set; }
         public DbSet<VentaCreditoCuota> VentaCreditoCuotas { get; set; }
 
-        // Módulo de Mora
+        // Módulo de Mora y Alertas
         public DbSet<ConfiguracionMora> ConfiguracionesMora { get; set; }
         public DbSet<LogMora> LogsMora { get; set; }
         public DbSet<AlertaCobranza> AlertasCobranza { get; set; }
@@ -545,7 +545,39 @@ namespace TheBuryProject.Data
                     .HasForeignKey(e => e.VentaId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+            // Seed de datos inicial
+            SeedData(modelBuilder);
+        }
 
+        /// <summary>
+        /// Datos iniciales para la base de datos
+        /// </summary>
+        private void SeedData(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Categoria>().HasData(
+                new Categoria
+                {
+                    Id = 1,
+                    Codigo = "ELEC",
+                    Nombre = "Electrónica",
+                    Descripcion = "Productos electrónicos",
+                    ControlSerieDefault = true,
+                    Activo = true,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "System"
+                },
+                new Categoria
+                {
+                    Id = 2,
+                    Codigo = "FRIO",
+                    Nombre = "Refrigeración",
+                    Descripcion = "Heladeras, freezers y aire acondicionado",
+                    ControlSerieDefault = true,
+                    Activo = true,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "System"
+                }
+            );
             // Configuración para ConfiguracionPago
             modelBuilder.Entity<ConfiguracionPago>(entity =>
             {
@@ -650,81 +682,6 @@ namespace TheBuryProject.Data
                     .HasForeignKey<DatosCheque>(e => e.VentaId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
-
-            // Configuración de Mora
-            modelBuilder.Entity<ConfiguracionMora>(entity =>
-            {
-                entity.HasQueryFilter(e => !e.IsDeleted);
-                entity.Property(e => e.TasaMoraDiaria).HasPrecision(18, 4);
-                entity.Property(e => e.PorcentajeRecargoPrimerMes).HasPrecision(18, 2);
-                entity.Property(e => e.PorcentajeRecargoSegundoMes).HasPrecision(18, 2);
-                entity.Property(e => e.PorcentajeRecargoTercerMes).HasPrecision(18, 2);
-            });
-
-            modelBuilder.Entity<LogMora>(entity =>
-            {
-                entity.HasQueryFilter(e => !e.IsDeleted);
-                entity.Property(e => e.TotalMora).HasPrecision(18, 2);
-                entity.Property(e => e.TotalRecargosAplicados).HasPrecision(18, 2);
-            });
-
-            modelBuilder.Entity<AlertaCobranza>(entity =>
-            {
-                entity.HasQueryFilter(e => !e.IsDeleted);
-                entity.HasIndex(e => e.CreditoId);
-                entity.HasIndex(e => e.ClienteId);
-                entity.HasIndex(e => new { e.Leida, e.Resuelta });
-
-                entity.HasOne(a => a.Cuota)
-                      .WithMany()
-                      .HasForeignKey(a => a.CuotaId)
-                      .OnDelete(DeleteBehavior.NoAction);
-
-                entity.HasOne(a => a.Credito)
-                      .WithMany()
-                      .HasForeignKey(a => a.CreditoId)
-                      .OnDelete(DeleteBehavior.NoAction);
-
-                entity.HasOne(a => a.Cliente)
-                      .WithMany()
-                      .HasForeignKey(a => a.ClienteId)
-                      .OnDelete(DeleteBehavior.NoAction);
-            });
-
-            // Seed de datos inicial
-            SeedData(modelBuilder);
-        }
-
-        /// <summary>
-        /// Datos iniciales para la base de datos
-        /// </summary>
-        private void SeedData(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<Categoria>().HasData(
-                new Categoria
-                {
-                    Id = 1,
-                    Codigo = "ELEC",
-                    Nombre = "Electrónica",
-                    Descripcion = "Productos electrónicos",
-                    ControlSerieDefault = true,
-                    Activo = true,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
-                },
-                new Categoria
-                {
-                    Id = 2,
-                    Codigo = "FRIO",
-                    Nombre = "Refrigeración",
-                    Descripcion = "Heladeras, freezers y aire acondicionado",
-                    ControlSerieDefault = true,
-                    Activo = true,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
-                }
-            );
-
             modelBuilder.Entity<Marca>().HasData(
                 new Marca
                 {

@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities
     /// Relación N:N entre Proveedor y Producto
     /// Indica qué productos puede proveer cada proveedor
     /// </summary>
-    public class ProveedorProducto : BaseEntity
+    public class ProveedorProducto : DashboardDtos
     {
         public int ProveedorId { get; set; }
         public int ProductoId { get; set; }

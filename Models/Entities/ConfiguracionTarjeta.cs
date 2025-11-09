@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Configuración específica para pagos con tarjeta
     /// </summary>
-    public class ConfiguracionTarjeta : BaseEntity
+    public class ConfiguracionTarjeta : DashboardDtos
     {
         public int ConfiguracionPagoId { get; set; }
 

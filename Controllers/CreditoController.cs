@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -61,7 +65,6 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Obtener evaluación si existe
                 var evaluacion = await _evaluacionService.GetEvaluacionByCreditoIdAsync(id);
                 ViewBag.Evaluacion = evaluacion;
 
@@ -82,12 +85,11 @@ namespace TheBuryProject.Controllers
             return View(new CreditoViewModel
             {
                 FechaSolicitud = DateTime.Now,
-                TasaInteres = 0.05m, // Tasa por defecto 5%
-                CantidadCuotas = 12 // 12 cuotas por defecto
+                TasaInteres = 0.05m,
+                CantidadCuotas = 12
             });
         }
 
-        // POST: Credito/Create
         // POST: Credito/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -125,7 +127,7 @@ namespace TheBuryProject.Controllers
                 _logger.LogInformation("ModelState válido. Llamando a CreateAsync...");
                 var credito = await _creditoService.CreateAsync(viewModel);
 
-                _logger.LogInformation("Línea de crédito creada exitosamente. Id: {Id}, Numero: {Numero}",
+                _logger.LogInformation("Línea de crédito creada. Id: {Id}, Numero: {Numero}",
                     credito.Id, credito.Numero);
 
                 TempData["Success"] = $"Línea de Crédito {credito.Numero} creada exitosamente";
@@ -133,7 +135,7 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "ERROR al crear línea de crédito. Mensaje: {Message}", ex.Message);
+                _logger.LogError(ex, "Error al crear línea de crédito. Mensaje: {Message}", ex.Message);
                 _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
 
                 ModelState.AddModelError("", "Error al crear la línea de crédito: " + ex.Message);
@@ -141,6 +143,7 @@ namespace TheBuryProject.Controllers
                 return View(viewModel);
             }
         }
+
         // GET: Credito/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
@@ -153,7 +156,6 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Solo se puede editar si está en Solicitado
                 if (credito.Estado != Models.Enums.EstadoCredito.Solicitado)
                 {
                     TempData["Error"] = "Solo se pueden editar créditos en estado Solicitado";
@@ -340,7 +342,6 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
-                // Cambiar estado a Rechazado
                 credito.Estado = Models.Enums.EstadoCredito.Rechazado;
                 await _creditoService.UpdateAsync(credito);
 
@@ -369,7 +370,6 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Cambiar estado a Cancelado
                 credito.Estado = Models.Enums.EstadoCredito.Cancelado;
                 await _creditoService.UpdateAsync(credito);
 
@@ -396,8 +396,7 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Obtener cuotas pendientes
-                var cuotasPendientes = credito.Cuotas
+                var cuotasPendientes = (credito.Cuotas ?? new List<CuotaViewModel>())
                     .Where(c => c.Estado == Models.Enums.EstadoCuota.Pendiente || c.Estado == Models.Enums.EstadoCuota.Vencida)
                     .OrderBy(c => c.NumeroCuota)
                     .Select(c => new SelectListItem
@@ -435,7 +434,13 @@ namespace TheBuryProject.Controllers
                 if (!ModelState.IsValid)
                 {
                     var credito = await _creditoService.GetByIdAsync(modelo.CreditoId);
-                    var cuotasPendientes = credito.Cuotas
+                    if (credito == null)
+                    {
+                        TempData["Error"] = "Crédito no encontrado";
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                    var cuotasPendientes = (credito.Cuotas ?? new List<CuotaViewModel>())
                         .Where(c => c.Estado == Models.Enums.EstadoCuota.Pendiente || c.Estado == Models.Enums.EstadoCuota.Vencida)
                         .OrderBy(c => c.NumeroCuota)
                         .Select(c => new SelectListItem
@@ -468,6 +473,7 @@ namespace TheBuryProject.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
         // GET: API endpoint para evaluar crédito en tiempo real
         [HttpGet]
         public async Task<IActionResult> EvaluarCredito(int clienteId, decimal montoSolicitado, int? garanteId = null)
@@ -486,6 +492,7 @@ namespace TheBuryProject.Controllers
                 return StatusCode(500, new { error = "Error al evaluar crédito: " + ex.Message });
             }
         }
+
         // GET: Credito/CuotasVencidas
         public async Task<IActionResult> CuotasVencidas()
         {

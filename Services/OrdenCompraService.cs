@@ -224,9 +224,9 @@ namespace TheBuryProject.Services
             {
                 query = query.Where(o =>
                     o.Numero.Contains(searchTerm) ||
-                    o.Proveedor.RazonSocial.Contains(searchTerm) ||
-                    o.Proveedor.NombreFantasia.Contains(searchTerm) ||
-                    o.Observaciones.Contains(searchTerm));
+                    (o.Proveedor != null && o.Proveedor.RazonSocial.Contains(searchTerm)) ||
+                    (o.Proveedor != null && o.Proveedor.NombreFantasia != null && o.Proveedor.NombreFantasia.Contains(searchTerm)) ||
+                    (o.Observaciones != null && o.Observaciones.Contains(searchTerm)));
             }
 
             if (proveedorId.HasValue)

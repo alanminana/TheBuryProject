@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// Representa una categoría de productos en el sistema.
     /// Soporta jerarquía (categorías padre e hijas).
     /// </summary>
-    public class Categoria : BaseEntity
+    public class Categoria : DashboardDtos
     {
         /// <summary>
         /// Código único de la categoría (ej: "ELEC", "FRIO")

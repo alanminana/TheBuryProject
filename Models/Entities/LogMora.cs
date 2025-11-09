@@ -1,30 +1,17 @@
-using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Base;
 
 namespace TheBuryProject.Models.Entities
 {
+    /// <summary>
+    /// Registro de ejecuciones del proceso de mora
+    /// </summary>
     public class LogMora : BaseEntity
     {
-        [Required]
         public DateTime FechaEjecucion { get; set; }
-
         public int CuotasProcesadas { get; set; }
-
-        public int CuotasConMora { get; set; }
-
         public int AlertasGeneradas { get; set; }
-
-        public decimal TotalMora { get; set; }
-
-        public decimal TotalRecargosAplicados { get; set; }
-
-        public bool Exitoso { get; set; } = true;
-
-        [StringLength(1000)]
-        public string? Errores { get; set; }
-
-        public int DuracionSegundos { get; set; }
-
-        public TimeSpan DuracionEjecucion => TimeSpan.FromSeconds(DuracionSegundos);
+        public bool Exitoso { get; set; }
+        public string? Mensaje { get; set; }
+        public string? DetalleError { get; set; }
     }
 }

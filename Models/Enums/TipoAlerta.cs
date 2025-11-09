@@ -1,11 +1,18 @@
 namespace TheBuryProject.Models.Enums
 {
-    public enum TipoAlerta
+    public enum TipoAlertaCobranza
     {
-        ProximoVencimiento = 0,
-        MoraLeve = 1,
-        MoraModerada = 2,
-        MoraGrave = 3,
-        MoraCritica = 4
+        CuotaVencida = 1,
+        ProximoVencimiento = 2,
+        MoraElevada = 3,
+        ClienteRiesgo = 4
+    }
+
+    public enum PrioridadAlerta
+    {
+        Baja = 1,
+        Media = 2,
+        Alta = 3,
+        Critica = 4
     }
 }

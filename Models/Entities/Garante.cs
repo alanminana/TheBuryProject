@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Representa un garante asociado a un cliente
     /// </summary>
-    public class Garante : BaseEntity
+    public class Garante : DashboardDtos
     {
         public int ClienteId { get; set; } // Cliente que necesita el garante
 
