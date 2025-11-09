@@ -1,0 +1,162 @@
+@model List<TheBuryProject.Models.Entities.LogMora>
+@{
+    ViewData["Title"] = "Logs de Procesamiento de Mora";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-light fw-bold">
+                        <i class="bi bi-journal-text text-info me-2"></i>Logs de Procesamiento
+                    </h2>
+                    <p class="text-muted">Historial de ejecuciones del sistema de mora</p>
+                </div>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-dark border-secondary shadow-sm">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Últimas 100 Ejecuciones</h5>
+        </div>
+        <div class="card-body">
+            @if (Model?.Any() == true)
+            {
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Fecha/Hora</th>
+                                <th>Estado</th>
+                                <th>Cuotas Procesadas</th>
+                                <th>Alertas Generadas</th>
+                                <th>Mensaje</th>
+                                <th>Detalles</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in Model)
+                            {
+                                <tr class="@(log.Exitoso ? "" : "table-danger")">
+                                    <td>
+                                        <strong>@log.FechaEjecucion.ToString("dd/MM/yyyy")</strong><br />
+                                        <small class="text-muted">@log.FechaEjecucion.ToString("HH:mm:ss")</small>
+                                    </td>
+                                    <td>
+                                        @if (log.Exitoso)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Exitoso
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-x-circle"></i> Error
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">@log.CuotasProcesadas</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-warning text-dark">@log.AlertasGeneradas</span>
+                                    </td>
+                                    <td>@(log.Mensaje ?? "-")</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(log.DetalleError))
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#errorModal@(log.Id)">
+                                                <i class="bi bi-exclamation-triangle"></i> Ver Error
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+
+                                <!-- Modal de Error -->
+                                @if (!string.IsNullOrEmpty(log.DetalleError))
+                                {
+                                    <div class="modal fade" id="errorModal@(log.Id)" tabindex="-1">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content bg-dark text-light">
+                                                <div class="modal-header border-secondary">
+                                                    <h5 class="modal-title">
+                                                        <i class="bi bi-bug text-danger me-2"></i>Detalle del Error
+                                                    </h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p><strong>Fecha:</strong> @log.FechaEjecucion.ToString("dd/MM/yyyy HH:mm:ss")</p>
+                                                    <p><strong>Mensaje:</strong> @log.Mensaje</p>
+                                                    <hr class="border-secondary" />
+                                                    <p><strong>Detalle del Error:</strong></p>
+                                                    <pre class="bg-body-secondary text-light p-3 rounded">@log.DetalleError</pre>
+                                                </div>
+                                                <div class="modal-footer border-secondary">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Resumen Estadístico -->
+                <div class="row mt-4">
+                    <div class="col-md-3">
+                        <div class="card bg-body-secondary border-0">
+                            <div class="card-body text-center">
+                                <h3 class="text-success fw-bold">@Model.Count(l => l.Exitoso)</h3>
+                                <p class="text-muted mb-0">Ejecuciones Exitosas</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-body-secondary border-0">
+                            <div class="card-body text-center">
+                                <h3 class="text-danger fw-bold">@Model.Count(l => !l.Exitoso)</h3>
+                                <p class="text-muted mb-0">Ejecuciones con Error</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-body-secondary border-0">
+                            <div class="card-body text-center">
+                                <h3 class="text-info fw-bold">@Model.Sum(l => l.CuotasProcesadas)</h3>
+                                <p class="text-muted mb-0">Total Cuotas Procesadas</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-body-secondary border-0">
+                            <div class="card-body text-center">
+                                <h3 class="text-warning fw-bold">@Model.Sum(l => l.AlertasGeneradas)</h3>
+                                <p class="text-muted mb-0">Total Alertas Generadas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <p class="text-muted mt-3">No hay logs de ejecución</p>
+                    <p class="text-muted">El sistema aún no ha ejecutado el proceso de mora</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

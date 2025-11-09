@@ -56,6 +56,9 @@ builder.Services.AddScoped<IChequeService, ChequeService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IMoraService, MoraService>();
 
+// Servicio en background para procesamiento automático de mora
+builder.Services.AddHostedService<MoraBackgroundService>();
+
 // 5. Configuración de MVC
 builder.Services.AddControllersWithViews();
 

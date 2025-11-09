@@ -1,0 +1,292 @@
+@model TheBuryProject.ViewModels.MoraIndexViewModel
+@{
+    ViewData["Title"] = "Gestión de Mora y Cobranza";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-light fw-bold">
+                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>Gestión de Mora y Cobranza
+                    </h2>
+                    <p class="text-muted">Sistema de alertas y procesamiento automático</p>
+                </div>
+                <div>
+                    <a asp-action="Logs" class="btn btn-outline-info me-2">
+                        <i class="bi bi-list-ul"></i> Ver Logs
+                    </a>
+                    <form asp-action="ProcesarMora" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-play-circle"></i> Procesar Ahora
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-x-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Resumen de Alertas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Total Alertas</h6>
+                    <h2 class="text-light fw-bold mb-0">@(Model?.TotalAlertas ?? 0)</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-warning">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Alertas Pendientes</h6>
+                    <h2 class="text-warning fw-bold mb-0">@(Model?.AlertasPendientes ?? 0)</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-success">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Alertas Resueltas</h6>
+                    <h2 class="text-success fw-bold mb-0">@(Model?.AlertasResueltas ?? 0)</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-danger">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Monto Vencido</h6>
+                    <h2 class="text-danger fw-bold mb-0">@(Model?.MontoTotalVencido.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuración -->
+    <div class="card bg-dark border-secondary shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Configuración del Sistema</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="ActualizarConfiguracion" method="post">
+                <input type="hidden" asp-for="Configuracion.Id" />
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label asp-for="Configuracion.DiasGracia" class="form-label text-light">Días de Gracia</label>
+                        <input asp-for="Configuracion.DiasGracia" class="form-control bg-body-secondary text-light border-0" />
+                        <small class="text-muted">Días después del vencimiento antes de generar alerta</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label asp-for="Configuracion.PorcentajeRecargo" class="form-label text-light">% Recargo</label>
+                        <input asp-for="Configuracion.PorcentajeRecargo" class="form-control bg-body-secondary text-light border-0" step="0.01" />
+                        <small class="text-muted">Porcentaje de recargo por mora</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label asp-for="Configuracion.HoraEjecucion" class="form-label text-light">Hora de Ejecución</label>
+                        <input asp-for="Configuracion.HoraEjecucion" type="time" class="form-control bg-body-secondary text-light border-0" />
+                        <small class="text-muted">Hora del procesamiento automático</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label text-light d-block">Estado del Job</label>
+                        <div class="form-check form-switch mt-2">
+                            <input asp-for="Configuracion.JobActivo" class="form-check-input" role="switch" />
+                            <label asp-for="Configuracion.JobActivo" class="form-check-label text-light">
+                                @(Model?.Configuracion?.JobActivo == true ? "Activo" : "Inactivo")
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="form-check form-switch">
+                            <input asp-for="Configuracion.CalculoAutomatico" class="form-check-input" />
+                            <label asp-for="Configuracion.CalculoAutomatico" class="form-check-label text-light">Cálculo Automático</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="form-check form-switch">
+                            <input asp-for="Configuracion.NotificacionAutomatica" class="form-check-input" />
+                            <label asp-for="Configuracion.NotificacionAutomatica" class="form-check-label text-light">Notificaciones Automáticas</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        @if (Model?.Configuracion?.UltimaEjecucion != null)
+                        {
+                            <small class="text-muted">
+                                Última ejecución: @Model.Configuracion.UltimaEjecucion.Value.ToString("dd/MM/yyyy HH:mm")
+                            </small>
+                        }
+                        else
+                        {
+                            <small class="text-muted">Sin ejecuciones previas</small>
+                        }
+                    </div>
+                    <div class="col-md-3 mb-3 text-end">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save"></i> Guardar Configuración
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Alertas -->
+    <div class="card bg-dark border-secondary shadow-sm">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Alertas de Cobranza</h5>
+        </div>
+        <div class="card-body">
+            @if (Model?.Alertas?.Any() == true)
+            {
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Prioridad</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Mensaje</th>
+                                <th>Monto Vencido</th>
+                                <th>Cuotas</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var alerta in Model.Alertas)
+                            {
+                                <tr class="@(alerta.Resuelta ? "table-secondary" : "")">
+                                    <td>
+                                        @switch (alerta.Prioridad)
+                                        {
+                                            case TheBuryProject.Models.Enums.PrioridadAlerta.Critica:
+                                                <span class="badge bg-danger">Crítica</span>
+                                                break;
+                                            case TheBuryProject.Models.Enums.PrioridadAlerta.Alta:
+                                                <span class="badge bg-warning text-dark">Alta</span>
+                                                break;
+                                            case TheBuryProject.Models.Enums.PrioridadAlerta.Media:
+                                                <span class="badge bg-info">Media</span>
+                                                break;
+                                            case TheBuryProject.Models.Enums.PrioridadAlerta.Baja:
+                                                <span class="badge bg-secondary">Baja</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong>@alerta.ClienteNombre</strong><br />
+                                        <small class="text-muted">@alerta.ClienteDocumento</small>
+                                    </td>
+                                    <td>
+                                        @switch (alerta.Tipo)
+                                        {
+                                            case TheBuryProject.Models.Enums.TipoAlertaCobranza.CuotaVencida:
+                                                <span class="badge bg-danger">Cuota Vencida</span>
+                                                break;
+                                            case TheBuryProject.Models.Enums.TipoAlertaCobranza.ProximoVencimiento:
+                                                <span class="badge bg-warning">Próximo Vencimiento</span>
+                                                break;
+                                            case TheBuryProject.Models.Enums.TipoAlertaCobranza.MoraElevada:
+                                                <span class="badge bg-danger">Mora Elevada</span>
+                                                break;
+                                            case TheBuryProject.Models.Enums.TipoAlertaCobranza.ClienteRiesgo:
+                                                <span class="badge bg-warning text-dark">Cliente en Riesgo</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>@alerta.Mensaje</td>
+                                    <td class="text-danger fw-bold">@alerta.MontoVencido.ToString("C", new System.Globalization.CultureInfo("es-AR"))</td>
+                                    <td class="text-center">@alerta.CuotasVencidas</td>
+                                    <td>@alerta.FechaAlerta.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        @if (alerta.Resuelta)
+                                        {
+                                            <span class="badge bg-success">Resuelta</span><br />
+                                            <small class="text-muted">@alerta.FechaResolucion?.ToString("dd/MM/yyyy")</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Pendiente</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!alerta.Resuelta)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#resolverModal@(alerta.Id)">
+                                                <i class="bi bi-check-circle"></i> Resolver
+                                            </button>
+                                        }
+                                        <a asp-controller="Credito" asp-action="Details" asp-route-id="@alerta.CreditoId" class="btn btn-sm btn-info">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+
+                                <!-- Modal Resolver Alerta -->
+                                <div class="modal fade" id="resolverModal@(alerta.Id)" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content bg-dark text-light">
+                                            <div class="modal-header border-secondary">
+                                                <h5 class="modal-title">Resolver Alerta</h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form asp-action="ResolverAlerta" method="post">
+                                                <div class="modal-body">
+                                                    <input type="hidden" name="id" value="@alerta.Id" />
+                                                    <p><strong>Cliente:</strong> @alerta.ClienteNombre</p>
+                                                    <p><strong>Mensaje:</strong> @alerta.Mensaje</p>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Observaciones</label>
+                                                        <textarea name="observaciones" class="form-control bg-body-secondary text-light border-0" rows="3" placeholder="Ingrese observaciones sobre la resolución..."></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-secondary">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-success">Marcar como Resuelta</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <p class="text-muted mt-3">No hay alertas de cobranza</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Auto-refresh cada 2 minutos
+    setTimeout(function() {
+        location.reload();
+    }, 120000);
+</script>
+}
