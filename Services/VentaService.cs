@@ -719,7 +719,7 @@ namespace TheBuryProject.Services
             return $"{prefijo}-{periodo}-{siguiente:D6}";
         }
 
-        private async Task<bool> ValidarLimiteCreditoClienteAsync(Cliente cliente, decimal montoVenta)
+        private Task<bool> ValidarLimiteCreditoClienteAsync(Cliente cliente, decimal montoVenta)
         {
             // Obtener el límite de crédito total del cliente (suma de créditos activos)
             var creditosActivos = cliente.Creditos
@@ -727,16 +727,17 @@ namespace TheBuryProject.Services
                 .ToList();
 
             if (!creditosActivos.Any())
-                return true; // Si no tiene créditos, requiere autorización
+                return Task.FromResult(true);
 
             var limiteTotal = creditosActivos.Sum(c => c.MontoAprobado);
             var saldoDisponible = creditosActivos.Sum(c => c.SaldoPendiente);
 
             // Si el monto de la venta supera el saldo disponible, requiere autorización
             if (montoVenta > saldoDisponible)
-                return true;
+                return Task.FromResult(true);
+            ;
 
-            return false;
+            return Task.FromResult(false);
         }
 
         #endregion

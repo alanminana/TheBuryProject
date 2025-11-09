@@ -82,7 +82,7 @@ namespace TheBuryProject.Services
                 puntajeTotal += reglaIngresos.Peso;
 
                 // 4️⃣ Historial crediticio
-                var reglaHistorial = await EvaluarHistorialAsync(cliente);
+                var reglaHistorial = EvaluarHistorial(cliente);
                 evaluacion.Reglas.Add(reglaHistorial);
                 evaluacion.TieneBuenHistorial = reglaHistorial.Cumple;
                 puntajeTotal += reglaHistorial.Peso;
@@ -210,14 +210,20 @@ namespace TheBuryProject.Services
             return regla;
         }
 
-        private async Task<ReglaEvaluacionViewModel> EvaluarHistorialAsync(Cliente cliente)
+        private ReglaEvaluacionViewModel EvaluarHistorial(Cliente cliente)
         {
             var regla = new ReglaEvaluacionViewModel { Nombre = "Historial Crediticio" };
 
             var creditos = cliente.Creditos.Where(c => !c.IsDeleted && c.Estado != EstadoCredito.Solicitado).ToList();
 
             if (!creditos.Any())
-                return new() { Nombre = "Historial Crediticio", Cumple = true, Peso = 10, Detalle = "Sin historial previo (cliente nuevo)" };
+                return new ReglaEvaluacionViewModel
+                {
+                    Nombre = "Historial Crediticio",
+                    Cumple = true,
+                    Peso = 10,
+                    Detalle = "Sin historial previo (cliente nuevo)"
+                };
 
             var finalizados = creditos.Count(c => c.Estado == EstadoCredito.Finalizado);
             var cancelados = creditos.Count(c => c.Estado == EstadoCredito.Cancelado);

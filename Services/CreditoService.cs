@@ -210,7 +210,7 @@ namespace TheBuryProject.Services
 
         #region Operaciones de Crédito
 
-        public async Task<SimularCreditoViewModel> SimularCreditoAsync(SimularCreditoViewModel modelo)
+        public Task<SimularCreditoViewModel> SimularCreditoAsync(SimularCreditoViewModel modelo)
         {
             try
             {
@@ -245,7 +245,7 @@ namespace TheBuryProject.Services
                     fechaCuota = fechaCuota.AddMonths(1);
                 }
 
-                return modelo;
+                return Task.FromResult(modelo);
             }
             catch (Exception ex)
             {
@@ -558,7 +558,7 @@ namespace TheBuryProject.Services
             return $"CRE-{DateTime.Now:yyyyMM}-{numero:D6}";
         }
 
-        private async Task GenerarCuotasAsync(Credito credito)
+        private Task GenerarCuotasAsync(Credito credito)
         {
             var tasaDecimal = credito.TasaInteres / 100;
             var fechaCuota = credito.FechaPrimeraCuota ?? DateTime.Now.AddMonths(1);
@@ -584,6 +584,8 @@ namespace TheBuryProject.Services
                 _context.Cuotas.Add(cuota);
                 fechaCuota = fechaCuota.AddMonths(1);
             }
+            return Task.CompletedTask;
+
         }
 
         #endregion
