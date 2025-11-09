@@ -53,6 +53,8 @@ builder.Services.AddScoped<IVentaService, VentaService>();
 builder.Services.AddScoped<IConfiguracionPagoService, ConfiguracionPagoService>();
 
 builder.Services.AddScoped<IChequeService, ChequeService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IMoraService, MoraService>();
 
 // 5. Configuración de MVC
 builder.Services.AddControllersWithViews();

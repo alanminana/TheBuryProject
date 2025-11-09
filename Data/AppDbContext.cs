@@ -50,6 +50,11 @@ namespace TheBuryProject.Data
         public DbSet<DatosCheque> DatosCheque { get; set; }
         public DbSet<VentaCreditoCuota> VentaCreditoCuotas { get; set; }
 
+        // Módulo de Mora y Alertas
+        public DbSet<ConfiguracionMora> ConfiguracionesMora { get; set; }
+        public DbSet<LogMora> LogsMora { get; set; }
+        public DbSet<AlertaCobranza> AlertasCobranza { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

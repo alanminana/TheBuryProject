@@ -1,0 +1,17 @@
+using TheBuryProject.Models.Base;
+
+namespace TheBuryProject.Models.Entities
+{
+    /// <summary>
+    /// Registro de ejecuciones del proceso de mora
+    /// </summary>
+    public class LogMora : BaseEntity
+    {
+        public DateTime FechaEjecucion { get; set; }
+        public int CuotasProcesadas { get; set; }
+        public int AlertasGeneradas { get; set; }
+        public bool Exitoso { get; set; }
+        public string? Mensaje { get; set; }
+        public string? DetalleError { get; set; }
+    }
+}

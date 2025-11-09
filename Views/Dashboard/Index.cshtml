@@ -1,0 +1,264 @@
+@model TheBuryProject.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard - KPIs";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="text-light fw-bold">
+                <i class="bi bi-speedometer2 text-info me-2"></i>Dashboard - Indicadores Clave
+            </h2>
+            <p class="text-muted">Panel de control con métricas en tiempo real</p>
+        </div>
+    </div>
+
+    <!-- KPIs de Ventas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h5 class="text-light mb-3"><i class="bi bi-cart-check text-success me-2"></i>Ventas</h5>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-gradient-success border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-white-50 mb-1">Hoy</p>
+                            <h3 class="text-white fw-bold mb-0">@(Model?.VentasTotalesHoy.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</h3>
+                        </div>
+                        <div class="fs-1 text-white opacity-50">
+                            <i class="bi bi-calendar-day"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-gradient-primary border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-white-50 mb-1">Este Mes</p>
+                            <h3 class="text-white fw-bold mb-0">@(Model?.VentasTotalesMes.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</h3>
+                        </div>
+                        <div class="fs-1 text-white opacity-50">
+                            <i class="bi bi-calendar-week"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-gradient-info border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-white-50 mb-1">Este Año</p>
+                            <h3 class="text-white fw-bold mb-0">@(Model?.VentasTotalesAnio.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</h3>
+                        </div>
+                        <div class="fs-1 text-white opacity-50">
+                            <i class="bi bi-calendar"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-gradient-warning border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-dark opacity-75 mb-1">Ticket Promedio</p>
+                            <h3 class="text-dark fw-bold mb-0">@(Model?.TicketPromedio.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</h3>
+                        </div>
+                        <div class="fs-1 text-dark opacity-50">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs de Créditos -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h5 class="text-light mb-3"><i class="bi bi-credit-card text-warning me-2"></i>Créditos</h5>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-secondary shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Créditos Activos</p>
+                    <h3 class="text-light fw-bold mb-0">@(Model?.CreditosActivos ?? 0)</h3>
+                    <small class="text-info">@(Model?.MontoTotalCreditos.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-secondary shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Saldo Pendiente</p>
+                    <h3 class="text-light fw-bold mb-0">@(Model?.SaldoPendienteTotal.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-danger shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Cuotas Vencidas</p>
+                    <h3 class="text-danger fw-bold mb-0">@(Model?.CuotasVencidasTotal ?? 0)</h3>
+                    <small class="text-danger">@(Model?.MontoVencidoTotal.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-dark border-secondary shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Tasa de Morosidad</p>
+                    <h3 class="text-light fw-bold mb-0">@((Model?.TasaMorosidad ?? 0).ToString("F1"))%</h3>
+                    <div class="progress mt-2" style="height: 6px;">
+                        @{
+                            var tasaMorosidad = Model?.TasaMorosidad ?? 0;
+                            var colorMorosidad = tasaMorosidad < 5 ? "success" : tasaMorosidad < 10 ? "warning" : "danger";
+                        }
+                        <div class="progress-bar bg-@colorMorosidad" role="progressbar" style="width: @tasaMorosidad%"></div>
+                    </div>
+                    @if (tasaMorosidad < 5)
+                    {
+                        <small class="text-success">Excelente &lt;5%</small>
+                    }
+                    else if (tasaMorosidad < 10)
+                    {
+                        <small class="text-warning">Aceptable 5-10%</small>
+                    }
+                    else
+                    {
+                        <small class="text-danger">Elevada &gt;10%</small>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs de Cobranza y Clientes -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-dark border-secondary shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Cobranza</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-4 text-center border-end border-secondary">
+                            <p class="text-muted mb-1">Hoy</p>
+                            <h5 class="text-success fw-bold">@(Model?.CobranzaHoy.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</h5>
+                        </div>
+                        <div class="col-4 text-center border-end border-secondary">
+                            <p class="text-muted mb-1">Mes</p>
+                            <h5 class="text-primary fw-bold">@(Model?.CobranzaMes.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</h5>
+                        </div>
+                        <div class="col-4 text-center">
+                            <p class="text-muted mb-1">Año</p>
+                            <h5 class="text-info fw-bold">@(Model?.CobranzaAnio.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</h5>
+                        </div>
+                    </div>
+                    <hr class="border-secondary" />
+                    <div class="text-center">
+                        <p class="text-muted mb-1">Efectividad de Cobranza</p>
+                        <h4 class="text-light fw-bold">@((Model?.EfectividadCobranza ?? 0).ToString("F1"))%</h4>
+                        <div class="progress" style="height: 10px;">
+                            @{
+                                var efectividadCobranza = Model?.EfectividadCobranza ?? 0;
+                                var colorEfectividad = efectividadCobranza >= 90 ? "success" : efectividadCobranza >= 70 ? "warning" : "danger";
+                            }
+                            <div class="progress-bar bg-@colorEfectividad" role="progressbar" style="width: @efectividadCobranza%"></div>
+                        </div>
+                        @if (efectividadCobranza >= 90)
+                        {
+                            <small class="text-success mt-2 d-block">Excelente &gt;90%</small>
+                        }
+                        else if (efectividadCobranza >= 70)
+                        {
+                            <small class="text-warning mt-2 d-block">Aceptable 70-90%</small>
+                        }
+                        else
+                        {
+                            <small class="text-danger mt-2 d-block">Baja &lt;70%</small>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-dark border-secondary shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="bi bi-people me-2"></i>Clientes y Stock</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="fs-2 text-primary me-3">
+                                    <i class="bi bi-person-check"></i>
+                                </div>
+                                <div>
+                                    <p class="text-muted mb-0 small">Clientes Activos</p>
+                                    <h5 class="text-light fw-bold mb-0">@(Model?.ClientesActivos ?? 0)</h5>
+                                    <small class="text-muted">de @(Model?.TotalClientes ?? 0) totales</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="fs-2 text-info me-3">
+                                    <i class="bi bi-box-seam"></i>
+                                </div>
+                                <div>
+                                    <p class="text-muted mb-0 small">Productos</p>
+                                    <h5 class="text-light fw-bold mb-0">@(Model?.ProductosTotales ?? 0)</h5>
+                                    <small class="text-danger">@(Model?.ProductosBajoStock ?? 0) bajo stock</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <hr class="border-secondary" />
+                            <div class="text-center">
+                                <p class="text-muted mb-1">Valor Total del Stock</p>
+                                <h4 class="text-success fw-bold">@(Model?.ValorTotalStock.ToString("C", new System.Globalization.CultureInfo("es-AR")) ?? "$0")</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 text-center">
+            <small class="text-muted">
+                <i class="bi bi-clock me-1"></i>
+                Actualizado automáticamente cada 5 minutos
+            </small>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+<style>
+    .bg-gradient-success { background: linear-gradient(135deg, #198754 0%, #20c997 100%); }
+    .bg-gradient-primary { background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%); }
+    .bg-gradient-info { background: linear-gradient(135deg, #0dcaf0 0%, #6f42c1 100%); }
+    .bg-gradient-warning { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); }
+    .card { transition: transform 0.2s; }
+    .card:hover { transform: translateY(-5px); }
+</style>
+}
+
+@section Scripts {
+<script>
+    // Auto-refresh cada 5 minutos
+    setTimeout(function() {
+        location.reload();
+    }, 300000);
+</script>
+}
