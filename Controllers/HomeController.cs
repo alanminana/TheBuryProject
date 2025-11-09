@@ -12,12 +12,10 @@ namespace TheBuryProject.Controllers
         {
             _logger = logger;
         }
-
         public IActionResult Index()
         {
-            return View();
+            return RedirectToAction("Index", "Dashboard");
         }
-
         public IActionResult Privacy()
         {
             return View();

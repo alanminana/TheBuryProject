@@ -56,6 +56,7 @@ builder.Services.AddScoped<IDocumentoClienteService, DocumentoClienteService>();
 builder.Services.AddScoped<IMoraService, MoraService>();
 builder.Services.AddHostedService<MoraBackgroundService>();
 builder.Services.AddScoped<IChequeService, ChequeService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // 5. Configuración de MVC
 builder.Services.AddControllersWithViews();

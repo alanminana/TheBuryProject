@@ -25,7 +25,7 @@ namespace TheBuryProject.Controllers
         public async Task<IActionResult> Index()
         {
             var alertasActivas = await _moraService.GetAlertasActivasAsync();
-            var historialEjecuciones = await _moraService.GetHistorialEjecucionesAsync(10);
+            var historialEjecuciones = await _moraService.GetLogsAsync(10);
             var configuracion = await _moraService.GetConfiguracionAsync();
 
             ViewBag.AlertasActivas = alertasActivas;
@@ -163,7 +163,7 @@ namespace TheBuryProject.Controllers
         [HttpPost]
         public async Task<IActionResult> MarcarLeida(int id)
         {
-            await _moraService.MarcarAlertaLeidaAsync(id);
+            await _moraService.MarcarAlertaLeidaAsync(id, User.Identity?.Name ?? "Sistema");
             TempData["SuccessMessage"] = "Alerta marcada como leída.";
             return RedirectToAction(nameof(Alertas));
         }
@@ -171,7 +171,7 @@ namespace TheBuryProject.Controllers
         [HttpPost]
         public async Task<IActionResult> Resolver(int id)
         {
-            await _moraService.ResolverAlertaAsync(id);
+            await _moraService.ResolverAlertaAsync(id, User.Identity?.Name ?? "Sistema", "Resuelta manualmente");
             TempData["SuccessMessage"] = "Alerta resuelta.";
             return RedirectToAction(nameof(Alertas));
         }

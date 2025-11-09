@@ -40,5 +40,36 @@ namespace TheBuryProject.ViewModels
         public string ClienteNombre { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; }
+
+        // Propiedades computadas
+        public string TipoNombre => Tipo switch
+        {
+            TipoAlerta.ProximoVencimiento => "Próximo Vencimiento",
+            TipoAlerta.MoraLeve => "Mora Leve",
+            TipoAlerta.MoraModerada => "Mora Moderada",
+            TipoAlerta.MoraGrave => "Mora Grave",
+            TipoAlerta.MoraCritica => "Mora Crítica",
+            _ => "Desconocido"
+        };
+
+        public string ColorAlerta => Tipo switch
+        {
+            TipoAlerta.ProximoVencimiento => "info",
+            TipoAlerta.MoraLeve => "warning",
+            TipoAlerta.MoraModerada => "orange",
+            TipoAlerta.MoraGrave => "danger",
+            TipoAlerta.MoraCritica => "dark",
+            _ => "secondary"
+        };
+
+        public string IconoAlerta => Tipo switch
+        {
+            TipoAlerta.ProximoVencimiento => "bi-clock",
+            TipoAlerta.MoraLeve => "bi-exclamation-circle",
+            TipoAlerta.MoraModerada => "bi-exclamation-triangle",
+            TipoAlerta.MoraGrave => "bi-exclamation-triangle-fill",
+            TipoAlerta.MoraCritica => "bi-x-octagon-fill",
+            _ => "bi-info-circle"
+        };
     }
 }

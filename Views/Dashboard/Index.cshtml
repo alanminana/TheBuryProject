@@ -1,0 +1,705 @@
+﻿@model DashboardViewModel
+@using TheBuryProject.ViewModels
+
+@{
+    ViewData["Title"] = "Dashboard Principal";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-speedometer2 me-2"></i>Dashboard Principal</h2>
+            <p class="text-muted mb-0">Resumen general del negocio - @DateTime.Today.ToString("dddd, dd MMMM yyyy")</p>
+        </div>
+        <button class="btn btn-outline-primary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
+        </button>
+    </div>
+
+    <!-- Alertas Importantes -->
+    @if (Model.AlertasPendientes.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-warning shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            Alertas Importantes (@Model.TotalAlertas)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @foreach (var alerta in Model.AlertasPendientes.Take(4))
+                            {
+                                <div class="col-md-3 mb-2">
+                                    <div class="alert alert-@alerta.Color mb-0" role="alert">
+                                        <i class="@alerta.Icono me-2"></i>
+                                        <strong>@alerta.Tipo:</strong><br />
+                                        @alerta.Mensaje
+                                        @if (!string.IsNullOrEmpty(alerta.Url))
+                                        {
+                                            <a href="@alerta.Url" class="alert-link float-end">Ver <i class="bi bi-arrow-right"></i></a>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- KPIs Principales - Ventas -->
+    <div class="mb-4">
+        <h4 class="mb-3"><i class="bi bi-cart-check me-2"></i>Ventas</h4>
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Ventas Hoy</p>
+                                <h3 class="mb-0">${{Model.VentasTotalesHoy.ToString("N2")}}</h3>
+                                <small class="text-muted">@Model.CantidadVentasHoy ventas</small>
+                            </div>
+                            <i class="bi bi-calendar-check text-primary" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Ventas del Mes</p>
+                                <h3 class="mb-0">${{Model.VentasTotalesMes.ToString("N2")}}</h3>
+                                <small class="text-muted">@Model.CantidadVentasMes ventas</small>
+                            </div>
+                            <i class="bi bi-calendar-month text-success" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Ventas del Año</p>
+                                <h3 class="mb-0">${{Model.VentasTotalesAnio.ToString("N2")}}</h3>
+                                <small class="text-muted">Año @DateTime.Today.Year</small>
+                            </div>
+                            <i class="bi bi-calendar-range text-info" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-secondary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Ticket Promedio</p>
+                                <h3 class="mb-0">${{Model.TicketPromedio.ToString("N2")}}</h3>
+                                <small class="text-muted">Este mes</small>
+                            </div>
+                            <i class="bi bi-receipt text-secondary" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs de Créditos y Cobranza -->
+    <div class="mb-4">
+        <h4 class="mb-3"><i class="bi bi-credit-card me-2"></i>Créditos y Cobranza</h4>
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Créditos Activos</p>
+                                <h3 class="mb-0">@Model.CreditosActivos</h3>
+                                <small class="text-muted">${{Model.MontoTotalCreditos.ToString("N2")}}</small>
+                            </div>
+                            <i class="bi bi-file-text text-primary" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Saldo Pendiente</p>
+                                <h3 class="mb-0">${{Model.SaldoPendienteCobro.ToString("N2")}}</h3>
+                                <small class="text-muted">Por cobrar</small>
+                            </div>
+                            <i class="bi bi-hourglass-split text-warning" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Cobrado Hoy</p>
+                                <h3 class="mb-0">${{Model.CobradoHoy.ToString("N2")}}</h3>
+                                <small class="text-muted">Cobrado este mes: $@Model.CobradoMes.ToString("N2")</small>
+                            </div>
+                            <i class="bi bi-cash-coin text-success" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card shadow-sm border-danger">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Mora Total</p>
+                                <h3 class="mb-0">${{Model.MontoMoraTotal.ToString("N2")}}</h3>
+                                <small class="text-muted">Tasa: @Model.TasaMorosidad%</small>
+                            </div>
+                            <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs de Clientes y Stock -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h4 class="mb-3"><i class="bi bi-people me-2"></i>Clientes</h4>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2 mb-0">@Model.TotalClientes</h4>
+                            <small class="text-muted">Total Clientes</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="bi bi-person-check-fill text-success" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2 mb-0">@Model.ClientesActivos</h4>
+                            <small class="text-muted">Activos</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="bi bi-person-plus-fill text-info" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2 mb-0">@Model.ClientesNuevosEsteMes</h4>
+                            <small class="text-muted">Nuevos este mes</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h4 class="mb-3"><i class="bi bi-box-seam me-2"></i>Stock</h4>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="bi bi-boxes text-primary" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2 mb-0">@Model.ProductosTotales</h4>
+                            <small class="text-muted">Total Productos</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="bi bi-exclamation-circle-fill text-warning" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2 mb-0">@Model.ProductosBajoStock</h4>
+                            <small class="text-muted">Stock Bajo</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="bi bi-x-circle-fill text-danger" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2 mb-0">@Model.ProductosSinStock</h4>
+                            <small class="text-muted">Sin Stock</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <!-- Gráfico de Ventas Últimos 7 Días -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Ventas - Últimos 7 Días</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="ventasChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Cobranza Últimos 30 Días -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Cobranza - Últimos 30 Días</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="cobranzaChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Gráfico de Ventas Mensuales -->
+        <div class="col-md-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up-arrow me-2"></i>Evolución de Ventas - Últimos 12 Meses</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="ventasMensualesChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Productos Más Vendidos -->
+        <div class="col-md-7 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Productos Más Vendidos (Últimos 30 días)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="productosChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Créditos por Estado -->
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Créditos por Estado</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="creditosChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores de Rendimiento -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-speedometer me-2"></i>Tasa de Morosidad</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Morosidad Actual</span>
+                        <strong class="@(Model.TasaMorosidad > 10 ? "text-danger" : Model.TasaMorosidad > 5 ? "text-warning" : "text-success")">
+                            @Model.TasaMorosidad%
+                        </strong>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar @(Model.TasaMorosidad > 10 ? "bg-danger" : Model.TasaMorosidad > 5 ? "bg-warning" : "bg-success")"
+                             role="progressbar"
+                             style="width: @Model.TasaMorosidad%"
+                             aria-valuenow="@Model.TasaMorosidad"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            @Model.TasaMorosidad%
+                        </div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Óptimo: <5% | Aceptable: 5-10% | Crítico:>10%
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-bullseye me-2"></i>Efectividad de Cobranza</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Efectividad del Mes</span>
+                        <strong class="@(Model.EfectividadCobranza >= 90 ? "text-success" : Model.EfectividadCobranza >= 70 ? "text-warning" : "text-danger")">
+                            @Model.EfectividadCobranza%
+                        </strong>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar @(Model.EfectividadCobranza >= 90 ? "bg-success" : Model.EfectividadCobranza >= 70 ? "bg-warning" : "bg-danger")"
+                             role="progressbar"
+                             style="width: @Model.EfectividadCobranza%"
+                             aria-valuenow="@Model.EfectividadCobranza"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            @Model.EfectividadCobranza%
+                        </div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Excelente: ≥90% | Bueno: 70-89% | Necesita mejorar: <70%
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <script>
+        // Configuración general de Chart.js
+        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+        Chart.defaults.color = '#6c757d';
+
+        // Datos del modelo
+        const ventasUltimos7Dias = @Html.Raw(Json.Serialize(Model.VentasUltimos7Dias));
+        const ventasUltimos12Meses = @Html.Raw(Json.Serialize(Model.VentasUltimos12Meses));
+        const productosMasVendidos = @Html.Raw(Json.Serialize(Model.ProductosMasVendidos));
+        const creditosPorEstado = @Html.Raw(Json.Serialize(Model.CreditosPorEstado));
+        const cobranzaUltimos30Dias = @Html.Raw(Json.Serialize(Model.CobranzaUltimos30Dias));
+
+        // Gráfico de Ventas - Últimos 7 Días
+        const ventasCtx = document.getElementById('ventasChart').getContext('2d');
+        const ventasChart = new Chart(ventasCtx, {
+            type: 'bar',
+            data: {
+                labels: ventasUltimos7Dias.map(v => {
+                    const fecha = new Date(v.fecha);
+                    return fecha.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
+                }),
+                datasets: [{
+                    label: 'Monto de Ventas ($)',
+                    data: ventasUltimos7Dias.map(v => v.montoTotal),
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 2,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const index = context.dataIndex;
+                                const ventas = ventasUltimos7Dias[index];
+                                return [
+                                    'Monto: $' + ventas.montoTotal.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+                                    'Cantidad: ' + ventas.cantidadVentas + ' ventas'
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString('es-AR');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Ventas Mensuales - Últimos 12 Meses
+        const ventasMensualesCtx = document.getElementById('ventasMensualesChart').getContext('2d');
+        const ventasMensualesChart = new Chart(ventasMensualesCtx, {
+            type: 'line',
+            data: {
+                labels: ventasUltimos12Meses.map(v => v.mesNombre),
+                datasets: [{
+                    label: 'Ventas Mensuales ($)',
+                    data: ventasUltimos12Meses.map(v => v.montoTotal),
+                    backgroundColor: 'rgba(13, 202, 240, 0.2)',
+                    borderColor: 'rgba(13, 202, 240, 1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: 'rgba(13, 202, 240, 1)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const index = context.dataIndex;
+                                const ventas = ventasUltimos12Meses[index];
+                                return [
+                                    'Monto: $' + ventas.montoTotal.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+                                    'Cantidad: ' + ventas.cantidadVentas + ' ventas'
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString('es-AR');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Cobranza - Últimos 30 Días
+        const cobranzaCtx = document.getElementById('cobranzaChart').getContext('2d');
+        const cobranzaChart = new Chart(cobranzaCtx, {
+            type: 'line',
+            data: {
+                labels: cobranzaUltimos30Dias.map(c => {
+                    const fecha = new Date(c.fecha);
+                    return fecha.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+                }),
+                datasets: [{
+                    label: 'Cobranza Diaria ($)',
+                    data: cobranzaUltimos30Dias.map(c => c.montoCobrado),
+                    backgroundColor: 'rgba(25, 135, 84, 0.2)',
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const index = context.dataIndex;
+                                const cobranza = cobranzaUltimos30Dias[index];
+                                return [
+                                    'Monto: $' + cobranza.montoCobrado.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+                                    'Cuotas: ' + cobranza.cuotasCobradas
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString('es-AR');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Productos Más Vendidos
+        const productosCtx = document.getElementById('productosChart').getContext('2d');
+        const productosChart = new Chart(productosCtx, {
+            type: 'horizontalBar',
+            data: {
+                labels: productosMasVendidos.map(p => {
+                    // Truncar nombres largos
+                    return p.productoNombre.length > 30
+                        ? p.productoNombre.substring(0, 30) + '...'
+                        : p.productoNombre;
+                }),
+                datasets: [{
+                    label: 'Cantidad Vendida',
+                    data: productosMasVendidos.map(p => p.cantidadVendida),
+                    backgroundColor: [
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(255, 193, 7, 0.65)',
+                        'rgba(255, 193, 7, 0.6)',
+                        'rgba(255, 193, 7, 0.55)',
+                        'rgba(255, 193, 7, 0.5)',
+                        'rgba(255, 193, 7, 0.45)',
+                        'rgba(255, 193, 7, 0.4)',
+                        'rgba(255, 193, 7, 0.35)',
+                        'rgba(255, 193, 7, 0.3)',
+                        'rgba(255, 193, 7, 0.25)'
+                    ],
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const index = context.dataIndex;
+                                const producto = productosMasVendidos[index];
+                                return [
+                                    producto.productoNombre,
+                                    'Cantidad: ' + producto.cantidadVendida + ' unidades',
+                                    'Monto: $' + producto.montoTotal.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Créditos por Estado (Pie Chart)
+        const creditosCtx = document.getElementById('creditosChart').getContext('2d');
+        const creditosChart = new Chart(creditosCtx, {
+            type: 'doughnut',
+            data: {
+                labels: creditosPorEstado.map(c => c.estado),
+                datasets: [{
+                    label: 'Cantidad de Créditos',
+                    data: creditosPorEstado.map(c => c.cantidad),
+                    backgroundColor: [
+                        'rgba(13, 110, 253, 0.7)',   // Activo - Azul
+                        'rgba(25, 135, 84, 0.7)',    // Pagado - Verde
+                        'rgba(255, 193, 7, 0.7)',    // Pendiente - Amarillo
+                        'rgba(220, 53, 69, 0.7)',    // Vencido - Rojo
+                        'rgba(108, 117, 125, 0.7)'   // Cancelado - Gris
+                    ],
+                    borderColor: [
+                        'rgba(13, 110, 253, 1)',
+                        'rgba(25, 135, 84, 1)',
+                        'rgba(255, 193, 7, 1)',
+                        'rgba(220, 53, 69, 1)',
+                        'rgba(108, 117, 125, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'right'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const index = context.dataIndex;
+                                const credito = creditosPorEstado[index];
+                                const total = creditosPorEstado.reduce((sum, c) => sum + c.cantidad, 0);
+                                const porcentaje = ((credito.cantidad / total) * 100).toFixed(1);
+                                return [
+                                    credito.estado + ': ' + credito.cantidad + ' créditos (' + porcentaje + '%)',
+                                    'Monto: $' + credito.montoTotal.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Auto-refresh cada 5 minutos
+        setTimeout(function() {
+            location.reload();
+        }, 300000);
+    </script>
+}
+
+<style>
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+    .progress {
+        border-radius: 0.5rem;
+    }
+
+    .alert {
+        border-left: 4px solid;
+    }
+
+    canvas {
+        max-height: 400px;
+    }
+</style>

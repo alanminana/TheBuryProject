@@ -5,23 +5,15 @@ namespace TheBuryProject.Services.Interfaces
 {
     public interface IMoraService
     {
-        // Configuración
         Task<ConfiguracionMoraViewModel> GetConfiguracionAsync();
-        Task<ConfiguracionMoraViewModel> SaveConfiguracionAsync(ConfiguracionMoraViewModel viewModel);
-
-        // Procesamiento de Mora
+        Task SaveConfiguracionAsync(ConfiguracionMoraViewModel model);
         Task<LogMora> ProcesarMoraAsync();
+        Task<List<AlertaCobranzaViewModel>> GetAlertasActivasAsync();
+        Task<List<LogMora>> GetLogsAsync(int cantidad = 20);
+        Task MarcarAlertaLeidaAsync(int alertaId, string usuario);
+        Task ResolverAlertaAsync(int alertaId, string usuario, string nota);
+        Task GenerarAlertasVencimientoAsync();
         Task ActualizarMoraCuotaAsync(int cuotaId);
         Task<decimal> CalcularRecargoMoraAsync(int cuotaId);
-
-        // Alertas
-        Task GenerarAlertasVencimientoAsync();
-        Task<List<AlertaCobranzaViewModel>> GetAlertasActivasAsync();
-        Task<List<AlertaCobranzaViewModel>> BuscarAlertasAsync(AlertaCobranzaFilterViewModel filtro);
-        Task<bool> MarcarAlertaLeidaAsync(int alertaId, string usuario);
-        Task<bool> ResolverAlertaAsync(int alertaId, string nota, string usuario);
-
-        // Logs
-        Task<List<LogMora>> GetLogsAsync(int cantidad = 20);
     }
 }
