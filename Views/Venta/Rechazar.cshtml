@@ -1,63 +1,84 @@
 ﻿@model TheBuryProject.ViewModels.VentaViewModel
-
 @{
     ViewData["Title"] = "Rechazar Venta";
 }
 
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card">
-            <div class="card-header bg-danger text-white">
-                <h4 class="mb-0"><i class="bi bi-x-circle"></i> Rechazar Venta</h4>
+<section class="container-fluid px-0">
+    <div class="col-lg-8 mx-auto">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0"><i class="bi bi-x-circle text-danger me-2"></i> Rechazar Venta</h2>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+
+        <!-- Card principal -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
+                <h5 class="mb-0 text-danger"><i class="bi bi-exclamation-triangle me-2"></i> Confirmación requerida</h5>
             </div>
+
             <div class="card-body">
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Atención:</strong> Está por rechazar esta venta. Esta acción no se puede deshacer.
+                <div class="alert alert-danger border-0">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Atención:</strong> Está a punto de <strong>rechazar esta venta</strong>.
+                    Esta acción es permanente y no podrá deshacerse.
                 </div>
 
-                <h5 class="mb-3">Datos de la Venta</h5>
-                <table class="table table-bordered">
-                    <tr>
-                        <th width="30%">Número:</th>
-                        <td>@Model.Numero</td>
-                    </tr>
-                    <tr>
-                        <th>Cliente:</th>
-                        <td>@Model.ClienteNombre (@Model.ClienteDocumento)</td>
-                    </tr>
-                    <tr>
-                        <th>Fecha:</th>
-                        <td>@Model.FechaVenta.ToString("dd/MM/yyyy")</td>
-                    </tr>
-                    <tr>
-                        <th>Total:</th>
-                        <td><strong>@Model.Total.ToString("C2")</strong></td>
-                    </tr>
-                </table>
+                <!-- Datos de la venta -->
+                <div class="mb-4">
+                    <h6 class="text-uppercase text-muted fw-semibold">Datos de la Venta</h6>
+                    <table class="table table-sm table-borderless align-middle">
+                        <tbody>
+                            <tr>
+                                <th class="text-muted" width="30%">Número:</th>
+                                <td>@Model.Numero</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Cliente:</th>
+                                <td>@Model.ClienteNombre (@Model.ClienteDocumento)</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Fecha:</th>
+                                <td>@Model.FechaVenta.ToString("dd/MM/yyyy")</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Total:</th>
+                                <td><strong class="text-success">@Model.Total.ToString("C2")</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
+                <!-- Motivo original -->
                 @if (!string.IsNullOrEmpty(Model.MotivoAutorizacion))
                 {
-                    <div class="alert alert-info">
+                    <div class="alert alert-info border-0 text-light">
                         <strong>Motivo de la solicitud:</strong><br />
-                        @Model.MotivoAutorizacion
+                        <span class="text-muted">@Model.MotivoAutorizacion</span>
                     </div>
                 }
 
+                <!-- Formulario de rechazo -->
                 <form asp-action="Rechazar" asp-route-id="@Model.Id" method="post">
                     @Html.AntiForgeryToken()
 
-                    <div class="mb-3">
-                        <label class="form-label"><span class="text-danger">*</span> Motivo del Rechazo</label>
-                        <textarea name="motivo" class="form-control" rows="4" required placeholder="Ingrese el motivo por el cual rechaza esta venta"></textarea>
-                        <small class="text-muted">Este campo es obligatorio</small>
+                    <div class="mb-4">
+                        <label for="motivo" class="form-label fw-semibold">
+                            <span class="text-danger">*</span> Motivo del Rechazo
+                        </label>
+                        <textarea id="motivo" name="motivo" class="form-control" rows="4" required
+                                  placeholder="Ingrese el motivo por el cual rechaza esta venta"></textarea>
+                        <small class="text-muted">Campo obligatorio</small>
                     </div>
 
+                    <!-- Botones -->
                     <div class="d-flex justify-content-end gap-2">
-                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
                         </a>
-                        <button type="submit" class="btn btn-danger">
+                        <button type="submit" class="btn btn-danger px-4">
                             <i class="bi bi-x-lg"></i> Rechazar Venta
                         </button>
                     </div>
@@ -65,4 +86,4 @@
             </div>
         </div>
     </div>
-</div>
+</section>

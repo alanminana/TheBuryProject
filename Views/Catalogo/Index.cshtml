@@ -4,13 +4,13 @@
     ViewData["Title"] = "Catálogo";
 }
 
-<div class="container-fluid py-4">
+<section class="container-fluid py-4 text-light">
     <div class="row mb-4">
         <div class="col">
-            <h1 class="h3 mb-0 fw-bold">
+            <h1 class="h3 fw-bold mb-1">
                 <i class="bi bi-grid text-primary"></i> Catálogo del Sistema
             </h1>
-            <p class="text-muted mb-0">Gestión centralizada de categorías y marcas</p>
+            <p class="text-secondary mb-0">Gestión centralizada de categorías y marcas</p>
         </div>
     </div>
 
@@ -23,72 +23,71 @@
         </div>
     }
 
-    <!-- Cards principales -->
     <div class="row g-4">
-        <!-- Card Categorías -->
+        <!-- Categorías -->
         <div class="col-lg-6">
-            <div class="card border-0 shadow h-100">
+            <div class="card bg-dark border-secondary shadow-sm h-100">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-4">
-                        <div class="bg-primary bg-opacity-10 rounded p-3 me-3">
-                            <i class="bi bi-diagram-3 text-primary" style="font-size: 2rem;"></i>
+                        <div class="bg-primary bg-opacity-25 rounded p-3 me-3">
+                            <i class="bi bi-diagram-3 text-primary fs-2"></i>
                         </div>
                         <div>
-                            <h4 class="mb-0 fw-bold">Categorías</h4>
-                            <p class="text-muted mb-0">Clasificación de productos</p>
+                            <h4 class="fw-bold mb-0 text-light">Categorías</h4>
+                            <p class="text-secondary mb-0">Clasificación de productos</p>
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
-                            <span class="fw-semibold">Total de categorías</span>
+                        <div class="d-flex justify-content-between align-items-center p-3 rounded bg-secondary bg-opacity-10 border border-secondary">
+                            <span class="fw-semibold text-light">Total de categorías</span>
                             <span class="badge bg-primary fs-5">@Model.Categorias.Count()</span>
                         </div>
                     </div>
 
                     <div class="d-grid gap-2">
                         <a asp-controller="Categoria" asp-action="Index" class="btn btn-primary btn-lg">
-                            <i class="bi bi-search me-2"></i>Ver todas las categorías
+                            <i class="bi bi-search me-2"></i> Ver todas las categorías
                         </a>
-                        <a asp-controller="Categoria" asp-action="Create" class="btn btn-outline-primary">
-                            <i class="bi bi-plus-circle me-2"></i>Nueva Categoría
+                        <a asp-controller="Categoria" asp-action="Create" class="btn btn-outline-light border-primary text-primary">
+                            <i class="bi bi-plus-circle me-2"></i> Nueva Categoría
                         </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Card Marcas -->
+        <!-- Marcas -->
         <div class="col-lg-6">
-            <div class="card border-0 shadow h-100">
+            <div class="card bg-dark border-secondary shadow-sm h-100">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-4">
-                        <div class="bg-success bg-opacity-10 rounded p-3 me-3">
-                            <i class="bi bi-award text-success" style="font-size: 2rem;"></i>
+                        <div class="bg-success bg-opacity-25 rounded p-3 me-3">
+                            <i class="bi bi-award text-success fs-2"></i>
                         </div>
                         <div>
-                            <h4 class="mb-0 fw-bold">Marcas</h4>
-                            <p class="text-muted mb-0">Fabricantes y proveedores</p>
+                            <h4 class="fw-bold mb-0 text-light">Marcas</h4>
+                            <p class="text-secondary mb-0">Fabricantes y proveedores</p>
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
-                            <span class="fw-semibold">Total de marcas</span>
+                        <div class="d-flex justify-content-between align-items-center p-3 rounded bg-secondary bg-opacity-10 border border-secondary">
+                            <span class="fw-semibold text-light">Total de marcas</span>
                             <span class="badge bg-success fs-5">@Model.Marcas.Count()</span>
                         </div>
                     </div>
 
                     <div class="d-grid gap-2">
                         <a asp-controller="Marca" asp-action="Index" class="btn btn-success btn-lg">
-                            <i class="bi bi-search me-2"></i>Ver todas las marcas
+                            <i class="bi bi-search me-2"></i> Ver todas las marcas
                         </a>
-                        <a asp-controller="Marca" asp-action="Create" class="btn btn-outline-success">
-                            <i class="bi bi-plus-circle me-2"></i>Nueva Marca
+                        <a asp-controller="Marca" asp-action="Create" class="btn btn-outline-light border-success text-success">
+                            <i class="bi bi-plus-circle me-2"></i> Nueva Marca
                         </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>

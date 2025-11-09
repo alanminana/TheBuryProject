@@ -1,98 +1,88 @@
 ﻿@model TheBuryProject.ViewModels.MarcaViewModel
-
 @{
     ViewData["Title"] = "Eliminar Marca";
 }
 
-<div class="container py-5">
+<section class="container-fluid py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="mb-4">
-                <a asp-action="Index" class="text-decoration-none">
+                <a asp-action="Index" class="text-decoration-none text-light">
                     <i class="bi bi-arrow-left me-2"></i>Volver al listado
                 </a>
             </div>
 
-            <div class="card border-danger shadow-lg">
+            <div class="card bg-dark border-danger shadow-sm">
                 <div class="card-header bg-danger text-white py-3">
                     <h4 class="mb-0 fw-bold">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>Eliminar Marca
                     </h4>
                 </div>
-                <div class="card-body p-4">
-                    <div class="alert alert-warning border-0 shadow-sm d-flex align-items-start" role="alert">
+
+                <div class="card-body text-light p-4">
+                    <div class="alert alert-warning border-0 d-flex align-items-start shadow-sm" role="alert">
                         <i class="bi bi-exclamation-triangle-fill fs-3 me-3 flex-shrink-0"></i>
                         <div>
-                            <h5 class="alert-heading fw-bold mb-2">¿Estás seguro que querés eliminar esta marca?</h5>
-                            <p class="mb-0">Esta acción no se puede deshacer. La marca quedará marcada como eliminada en el sistema y no podrá ser utilizada en nuevos productos.</p>
+                            <h5 class="alert-heading fw-bold mb-2">¿Confirmás eliminar esta marca?</h5>
+                            <p class="mb-0 small">Esta acción no se puede deshacer. La marca quedará deshabilitada para nuevos productos.</p>
                         </div>
                     </div>
 
-                    <div class="card bg-light border-0 mt-4">
-                        <div class="card-body p-4">
-                            <h6 class="text-muted text-uppercase fw-semibold mb-3">Información de la Marca</h6>
+                    <div class="card bg-body-secondary border-0 mt-4">
+                        <div class="card-body text-light p-4">
+                            <h6 class="text-uppercase text-muted fw-semibold mb-3">Información de la Marca</h6>
 
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <div class="mb-2">
-                                        <small class="text-muted d-block">Código</small>
-                                        <span class="badge bg-primary fs-6 px-3 py-2">@Model.Codigo</span>
-                                    </div>
+                                    <small class="text-muted d-block">Código</small>
+                                    <span class="badge bg-primary fs-6 px-3 py-2">@Model.Codigo</span>
                                 </div>
 
                                 <div class="col-md-6">
-                                    <div class="mb-2">
-                                        <small class="text-muted d-block">País de Origen</small>
-                                        @if (!string.IsNullOrEmpty(Model.PaisOrigen))
-                                        {
-                                            <span class="badge bg-info-subtle text-info-emphasis fs-6 px-3 py-2">
-                                                <i class="bi bi-flag"></i> @Model.PaisOrigen
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted fst-italic">Sin especificar</span>
-                                        }
-                                    </div>
+                                    <small class="text-muted d-block">País de Origen</small>
+                                    @if (!string.IsNullOrEmpty(Model.PaisOrigen))
+                                    {
+                                        <span class="badge bg-info text-dark fs-6 px-3 py-2">
+                                            <i class="bi bi-flag"></i> @Model.PaisOrigen
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic">Sin especificar</span>
+                                    }
                                 </div>
 
                                 <div class="col-12">
-                                    <div class="mb-2">
-                                        <small class="text-muted d-block mb-1">Nombre</small>
-                                        <p class="fs-5 fw-medium mb-0">@Model.Nombre</p>
-                                    </div>
+                                    <small class="text-muted d-block mb-1">Nombre</small>
+                                    <p class="fs-5 fw-semibold mb-0">@Model.Nombre</p>
                                 </div>
 
                                 <div class="col-12">
-                                    <div class="mb-2">
-                                        <small class="text-muted d-block mb-1">Descripción</small>
-                                        @if (!string.IsNullOrEmpty(Model.Descripcion))
-                                        {
-                                            <p class="mb-0">@Model.Descripcion</p>
-                                        }
-                                        else
-                                        {
-                                            <p class="text-muted fst-italic mb-0">Sin descripción</p>
-                                        }
-                                    </div>
+                                    <small class="text-muted d-block mb-1">Descripción</small>
+                                    @if (!string.IsNullOrEmpty(Model.Descripcion))
+                                    {
+                                        <p class="mb-0">@Model.Descripcion</p>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted fst-italic mb-0">Sin descripción</p>
+                                    }
                                 </div>
 
                                 <div class="col-12">
-                                    <div class="mb-0">
-                                        <small class="text-muted d-block mb-1">Marca Padre</small>
-                                        @if (!string.IsNullOrEmpty(Model.ParentNombre))
-                                        {
-                                            <span class="badge bg-secondary-subtle text-secondary-emphasis fs-6 px-3 py-2">
-                                                <i class="bi bi-diagram-3 me-1"></i>@Model.ParentNombre
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-primary-subtle text-primary-emphasis fs-6 px-3 py-2">
-                                                <i class="bi bi-star-fill me-1"></i>Marca Principal
-                                            </span>
-                                        }
-                                    </div>
+                                    <small class="text-muted d-block mb-1">Marca Padre</small>
+                                    @if (!string.IsNullOrEmpty(Model.ParentNombre))
+                                    {
+                                        <span class="badge bg-secondary text-light fs-6 px-3 py-2">
+                                            <i class="bi bi-diagram-3 me-1"></i>@Model.ParentNombre
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary text-light fs-6 px-3 py-2">
+                                            <i class="bi bi-star-fill me-1"></i>Marca Principal
+                                        </span>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -101,12 +91,12 @@
                     <form asp-action="Delete" method="post" class="mt-4">
                         <input type="hidden" asp-for="Id" />
 
-                        <div class="d-flex gap-2 justify-content-end">
-                            <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-4">
-                                <i class="bi bi-x-circle me-2"></i>No, cancelar
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-danger btn-lg px-4">
-                                <i class="bi bi-trash me-2"></i>Sí, eliminar permanentemente
+                                <i class="bi bi-trash me-2"></i>Eliminar Marca
                             </button>
                         </div>
                     </form>
@@ -114,4 +104,4 @@
             </div>
         </div>
     </div>
-</div>
+</section>

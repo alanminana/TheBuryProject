@@ -1,139 +1,145 @@
 ﻿@model TheBuryProject.ViewModels.ChequeViewModel
-
 @{
     ViewData["Title"] = "Nuevo Cheque";
 }
 
-<div class="row">
-    <div class="col-md-8 mx-auto">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>
-                <i class="bi bi-credit-card-2-front"></i> Nuevo Cheque
-            </h2>
-            <a asp-action="Index" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver al listado
-            </a>
-        </div>
+<section class="container-fluid py-4 text-light">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
 
-        <form asp-action="Create" method="post">
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-
-            <div class="card mb-3">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información del Cheque</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="Numero" class="form-label"></label>
-                            <input asp-for="Numero" class="form-control" />
-                            <span asp-validation-for="Numero" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="Banco" class="form-label"></label>
-                            <input asp-for="Banco" class="form-control" />
-                            <span asp-validation-for="Banco" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="Monto" class="form-label"></label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input asp-for="Monto" class="form-control" type="number" step="0.01" min="0.01" />
-                            </div>
-                            <span asp-validation-for="Monto" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="Estado" class="form-label"></label>
-                            <select asp-for="Estado" class="form-select" asp-items="ViewBag.Estados"></select>
-                            <span asp-validation-for="Estado" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="FechaEmision" class="form-label"></label>
-                            <input asp-for="FechaEmision" class="form-control" type="date" />
-                            <span asp-validation-for="FechaEmision" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="FechaVencimiento" class="form-label"></label>
-                            <input asp-for="FechaVencimiento" class="form-control" type="date" />
-                            <span asp-validation-for="FechaVencimiento" class="text-danger"></span>
-                            <small class="form-text text-muted">Opcional - Dejar vacío si es un cheque al día</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mb-3">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-building"></i> Relación con Proveedor</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="ProveedorId" class="form-label"></label>
-                            <select asp-for="ProveedorId" class="form-select" asp-items="ViewBag.Proveedores"
-                                    id="proveedorSelect" onchange="cargarOrdenesProveedor()">
-                                <option value="">Seleccione un proveedor</option>
-                            </select>
-                            <span asp-validation-for="ProveedorId" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label asp-for="OrdenCompraId" class="form-label"></label>
-                            <select asp-for="OrdenCompraId" class="form-select" asp-items="ViewBag.OrdenesCompra" id="ordenCompraSelect">
-                                <option value="">Ninguna (Opcional)</option>
-                            </select>
-                            <span asp-validation-for="OrdenCompraId" class="text-danger"></span>
-                            <small class="form-text text-muted">Opcional - Vincular con una orden de compra</small>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="Observaciones" class="form-label"></label>
-                        <textarea asp-for="Observaciones" class="form-control" rows="3"></textarea>
-                        <span asp-validation-for="Observaciones" class="text-danger"></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="d-flex justify-content-between">
-                <a asp-action="Index" class="btn btn-secondary">
-                    <i class="bi bi-x-circle"></i> Cancelar
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="fw-semibold">
+                    <i class="bi bi-credit-card-2-front text-primary"></i> Nuevo Cheque
+                </h2>
+                <a asp-action="Index" class="btn btn-outline-light">
+                    <i class="bi bi-arrow-left"></i> Volver al listado
                 </a>
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save"></i> Guardar Cheque
-                </button>
             </div>
-        </form>
+
+            <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>Por favor, corregí los errores antes de continuar.</div>
+                </div>
+
+                <!-- Información del cheque -->
+                <div class="card bg-dark border-secondary mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-dark bg-opacity-25 border-primary">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle"></i> Información del Cheque
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Numero" class="form-label fw-semibold"></label>
+                                <input asp-for="Numero" class="form-control bg-dark text-light border-secondary" />
+                                <span asp-validation-for="Numero" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Banco" class="form-label fw-semibold"></label>
+                                <input asp-for="Banco" class="form-control bg-dark text-light border-secondary" />
+                                <span asp-validation-for="Banco" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Monto" class="form-label fw-semibold"></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-secondary text-light border-secondary">$</span>
+                                    <input asp-for="Monto" type="number" step="0.01" min="0.01"
+                                           class="form-control bg-dark text-light border-secondary" />
+                                </div>
+                                <span asp-validation-for="Monto" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Estado" class="form-label fw-semibold"></label>
+                                <select asp-for="Estado" class="form-select bg-dark text-light border-secondary" asp-items="ViewBag.Estados"></select>
+                                <span asp-validation-for="Estado" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FechaEmision" class="form-label fw-semibold"></label>
+                                <input asp-for="FechaEmision" type="date" class="form-control bg-dark text-light border-secondary" />
+                                <span asp-validation-for="FechaEmision" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FechaVencimiento" class="form-label fw-semibold"></label>
+                                <input asp-for="FechaVencimiento" type="date" class="form-control bg-dark text-light border-secondary" />
+                                <span asp-validation-for="FechaVencimiento" class="text-danger small"></span>
+                                <div class="form-text text-secondary">Opcional — dejar vacío si es un cheque al día</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Relación con proveedor -->
+                <div class="card bg-dark border-secondary mb-4 shadow-sm">
+                    <div class="card-header bg-success text-dark bg-opacity-25 border-success">
+                        <h5 class="mb-0">
+                            <i class="bi bi-building"></i> Relación con Proveedor
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ProveedorId" class="form-label fw-semibold"></label>
+                                <select asp-for="ProveedorId"
+                                        class="form-select bg-dark text-light border-secondary"
+                                        asp-items="ViewBag.Proveedores"
+                                        id="proveedorSelect"
+                                        onchange="cargarOrdenesProveedor()">
+                                    <option value="">Seleccione un proveedor</option>
+                                </select>
+                                <span asp-validation-for="ProveedorId" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="OrdenCompraId" class="form-label fw-semibold"></label>
+                                <select asp-for="OrdenCompraId"
+                                        class="form-select bg-dark text-light border-secondary"
+                                        asp-items="ViewBag.OrdenesCompra"
+                                        id="ordenCompraSelect">
+                                    <option value="">Ninguna (Opcional)</option>
+                                </select>
+                                <span asp-validation-for="OrdenCompraId" class="text-danger small"></span>
+                                <div class="form-text text-secondary">Opcional — vincular con una orden de compra</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Observaciones" class="form-label fw-semibold"></label>
+                            <textarea asp-for="Observaciones" class="form-control bg-dark text-light border-secondary" rows="3"></textarea>
+                            <span asp-validation-for="Observaciones" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-light px-4">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-save"></i> Guardar Cheque
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-
+    <partial name="_ValidationScriptsPartial" />
     <script>
         function cargarOrdenesProveedor() {
             const proveedorId = document.getElementById('proveedorSelect').value;
             const ordenSelect = document.getElementById('ordenCompraSelect');
-
-            // Limpiar el select de órdenes
             ordenSelect.innerHTML = '<option value="">Ninguna (Opcional)</option>';
-
-            if (!proveedorId) {
-                return;
-            }
-
-            // Aquí podrías hacer una llamada AJAX para cargar las órdenes del proveedor
-            // Por ahora solo mostramos el mensaje
+            if (!proveedorId) return;
             ordenSelect.innerHTML = '<option value="">Cargando órdenes...</option>';
-
-            // Simular carga (en producción esto sería una llamada AJAX)
             setTimeout(() => {
                 ordenSelect.innerHTML = '<option value="">Ninguna (Opcional)</option>';
             }, 500);

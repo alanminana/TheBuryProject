@@ -1,97 +1,88 @@
 ﻿@model TheBuryProject.ViewModels.ProveedorFilterViewModel
-
 @{
     ViewData["Title"] = "Proveedores";
 }
 
-<div class="container-fluid py-4">
+<section class="container-fluid py-4">
+    <!-- Header -->
     <div class="row align-items-center mb-4">
         <div class="col">
-            <h1 class="h3 mb-0 fw-bold">
-                <i class="bi bi-truck text-primary"></i> Gestión de Proveedores
+            <h1 class="h3 fw-bold text-light mb-0">
+                <i class="bi bi-truck text-info me-2"></i> Gestión de Proveedores
             </h1>
-            <p class="text-muted mb-0">Administrá los proveedores del sistema</p>
+            <p class="text-secondary mb-0">Administrá los proveedores registrados en el sistema</p>
         </div>
-        <div class="col-auto">
-            <a asp-action="Create" class="btn btn-primary btn-lg shadow-sm">
+        <div class="col-auto d-flex gap-2 flex-wrap">
+            <a asp-controller="OrdenCompra" asp-action="Index" class="btn btn-outline-light fw-semibold shadow-sm">
+                <i class="bi bi-cart-check me-2"></i>Ver Órdenes de Compra
+            </a>
+            <a asp-action="Create" class="btn btn-info text-dark fw-semibold shadow-sm">
                 <i class="bi bi-plus-circle me-2"></i>Nuevo Proveedor
             </a>
         </div>
     </div>
 
+    <!-- Mensajes -->
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            @TempData["Success"]
+        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            @TempData["Error"]
+        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
-    <!-- Formulario de Búsqueda y Filtros -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white border-bottom">
-            <button class="btn btn-link text-decoration-none text-dark w-100 text-start p-0"
+    <!-- Filtros -->
+    <div class="card bg-dark border-0 shadow-sm mb-4">
+        <div class="card-header border-bottom border-secondary bg-gradient">
+            <button class="btn btn-link text-decoration-none text-light w-100 text-start p-0"
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#filtrosCollapse">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">
-                        <i class="bi bi-funnel me-2"></i>Búsqueda y Filtros
-                    </h6>
+                    <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Búsqueda y Filtros</h6>
                     <i class="bi bi-chevron-down"></i>
                 </div>
             </button>
         </div>
+
         <div class="collapse show" id="filtrosCollapse">
-            <div class="card-body">
+            <div class="card-body bg-dark">
                 <form asp-action="Index" method="get">
                     <div class="row g-3">
-                        <!-- Búsqueda de texto -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-search me-1"></i>Búsqueda por texto
+                            <label class="form-label text-light fw-semibold">
+                                <i class="bi bi-search me-1"></i>Buscar proveedor
                             </label>
-                            <input type="text"
-                                   class="form-control"
-                                   name="searchTerm"
-                                   value="@Model.SearchTerm"
+                            <input type="text" name="searchTerm" value="@Model.SearchTerm"
+                                   class="form-control bg-body-secondary text-light border-0"
                                    placeholder="Buscar por CUIT, razón social, nombre de fantasía o email..." />
                         </div>
 
-                        <!-- Checkbox solo activos -->
                         <div class="col-md-3">
-                            <label class="form-label fw-semibold">Opciones</label>
+                            <label class="form-label text-light fw-semibold">Opciones</label>
                             <div class="form-check">
-                                <input class="form-check-input"
-                                       type="checkbox"
-                                       name="soloActivos"
-                                       id="soloActivos"
-                                       value="true"
-                                       @(Model.SoloActivos ? "checked" : "") />
-                                <label class="form-check-label" for="soloActivos">
-                                    <i class="bi bi-check-circle text-success me-1"></i>
-                                    Solo proveedores activos
+                                <input class="form-check-input" type="checkbox" name="soloActivos"
+                                       id="soloActivos" value="true" @(Model.SoloActivos ? "checked" : "") />
+                                <label class="form-check-label text-light" for="soloActivos">
+                                    <i class="bi bi-check-circle text-success me-1"></i> Solo activos
                                 </label>
                             </div>
                         </div>
 
-                        <!-- Ordenamiento -->
                         <div class="col-md-2">
-                            <label class="form-label fw-semibold">
+                            <label class="form-label text-light fw-semibold">
                                 <i class="bi bi-sort-down me-1"></i>Ordenar por
                             </label>
-                            <select class="form-select" name="orderBy">
-                                <option value="razonsocial" selected="@(Model.OrderBy == "razonsocial" || string.IsNullOrEmpty(Model.OrderBy))">Razón Social</option>
+                            <select class="form-select bg-body-secondary text-light border-0" name="orderBy">
+                                <option value="razonsocial" selected="@(Model.OrderBy == "razonsocial")">Razón Social</option>
                                 <option value="cuit" selected="@(Model.OrderBy == "cuit")">CUIT</option>
                                 <option value="email" selected="@(Model.OrderBy == "email")">Email</option>
                                 <option value="telefono" selected="@(Model.OrderBy == "telefono")">Teléfono</option>
@@ -99,20 +90,19 @@
                         </div>
 
                         <div class="col-md-1">
-                            <label class="form-label fw-semibold">Dirección</label>
-                            <select class="form-select" name="orderDirection">
-                                <option value="asc" selected="@(Model.OrderDirection == "asc" || string.IsNullOrEmpty(Model.OrderDirection))">Asc</option>
+                            <label class="form-label text-light fw-semibold">Dirección</label>
+                            <select class="form-select bg-body-secondary text-light border-0" name="orderDirection">
+                                <option value="asc" selected="@(Model.OrderDirection == "asc")">Asc</option>
                                 <option value="desc" selected="@(Model.OrderDirection == "desc")">Desc</option>
                             </select>
                         </div>
 
-                        <!-- Botones -->
                         <div class="col-12">
                             <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-info text-dark fw-semibold">
                                     <i class="bi bi-search me-2"></i>Buscar
                                 </button>
-                                <a asp-action="Index" class="btn btn-outline-secondary">
+                                <a asp-action="Index" class="btn btn-outline-light">
                                     <i class="bi bi-x-circle me-2"></i>Limpiar Filtros
                                 </a>
                             </div>
@@ -126,108 +116,81 @@
     <!-- Resultados -->
     @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos)
     {
-        <div class="alert alert-info d-flex align-items-center mb-3">
+        <div class="alert alert-info border-0 shadow-sm mb-3">
             <i class="bi bi-info-circle me-2"></i>
-            <span>
-                Se encontraron <strong>@Model.TotalResultados</strong> proveedores que coinciden con los filtros aplicados
-            </span>
+            Se encontraron <strong>@Model.TotalResultados</strong> proveedores que coinciden con los filtros.
         </div>
     }
 
-    <div class="card border-0 shadow-sm">
+    <div class="card bg-dark border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
+                <table class="table table-hover align-middle text-light mb-0">
+                    <thead class="table-dark border-secondary">
                         <tr>
-                            <th class="fw-semibold px-4 py-3">CUIT</th>
-                            <th class="fw-semibold py-3">Razón Social</th>
-                            <th class="fw-semibold py-3">Productos Asociados</th>
-                            <th class="fw-semibold py-3">Contacto</th>
-                            <th class="fw-semibold py-3 text-center">Estado</th>
-                            <th class="fw-semibold text-center py-3 px-4">Acciones</th>
+                            <th>CUIT</th>
+                            <th>Razón Social</th>
+                            <th>Productos</th>
+                            <th>Contacto</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (Model.Proveedores.Any())
                         {
-                            @foreach (var proveedor in Model.Proveedores)
+                            @foreach (var p in Model.Proveedores)
                             {
                                 <tr>
-                                    <td class="px-4">
-                                        <span class="badge bg-primary-subtle text-primary-emphasis">@proveedor.Cuit</span>
-                                    </td>
+                                    <td><span class="badge bg-secondary text-light">@p.Cuit</span></td>
                                     <td>
-                                        <div class="fw-medium">@proveedor.RazonSocial</div>
-                                        @if (!string.IsNullOrEmpty(proveedor.NombreFantasia))
+                                        <div class="fw-semibold">@p.RazonSocial</div>
+                                        @if (!string.IsNullOrEmpty(p.NombreFantasia))
                                         {
-                                            <small class="text-muted">@proveedor.NombreFantasia</small>
+                                            <small class="text-muted">@p.NombreFantasia</small>
                                         }
                                     </td>
                                     <td>
-                                        @if (proveedor.ProductosAsociados.Any())
+                                        @if (p.ProductosAsociados.Any())
                                         {
                                             <div class="d-flex flex-wrap gap-1">
-                                                @foreach (var producto in proveedor.ProductosAsociados.Take(3))
+                                                @foreach (var producto in p.ProductosAsociados.Take(3))
                                                 {
-                                                    <span class="badge bg-success-subtle text-success-emphasis small">@producto</span>
+                                                    <span class="badge bg-success-subtle text-success">@producto</span>
                                                 }
-                                                @if (proveedor.ProductosAsociados.Count > 3)
+                                                @if (p.ProductosAsociados.Count > 3)
                                                 {
-                                                    <span class="badge bg-secondary-subtle text-secondary-emphasis small"
-                                                          data-bs-toggle="tooltip"
-                                                          title="@string.Join(", ", proveedor.ProductosAsociados.Skip(3))">
-                                                        +@(proveedor.ProductosAsociados.Count - 3) más
+                                                    <span class="badge bg-secondary" title="@string.Join(", ", p.ProductosAsociados.Skip(3))">
+                                                        +@(p.ProductosAsociados.Count - 3) más
                                                     </span>
                                                 }
                                             </div>
                                         }
                                         else
                                         {
-                                            <small class="text-muted">
-                                                <i class="bi bi-exclamation-triangle text-warning"></i> Sin productos
-                                            </small>
+                                            <small class="text-muted"><i class="bi bi-exclamation-triangle text-warning"></i> Sin productos</small>
                                         }
                                     </td>
                                     <td>
-                                        <div class="text-muted small">@(proveedor.Contacto ?? "-")</div>
-                                        <div class="text-muted small">@(proveedor.Email ?? "-")</div>
-                                        <div class="text-muted small">@(proveedor.Telefono ?? "-")</div>
+                                        <div class="small text-muted">@(p.Contacto ?? "-")</div>
+                                        <div class="small text-muted">@(p.Email ?? "-")</div>
+                                        <div class="small text-muted">@(p.Telefono ?? "-")</div>
                                     </td>
                                     <td class="text-center">
-                                        @if (proveedor.Activo)
+                                        @if (p.Activo)
                                         {
-                                            <span class="badge bg-success-subtle text-success-emphasis">
-                                                <i class="bi bi-check-circle"></i> Activo
-                                            </span>
+                                            <span class="badge bg-success text-dark"><i class="bi bi-check-circle"></i> Activo</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">
-                                                <i class="bi bi-x-circle"></i> Inactivo
-                                            </span>
+                                            <span class="badge bg-danger text-light"><i class="bi bi-x-circle"></i> Inactivo</span>
                                         }
                                     </td>
-                                    <td class="text-center px-4">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a asp-action="Details" asp-route-id="@proveedor.Id"
-                                               class="btn btn-outline-info"
-                                               data-bs-toggle="tooltip"
-                                               title="Ver detalles">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            <a asp-action="Edit" asp-route-id="@proveedor.Id"
-                                               class="btn btn-outline-warning"
-                                               data-bs-toggle="tooltip"
-                                               title="Editar">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <a asp-action="Delete" asp-route-id="@proveedor.Id"
-                                               class="btn btn-outline-danger"
-                                               data-bs-toggle="tooltip"
-                                               title="Eliminar">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-outline-info" title="Ver detalles"><i class="bi bi-eye"></i></a>
+                                            <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-outline-warning" title="Editar"><i class="bi bi-pencil"></i></a>
+                                            <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></a>
                                         </div>
                                     </td>
                                 </tr>
@@ -236,17 +199,17 @@
                         else
                         {
                             <tr>
-                                <td colspan="6" class="text-center py-5">
-                                    <i class="bi bi-inbox display-1 text-muted d-block mb-3"></i>
+                                <td colspan="6" class="text-center py-5 text-secondary">
+                                    <i class="bi bi-inbox display-4 d-block mb-2"></i>
                                     @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos)
                                     {
-                                        <p class="text-muted mb-2">No se encontraron proveedores con los filtros aplicados</p>
-                                        <a asp-action="Index" class="btn btn-outline-primary">Limpiar filtros</a>
+                                        <p>No se encontraron proveedores</p>
+                                        <a asp-action="Index" class="btn btn-outline-light">Limpiar filtros</a>
                                     }
                                     else
                                     {
-                                        <p class="text-muted mb-2">No hay proveedores registrados</p>
-                                        <a asp-action="Create" class="btn btn-primary">Crear el primer proveedor</a>
+                                        <p>No hay proveedores registrados</p>
+                                        <a asp-action="Create" class="btn btn-info text-dark fw-semibold">Crear proveedor</a>
                                     }
                                 </td>
                             </tr>
@@ -259,30 +222,30 @@
 
     @if (Model.Proveedores.Any())
     {
-        <div class="row mt-4">
+        <div class="row mt-4 g-3">
             <div class="col-md-6">
-                <div class="card border-0 shadow-sm">
+                <div class="card bg-dark border-0 shadow-sm text-light">
                     <div class="card-body">
-                        <h6 class="text-muted mb-2">Total Proveedores</h6>
-                        <h3 class="mb-0 fw-bold">@Model.TotalResultados</h3>
+                        <h6 class="text-secondary mb-1">Total Proveedores</h6>
+                        <h3 class="fw-bold">@Model.TotalResultados</h3>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card border-0 shadow-sm">
+                <div class="card bg-dark border-0 shadow-sm text-light">
                     <div class="card-body">
-                        <h6 class="text-muted mb-2">Proveedores Activos</h6>
-                        <h3 class="mb-0 fw-bold text-success">@Model.Proveedores.Count(p => p.Activo)</h3>
+                        <h6 class="text-secondary mb-1">Activos</h6>
+                        <h3 class="fw-bold text-success">@Model.Proveedores.Count(p => p.Activo)</h3>
                     </div>
                 </div>
             </div>
         </div>
     }
-</div>
+</section>
 
 @section Scripts {
     <script>
         const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        [...tooltipTriggerList].forEach(t => new bootstrap.Tooltip(t));
     </script>
 }

@@ -1,178 +1,173 @@
 ﻿@model TheBuryProject.ViewModels.ProveedorViewModel
-
 @{
     ViewData["Title"] = "Nuevo Proveedor";
 }
 
-<div class="container-fluid py-4">
+<section class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col">
-            <h1 class="h3 mb-0 fw-bold">
-                <i class="bi bi-plus-circle text-primary"></i> Nuevo Proveedor
+            <h1 class="h3 fw-bold text-light mb-0">
+                <i class="bi bi-plus-circle text-info me-2"></i>Nuevo Proveedor
             </h1>
             <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a asp-action="Index">Proveedores</a></li>
-                    <li class="breadcrumb-item active">Nuevo</li>
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a asp-action="Index" class="link-light">Proveedores</a></li>
+                    <li class="breadcrumb-item active text-light">Nuevo</li>
                 </ol>
             </nav>
         </div>
     </div>
 
     <div class="row">
+        <!-- Formulario principal -->
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
+            <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-body p-4">
                     <form asp-action="Create" method="post">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                         <!-- Datos Fiscales -->
-                        <h5 class="mb-3 pb-2 border-bottom">
-                            <i class="bi bi-file-text text-primary"></i> Datos Fiscales
+                        <h5 class="text-info border-bottom pb-2 mb-3">
+                            <i class="bi bi-file-text me-2"></i>Datos Fiscales
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-4">
-                                <label asp-for="Cuit" class="form-label"></label>
-                                <input asp-for="Cuit" class="form-control" maxlength="11" placeholder="20123456789" />
+                                <label asp-for="Cuit" class="form-label text-light"></label>
+                                <input asp-for="Cuit" class="form-control bg-body-secondary text-light border-0" maxlength="11" placeholder="20123456789" />
                                 <span asp-validation-for="Cuit" class="text-danger"></span>
-                                <small class="text-muted">11 dígitos sin guiones</small>
+                                <small class="text-secondary">11 dígitos sin guiones</small>
                             </div>
                             <div class="col-md-8">
-                                <label asp-for="RazonSocial" class="form-label"></label>
-                                <input asp-for="RazonSocial" class="form-control" />
+                                <label asp-for="RazonSocial" class="form-label text-light"></label>
+                                <input asp-for="RazonSocial" class="form-control bg-body-secondary text-light border-0" />
                                 <span asp-validation-for="RazonSocial" class="text-danger"></span>
                             </div>
                             <div class="col-md-12">
-                                <label asp-for="NombreFantasia" class="form-label"></label>
-                                <input asp-for="NombreFantasia" class="form-control" />
+                                <label asp-for="NombreFantasia" class="form-label text-light"></label>
+                                <input asp-for="NombreFantasia" class="form-control bg-body-secondary text-light border-0" />
                                 <span asp-validation-for="NombreFantasia" class="text-danger"></span>
                             </div>
                         </div>
 
                         <!-- Datos de Contacto -->
-                        <h5 class="mb-3 pb-2 border-bottom">
-                            <i class="bi bi-telephone text-primary"></i> Datos de Contacto
+                        <h5 class="text-info border-bottom pb-2 mb-3">
+                            <i class="bi bi-telephone me-2"></i>Datos de Contacto
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
-                                <label asp-for="Email" class="form-label"></label>
-                                <input asp-for="Email" type="email" class="form-control" />
+                                <label asp-for="Email" class="form-label text-light"></label>
+                                <input asp-for="Email" type="email" class="form-control bg-body-secondary text-light border-0" />
                                 <span asp-validation-for="Email" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="Telefono" class="form-label"></label>
-                                <input asp-for="Telefono" class="form-control" />
+                                <label asp-for="Telefono" class="form-label text-light"></label>
+                                <input asp-for="Telefono" class="form-control bg-body-secondary text-light border-0" />
                                 <span asp-validation-for="Telefono" class="text-danger"></span>
                             </div>
                             <div class="col-md-12">
-                                <label asp-for="Contacto" class="form-label"></label>
-                                <input asp-for="Contacto" class="form-control" placeholder="Nombre del contacto principal" />
+                                <label asp-for="Contacto" class="form-label text-light"></label>
+                                <input asp-for="Contacto" class="form-control bg-body-secondary text-light border-0" placeholder="Nombre del contacto principal" />
                                 <span asp-validation-for="Contacto" class="text-danger"></span>
                             </div>
                         </div>
 
                         <!-- Asociaciones -->
-                        <h5 class="mb-3 pb-2 border-bottom">
-                            <i class="bi bi-diagram-3 text-primary"></i> Cobertura de Catálogo
+                        <h5 class="text-info border-bottom pb-2 mb-3">
+                            <i class="bi bi-diagram-3 me-2"></i>Cobertura de Catálogo
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-4">
-                                <label asp-for="CategoriasSeleccionadas" class="form-label"></label>
-                                <select asp-for="CategoriasSeleccionadas" class="form-select" asp-items="Model.CategoriasDisponibles" multiple="multiple"></select>
-                                <small class="text-muted d-block mt-1">Seleccioná las categorías que trabaja este proveedor.</small>
+                                <label asp-for="CategoriasSeleccionadas" class="form-label text-light"></label>
+                                <select asp-for="CategoriasSeleccionadas" class="form-select bg-body-secondary text-light border-0" asp-items="Model.CategoriasDisponibles" multiple></select>
+                                <small class="text-secondary d-block mt-1">Seleccioná las categorías que trabaja.</small>
                             </div>
                             <div class="col-md-4">
-                                <label asp-for="MarcasSeleccionadas" class="form-label"></label>
-                                <select asp-for="MarcasSeleccionadas" class="form-select" asp-items="Model.MarcasDisponibles" multiple="multiple"></select>
-                                <small class="text-muted d-block mt-1">Elegí las marcas con las que opera.</small>
+                                <label asp-for="MarcasSeleccionadas" class="form-label text-light"></label>
+                                <select asp-for="MarcasSeleccionadas" class="form-select bg-body-secondary text-light border-0" asp-items="Model.MarcasDisponibles" multiple></select>
+                                <small class="text-secondary d-block mt-1">Elegí las marcas con las que opera.</small>
                             </div>
                             <div class="col-md-4">
-                                <label asp-for="ProductosSeleccionados" class="form-label"></label>
-                                <select asp-for="ProductosSeleccionados" class="form-select" asp-items="Model.ProductosDisponibles" multiple="multiple" size="8"></select>
-                                <small class="text-muted d-block mt-1">Podés marcar productos clave o habituales.</small>
+                                <label asp-for="ProductosSeleccionados" class="form-label text-light"></label>
+                                <select asp-for="ProductosSeleccionados" class="form-select bg-body-secondary text-light border-0" asp-items="Model.ProductosDisponibles" multiple size="8"></select>
+                                <small class="text-secondary d-block mt-1">Marcá productos clave o habituales.</small>
                             </div>
                         </div>
 
                         <!-- Dirección -->
-                        <h5 class="mb-3 pb-2 border-bottom">
-                            <i class="bi bi-geo-alt text-primary"></i> Dirección
+                        <h5 class="text-info border-bottom pb-2 mb-3">
+                            <i class="bi bi-geo-alt me-2"></i>Dirección
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-12">
-                                <label asp-for="Direccion" class="form-label"></label>
-                                <input asp-for="Direccion" class="form-control" />
+                                <label asp-for="Direccion" class="form-label text-light"></label>
+                                <input asp-for="Direccion" class="form-control bg-body-secondary text-light border-0" />
                                 <span asp-validation-for="Direccion" class="text-danger"></span>
                             </div>
                             <div class="col-md-5">
-                                <label asp-for="Ciudad" class="form-label"></label>
-                                <input asp-for="Ciudad" class="form-control" />
+                                <label asp-for="Ciudad" class="form-label text-light"></label>
+                                <input asp-for="Ciudad" class="form-control bg-body-secondary text-light border-0" />
                                 <span asp-validation-for="Ciudad" class="text-danger"></span>
                             </div>
                             <div class="col-md-5">
-                                <label asp-for="Provincia" class="form-label"></label>
-                                <input asp-for="Provincia" class="form-control" />
+                                <label asp-for="Provincia" class="form-label text-light"></label>
+                                <input asp-for="Provincia" class="form-control bg-body-secondary text-light border-0" />
                                 <span asp-validation-for="Provincia" class="text-danger"></span>
                             </div>
                             <div class="col-md-2">
-                                <label asp-for="CodigoPostal" class="form-label"></label>
-                                <input asp-for="CodigoPostal" class="form-control" />
+                                <label asp-for="CodigoPostal" class="form-label text-light"></label>
+                                <input asp-for="CodigoPostal" class="form-control bg-body-secondary text-light border-0" />
                                 <span asp-validation-for="CodigoPostal" class="text-danger"></span>
                             </div>
-                        <!-- Aclaraciones -->
-                        <h5 class="mb-3 pb-2 border-bottom">
-                            <i class="bi bi-chat-text text-primary"></i> Información Adicional
+                        </div>
+
+                        <!-- Información Adicional -->
+                        <h5 class="text-info border-bottom pb-2 mb-3">
+                            <i class="bi bi-chat-text me-2"></i>Información Adicional
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-12">
-                                <label asp-for="Aclaraciones" class="form-label"></label>
-                                <textarea asp-for="Aclaraciones" class="form-control" rows="4" placeholder="Notas o aclaraciones sobre el proveedor..."></textarea>
+                                <label asp-for="Aclaraciones" class="form-label text-light"></label>
+                                <textarea asp-for="Aclaraciones" class="form-control bg-body-secondary text-light border-0" rows="4" placeholder="Notas o condiciones especiales..."></textarea>
                                 <span asp-validation-for="Aclaraciones" class="text-danger"></span>
                             </div>
                             <div class="col-md-12">
                                 <div class="form-check">
                                     <input asp-for="Activo" class="form-check-input" />
-                                    <label asp-for="Activo" class="form-check-label"></label>
+                                    <label asp-for="Activo" class="form-check-label text-light"></label>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Botones -->
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-2"></i>Guardar
-                            </button>
-                            <a asp-action="Index" class="btn btn-outline-secondary">
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a asp-action="Index" class="btn btn-outline-light">
                                 <i class="bi bi-x-circle me-2"></i>Cancelar
                             </a>
+                            <button type="submit" class="btn btn-info text-dark fw-semibold">
+                                <i class="bi bi-save me-2"></i>Guardar
+                            </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
 
+        <!-- Panel lateral -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm bg-light">
+            <div class="card bg-body-secondary border-0 shadow-sm">
                 <div class="card-body">
-                    <h6 class="fw-bold mb-3">
-                        <i class="bi bi-info-circle text-primary"></i> Información
+                    <h6 class="fw-bold text-info mb-3">
+                        <i class="bi bi-info-circle me-2"></i>Guía de Carga
                     </h6>
-                    <p class="small mb-2">
-                        <strong>CUIT:</strong> Ingresá los 11 dígitos sin guiones ni espacios.
-                    </p>
-                    <p class="small mb-2">
-                        <strong>Razón Social:</strong> Nombre legal del proveedor según AFIP.
-                    </p>
-                    <p class="small mb-2">
-                        <strong>Nombre de Fantasía:</strong> Nombre comercial del proveedor (opcional).
-                    </p>
-                    <p class="small mb-0">
-                        <strong>Aclaraciones:</strong> Podés agregar notas sobre condiciones de pago, plazos de entrega, etc.
-                    </p>
+                    <p class="small text-light mb-2"><strong>CUIT:</strong> Ingresá 11 dígitos sin guiones.</p>
+                    <p class="small text-light mb-2"><strong>Razón Social:</strong> Nombre legal según AFIP.</p>
+                    <p class="small text-light mb-2"><strong>Fantasia:</strong> Nombre comercial (opcional).</p>
+                    <p class="small text-light mb-0"><strong>Notas:</strong> Podés agregar aclaraciones, condiciones de pago o plazos de entrega.</p>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
     @{

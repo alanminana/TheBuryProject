@@ -54,13 +54,4 @@ namespace TheBuryProject.ViewModels
         public List<VentaCreditoCuotaViewModel> Cuotas { get; set; } = new List<VentaCreditoCuotaViewModel>();
     }
 
-    public class VentaCreditoCuotaViewModel
-    {
-        public int NumeroCuota { get; set; }
-        public DateTime FechaVencimiento { get; set; }
-        public decimal Monto { get; set; }
-        public decimal Saldo { get; set; }
-        public bool Pagada { get; set; }
-        public DateTime? FechaPago { get; set; }
-    }
 }

@@ -1,202 +1,207 @@
 ﻿@model TheBuryProject.ViewModels.ClienteFilterViewModel
-
 @{
     ViewData["Title"] = "Clientes";
 }
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2><i class="bi bi-people"></i> Clientes</h2>
-            <a asp-action="Create" class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> Nuevo Cliente
-            </a>
-        </div>
+<section class="container-fluid py-4 text-light">
+    <div class="row justify-content-center">
+        <div class="col-lg-12">
 
-        <!-- Filtros -->
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros de Búsqueda</h5>
+            <!-- Encabezado -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold mb-0">
+                    <i class="bi bi-people text-info me-2"></i>Clientes
+                </h2>
+                <a asp-action="Create" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Nuevo Cliente
+                </a>
             </div>
-            <div class="card-body">
-                <form asp-action="Index" method="get">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Búsqueda</label>
-                            <input type="text" name="SearchTerm" class="form-control"
-                                   value="@Model.SearchTerm"
-                                   placeholder="Nombre, DNI, teléfono, email..." />
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">Tipo Documento</label>
-                            <select name="TipoDocumento" class="form-select" asp-items="ViewBag.TiposDocumento">
-                                <option value="">Todos</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">Estado</label>
-                            <select name="SoloActivos" class="form-select">
-                                <option value="">Todos</option>
-                                <option value="true" selected="@(Model.SoloActivos == true)">Solo Activos</option>
-                                <option value="false" selected="@(Model.SoloActivos == false)">Solo Inactivos</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">Puntaje Mínimo</label>
-                            <input type="number" name="PuntajeMinimo" class="form-control"
-                                   value="@Model.PuntajeMinimo"
-                                   min="0" max="10" step="0.1" />
-                        </div>
-                        <div class="col-md-2 mb-3 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary me-2">
-                                <i class="bi bi-search"></i> Buscar
-                            </button>
-                            <a asp-action="Index" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Limpiar
-                            </a>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
 
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle"></i> @TempData["Success"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-x-circle"></i> @TempData["Error"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
-
-        <!-- Resultados -->
-        <div class="card">
-            <div class="card-header bg-light">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bi bi-list"></i> Resultados (@Model.TotalResultados)
+            <!-- Filtros -->
+            <div class="card bg-dark border-0 shadow-sm mb-4">
+                <div class="card-header bg-body-secondary text-light border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="bi bi-funnel me-2"></i>Filtros de Búsqueda
                     </h5>
+                    <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCliente">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
+
+                <div class="collapse" id="filtrosCliente">
+                    <div class="card-body">
+                        <form asp-action="Index" method="get" class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Búsqueda</label>
+                                <input type="text" name="SearchTerm" class="form-control bg-body-secondary text-light border-0"
+                                       value="@Model.SearchTerm"
+                                       placeholder="Nombre, DNI, teléfono, email..." />
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Tipo Documento</label>
+                                <select name="TipoDocumento" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.TiposDocumento">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Estado</label>
+                                <select name="SoloActivos" class="form-select bg-body-secondary text-light border-0">
+                                    <option value="">Todos</option>
+                                    <option value="true" selected="@(Model.SoloActivos == true)">Solo Activos</option>
+                                    <option value="false" selected="@(Model.SoloActivos == false)">Solo Inactivos</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Puntaje Mínimo</label>
+                                <input type="number" name="PuntajeMinimo"
+                                       class="form-control bg-body-secondary text-light border-0"
+                                       value="@Model.PuntajeMinimo"
+                                       min="0" max="10" step="0.1" />
+                            </div>
+
+                            <div class="col-md-2 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-fill">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                                <a asp-action="Index" class="btn btn-outline-light flex-fill">
+                                    <i class="bi bi-x-circle"></i> Limpiar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-            <div class="card-body p-0">
-                @if (Model.Clientes.Any())
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Documento</th>
-                                    <th>Cliente</th>
-                                    <th>Contacto</th>
-                                    <th>Domicilio</th>
-                                    <th class="text-center">Puntaje</th>
-                                    <th class="text-center">Créditos</th>
-                                    <th class="text-center">Estado</th>
-                                    <th class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var cliente in Model.Clientes)
-                                {
+
+            <!-- Mensajes -->
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show shadow-sm">
+                    <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm">
+                    <i class="bi bi-x-circle-fill me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Resultados -->
+            <div class="card bg-dark border-0 shadow-sm">
+                <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list me-2"></i>Resultados (@Model.TotalResultados)</h5>
+                </div>
+
+                <div class="card-body p-0">
+                    @if (Model.Clientes.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <thead class="table-secondary text-dark">
                                     <tr>
-                                        <td>
-                                            <strong>@cliente.TipoDocumento</strong><br />
-                                            <small class="text-muted">@cliente.NumeroDocumento</small>
-                                        </td>
-                                        <td>
-                                            <strong>@cliente.NombreCompleto</strong>
-                                            @if (cliente.Edad.HasValue)
-                                            {
-                                                <br />
-                                    
-                                                <small class="text-muted">@cliente.Edad años</small>
-                                            }
-                                        </td>
-                                        <td>
-                                            <i class="bi bi-telephone"></i> @cliente.Telefono<br />
-                                            @if (!string.IsNullOrEmpty(cliente.Email))
-                                            {
-                                                <small><i class="bi bi-envelope"></i> @cliente.Email</small>
-                                            }
-                                        </td>
-                                        <td>
-                                            @cliente.Domicilio
-                                            @if (!string.IsNullOrEmpty(cliente.Localidad))
-                                            {
-                                                <br />
-                                    
-                                                <small class="text-muted">@cliente.Localidad</small>
-                                            }
-                                        </td>
-                                        <td class="text-center">
-                                            @{
-                                                var badgeClass = cliente.PuntajeRiesgo >= 7 ? "bg-success" :
-                                                cliente.PuntajeRiesgo >= 4 ? "bg-warning" : "bg-danger";
-                                            }
-                                            <span class="badge @badgeClass fs-6">
-                                                @cliente.PuntajeRiesgo.ToString("F1")
-                                            </span>
-                                        </td>
-                                        <td class="text-center">
-                                            @if (cliente.CreditosActivos > 0)
-                                            {
-                                                <span class="badge bg-info">@cliente.CreditosActivos</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted">-</span>
-                                            }
-                                        </td>
-                                        <td class="text-center">
-                                            @if (cliente.Activo)
-                                            {
-                                                <span class="badge bg-success">Activo</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-secondary">Inactivo</span>
-                                            }
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="btn-group" role="group">
-                                                <a asp-action="Details" asp-route-id="@cliente.Id"
-                                                   class="btn btn-sm btn-outline-primary" title="Ver detalles">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                                <a asp-action="Edit" asp-route-id="@cliente.Id"
-                                                   class="btn btn-sm btn-outline-warning" title="Editar">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                                <a asp-action="Delete" asp-route-id="@cliente.Id"
-                                                   class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                                    <i class="bi bi-trash"></i>
-                                                </a>
-                                            </div>
-                                        </td>
+                                        <th>Documento</th>
+                                        <th>Cliente</th>
+                                        <th>Contacto</th>
+                                        <th>Domicilio</th>
+                                        <th class="text-center">Puntaje</th>
+                                        <th class="text-center">Créditos</th>
+                                        <th class="text-center">Estado</th>
+                                        <th class="text-center">Acciones</th>
                                     </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-                else
-                {
-                    <div class="p-4 text-center text-muted">
-                        <i class="bi bi-inbox fs-1"></i>
-                        <p>No se encontraron clientes</p>
-                        <a asp-action="Create" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Crear Primer Cliente
-                        </a>
-                    </div>
-                }
+                                </thead>
+                                <tbody>
+                                    @foreach (var cliente in Model.Clientes)
+                                    {
+                                        var badgeClass = cliente.PuntajeRiesgo >= 7 ? "bg-success" :
+                                        cliente.PuntajeRiesgo >= 4 ? "bg-warning text-dark" :
+                                        "bg-danger";
+                                        <tr>
+                                            <td>
+                                                <strong>@cliente.TipoDocumento</strong><br />
+                                                <small class="text-muted">@cliente.NumeroDocumento</small>
+                                            </td>
+                                            <td>
+                                                <strong>@cliente.NombreCompleto</strong>
+                                                @if (cliente.Edad.HasValue)
+                                                {
+                                                    <br />
+                                                    <small class="text-muted">@cliente.Edad años</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <i class="bi bi-telephone"></i> @cliente.Telefono<br />
+                                                @if (!string.IsNullOrEmpty(cliente.Email))
+                                                {
+                                                    <small><i class="bi bi-envelope"></i> @cliente.Email</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                @cliente.Domicilio
+                                                @if (!string.IsNullOrEmpty(cliente.Localidad))
+                                                {
+                                                    <br />
+                                                    <small class="text-muted">@cliente.Localidad</small>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge @badgeClass fs-6">@cliente.PuntajeRiesgo.ToString("F1")</span>
+                                            </td>
+                                            <td class="text-center">
+                                                @if (cliente.CreditosActivos > 0)
+                                                {
+                                                    <span class="badge bg-info">@cliente.CreditosActivos</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge @(cliente.Activo ? "bg-success" : "bg-secondary")">
+                                                    @(cliente.Activo ? "Activo" : "Inactivo")
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a asp-action="Details" asp-route-id="@cliente.Id"
+                                                       class="btn btn-outline-info" title="Ver detalles">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <a asp-action="Edit" asp-route-id="@cliente.Id"
+                                                       class="btn btn-outline-warning" title="Editar">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <a asp-action="Delete" asp-route-id="@cliente.Id"
+                                                       class="btn btn-outline-danger" title="Eliminar">
+                                                        <i class="bi bi-trash"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="py-5 text-center text-muted">
+                            <i class="bi bi-inbox fs-1"></i>
+                            <p class="mt-2">No se encontraron clientes</p>
+                            <a asp-action="Create" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Crear Primer Cliente
+                            </a>
+                        </div>
+                    }
+                </div>
             </div>
+
         </div>
     </div>
-</div>
+</section>

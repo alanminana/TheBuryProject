@@ -132,22 +132,24 @@ namespace TheBuryProject.Services
                 viewModel.Estado = EstadoCredito.Solicitado;
                 viewModel.FechaSolicitud = DateTime.Now;
 
-                // Calcular valores financieros
-                var tasaDecimal = viewModel.TasaInteres / 100;
-                viewModel.MontoCuota = CalcularMontoCuotaSistemaFrances(
-                    viewModel.MontoSolicitado,
-                    tasaDecimal,
-                    viewModel.CantidadCuotas);
+                // CAMBIO IMPORTANTE: No calculamos cuotas ni totales
+                // El MontoAprobado se iguala al MontoSolicitado
+                viewModel.MontoAprobado = viewModel.MontoSolicitado;
+                // El SaldoPendiente inicia igual al monto aprobado (disponible completo)
+                viewModel.SaldoPendiente = viewModel.MontoAprobado;
 
-                viewModel.TotalAPagar = viewModel.MontoCuota * viewModel.CantidadCuotas;
-                viewModel.CFTEA = CalcularCFTEA(tasaDecimal);
-                viewModel.SaldoPendiente = viewModel.MontoSolicitado;
+                // La tasa se guarda para aplicar en cada venta
+                // NO se calculan cuotas aquí
 
                 var credito = _mapper.Map<Credito>(viewModel);
                 _context.Creditos.Add(credito);
                 await _context.SaveChangesAsync();
 
                 viewModel.Id = credito.Id;
+
+                _logger.LogInformation("Línea de crédito {Numero} creada para cliente {ClienteId} por ${Monto}",
+                    viewModel.Numero, viewModel.ClienteId, viewModel.MontoAprobado);
+
                 return viewModel;
             }
             catch (Exception ex)
@@ -156,7 +158,6 @@ namespace TheBuryProject.Services
                 throw;
             }
         }
-
         public async Task<bool> UpdateAsync(CreditoViewModel viewModel)
         {
             try
@@ -271,14 +272,16 @@ namespace TheBuryProject.Services
                 credito.FechaAprobacion = DateTime.Now;
                 credito.AprobadoPor = aprobadoPor;
                 credito.MontoAprobado = credito.MontoSolicitado;
+                credito.SaldoPendiente = credito.MontoAprobado; // Saldo disponible completo
 
-                // Generar cuotas si no existen
-                if (!credito.Cuotas.Any())
-                {
-                    await GenerarCuotasAsync(credito);
-                }
+                // CAMBIO IMPORTANTE: NO generamos cuotas aquí
+                // Las cuotas se generan cuando el cliente hace una compra
 
                 await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Línea de crédito {Id} aprobada por {Usuario}. Saldo disponible: ${Saldo}",
+                    creditoId, aprobadoPor, credito.SaldoPendiente);
+
                 return true;
             }
             catch (Exception ex)
