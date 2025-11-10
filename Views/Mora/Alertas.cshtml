@@ -76,7 +76,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title mb-0">Críticas</h6>
-                            <h3 class="mb-0">@Model.Count(a => a.Prioridad == 3 && !a.Resuelta)</h3>
+                            <h3 class="mb-0">@Model.Count(a => a.Prioridad == PrioridadAlerta.Alta && !a.Resuelta)</h3>
                         </div>
                         <i class="bi bi-exclamation-triangle-fill" style="font-size: 2rem; opacity: 0.5;"></i>
                     </div>
@@ -89,7 +89,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title mb-0">Media Prioridad</h6>
-                            <h3 class="mb-0">@Model.Count(a => a.Prioridad == 2 && !a.Resuelta)</h3>
+                            <h3 class="mb-0">@Model.Count(a => a.Prioridad == PrioridadAlerta.Media && !a.Resuelta)</h3>
                         </div>
                         <i class="bi bi-exclamation-circle-fill" style="font-size: 2rem; opacity: 0.5;"></i>
                     </div>
@@ -102,7 +102,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title mb-0">Baja Prioridad</h6>
-                            <h3 class="mb-0">@Model.Count(a => a.Prioridad == 1 && !a.Resuelta)</h3>
+                            <h3 class="mb-0">@Model.Count(a => a.Prioridad == PrioridadAlerta.Baja && !a.Resuelta)</h3>
                         </div>
                         <i class="bi bi-info-circle-fill" style="font-size: 2rem; opacity: 0.5;"></i>
                     </div>
@@ -171,20 +171,17 @@
                                     <td>
                                         @switch (alerta.Tipo)
                                         {
-                                            case TipoAlerta.ProximoVencimiento:
+                                            case TipoAlertaCobranza.CuotaVencida:
+                                                <span class="badge bg-warning">Cuota Vencida</span>
+                                                break;
+                                            case TipoAlertaCobranza.ProximoVencimiento:
                                                 <span class="badge bg-info">Próximo Vencimiento</span>
                                                 break;
-                                            case TipoAlerta.MoraLeve:
-                                                <span class="badge bg-warning">Mora Leve</span>
+                                            case TipoAlertaCobranza.MoraElevada:
+                                                <span class="badge bg-danger">Mora Elevada</span>
                                                 break;
-                                            case TipoAlerta.MoraModerada:
-                                                <span class="badge bg-orange text-white">Mora Moderada</span>
-                                                break;
-                                            case TipoAlerta.MoraGrave:
-                                                <span class="badge bg-danger">Mora Grave</span>
-                                                break;
-                                            case TipoAlerta.MoraCritica:
-                                                <span class="badge bg-dark">Mora Crítica</span>
+                                            case TipoAlertaCobranza.ClienteRiesgo:
+                                                <span class="badge bg-dark">Cliente de Riesgo</span>
                                                 break;
                                         }
                                     </td>
@@ -194,14 +191,17 @@
                                     <td>
                                         @switch (alerta.Prioridad)
                                         {
-                                            case 1:
+                                            case PrioridadAlerta.Baja:
                                                 <span class="badge bg-secondary">Baja</span>
                                                 break;
-                                            case 2:
+                                            case PrioridadAlerta.Media:
                                                 <span class="badge bg-warning">Media</span>
                                                 break;
-                                            case 3:
+                                            case PrioridadAlerta.Alta:
                                                 <span class="badge bg-danger">Alta</span>
+                                                break;
+                                            case PrioridadAlerta.Critica:
+                                                <span class="badge bg-dark">Crítica</span>
                                                 break;
                                         }
                                     </td>

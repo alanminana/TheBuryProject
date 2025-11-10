@@ -755,6 +755,12 @@ namespace TheBuryProject.Data
                 entity.ToTable("LogsMora");
                 entity.HasKey(e => e.Id);
 
+                entity.Property(e => e.TotalMora)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.TotalRecargosAplicados)
+                    .HasPrecision(18, 2);
+
                 entity.HasIndex(e => e.FechaEjecucion);
                 entity.HasIndex(e => e.Exitoso);
 

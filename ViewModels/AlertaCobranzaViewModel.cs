@@ -1,4 +1,4 @@
-﻿using TheBuryProject.Models.Enums;
+using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.ViewModels
 {
@@ -18,5 +18,13 @@ namespace TheBuryProject.ViewModels
         public bool Resuelta { get; set; }
         public DateTime? FechaResolucion { get; set; }
         public string? Observaciones { get; set; }
+
+        // Propiedades computadas para la vista
+        public string Titulo { get; set; } = string.Empty;
+        public string TipoNombre { get; set; } = string.Empty;
+        public string IconoAlerta { get; set; } = string.Empty;
+        public string ColorAlerta { get; set; } = string.Empty;
+        public bool Leida { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }
