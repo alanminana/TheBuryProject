@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Representa un documento adjunto de un cliente (DNI, recibos, servicios, etc.)
     /// </summary>
-    public class DocumentoCliente : DashboardDtos
+    public class DocumentoCliente : BaseEntity
     {
         public int ClienteId { get; set; }
 
@@ -19,7 +19,7 @@ namespace TheBuryProject.Models.Entities
 
         [Required]
         [StringLength(500)]
-        public string RutaArchivo { get; set; } = string.Empty; // Ruta física del archivo
+        public string RutaArchivo { get; set; } = string.Empty; // Ruta fï¿½sica del archivo
 
         [StringLength(100)]
         public string? TipoMIME { get; set; } // application/pdf, image/jpeg, etc.
@@ -32,7 +32,7 @@ namespace TheBuryProject.Models.Entities
 
         public DateTime? FechaVencimiento { get; set; } // Para docs que expiran (ej: recibo de sueldo)
 
-        // Verificación
+        // Verificaciï¿½n
         public DateTime? FechaVerificacion { get; set; }
 
         [StringLength(100)]

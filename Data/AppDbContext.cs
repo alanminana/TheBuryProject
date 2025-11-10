@@ -39,6 +39,7 @@ namespace TheBuryProject.Data
         public DbSet<Credito> Creditos { get; set; }
         public DbSet<Cuota> Cuotas { get; set; }
         public DbSet<Garante> Garantes { get; set; }
+        public DbSet<DocumentoCliente> DocumentosCliente { get; set; }
 
         // Ventas
         public DbSet<Venta> Ventas { get; set; }
@@ -412,6 +413,26 @@ namespace TheBuryProject.Data
                     .WithMany()
                     .HasForeignKey(e => e.GaranteClienteId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // Configuración de DocumentoCliente
+            modelBuilder.Entity<DocumentoCliente>(entity =>
+            {
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.ClienteId);
+                entity.HasIndex(e => e.Estado);
+                entity.HasIndex(e => e.FechaSubida);
+                entity.HasIndex(e => e.FechaVencimiento);
+                entity.HasIndex(e => e.TipoDocumento);
 
                 entity.Property(e => e.RowVersion)
                     .IsRowVersion();
