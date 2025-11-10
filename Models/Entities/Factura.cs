@@ -5,7 +5,7 @@ using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.Models.Entities
 {
-    public class Factura : DashboardDtos
+    public class Factura : BaseEntity
     {
         [Required]
         public int VentaId { get; set; }

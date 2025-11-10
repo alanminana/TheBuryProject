@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Representa un cliente del sistema que puede solicitar créditos
     /// </summary>
-    public class Cliente : DashboardDtos
+    public class Cliente : BaseEntity
     {
         // Datos Personales
         [Required]

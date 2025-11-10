@@ -30,6 +30,7 @@ namespace TheBuryProject.Services
                 // KPIs de Clientes
                 TotalClientes = await _context.Clientes.CountAsync(c => !c.IsDeleted),
                 ClientesActivos = await _context.Clientes.CountAsync(c => !c.IsDeleted && c.Activo),
+                ClientesNuevosMes = await _context.Clientes.CountAsync(c => !c.IsDeleted && c.CreatedAt >= inicioMes),
 
                 // KPIs de Ventas
                 VentasTotalesHoy = await _context.Ventas
@@ -39,6 +40,13 @@ namespace TheBuryProject.Services
                 VentasTotalesMes = await _context.Ventas
                     .Where(v => !v.IsDeleted && v.FechaVenta >= inicioMes)
                     .SumAsync(v => (decimal?)v.Total) ?? 0,
+
+                TotalVentasMes = await _context.Ventas
+                    .Where(v => !v.IsDeleted && v.FechaVenta >= inicioMes)
+                    .SumAsync(v => (decimal?)v.Total),
+
+                CantidadVentasMes = await _context.Ventas
+                    .CountAsync(v => !v.IsDeleted && v.FechaVenta >= inicioMes),
 
                 VentasTotalesAnio = await _context.Ventas
                     .Where(v => !v.IsDeleted && v.FechaVenta >= inicioAnio)
@@ -96,6 +104,8 @@ namespace TheBuryProject.Services
                 // KPIs de Stock
                 ProductosTotales = await _context.Productos.CountAsync(p => !p.IsDeleted),
                 ProductosBajoStock = await _context.Productos
+                    .CountAsync(p => !p.IsDeleted && p.StockActual < p.StockMinimo),
+                ProductosStockBajo = await _context.Productos
                     .CountAsync(p => !p.IsDeleted && p.StockActual < p.StockMinimo),
 
                 ValorTotalStock = await _context.Productos

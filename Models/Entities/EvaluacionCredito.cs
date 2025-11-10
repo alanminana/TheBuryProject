@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Registro de evaluación crediticia automática
     /// </summary>
-    public class EvaluacionCredito : DashboardDtos
+    public class EvaluacionCredito : BaseEntity 
     {
         public int CreditoId { get; set; }
         public int ClienteId { get; set; }

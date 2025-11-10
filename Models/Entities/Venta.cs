@@ -4,7 +4,7 @@ using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.Models.Entities
 {
-    public class Venta : DashboardDtos
+    public class Venta : BaseEntity
     {
         [Required]
         [StringLength(20)]

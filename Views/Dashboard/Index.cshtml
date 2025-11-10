@@ -1,167 +1,177 @@
-﻿@model TheBuryProject.ViewModels.MovimientoStockFilterViewModel
-@using TheBuryProject.Models.Enums
+﻿@model TheBuryProject.ViewModels.DashboardViewModel
 @{
-    ViewData["Title"] = "Movimientos de Stock";
+    ViewData["Title"] = "Dashboard";
 }
 
-<section class="container-fluid py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-11">
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="bi bi-speedometer2"></i> Dashboard - Panel de Control
+            </h2>
+        </div>
+    </div>
 
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="text-light fw-bold">
-                    <i class="bi bi-arrow-left-right text-info me-2"></i>Movimientos de Stock (Kardex)
-                </h2>
-                <a asp-action="Create" asp-route-productoId="@(Model?.ProductoId)" class="btn btn-success">
-                    <i class="bi bi-plus-circle me-1"></i>Nuevo Ajuste
-                </a>
-            </div>
-
-            <!-- Filtros -->
-            <div class="card bg-dark border-0 shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtros</h5>
-                </div>
-                <div class="card-body text-light">
-                    <form asp-action="Index" method="get">
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label fw-semibold">Producto</label>
-                                <select name="ProductoId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Productos">
-                                    <option value="">Todos los productos</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-2 mb-3">
-                                <label class="form-label fw-semibold">Tipo</label>
-                                <select name="Tipo" class="form-select bg-body-secondary text-light border-0">
-                                    <option value="">Todos</option>
-                                    <option value="@((int)TipoMovimiento.Entrada)" selected="@(Model?.Tipo == TipoMovimiento.Entrada)">Entrada</option>
-                                    <option value="@((int)TipoMovimiento.Salida)" selected="@(Model?.Tipo == TipoMovimiento.Salida)">Salida</option>
-                                    <option value="@((int)TipoMovimiento.Ajuste)" selected="@(Model?.Tipo == TipoMovimiento.Ajuste)">Ajuste</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-2 mb-3">
-                                <label class="form-label fw-semibold">Desde</label>
-                                <input type="date" name="FechaDesde" class="form-control bg-body-secondary text-light border-0"
-                                       value="@Model.FechaDesde?.ToString("yyyy-MM-dd")" />
-                            </div>
-
-                            <div class="col-md-2 mb-3">
-                                <label class="form-label fw-semibold">Hasta</label>
-                                <input type="date" name="FechaHasta" class="form-control bg-body-secondary text-light border-0"
-                                       value="@Model.FechaHasta?.ToString("yyyy-MM-dd")" />
-                            </div>
-
-                            <div class="col-md-3 mb-3 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary me-2">
-                                    <i class="bi bi-search"></i> Buscar
-                                </button>
-                                <a asp-action="Index" class="btn btn-outline-light">
-                                    <i class="bi bi-x-circle"></i> Limpiar
-                                </a>
-                            </div>
+    <!-- KPI Cards -->
+    <div class="row g-3 mb-4">
+        <!-- Ventas del Mes -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-primary border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted text-uppercase mb-2">Ventas del Mes</h6>
+                            <h3 class="mb-0">@(Model.TotalVentasMes?.ToString("C") ?? "$0.00")</h3>
+                            <small class="text-muted">@Model.CantidadVentasMes ventas realizadas</small>
                         </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Resultados -->
-            <div class="card bg-dark border-0 shadow-sm">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-list me-2"></i>Movimientos</h5>
-                    <span class="badge bg-light text-dark">@(Model?.TotalResultados ?? 0)</span>
-                </div>
-
-                <div class="card-body text-light">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Producto</th>
-                                    <th class="text-center">Tipo</th>
-                                    <th class="text-end">Cantidad</th>
-                                    <th class="text-end">Stock Anterior</th>
-                                    <th class="text-end">Stock Nuevo</th>
-                                    <th>Referencia</th>
-                                    <th>Motivo</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Model?.Movimientos?.Any() == true)
-                                {
-                                    @foreach (var mov in Model.Movimientos)
-                                    {
-                                        <tr>
-                                            <td>@mov.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
-                                            <td>
-                                                <strong>@mov.ProductoCodigo</strong> - @mov.ProductoNombre
-                                                <br />
-                                                <a asp-action="Kardex" asp-route-id="@mov.ProductoId"
-                                                   class="btn btn-sm btn-outline-info mt-1">
-                                                    <i class="bi bi-graph-up"></i> Kardex
-                                                </a>
-                                            </td>
-                                            <td class="text-center">
-                                                @switch (mov.Tipo)
-                                                {
-                                                    case TipoMovimiento.Entrada:
-                                                        <span class="badge bg-success">Entrada</span>
-                                                        break;
-                                                    case TipoMovimiento.Salida:
-                                                        <span class="badge bg-danger">Salida</span>
-                                                        break;
-                                                    case TipoMovimiento.Ajuste:
-                                                        <span class="badge bg-warning text-dark">Ajuste</span>
-                                                        break;
-                                                }
-                                            </td>
-                                            <td class="text-end">
-                                                @if (mov.Tipo == TipoMovimiento.Entrada || (mov.Tipo == TipoMovimiento.Ajuste && mov.Cantidad > 0))
-                                                {
-                                                    <span class="text-success fw-bold">+@mov.Cantidad.ToString("N2")</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-danger fw-bold">-@Math.Abs(mov.Cantidad).ToString("N2")</span>
-                                                }
-                                            </td>
-                                            <td class="text-end">@mov.StockAnterior.ToString("N2")</td>
-                                            <td class="text-end fw-bold">@mov.StockNuevo.ToString("N2")</td>
-                                            <td>
-                                                @if (!string.IsNullOrEmpty(mov.OrdenCompraNumero))
-                                                {
-                                                    <a asp-controller="OrdenCompra" asp-action="Details" asp-route-id="@mov.OrdenCompraId"
-                                                       class="text-info text-decoration-none">
-                                                        @mov.Referencia
-                                                    </a>
-                                                }
-                                                else
-                                                {
-                                                    @mov.Referencia
-                                                }
-                                            </td>
-                                            <td>@mov.Motivo</td>
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="8" class="text-center py-5">
-                                            <i class="bi bi-inbox display-4 text-muted"></i>
-                                            <p class="text-muted mt-2">No se encontraron movimientos.</p>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                        <div class="ms-3">
+                            <i class="bi bi-cart-check fs-1 text-primary"></i>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Créditos Activos -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-success border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted text-uppercase mb-2">Créditos Activos</h6>
+                            <h3 class="mb-0">@Model.CreditosActivos</h3>
+                            <small class="text-muted">Monto total: @(Model.MontoTotalCreditos?.ToString("C") ?? "$0.00")</small>
+                        </div>
+                        <div class="ms-3">
+                            <i class="bi bi-credit-card fs-1 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clientes -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-info border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted text-uppercase mb-2">Clientes</h6>
+                            <h3 class="mb-0">@Model.TotalClientes</h3>
+                            <small class="text-muted">Nuevos este mes: @Model.ClientesNuevosMes</small>
+                        </div>
+                        <div class="ms-3">
+                            <i class="bi bi-people fs-1 text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Bajo -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-start border-warning border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted text-uppercase mb-2">Stock Bajo</h6>
+                            <h3 class="mb-0">@Model.ProductosStockBajo</h3>
+                            <small class="text-muted">Productos bajo mínimo</small>
+                        </div>
+                        <div class="ms-3">
+                            <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</section>
+
+    <!-- Accesos Rápidos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-grid-3x3-gap"></i> Accesos Rápidos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Ventas -->
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <a asp-controller="Venta" asp-action="Create" class="btn btn-outline-primary w-100 py-3 text-start">
+                                <i class="bi bi-cart-plus fs-4 d-block mb-2"></i>
+                                <strong>Nueva Venta</strong>
+                            </a>
+                        </div>
+
+                        <!-- Clientes -->
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <a asp-controller="Cliente" asp-action="Index" class="btn btn-outline-info w-100 py-3 text-start">
+                                <i class="bi bi-people fs-4 d-block mb-2"></i>
+                                <strong>Clientes</strong>
+                            </a>
+                        </div>
+
+                        <!-- Créditos -->
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <a asp-controller="Credito" asp-action="Index" class="btn btn-outline-success w-100 py-3 text-start">
+                                <i class="bi bi-credit-card fs-4 d-block mb-2"></i>
+                                <strong>Créditos</strong>
+                            </a>
+                        </div>
+
+                        <!-- Productos -->
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <a asp-controller="Producto" asp-action="Index" class="btn btn-outline-secondary w-100 py-3 text-start">
+                                <i class="bi bi-box-seam fs-4 d-block mb-2"></i>
+                                <strong>Productos</strong>
+                            </a>
+                        </div>
+
+                        <!-- Proveedores -->
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <a asp-controller="Proveedor" asp-action="Index" class="btn btn-outline-dark w-100 py-3 text-start">
+                                <i class="bi bi-building fs-4 d-block mb-2"></i>
+                                <strong>Proveedores</strong>
+                            </a>
+                        </div>
+
+                        <!-- Órdenes de Compra -->
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <a asp-controller="OrdenCompra" asp-action="Index" class="btn btn-outline-primary w-100 py-3 text-start">
+                                <i class="bi bi-file-earmark-text fs-4 d-block mb-2"></i>
+                                <strong>Órdenes Compra</strong>
+                            </a>
+                        </div>
+
+                        <!-- Stock -->
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <a asp-controller="MovimientoStock" asp-action="Index" class="btn btn-outline-warning w-100 py-3 text-start">
+                                <i class="bi bi-truck fs-4 d-block mb-2"></i>
+                                <strong>Movimientos Stock</strong>
+                            </a>
+                        </div>
+
+                        <!-- Cheques -->
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <a asp-controller="Cheque" asp-action="Index" class="btn btn-outline-danger w-100 py-3 text-start">
+                                <i class="bi bi-cash-coin fs-4 d-block mb-2"></i>
+                                <strong>Cheques</strong>
+                            </a>
+                        </div>
+
+                        <!-- Mora -->
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <a asp-controller="Mora" asp-action="Index" class="btn btn-outline-danger w-100 py-3 text-start">
+                                <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
+                                <strong>Gestión de Mora</strong>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

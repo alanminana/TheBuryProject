@@ -7,14 +7,17 @@ namespace TheBuryProject.ViewModels
         // KPIs Generales
         public int TotalClientes { get; set; }
         public int ClientesActivos { get; set; }
+        public int ClientesNuevosMes { get; set; }
         public decimal VentasTotalesHoy { get; set; }
         public decimal VentasTotalesMes { get; set; }
         public decimal VentasTotalesAnio { get; set; }
+        public decimal? TotalVentasMes { get; set; }
+        public int CantidadVentasMes { get; set; }
         public decimal TicketPromedio { get; set; }
 
         // KPIs de Créditos
         public int CreditosActivos { get; set; }
-        public decimal MontoTotalCreditos { get; set; }
+        public decimal? MontoTotalCreditos { get; set; }
         public decimal SaldoPendienteTotal { get; set; }
         public int CuotasVencidasTotal { get; set; }
         public decimal MontoVencidoTotal { get; set; }
@@ -29,6 +32,7 @@ namespace TheBuryProject.ViewModels
         // KPIs de Stock
         public int ProductosTotales { get; set; }
         public int ProductosBajoStock { get; set; }
+        public int ProductosStockBajo { get; set; }
         public decimal ValorTotalStock { get; set; }
 
         // Datos para gráficos

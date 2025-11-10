@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Representa un proveedor del sistema
     /// </summary>
-    public class Proveedor : DashboardDtos
+    public class Proveedor : BaseEntity
     {
         /// <summary>
         /// CUIT del proveedor (11 dígitos sin guiones)

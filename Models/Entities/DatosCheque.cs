@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Datos específicos del cheque asociado a una venta
     /// </summary>
-    public class DatosCheque : DashboardDtos
+    public class DatosCheque : BaseEntity
     {
         public int VentaId { get; set; }
 

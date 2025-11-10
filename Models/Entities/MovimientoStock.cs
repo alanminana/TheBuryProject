@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Registra movimientos de stock (Kardex)
     /// </summary>
-    public class MovimientoStock : DashboardDtos
+    public class MovimientoStock : BaseEntity
     {
         public int ProductoId { get; set; }
         public TipoMovimiento Tipo { get; set; }

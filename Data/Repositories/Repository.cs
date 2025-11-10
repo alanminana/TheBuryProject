@@ -1,15 +1,15 @@
-using Microsoft.EntityFrameworkCore;
+ï»¿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using TheBuryProject.Models.Base;
 
 namespace TheBuryProject.Data.Repositories
 {
     /// <summary>
-    /// Implementación genérica del repositorio.
-    /// Maneja operaciones CRUD básicas para cualquier entidad.
+    /// Implementaciï¿½n genï¿½rica del repositorio.
+    /// Maneja operaciones CRUD bï¿½sicas para cualquier entidad.
     /// </summary>
     /// <typeparam name="T">Tipo de entidad que hereda de BaseEntity</typeparam>
-    public class Repository<T> : AutoMapperProfile<T> where T : DashboardDtos
+    public class Repository<T> : IRepository<T> where T : BaseEntity
     {
         private readonly AppDbContext _context;
         private readonly DbSet<T> _dbSet;
@@ -51,7 +51,7 @@ namespace TheBuryProject.Data.Repositories
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            // Soft delete - marcar como eliminado en lugar de borrar físicamente
+            // Soft delete - marcar como eliminado en lugar de borrar fï¿½sicamente
             entity.IsDeleted = true;
             _dbSet.Update(entity);
         }

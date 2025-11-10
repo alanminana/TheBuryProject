@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Datos de pago con tarjeta asociados a una venta
     /// </summary>
-    public class DatosTarjeta : DashboardDtos
+    public class DatosTarjeta : BaseEntity
     {
         public int VentaId { get; set; }
         public int? ConfiguracionTarjetaId { get; set; }

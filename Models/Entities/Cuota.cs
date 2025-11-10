@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Representa una cuota individual de un crédito
     /// </summary>
-    public class Cuota : DashboardDtos
+    public class Cuota : BaseEntity
     {
         public int CreditoId { get; set; }
 

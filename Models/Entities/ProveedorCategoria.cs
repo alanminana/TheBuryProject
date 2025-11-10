@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities
     /// Relación N:N entre Proveedor y Categoría
     /// Indica en qué categorías se especializa cada proveedor
     /// </summary>
-    public class ProveedorCategoria : DashboardDtos
+    public class ProveedorCategoria : BaseEntity
     {
         public int ProveedorId { get; set; }
         public int CategoriaId { get; set; }

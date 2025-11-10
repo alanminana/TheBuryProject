@@ -74,7 +74,8 @@ namespace TheBuryProject.Controllers
 
                 TempData["Success"] = $"Documento '{resultado.TipoDocumentoNombre}' subido exitosamente";
 
-                return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId });
+                // Redirigir al índice de documentos filtrado por el cliente
+                return RedirectToAction(nameof(Index), new { clienteId = viewModel.ClienteId });
             }
             catch (Exception ex)
             {
@@ -207,7 +208,7 @@ namespace TheBuryProject.Controllers
                 else
                     TempData["Error"] = "No se pudo eliminar el documento";
 
-                return RedirectToAction("Details", "Cliente", new { id = clienteId });
+                return RedirectToAction(nameof(Index), new { clienteId = clienteId });
             }
             catch (Exception ex)
             {

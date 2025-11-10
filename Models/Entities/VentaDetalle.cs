@@ -4,7 +4,7 @@ using TheBuryProject.Models.Base;
 
 namespace TheBuryProject.Models.Entities
 {
-    public class VentaDetalle : DashboardDtos
+    public class VentaDetalle : BaseEntity
     {
         [Required]
         public int VentaId { get; set; }

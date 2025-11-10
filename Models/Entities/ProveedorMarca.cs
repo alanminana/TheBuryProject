@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities
     /// Relación N:N entre Proveedor y Marca
     /// Indica qué marcas representa cada proveedor
     /// </summary>
-    public class ProveedorMarca : DashboardDtos
+    public class ProveedorMarca : BaseEntity
     {
         public int ProveedorId { get; set; }
         public int MarcaId { get; set; }
