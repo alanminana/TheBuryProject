@@ -703,6 +703,67 @@ namespace TheBuryProject.Data
                     .HasForeignKey<DatosCheque>(e => e.VentaId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+            // Configuración para AlertaCobranza
+            modelBuilder.Entity<AlertaCobranza>(entity =>
+            {
+                entity.ToTable("AlertasCobranza");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.MontoVencido)
+                    .HasPrecision(18, 2);
+
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Credito)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreditoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.FechaAlerta);
+                entity.HasIndex(e => e.Tipo);
+                entity.HasIndex(e => e.Prioridad);
+                entity.HasIndex(e => e.Resuelta);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // Configuración para ConfiguracionMora
+            modelBuilder.Entity<ConfiguracionMora>(entity =>
+            {
+                entity.ToTable("ConfiguracionesMora");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.PorcentajeRecargo)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // Configuración para LogMora
+            modelBuilder.Entity<LogMora>(entity =>
+            {
+                entity.ToTable("LogsMora");
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => e.FechaEjecucion);
+                entity.HasIndex(e => e.Exitoso);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
             modelBuilder.Entity<Marca>().HasData(
                 new Marca
                 {
