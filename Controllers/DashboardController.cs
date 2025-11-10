@@ -4,7 +4,7 @@ using TheBuryProject.Services.Interfaces;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize]
+    // [Authorize] // Deshabilitado temporalmente para desarrollo
     public class DashboardController : Controller
     {
         private readonly IDashboardService _dashboardService;

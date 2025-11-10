@@ -9,7 +9,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize]
+    // [Authorize] // Deshabilitado temporalmente para desarrollo
     public class ChequeController : Controller
     {
         private readonly IChequeService _chequeService;
