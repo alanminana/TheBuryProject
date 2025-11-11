@@ -30,7 +30,7 @@ namespace TheBuryProject.ViewModels
 
         [Display(Name = "Cantidad de Cuotas")]
         // Ya no es requerido - las cuotas se definen al momento de la venta
-        public int? CantidadCuotas { get; set; }
+        public int CantidadCuotas { get; set; }
 
         [Display(Name = "Monto por Cuota")]
         public decimal MontoCuota { get; set; }
@@ -40,6 +40,9 @@ namespace TheBuryProject.ViewModels
 
         [Display(Name = "Total a Pagar")]
         public decimal TotalAPagar { get; set; }
+
+        // Alias para compatibilidad
+        public decimal MontoTotal => TotalAPagar;
 
         [Display(Name = "Saldo Pendiente")]
         public decimal SaldoPendiente { get; set; }

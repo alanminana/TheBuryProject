@@ -55,11 +55,38 @@ namespace TheBuryProject.Data
         public DbSet<ConfiguracionMora> ConfiguracionesMora { get; set; }
         public DbSet<LogMora> LogsMora { get; set; }
         public DbSet<AlertaCobranza> AlertasCobranza { get; set; }
+        public DbSet<EvaluacionCredito> EvaluacionesCredito { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<EvaluacionCredito>(entity =>
+            {
+                entity.ToTable("EvaluacionesCredito");
 
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Credito)
+                    .WithOne() // o .WithMany() si un crédito puede tener múltiples evaluaciones
+                    .HasForeignKey<EvaluacionCredito>(e => e.CreditoId)
+                    .OnDelete(DeleteBehavior.Cascade); // o Restrict según lógica de negocio
+
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.PuntajeRiesgoCliente).HasPrecision(5, 2);
+                entity.Property(e => e.RelacionCuotaIngreso).HasPrecision(5, 2);
+                entity.Property(e => e.PuntajeFinal).HasPrecision(5, 2);
+                entity.Property(e => e.MontoSolicitado).HasPrecision(18, 2);
+                entity.Property(e => e.SueldoCliente).HasPrecision(18, 2);
+
+                entity.Property(e => e.Motivo).HasMaxLength(1000);
+                entity.Property(e => e.Observaciones).HasMaxLength(2000);
+
+                entity.HasIndex(e => e.FechaEvaluacion);
+            });
             // Configuración de Categoria
             modelBuilder.Entity<Categoria>(entity =>
             {
@@ -351,6 +378,12 @@ namespace TheBuryProject.Data
 
                 entity.Property(e => e.RowVersion)
                     .IsRowVersion();
+
+                // Configurar relación con Garante
+                entity.HasOne(e => e.Garante)
+                    .WithMany()
+                    .HasForeignKey(e => e.GaranteId)
+                    .OnDelete(DeleteBehavior.NoAction);
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });

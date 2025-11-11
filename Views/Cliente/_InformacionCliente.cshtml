@@ -1,0 +1,125 @@
+﻿@model TheBuryProject.ViewModels.ClienteViewModel
+
+<div class="card bg-dark border-0 shadow-sm">
+    <div class="card-header bg-secondary">
+        <h5 class="mb-0 text-light"><i class="bi bi-person-vcard"></i> Información Personal</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="text-muted small">Nombre Completo</label>
+                <p class="fw-bold text-light mb-0">@Model.NombreCompleto</p>
+            </div>
+            <div class="col-md-3">
+                <label class="text-muted small">Documento</label>
+                <p class="fw-bold text-light mb-0">@Model.TipoDocumento: @Model.NumeroDocumento</p>
+            </div>
+            <div class="col-md-3">
+                <label class="text-muted small">Edad</label>
+                <p class="fw-bold text-light mb-0">@(Model.Edad ?? 0) años</p>
+            </div>
+            <div class="col-md-4">
+                <label class="text-muted small">Teléfono</label>
+                <p class="fw-bold text-light mb-0">@(Model.Telefono ?? "-")</p>
+            </div>
+            <div class="col-md-4">
+                <label class="text-muted small">Email</label>
+                <p class="fw-bold text-light mb-0">@(Model.Email ?? "-")</p>
+            </div>
+            <div class="col-md-4">
+                <label class="text-muted small">Estado Civil</label>
+                <p class="fw-bold text-light mb-0">@(Model.EstadoCivil ?? "-")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-dark border-0 shadow-sm mt-3">
+    <div class="card-header bg-secondary">
+        <h5 class="mb-0 text-light"><i class="bi bi-geo-alt"></i> Domicilio</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="text-muted small">Dirección</label>
+                <p class="fw-bold text-light mb-0">@(Model.Direccion ?? "-")</p>
+            </div>
+            <div class="col-md-3">
+                <label class="text-muted small">Localidad</label>
+                <p class="fw-bold text-light mb-0">@(Model.Localidad ?? "-")</p>
+            </div>
+            <div class="col-md-3">
+                <label class="text-muted small">Provincia</label>
+                <p class="fw-bold text-light mb-0">@(Model.Provincia ?? "-")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-dark border-0 shadow-sm mt-3">
+    <div class="card-header bg-secondary">
+        <h5 class="mb-0 text-light"><i class="bi bi-briefcase"></i> Información Laboral</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="text-muted small">Lugar de Trabajo</label>
+                <p class="fw-bold text-light mb-0">@(Model.LugarTrabajo ?? "-")</p>
+            </div>
+            <div class="col-md-3">
+                <label class="text-muted small">Tipo de Empleo</label>
+                <p class="fw-bold text-light mb-0">@(Model.TipoEmpleo ?? "-")</p>
+            </div>
+            <div class="col-md-3">
+                <label class="text-muted small">Antigüedad</label>
+                <p class="fw-bold text-light mb-0">@(Model.TiempoTrabajo ?? "-")</p>
+            </div>
+            <div class="col-md-4">
+                <label class="text-muted small">Ingresos Mensuales</label>
+                <p class="fw-bold text-success mb-0">@(Model.IngresoMensual?.ToString("C") ?? "-")</p>
+            </div>
+            <div class="col-md-4">
+                <label class="text-muted small">Teléfono Laboral</label>
+                <p class="fw-bold text-light mb-0">@(Model.TelefonoTrabajo ?? "-")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-dark border-0 shadow-sm mt-3">
+    <div class="card-header bg-secondary">
+        <h5 class="mb-0 text-light"><i class="bi bi-bar-chart"></i> Historial Crediticio</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="text-muted small">Créditos Totales</label>
+                <p class="fw-bold text-light mb-0">@(Model.CreditosTotales)</p>
+            </div>
+            <div class="col-md-3">
+                <label class="text-muted small">Créditos Activos</label>
+                <p class="fw-bold text-warning mb-0">@(Model.CreditosActivos)</p>
+            </div>
+            <div class="col-md-3">
+                <label class="text-muted small">Cuotas Impagas</label>
+                <p class="fw-bold text-danger mb-0">@(Model.CuotasImpagas)</p>
+            </div>
+            <div class="col-md-3">
+                <label class="text-muted small">Monto Adeudado</label>
+                <p class="fw-bold text-danger mb-0">@(Model.MontoAdeudado?.ToString("C") ?? "$0")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Observaciones))
+{
+    <div class="card bg-dark border-warning shadow-sm mt-3">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="bi bi-chat-square-text"></i> Observaciones</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-light mb-0">@Model.Observaciones</p>
+        </div>
+    </div>
+}

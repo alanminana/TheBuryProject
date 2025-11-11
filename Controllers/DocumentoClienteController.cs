@@ -27,10 +27,13 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: DocumentoCliente
-        public async Task<IActionResult> Index(DocumentoClienteFilterViewModel filtro)
+        public async Task<IActionResult> Index(DocumentoClienteFilterViewModel? filtro)
         {
             try
             {
+                if (filtro == null)
+                    filtro = new DocumentoClienteFilterViewModel();
+
                 filtro.Documentos = await _documentoService.BuscarAsync(filtro);
 
                 await CargarViewBags(filtro.ClienteId);
@@ -40,8 +43,11 @@ namespace TheBuryProject.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al listar documentos");
-                TempData["Error"] = "Error al cargar los documentos";
-                return View(new DocumentoClienteFilterViewModel());
+                TempData["Error"] = $"Error al cargar los documentos: {ex.Message}";
+
+                var emptyModel = new DocumentoClienteFilterViewModel();
+                await CargarViewBags(null);
+                return View(emptyModel);
             }
         }
 
@@ -60,13 +66,21 @@ namespace TheBuryProject.Controllers
         // POST: DocumentoCliente/Upload
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Upload(DocumentoClienteViewModel viewModel)
+        public async Task<IActionResult> Upload(DocumentoClienteViewModel viewModel, bool returnToDetails = false)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
                     await CargarViewBags(viewModel.ClienteId);
+
+                    // Si viene del inline upload, redirigir con error
+                    if (returnToDetails)
+                    {
+                        TempData["Error"] = "Por favor corrija los errores en el formulario";
+                        return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentacion" });
+                    }
+
                     return View(viewModel);
                 }
 
@@ -74,12 +88,27 @@ namespace TheBuryProject.Controllers
 
                 TempData["Success"] = $"Documento '{resultado.TipoDocumentoNombre}' subido exitosamente";
 
+                // Si viene del upload inline, redirigir a Cliente/Details con tab documentacion
+                if (returnToDetails)
+                {
+                    return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentacion" });
+                }
+
                 // Redirigir al índice de documentos filtrado por el cliente
                 return RedirectToAction(nameof(Index), new { clienteId = viewModel.ClienteId });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al subir documento");
+
+                TempData["Error"] = "Error al subir documento: " + ex.Message;
+
+                // Si viene del inline upload, redirigir al tab documentacion
+                if (returnToDetails)
+                {
+                    return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentacion" });
+                }
+
                 ModelState.AddModelError("", "Error al subir documento: " + ex.Message);
                 await CargarViewBags(viewModel.ClienteId);
                 return View(viewModel);

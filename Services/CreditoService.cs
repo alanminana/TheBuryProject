@@ -117,6 +117,38 @@ namespace TheBuryProject.Services
             }
         }
 
+        public async Task<List<CreditoViewModel>> GetByClienteIdAsync(int clienteId)
+        {
+            try
+            {
+                var creditos = await _context.Creditos
+                    .Include(c => c.Cliente)
+                    .Include(c => c.Garante)
+                    .Include(c => c.Cuotas.OrderBy(cu => cu.NumeroCuota))
+                    .Where(c => c.ClienteId == clienteId)
+                    .OrderByDescending(c => c.FechaSolicitud)
+                    .ToListAsync();
+
+                var viewModels = new List<CreditoViewModel>();
+                foreach (var credito in creditos)
+                {
+                    var viewModel = _mapper.Map<CreditoViewModel>(credito);
+                    viewModel.ClienteNombre = $"{credito.Cliente.Apellido}, {credito.Cliente.Nombre}";
+                    if (credito.Garante != null)
+                        viewModel.GaranteNombre = $"{credito.Garante.Apellido}, {credito.Garante.Nombre}";
+
+                    viewModels.Add(viewModel);
+                }
+
+                return viewModels;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener créditos del cliente: {ClienteId}", clienteId);
+                throw;
+            }
+        }
+
         public async Task<CreditoViewModel> CreateAsync(CreditoViewModel viewModel)
         {
             try

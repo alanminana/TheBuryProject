@@ -6,27 +6,32 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TheBuryProject.Migrations
 {
     /// <inheritdoc />
-    public partial class AddVentaCreditoCuotasYMejorasCreditoPersonal : Migration
+    public partial class AddEvaluacionCredito : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "VentaCreditoCuotas",
+                name: "EvaluacionesCredito",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    VentaId = table.Column<int>(type: "int", nullable: false),
                     CreditoId = table.Column<int>(type: "int", nullable: false),
-                    NumeroCuota = table.Column<int>(type: "int", nullable: false),
-                    FechaVencimiento = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Monto = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Saldo = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Pagada = table.Column<bool>(type: "bit", nullable: false),
-                    FechaPago = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    MontoPagado = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
-                    Observaciones = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ClienteId = table.Column<int>(type: "int", nullable: false),
+                    Resultado = table.Column<int>(type: "int", nullable: false),
+                    PuntajeRiesgoCliente = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    MontoSolicitado = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SueldoCliente = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    RelacionCuotaIngreso = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    TieneDocumentacionCompleta = table.Column<bool>(type: "bit", nullable: false),
+                    TieneIngresosSuficientes = table.Column<bool>(type: "bit", nullable: false),
+                    TieneBuenHistorial = table.Column<bool>(type: "bit", nullable: false),
+                    TieneGarante = table.Column<bool>(type: "bit", nullable: false),
+                    PuntajeFinal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Motivo = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Observaciones = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    FechaEvaluacion = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -36,17 +41,17 @@ namespace TheBuryProject.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_VentaCreditoCuotas", x => x.Id);
+                    table.PrimaryKey("PK_EvaluacionesCredito", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_VentaCreditoCuotas_Creditos_CreditoId",
+                        name: "FK_EvaluacionesCredito_Clientes_ClienteId",
+                        column: x => x.ClienteId,
+                        principalTable: "Clientes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_EvaluacionesCredito_Creditos_CreditoId",
                         column: x => x.CreditoId,
                         principalTable: "Creditos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_VentaCreditoCuotas_Ventas_VentaId",
-                        column: x => x.VentaId,
-                        principalTable: "Ventas",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -56,97 +61,87 @@ namespace TheBuryProject.Migrations
                 keyColumn: "Id",
                 keyValue: 1,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 7, 20, 33, 19, 648, DateTimeKind.Utc).AddTicks(5153));
+                value: new DateTime(2025, 11, 11, 4, 31, 32, 646, DateTimeKind.Utc).AddTicks(5139));
 
             migrationBuilder.UpdateData(
                 table: "Categorias",
                 keyColumn: "Id",
                 keyValue: 2,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 7, 20, 33, 19, 648, DateTimeKind.Utc).AddTicks(5157));
+                value: new DateTime(2025, 11, 11, 4, 31, 32, 646, DateTimeKind.Utc).AddTicks(5143));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 1,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 7, 20, 33, 19, 649, DateTimeKind.Utc).AddTicks(1366));
+                value: new DateTime(2025, 11, 11, 4, 31, 32, 647, DateTimeKind.Utc).AddTicks(8397));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 2,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 7, 20, 33, 19, 649, DateTimeKind.Utc).AddTicks(1370));
+                value: new DateTime(2025, 11, 11, 4, 31, 32, 647, DateTimeKind.Utc).AddTicks(8402));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 3,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 7, 20, 33, 19, 649, DateTimeKind.Utc).AddTicks(1373));
+                value: new DateTime(2025, 11, 11, 4, 31, 32, 647, DateTimeKind.Utc).AddTicks(8405));
 
             migrationBuilder.CreateIndex(
-                name: "IX_VentaCreditoCuotas_CreditoId",
-                table: "VentaCreditoCuotas",
+                name: "IX_EvaluacionesCredito_ClienteId",
+                table: "EvaluacionesCredito",
+                column: "ClienteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EvaluacionesCredito_CreditoId",
+                table: "EvaluacionesCredito",
                 column: "CreditoId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_VentaCreditoCuotas_FechaVencimiento",
-                table: "VentaCreditoCuotas",
-                column: "FechaVencimiento");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_VentaCreditoCuotas_Pagada",
-                table: "VentaCreditoCuotas",
-                column: "Pagada");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_VentaCreditoCuotas_VentaId_NumeroCuota",
-                table: "VentaCreditoCuotas",
-                columns: new[] { "VentaId", "NumeroCuota" });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "VentaCreditoCuotas");
+                name: "EvaluacionesCredito");
 
             migrationBuilder.UpdateData(
                 table: "Categorias",
                 keyColumn: "Id",
                 keyValue: 1,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 7, 18, 48, 34, 658, DateTimeKind.Utc).AddTicks(9441));
+                value: new DateTime(2025, 11, 10, 23, 2, 38, 214, DateTimeKind.Utc).AddTicks(4522));
 
             migrationBuilder.UpdateData(
                 table: "Categorias",
                 keyColumn: "Id",
                 keyValue: 2,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 7, 18, 48, 34, 658, DateTimeKind.Utc).AddTicks(9445));
+                value: new DateTime(2025, 11, 10, 23, 2, 38, 214, DateTimeKind.Utc).AddTicks(4526));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 1,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 7, 18, 48, 34, 659, DateTimeKind.Utc).AddTicks(3304));
+                value: new DateTime(2025, 11, 10, 23, 2, 38, 215, DateTimeKind.Utc).AddTicks(5732));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 2,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 7, 18, 48, 34, 659, DateTimeKind.Utc).AddTicks(3307));
+                value: new DateTime(2025, 11, 10, 23, 2, 38, 215, DateTimeKind.Utc).AddTicks(5736));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 3,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 7, 18, 48, 34, 659, DateTimeKind.Utc).AddTicks(3309));
+                value: new DateTime(2025, 11, 10, 23, 2, 38, 215, DateTimeKind.Utc).AddTicks(5739));
         }
     }
 }

@@ -1,17 +1,18 @@
-using TheBuryProject.ViewModels;
+ï»¿using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Services.Interfaces
 {
     public interface ICreditoService
     {
-        // CRUD básico
+        // CRUD bï¿½sico
         Task<List<CreditoViewModel>> GetAllAsync(CreditoFilterViewModel? filter = null);
         Task<CreditoViewModel?> GetByIdAsync(int id);
+        Task<List<CreditoViewModel>> GetByClienteIdAsync(int clienteId);
         Task<CreditoViewModel> CreateAsync(CreditoViewModel viewModel);
         Task<bool> UpdateAsync(CreditoViewModel viewModel);
         Task<bool> DeleteAsync(int id);
 
-        // Operaciones de crédito
+        // Operaciones de crï¿½dito
         Task<SimularCreditoViewModel> SimularCreditoAsync(SimularCreditoViewModel modelo);
         Task<bool> AprobarCreditoAsync(int creditoId, string aprobadoPor);
         Task<bool> RechazarCreditoAsync(int creditoId, string motivo);
@@ -24,7 +25,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<List<CuotaViewModel>> GetCuotasVencidasAsync();
         Task ActualizarEstadoCuotasAsync();
 
-        // Cálculos financieros
+        // Cï¿½lculos financieros
         decimal CalcularMontoCuotaSistemaFrances(decimal monto, decimal tasaMensual, int cantidadCuotas);
         decimal CalcularCFTEA(decimal tasaMensual);
         Task<bool> RecalcularSaldoCreditoAsync(int creditoId);

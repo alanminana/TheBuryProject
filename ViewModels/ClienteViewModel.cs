@@ -59,6 +59,9 @@ namespace TheBuryProject.ViewModels
         [StringLength(200)]
         public string Domicilio { get; set; } = string.Empty;
 
+        // Alias para compatibilidad con vistas
+        public string? Direccion => Domicilio;
+
         [Display(Name = "Localidad")]
         public string? Localidad { get; set; }
 
@@ -72,6 +75,9 @@ namespace TheBuryProject.ViewModels
         [Display(Name = "Empleador")]
         public string? Empleador { get; set; }
 
+        // Alias para compatibilidad con vistas
+        public string? LugarTrabajo => Empleador;
+
         [Display(Name = "Tipo de Empleo")]
         public string? TipoEmpleo { get; set; }
 
@@ -79,9 +85,18 @@ namespace TheBuryProject.ViewModels
         [DataType(DataType.Currency)]
         public decimal? Sueldo { get; set; }
 
+        // Alias para compatibilidad con vistas
+        public decimal? IngresoMensual => Sueldo;
+
+        [Display(Name = "Tiempo en el Trabajo")]
+        public string? TiempoTrabajo { get; set; }
+
         [Display(Name = "Teléfono Laboral")]
         [Phone]
         public string? TelefonoLaboral { get; set; }
+
+        // Alias para compatibilidad con vistas
+        public string? TelefonoTrabajo => TelefonoLaboral;
 
         // Documentación
         [Display(Name = "Tiene Recibo de Sueldo")]
@@ -113,13 +128,25 @@ namespace TheBuryProject.ViewModels
         [DataType(DataType.MultilineText)]
         public string? Observaciones { get; set; }
 
-        // Info adicional
+        // Info adicional - Historial Crediticio
         [Display(Name = "Créditos Activos")]
         public int CreditosActivos { get; set; }
+
+        [Display(Name = "Créditos Totales")]
+        public int CreditosTotales { get; set; }
+
+        [Display(Name = "Cuotas Impagas")]
+        public int CuotasImpagas { get; set; }
 
         [Display(Name = "Total Adeudado")]
         [DataType(DataType.Currency)]
         public decimal TotalAdeudado { get; set; }
+
+        // Alias para compatibilidad con vistas
+        public decimal? MontoAdeudado => TotalAdeudado;
+
+        // Garante
+        public int? GaranteId { get; set; }
 
         // Auditoría
         public DateTime CreatedAt { get; set; }
