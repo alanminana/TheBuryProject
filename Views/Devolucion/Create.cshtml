@@ -27,7 +27,7 @@
         </div>
     }
 
-    <form asp-action="Create" method="post">
+    <form asp-action="Crear" method="post">
         <input type="hidden" asp-for="VentaId" />
         <input type="hidden" asp-for="ClienteId" />
 
@@ -74,7 +74,6 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Cliente</label>
                         <input type="text" class="form-control" value="@Model.ClienteNombre" readonly />
-
                     </div>
                 </div>
                 <div class="row">
