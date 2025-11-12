@@ -298,25 +298,25 @@ public class DevolucionController : Controller
     #region RMAs
 
     /// <summary>
-    /// Lista de RMAs
+    /// Estadísticas de RMAs y devoluciones
     /// </summary>
     [Authorize(Roles = "Admin,Gerente")]
-    public async Task<IActionResult> RMAs()
+    public async Task<IActionResult> RMAs(DateTime? desde, DateTime? hasta)
     {
-        var todosRMAs = await _devolucionService.ObtenerTodosRMAsAsync();
+        var fechaDesde = desde ?? DateTime.Now.AddMonths(-1);
+        var fechaHasta = hasta ?? DateTime.Now;
 
-        var viewModel = new RMAsListViewModel
+        var viewModel = new EstadisticasDevolucionViewModel
         {
-            Pendientes = todosRMAs.Where(r => r.Estado == EstadoRMA.Pendiente).ToList(),
-            EnProceso = todosRMAs.Where(r => r.Estado == EstadoRMA.AprobadoProveedor ||
-                                              r.Estado == EstadoRMA.EnTransito ||
-                                              r.Estado == EstadoRMA.RecibidoProveedor ||
-                                              r.Estado == EstadoRMA.EnEvaluacion).ToList(),
-            Resueltos = todosRMAs.Where(r => r.Estado == EstadoRMA.Resuelto || r.Estado == EstadoRMA.Rechazado).ToList(),
-            TotalPendientes = todosRMAs.Count(r => r.Estado == EstadoRMA.Pendiente),
-            TotalEnProceso = todosRMAs.Count(r => r.Estado != EstadoRMA.Pendiente && r.Estado != EstadoRMA.Resuelto && r.Estado != EstadoRMA.Rechazado),
-            TotalResueltos = todosRMAs.Count(r => r.Estado == EstadoRMA.Resuelto)
+            FechaDesde = fechaDesde,
+            FechaHasta = fechaHasta,
+            DevolucionesPorMotivo = await _devolucionService.ObtenerEstadisticasMotivoDevolucionAsync(fechaDesde, fechaHasta),
+            ProductosMasDevueltos = await _devolucionService.ObtenerProductosMasDevueltosAsync(10),
+            MontoTotalDevuelto = await _devolucionService.ObtenerTotalDevolucionesPeriodoAsync(fechaDesde, fechaHasta),
+            RMAsPendientes = await _devolucionService.ObtenerCantidadRMAsPendientesAsync()
         };
+
+        viewModel.TotalDevoluciones = viewModel.DevolucionesPorMotivo.Values.Sum();
 
         return View(viewModel);
     }
