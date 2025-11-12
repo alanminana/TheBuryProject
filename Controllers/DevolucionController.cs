@@ -97,6 +97,33 @@ public class DevolucionController : Controller
                 }
             }
         }
+        else
+        {
+            // Si no hay ventaId, cargar lista de ventas disponibles para devolución
+            var ventasDisponibles = await _ventaService.GetAllAsync(new VentaFilterViewModel
+            {
+                Estado = Models.Enums.EstadoVenta.Confirmada
+            });
+
+            // También incluir facturadas y entregadas
+            var ventasFacturadas = await _ventaService.GetAllAsync(new VentaFilterViewModel
+            {
+                Estado = Models.Enums.EstadoVenta.Facturada
+            });
+
+            var ventasEntregadas = await _ventaService.GetAllAsync(new VentaFilterViewModel
+            {
+                Estado = Models.Enums.EstadoVenta.Entregada
+            });
+
+            var todasVentas = ventasDisponibles
+                .Concat(ventasFacturadas)
+                .Concat(ventasEntregadas)
+                .OrderByDescending(v => v.FechaVenta)
+                .ToList();
+
+            ViewBag.Ventas = todasVentas;
+        }
 
         await CargarListasAsync();
         return View(viewModel);

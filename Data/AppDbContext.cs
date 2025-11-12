@@ -83,6 +83,11 @@ namespace TheBuryProject.Data
         // Módulo de Notificaciones
         public DbSet<Notificacion> Notificaciones { get; set; }
 
+        // Módulo de Roles y Permisos
+        public DbSet<RolPermiso> RolPermisos { get; set; }
+        public DbSet<ModuloSistema> ModulosSistema { get; set; }
+        public DbSet<AccionModulo> AccionesModulo { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -1131,6 +1136,184 @@ namespace TheBuryProject.Data
                     .WithMany()
                     .HasForeignKey(e => e.ClienteId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // Configuración para ModuloSistema
+            // =======================
+            modelBuilder.Entity<ModuloSistema>(entity =>
+            {
+                entity.ToTable("ModulosSistema");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Nombre)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.Clave)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Descripcion)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.Icono)
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Categoria)
+                    .HasMaxLength(50);
+
+                entity.HasIndex(e => e.Clave)
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0");
+
+                entity.HasIndex(e => e.Orden);
+                entity.HasIndex(e => e.Activo);
+                entity.HasIndex(e => e.Categoria);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // Configuración para AccionModulo
+            // =======================
+            modelBuilder.Entity<AccionModulo>(entity =>
+            {
+                entity.ToTable("AccionesModulo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Nombre)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.Clave)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Descripcion)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.Icono)
+                    .HasMaxLength(50);
+
+                entity.HasIndex(e => e.ModuloId);
+                entity.HasIndex(e => e.Orden);
+                entity.HasIndex(e => e.Activa);
+
+                entity.HasIndex(e => new { e.ModuloId, e.Clave })
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0");
+
+                entity.HasOne(e => e.Modulo)
+                    .WithMany(m => m.Acciones)
+                    .HasForeignKey(e => e.ModuloId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // Configuración para RolPermiso
+            // =======================
+            modelBuilder.Entity<RolPermiso>(entity =>
+            {
+                entity.ToTable("RolPermisos");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.RoleId)
+                    .IsRequired()
+                    .HasMaxLength(450);
+
+                entity.Property(e => e.ClaimValue)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Observaciones)
+                    .HasMaxLength(500);
+
+                entity.HasIndex(e => e.RoleId);
+                entity.HasIndex(e => e.ModuloId);
+                entity.HasIndex(e => e.AccionId);
+                entity.HasIndex(e => e.ClaimValue);
+
+                entity.HasIndex(e => new { e.RoleId, e.ModuloId, e.AccionId })
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0");
+
+                entity.HasOne(e => e.Role)
+                    .WithMany()
+                    .HasForeignKey(e => e.RoleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Modulo)
+                    .WithMany(m => m.Permisos)
+                    .HasForeignKey(e => e.ModuloId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(e => e.Accion)
+                    .WithMany(a => a.Permisos)
+                    .HasForeignKey(e => e.AccionId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // Configuración para UmbralAutorizacion
+            // =======================
+            modelBuilder.Entity<UmbralAutorizacion>(entity =>
+            {
+                entity.ToTable("UmbralesAutorizacion");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.MontoMinimo)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.MontoMaximo)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.PorcentajeDescuentoMaximo)
+                    .HasPrecision(5, 2);
+
+                entity.HasIndex(e => e.Tipo);
+                entity.HasIndex(e => e.Activo);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // Configuración para SolicitudAutorizacion
+            // =======================
+            modelBuilder.Entity<SolicitudAutorizacion>(entity =>
+            {
+                entity.ToTable("SolicitudesAutorizacion");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Monto)
+                    .HasPrecision(18, 2);
+
+                entity.HasIndex(e => e.Tipo);
+                entity.HasIndex(e => e.Estado);
+                entity.HasIndex(e => e.FechaSolicitud);
+                entity.HasIndex(e => e.SolicitadoPor);
+                entity.HasIndex(e => e.AprobadoPor);
 
                 entity.Property(e => e.RowVersion)
                     .IsRowVersion();

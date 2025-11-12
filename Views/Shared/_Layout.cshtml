@@ -78,6 +78,13 @@
                         </a>
                     </li>
 
+                    <!-- ROLES Y PERMISOS -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Roles" asp-action="Index">
+                            <i class="bi bi-shield me-1"></i>Roles
+                        </a>
+                    </li>
+
                     <!-- AUTORIZACIONES -->
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Autorizacion" asp-action="Index">
@@ -144,7 +151,8 @@
                             <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Configuración</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="post" asp-controller="Account" asp-action="Logout">
+                                <form method="post" asp-area="Identity" asp-page="/Account/Logout">
+                                    @Html.AntiForgeryToken()
                                     <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</button>
                                 </form>
                             </li>

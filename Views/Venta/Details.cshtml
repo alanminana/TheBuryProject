@@ -190,6 +190,15 @@
                     @if (puedeFacturar)
                     { <a asp-action="Facturar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-receipt"></i> Facturar</a> }
 
+                    @if (Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Confirmada ||
+                         Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Facturada ||
+                         Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Entregada)
+                    {
+                        <a asp-controller="Devolucion" asp-action="Create" asp-route-ventaId="@Model.Id" class="btn btn-outline-warning">
+                            <i class="bi bi-arrow-return-left"></i> Crear Devolución
+                        </a>
+                    }
+
                     @if (puedeCancelar)
                     { <a asp-action="Cancelar" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar</a> }
 

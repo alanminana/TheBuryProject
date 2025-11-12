@@ -27,7 +27,43 @@
         </div>
     }
 
-    <form asp-action="Crear" method="post">
+    <!-- Selector de Venta (solo si no viene ventaId) -->
+    @if (Model.NumeroVenta == null)
+    {
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-search me-2"></i>Buscar Venta</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Seleccione la venta para la cual desea crear la devolución. Solo se mostrarán ventas confirmadas, facturadas o entregadas.
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="ventaSelect" class="form-label">Venta</label>
+                        <select id="ventaSelect" class="form-select">
+                            <option value="">-- Seleccione una venta --</option>
+                            @if (ViewBag.Ventas != null)
+                            {
+                                @foreach (var venta in (IEnumerable<dynamic>)ViewBag.Ventas)
+                                {
+                                    <option value="@venta.Id">@venta.Numero - @venta.ClienteNombre - $@venta.Total.ToString("N2")</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button type="button" class="btn btn-primary" id="btnCargarVenta">
+                            <i class="bi bi-arrow-right-circle me-1"></i>Cargar Venta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <form asp-action="Create" method="post">
         <input type="hidden" asp-for="VentaId" />
         <input type="hidden" asp-for="ClienteId" />
 
@@ -54,6 +90,13 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Debe seleccionar una venta</strong> para poder crear una devolución.
             </div>
         }
 
@@ -184,6 +227,16 @@
 
     <script>
         $(document).ready(function() {
+            // Cargar venta seleccionada
+            $('#btnCargarVenta').on('click', function() {
+                const ventaId = $('#ventaSelect').val();
+                if (!ventaId) {
+                    alert('Debe seleccionar una venta');
+                    return;
+                }
+                window.location.href = '@Url.Action("Create", "Devolucion")?ventaId=' + ventaId;
+            });
+
             // Calcular subtotales y total
             function calcularTotales() {
                 let total = 0;

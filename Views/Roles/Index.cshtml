@@ -1,0 +1,141 @@
+﻿@model List<RolViewModel>
+
+@{
+    ViewData["Title"] = "Gestión de Roles";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h2><i class="bi bi-shield me-2"></i>Gestión de Roles y Permisos</h2>
+            <p class="text-muted">Administra los roles del sistema y sus permisos</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Crear Rol
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-body">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-shield-x" style="font-size: 4rem; color: #6c757d;"></i>
+                    <p class="mt-3 text-muted">No hay roles configurados en el sistema</p>
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Crear Primer Rol
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th><i class="bi bi-shield me-1"></i>Rol</th>
+                                <th class="text-center"><i class="bi bi-people me-1"></i>Usuarios</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var rol in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@rol.Nombre</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (rol.CantidadUsuarios > 0)
+                                        {
+                                            <a asp-action="Usuarios" asp-route-id="@rol.Id" class="badge bg-primary">
+                                                @rol.CantidadUsuarios usuario@(rol.CantidadUsuarios != 1 ? "s" : "")
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Sin usuarios</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Details" asp-route-id="@rol.Id"
+                                               class="btn btn-sm btn-outline-info"
+                                               title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="AsignarPermisos" asp-route-id="@rol.Id"
+                                               class="btn btn-sm btn-outline-warning"
+                                               title="Asignar permisos">
+                                                <i class="bi bi-key"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@rol.Id"
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            @if (rol.Nombre != "SuperAdmin")
+                                            {
+                                                <a asp-action="Delete" asp-route-id="@rol.Id"
+                                                   class="btn btn-sm btn-outline-danger"
+                                                   title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Roles del Sistema:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li><strong>SuperAdmin:</strong> Todos los permisos sin restricción</li>
+                                <li><strong>Administrador:</strong> Gestión completa excepto configuración crítica</li>
+                                <li><strong>Gerente:</strong> Ventas, compras, reportes y autorizaciones</li>
+                                <li><strong>Vendedor:</strong> Ventas, cotizaciones y gestión de clientes</li>
+                                <li><strong>Cajero:</strong> Cobros y movimientos de caja</li>
+                                <li><strong>Repositor:</strong> Gestión de stock y movimientos</li>
+                                <li><strong>Técnico:</strong> Devoluciones, garantías y RMAs</li>
+                                <li><strong>Contador:</strong> Consultas y reportes (solo lectura)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+    </script>
+}
