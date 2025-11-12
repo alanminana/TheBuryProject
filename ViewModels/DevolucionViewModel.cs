@@ -30,6 +30,7 @@ public class CrearDevolucionViewModel
 
     // Info de la venta (solo lectura)
     public string? NumeroVenta { get; set; }
+    public string? ClienteNombre { get; set; }
     public DateTime? FechaVenta { get; set; }
     public decimal? TotalVenta { get; set; }
     public int? DiasDesdeVenta { get; set; }

@@ -77,6 +77,7 @@ public class DevolucionController : Controller
                 viewModel.VentaId = venta.Id;
                 viewModel.ClienteId = venta.ClienteId;
                 viewModel.NumeroVenta = venta.Numero;
+                viewModel.ClienteNombre = venta.Cliente?.NombreCompleto ?? "Cliente";
                 viewModel.FechaVenta = venta.FechaVenta;
                 viewModel.TotalVenta = venta.Total;
                 viewModel.DiasDesdeVenta = await _devolucionService.ObtenerDiasDesdeVentaAsync(venta.Id);
@@ -116,6 +117,23 @@ public class DevolucionController : Controller
 
         try
         {
+            // Validar que la venta existe y obtener el cliente correcto
+            var venta = await _ventaService.GetByIdAsync(model.VentaId);
+            if (venta == null)
+            {
+                ModelState.AddModelError("", "La venta especificada no existe");
+                await CargarListasAsync();
+                return View(model);
+            }
+
+            // Validar que el cliente de la devolución coincide con el cliente de la venta
+            if (model.ClienteId != venta.ClienteId)
+            {
+                ModelState.AddModelError("", "El cliente de la devolución no coincide con el cliente de la venta");
+                await CargarListasAsync();
+                return View(model);
+            }
+
             // Validar que puede devolver
             if (!await _devolucionService.PuedeDevolverVentaAsync(model.VentaId))
             {
@@ -124,7 +142,7 @@ public class DevolucionController : Controller
                 return View(model);
             }
 
-            // Crear devolución
+            // Crear devolución (el ClienteId ya está validado que coincide con la venta)
             var devolucion = new Devolucion
             {
                 VentaId = model.VentaId,
