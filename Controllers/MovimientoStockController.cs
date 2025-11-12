@@ -13,7 +13,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin,Gerente")]
     public class MovimientoStockController : Controller
     {
         private readonly IMovimientoStockService _movimientoStockService;

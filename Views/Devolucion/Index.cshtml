@@ -1,0 +1,224 @@
+﻿@model TheBuryProject.ViewModels.DevolucionesListViewModel
+@{
+    ViewData["Title"] = "Devoluciones y Garantías";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>📦 Devoluciones y Garantías</h2>
+            <p class="text-muted">Gestión completa de devoluciones, RMAs y notas de crédito</p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Crear" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nueva Devolución
+            </a>
+            <div class="btn-group ms-2">
+                <a asp-action="Garantias" class="btn btn-outline-info">
+                    <i class="bi bi-shield-check"></i> Garantías
+                </a>
+                <a asp-action="RMAs" class="btn btn-outline-warning">
+                    <i class="bi bi-truck"></i> RMAs
+                </a>
+                <a asp-action="Estadisticas" class="btn btn-outline-secondary">
+                    <i class="bi bi-graph-up"></i> Estadísticas
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Resumen de estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h3 class="text-warning">@Model.TotalPendientes</h3>
+                    <p class="text-muted mb-0">Pendientes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h3 class="text-success">@Model.TotalAprobadas</h3>
+                    <p class="text-muted mb-0">Aprobadas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h3 class="text-danger">@Model.TotalRechazadas</h3>
+                    <p class="text-muted mb-0">Rechazadas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">$@Model.MontoTotalMes.ToString("N2")</h3>
+                    <p class="text-muted mb-0">Devuelto (mes)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-pendientes" type="button">
+                Pendientes
+                @if (Model.Pendientes.Any())
+                {
+                    <span class="badge bg-warning">@Model.Pendientes.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-revision" type="button">
+                En Revisión
+                @if (Model.EnRevision.Any())
+                {
+                    <span class="badge bg-info">@Model.EnRevision.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-aprobadas" type="button">
+                Aprobadas
+                @if (Model.Aprobadas.Any())
+                {
+                    <span class="badge bg-success">@Model.Aprobadas.Count</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-completadas" type="button">
+                Completadas
+                @if (Model.Completadas.Any())
+                {
+                    <span class="badge bg-secondary">@Model.Completadas.Count</span>
+                }
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenido de Tabs -->
+    <div class="tab-content">
+        <!-- Tab Pendientes -->
+        <div class="tab-pane fade show active" id="tab-pendientes">
+            @if (!Model.Pendientes.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay devoluciones pendientes
+                </div>
+            }
+            else
+            {
+                @await Html.PartialAsync("_TablaDevolucionesPartial", Model.Pendientes)
+            }
+        </div>
+
+        <!-- Tab En Revisión -->
+        <div class="tab-pane fade" id="tab-revision">
+            @if (!Model.EnRevision.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay devoluciones en revisión
+                </div>
+            }
+            else
+            {
+                @await Html.PartialAsync("_TablaDevolucionesPartial", Model.EnRevision)
+            }
+        </div>
+
+        <!-- Tab Aprobadas -->
+        <div class="tab-pane fade" id="tab-aprobadas">
+            @if (!Model.Aprobadas.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay devoluciones aprobadas
+                </div>
+            }
+            else
+            {
+                @await Html.PartialAsync("_TablaDevolucionesPartial", Model.Aprobadas)
+            }
+        </div>
+
+        <!-- Tab Completadas -->
+        <div class="tab-pane fade" id="tab-completadas">
+            @if (!Model.Completadas.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay devoluciones completadas
+                </div>
+            }
+            else
+            {
+                @await Html.PartialAsync("_TablaDevolucionesPartial", Model.Completadas)
+            }
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">ℹ️ Información sobre Devoluciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Política de Devoluciones:</h6>
+                            <ul class="mb-0">
+                                <li>Plazo máximo: <strong>30 días</strong> desde la compra</li>
+                                <li>Producto en buen estado con accesorios completos</li>
+                                <li>Factura o comprobante de compra requerido</li>
+                                <li>Garantía según condiciones del fabricante</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Proceso de Devolución:</h6>
+                            <ul class="mb-0">
+                                <li><strong>1.</strong> Cliente solicita devolución</li>
+                                <li><strong>2.</strong> Revisión técnica del producto</li>
+                                <li><strong>3.</strong> Aprobación/Rechazo por gerencia</li>
+                                <li><strong>4.</strong> Generación de nota de crédito</li>
+                                <li><strong>5.</strong> Procesamiento de stock</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Habilitar tooltips de Bootstrap
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
+}

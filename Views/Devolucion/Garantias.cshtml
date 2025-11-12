@@ -1,0 +1,325 @@
+﻿@using TheBuryProject.Models.Entities
+@using TheBuryProject.ViewModels
+@model GarantiasListViewModel
+@{
+    ViewData["Title"] = "Garantías";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2><i class="bi bi-shield-check me-2"></i>Gestión de Garantías</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Devoluciones</a></li>
+                    <li class="breadcrumb-item active">Garantías</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Garantías Vigentes</h6>
+                            <h2 class="mb-0">@Model.TotalVigentes</h2>
+                        </div>
+                        <i class="bi bi-shield-check fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Próximas a Vencer</h6>
+                            <h2 class="mb-0">@Model.TotalProximasVencer</h2>
+                        </div>
+                        <i class="bi bi-exclamation-triangle fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Vencidas</h6>
+                            <h2 class="mb-0">@Model.Vencidas.Count</h2>
+                        </div>
+                        <i class="bi bi-x-circle fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">En Uso</h6>
+                            <h2 class="mb-0">@Model.EnUso.Count</h2>
+                        </div>
+                        <i class="bi bi-wrench fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="garantiasTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="vigentes-tab" data-bs-toggle="tab" data-bs-target="#vigentes" type="button">
+                <i class="bi bi-shield-check me-1"></i>Vigentes (@Model.Vigentes.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="proximas-tab" data-bs-toggle="tab" data-bs-target="#proximas" type="button">
+                <i class="bi bi-exclamation-triangle me-1"></i>Próximas a Vencer (@Model.ProximasVencer.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="vencidas-tab" data-bs-toggle="tab" data-bs-target="#vencidas" type="button">
+                <i class="bi bi-x-circle me-1"></i>Vencidas (@Model.Vencidas.Count)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="enuso-tab" data-bs-toggle="tab" data-bs-target="#enuso" type="button">
+                <i class="bi bi-wrench me-1"></i>En Uso (@Model.EnUso.Count)
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content border border-top-0 p-3" id="garantiasTabContent">
+        <!-- Vigentes -->
+        <div class="tab-pane fade show active" id="vigentes" role="tabpanel">
+            @if (Model.Vigentes.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>N° Garantía</th>
+                                <th>Producto</th>
+                                <th>Cliente</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Vencimiento</th>
+                                <th>Meses</th>
+                                <th>Días Restantes</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var garantia in Model.Vigentes)
+                            {
+                                var diasRestantes = (garantia.FechaVencimiento - DateTime.Now).Days;
+                                var alertClass = diasRestantes < 30 ? "text-warning" : "text-success";
+                                <tr>
+                                    <td><strong>@garantia.NumeroGarantia</strong></td>
+                                    <td>@garantia.Producto?.Nombre</td>
+                                    <td>@garantia.Cliente?.NombreCompleto</td>
+                                    <td>@garantia.FechaInicio.ToString("dd/MM/yyyy")</td>
+                                    <td>@garantia.FechaVencimiento.ToString("dd/MM/yyyy")</td>
+                                    <td>@garantia.MesesGarantia meses</td>
+                                    <td class="@alertClass"><strong>@diasRestantes días</strong></td>
+                                    <td>
+                                        <span class="badge bg-success">Vigente</span>
+                                        @if (garantia.GarantiaExtendida)
+                                        {
+                                            <span class="badge bg-info">Extendida</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" title="Ver Detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>No hay garantías vigentes.
+                </div>
+            }
+        </div>
+
+        <!-- Próximas a Vencer -->
+        <div class="tab-pane fade" id="proximas" role="tabpanel">
+            @if (Model.ProximasVencer.Any())
+            {
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Atención:</strong> Las siguientes garantías vencerán en los próximos 30 días.
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>N° Garantía</th>
+                                <th>Producto</th>
+                                <th>Cliente</th>
+                                <th>Fecha Vencimiento</th>
+                                <th>Días Restantes</th>
+                                <th>Contacto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var garantia in Model.ProximasVencer.OrderBy(g => g.FechaVencimiento))
+                            {
+                                var diasRestantes = (garantia.FechaVencimiento - DateTime.Now).Days;
+                                var urgenciaClass = diasRestantes < 7 ? "table-danger" : "table-warning";
+                                <tr class="@urgenciaClass">
+                                    <td><strong>@garantia.NumeroGarantia</strong></td>
+                                    <td>@garantia.Producto?.Nombre</td>
+                                    <td>@garantia.Cliente?.NombreCompleto</td>
+                                    <td>@garantia.FechaVencimiento.ToString("dd/MM/yyyy")</td>
+                                    <td><strong>@diasRestantes días</strong></td>
+                                    <td>
+                                        <small>@garantia.Cliente?.Telefono</small><br />
+                                        <small>@garantia.Cliente?.Email</small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" title="Contactar Cliente">
+                                            <i class="bi bi-envelope"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-success" title="Extender Garantía">
+                                            <i class="bi bi-plus-circle"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>No hay garantías próximas a vencer.
+                </div>
+            }
+        </div>
+
+        <!-- Vencidas -->
+        <div class="tab-pane fade" id="vencidas" role="tabpanel">
+            @if (Model.Vencidas.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>N° Garantía</th>
+                                <th>Producto</th>
+                                <th>Cliente</th>
+                                <th>Fecha Vencimiento</th>
+                                <th>Días Vencida</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var garantia in Model.Vencidas)
+                            {
+                                var diasVencida = (DateTime.Now - garantia.FechaVencimiento).Days;
+                                <tr>
+                                    <td><strong>@garantia.NumeroGarantia</strong></td>
+                                    <td>@garantia.Producto?.Nombre</td>
+                                    <td>@garantia.Cliente?.NombreCompleto</td>
+                                    <td>@garantia.FechaVencimiento.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-danger"><strong>@diasVencida días</strong></td>
+                                    <td>
+                                        <span class="badge bg-danger">Vencida</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>No hay garantías vencidas.
+                </div>
+            }
+        </div>
+
+        <!-- En Uso -->
+        <div class="tab-pane fade" id="enuso" role="tabpanel">
+            @if (Model.EnUso.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Estas garantías están siendo utilizadas actualmente (producto en reparación/servicio).
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>N° Garantía</th>
+                                <th>Producto</th>
+                                <th>Cliente</th>
+                                <th>Fecha Uso</th>
+                                <th>Días en Servicio</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var garantia in Model.EnUso)
+                            {
+                                <tr>
+                                    <td><strong>@garantia.NumeroGarantia</strong></td>
+                                    <td>@garantia.Producto?.Nombre</td>
+                                    <td>@garantia.Cliente?.NombreCompleto</td>
+                                    <td>@garantia.UpdatedAt?.ToString("dd/MM/yyyy")</td>
+                                    <td>@((DateTime.Now - (garantia.UpdatedAt ?? DateTime.Now)).Days) días</td>
+                                    <td>
+                                        <span class="badge bg-info">En Uso</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-success" title="Finalizar Servicio">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>No hay garantías en uso actualmente.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Inicializar tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+}

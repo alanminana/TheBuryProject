@@ -1,0 +1,295 @@
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Data;
+using TheBuryProject.Models.Entities;
+using TheBuryProject.Models.Enums;
+using TheBuryProject.Services.Interfaces;
+using TheBuryProject.ViewModels;
+
+namespace TheBuryProject.Services
+{
+    public class NotificacionService : INotificacionService
+    {
+        private readonly AppDbContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly ILogger<NotificacionService> _logger;
+
+        public NotificacionService(
+            AppDbContext context,
+            UserManager<IdentityUser> userManager,
+            ILogger<NotificacionService> logger)
+        {
+            _context = context;
+            _userManager = userManager;
+            _logger = logger;
+        }
+
+        #region Crear Notificaciones
+
+        public async Task<Notificacion> CrearNotificacionAsync(CrearNotificacionViewModel model)
+        {
+            var notificacion = new Notificacion
+            {
+                UsuarioDestino = model.UsuarioDestino,
+                Tipo = model.Tipo,
+                Prioridad = model.Prioridad,
+                Titulo = model.Titulo,
+                Mensaje = model.Mensaje,
+                Url = model.Url,
+                IconoCss = ObtenerIconoPorTipo(model.Tipo),
+                FechaNotificacion = DateTime.Now,
+                Leida = false,
+                EntidadOrigen = model.EntidadOrigen,
+                EntidadOrigenId = model.EntidadOrigenId
+            };
+
+            _context.Notificaciones.Add(notificacion);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Notificación creada para {model.UsuarioDestino}: {model.Titulo}");
+
+            return notificacion;
+        }
+
+        public async Task CrearNotificacionParaUsuarioAsync(
+            string usuario,
+            TipoNotificacion tipo,
+            string titulo,
+            string mensaje,
+            string? url = null,
+            PrioridadNotificacion prioridad = PrioridadNotificacion.Media)
+        {
+            var model = new CrearNotificacionViewModel
+            {
+                UsuarioDestino = usuario,
+                Tipo = tipo,
+                Prioridad = prioridad,
+                Titulo = titulo,
+                Mensaje = mensaje,
+                Url = url
+            };
+
+            await CrearNotificacionAsync(model);
+        }
+
+        public async Task CrearNotificacionParaRolAsync(
+            string rol,
+            TipoNotificacion tipo,
+            string titulo,
+            string mensaje,
+            string? url = null,
+            PrioridadNotificacion prioridad = PrioridadNotificacion.Media)
+        {
+            // Obtener todos los usuarios con ese rol
+            var usuariosEnRol = await _userManager.GetUsersInRoleAsync(rol);
+
+            foreach (var usuario in usuariosEnRol)
+            {
+                await CrearNotificacionParaUsuarioAsync(
+                    usuario.UserName ?? usuario.Email ?? "",
+                    tipo,
+                    titulo,
+                    mensaje,
+                    url,
+                    prioridad);
+            }
+
+            _logger.LogInformation($"Notificaciones creadas para rol {rol}: {usuariosEnRol.Count} usuarios");
+        }
+
+        #endregion
+
+        #region Obtener Notificaciones
+
+        public async Task<List<NotificacionViewModel>> ObtenerNotificacionesUsuarioAsync(
+            string usuario,
+            bool soloNoLeidas = false,
+            int limite = 50)
+        {
+            var query = _context.Notificaciones
+                .Where(n => n.UsuarioDestino == usuario && !n.IsDeleted);
+
+            if (soloNoLeidas)
+            {
+                query = query.Where(n => !n.Leida);
+            }
+
+            var notificaciones = await query
+                .OrderByDescending(n => n.FechaNotificacion)
+                .Take(limite)
+                .ToListAsync();
+
+            return notificaciones.Select(n => new NotificacionViewModel
+            {
+                Id = n.Id,
+                Tipo = n.Tipo,
+                Prioridad = n.Prioridad,
+                Titulo = n.Titulo,
+                Mensaje = n.Mensaje,
+                Url = n.Url,
+                IconoCss = n.IconoCss,
+                Leida = n.Leida,
+                FechaNotificacion = n.FechaNotificacion,
+                TiempoTranscurrido = CalcularTiempoTranscurrido(n.FechaNotificacion)
+            }).ToList();
+        }
+
+        public async Task<int> ObtenerCantidadNoLeidasAsync(string usuario)
+        {
+            return await _context.Notificaciones
+                .CountAsync(n => n.UsuarioDestino == usuario && !n.Leida && !n.IsDeleted);
+        }
+
+        public async Task<Notificacion?> ObtenerNotificacionPorIdAsync(int id)
+        {
+            return await _context.Notificaciones
+                .FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
+        }
+
+        public async Task<ListaNotificacionesViewModel> ObtenerResumenNotificacionesAsync(string usuario)
+        {
+            var notificaciones = await ObtenerNotificacionesUsuarioAsync(usuario, false, 100);
+            var noLeidas = await ObtenerCantidadNoLeidasAsync(usuario);
+
+            return new ListaNotificacionesViewModel
+            {
+                Notificaciones = notificaciones,
+                TotalNoLeidas = noLeidas,
+                TotalNotificaciones = notificaciones.Count
+            };
+        }
+
+        #endregion
+
+        #region Marcar como Leída
+
+        public async Task MarcarComoLeidaAsync(int notificacionId, string usuario)
+        {
+            var notificacion = await _context.Notificaciones
+                .FirstOrDefaultAsync(n => n.Id == notificacionId &&
+                                         n.UsuarioDestino == usuario &&
+                                         !n.IsDeleted);
+
+            if (notificacion != null && !notificacion.Leida)
+            {
+                notificacion.Leida = true;
+                notificacion.FechaLeida = DateTime.Now;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task MarcarTodasComoLeidasAsync(string usuario)
+        {
+            var notificaciones = await _context.Notificaciones
+                .Where(n => n.UsuarioDestino == usuario && !n.Leida && !n.IsDeleted)
+                .ToListAsync();
+
+            foreach (var notificacion in notificaciones)
+            {
+                notificacion.Leida = true;
+                notificacion.FechaLeida = DateTime.Now;
+            }
+
+            if (notificaciones.Any())
+            {
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Marcadas {notificaciones.Count} notificaciones como leídas para {usuario}");
+            }
+        }
+
+        #endregion
+
+        #region Eliminar
+
+        public async Task EliminarNotificacionAsync(int id, string usuario)
+        {
+            var notificacion = await _context.Notificaciones
+                .FirstOrDefaultAsync(n => n.Id == id &&
+                                         n.UsuarioDestino == usuario &&
+                                         !n.IsDeleted);
+
+            if (notificacion != null)
+            {
+                notificacion.IsDeleted = true;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task LimpiarNotificacionesAntiguasAsync(int diasAntiguedad = 30)
+        {
+            var fechaLimite = DateTime.Now.AddDays(-diasAntiguedad);
+
+            var notificacionesAntiguas = await _context.Notificaciones
+                .Where(n => n.FechaNotificacion < fechaLimite && n.Leida && !n.IsDeleted)
+                .ToListAsync();
+
+            foreach (var notificacion in notificacionesAntiguas)
+            {
+                notificacion.IsDeleted = true;
+            }
+
+            if (notificacionesAntiguas.Any())
+            {
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Limpiadas {notificacionesAntiguas.Count} notificaciones antiguas");
+            }
+        }
+
+        #endregion
+
+        #region Métodos Auxiliares
+
+        private string ObtenerIconoPorTipo(TipoNotificacion tipo)
+        {
+            return tipo switch
+            {
+                TipoNotificacion.StockBajo => "bi-box-seam text-warning",
+                TipoNotificacion.StockAgotado => "bi-box-seam text-danger",
+                TipoNotificacion.CuotaProximaVencer => "bi-calendar-event text-warning",
+                TipoNotificacion.CuotaVencida => "bi-calendar-x text-danger",
+                TipoNotificacion.CreditoAprobado => "bi-check-circle text-success",
+                TipoNotificacion.CreditoRechazado => "bi-x-circle text-danger",
+                TipoNotificacion.PagoRecibido => "bi-cash text-success",
+                TipoNotificacion.AutorizacionPendiente => "bi-shield-lock text-warning",
+                TipoNotificacion.AutorizacionAprobada => "bi-shield-check text-success",
+                TipoNotificacion.AutorizacionRechazada => "bi-shield-x text-danger",
+                TipoNotificacion.VentaCompletada => "bi-cart-check text-success",
+                TipoNotificacion.DevolucionCreada => "bi-arrow-return-left text-info",
+                TipoNotificacion.DevolucionAprobada => "bi-check2-all text-success",
+                TipoNotificacion.NotaCreditoGenerada => "bi-receipt text-info",
+                TipoNotificacion.RMAPendiente => "bi-hourglass-split text-warning",
+                TipoNotificacion.RMAAprobado => "bi-check-circle text-success",
+                TipoNotificacion.RMARechazado => "bi-x-circle text-danger",
+                TipoNotificacion.GarantiaProximaVencer => "bi-shield-exclamation text-warning",
+                TipoNotificacion.CajaAbierta => "bi-unlock text-success",
+                TipoNotificacion.CajaCerrada => "bi-lock text-info",
+                TipoNotificacion.CierreConDiferencia => "bi-exclamation-triangle text-warning",
+                TipoNotificacion.ChequeProximoVencer => "bi-cash-coin text-warning",
+                TipoNotificacion.ChequeVencido => "bi-cash-coin text-danger",
+                TipoNotificacion.SistemaError => "bi-bug text-danger",
+                TipoNotificacion.SistemaMantenimiento => "bi-tools text-info",
+                _ => "bi-bell text-primary"
+            };
+        }
+
+        private string CalcularTiempoTranscurrido(DateTime fecha)
+        {
+            var diferencia = DateTime.Now - fecha;
+
+            if (diferencia.TotalMinutes < 1)
+                return "Ahora";
+            if (diferencia.TotalMinutes < 60)
+                return $"Hace {(int)diferencia.TotalMinutes} min";
+            if (diferencia.TotalHours < 24)
+                return $"Hace {(int)diferencia.TotalHours}h";
+            if (diferencia.TotalDays < 7)
+                return $"Hace {(int)diferencia.TotalDays}d";
+            if (diferencia.TotalDays < 30)
+                return $"Hace {(int)(diferencia.TotalDays / 7)} sem";
+
+            return fecha.ToString("dd/MM/yyyy");
+        }
+
+        #endregion
+    }
+}

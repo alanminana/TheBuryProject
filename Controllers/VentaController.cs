@@ -10,7 +10,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin,Gerente,Vendedor")]
     public class VentaController : Controller
     {
         private readonly IVentaService _ventaService;
@@ -215,7 +215,7 @@ namespace TheBuryProject.Controllers
                 TipoPago = TipoPago.Efectivo
             });
         }
-     
+
         // GET: Venta/Edit/5
         public async Task<IActionResult> Edit(int id)
         {

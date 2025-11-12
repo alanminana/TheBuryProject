@@ -1,0 +1,150 @@
+﻿@model TheBuryProject.ViewModels.CajasListViewModel
+@{
+    ViewData["Title"] = "Gestión de Cajas";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-cash-stack"></i> Gestión de Cajas</h2>
+        <div>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nueva Caja
+            </a>
+            <a asp-action="Historial" class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history"></i> Historial de Cierres
+            </a>
+        </div>
+    </div>
+
+    <!-- Aperturas Abiertas -->
+    @if (Model.AperturasAbiertas.Any())
+    {
+        <div class="alert alert-info">
+            <h5><i class="bi bi-info-circle"></i> Cajas Abiertas</h5>
+            <div class="row">
+                @foreach (var apertura in Model.AperturasAbiertas)
+                {
+                    <div class="col-md-4 mb-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>@apertura.Caja.Nombre</h6>
+                                <small>Abierta por: @apertura.UsuarioApertura</small><br />
+                                <small>Fecha: @apertura.FechaApertura.ToString("dd/MM/yyyy HH:mm")</small>
+                                <div class="mt-2">
+                                    <a asp-action="DetallesApertura" asp-route-id="@apertura.Id" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-eye"></i> Ver Detalles
+                                    </a>
+                                    <a asp-action="RegistrarMovimiento" asp-route-aperturaId="@apertura.Id" class="btn btn-sm btn-success">
+                                        <i class="bi bi-plus"></i> Movimiento
+                                    </a>
+                                    <a asp-action="Cerrar" asp-route-aperturaId="@apertura.Id" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-lock"></i> Cerrar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Cajas Activas -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Cajas Activas</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.CajasActivas.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Sucursal</th>
+                                <th>Ubicación</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var caja in Model.CajasActivas)
+                            {
+                                <tr>
+                                    <td>@caja.Codigo</td>
+                                    <td>@caja.Nombre</td>
+                                    <td>@(caja.Sucursal ?? "-")</td>
+                                    <td>@(caja.Ubicacion ?? "-")</td>
+                                    <td>
+                                        @if (caja.Estado == TheBuryProject.Models.Enums.EstadoCaja.Abierta)
+                                        {
+                                            <span class="badge bg-success">Abierta</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Cerrada</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (caja.Estado == TheBuryProject.Models.Enums.EstadoCaja.Cerrada)
+                                        {
+                                            <a asp-action="Abrir" asp-route-cajaId="@caja.Id" class="btn btn-sm btn-success">
+                                                <i class="bi bi-unlock"></i> Abrir
+                                            </a>
+                                        }
+                                        <a asp-action="Edit" asp-route-id="@caja.Id" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted">No hay cajas activas. <a asp-action="Create">Crear primera caja</a></p>
+            }
+        </div>
+    </div>
+
+    <!-- Cajas Inactivas -->
+    @if (Model.CajasInactivas.Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Cajas Inactivas</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var caja in Model.CajasInactivas)
+                            {
+                                <tr>
+                                    <td>@caja.Codigo</td>
+                                    <td>@caja.Nombre</td>
+                                    <td>
+                                        <a asp-action="Edit" asp-route-id="@caja.Id" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>

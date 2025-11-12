@@ -1,0 +1,131 @@
+﻿@{
+    ViewData["Title"] = "Reportes";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2>📊 Sistema de Reportes</h2>
+            <p class="text-muted">Analiza el rendimiento de tu negocio con reportes detallados</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Reporte de Ventas -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cart-check"></i> Reporte de Ventas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Análisis detallado de ventas por período con filtros avanzados por cliente, producto, categoría y vendedor.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check text-success"></i> Ventas por período</li>
+                        <li><i class="bi bi-check text-success"></i> Análisis de ganancias</li>
+                        <li><i class="bi bi-check text-success"></i> Productos más vendidos</li>
+                        <li><i class="bi bi-check text-success"></i> Clientes top</li>
+                        <li><i class="bi bi-check text-success"></i> Ventas por tipo de pago</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a asp-action="Ventas" class="btn btn-primary w-100">
+                        <i class="bi bi-file-earmark-bar-graph"></i> Ver Reporte
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Márgenes -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-percent"></i> Análisis de Márgenes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Analiza la rentabilidad de tus productos con información detallada de márgenes y ganancias potenciales.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check text-success"></i> Margen por producto</li>
+                        <li><i class="bi bi-check text-success"></i> Ganancia potencial</li>
+                        <li><i class="bi bi-check text-success"></i> Rotación de stock</li>
+                        <li><i class="bi bi-check text-success"></i> Productos con bajo margen</li>
+                        <li><i class="bi bi-check text-success"></i> Filtros por categoría/marca</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a asp-action="Margenes" class="btn btn-success w-100">
+                        <i class="bi bi-calculator"></i> Ver Reporte
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Morosidad -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Reporte de Morosidad
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Monitorea créditos vencidos y gestiona la cartera morosa con información detallada por cliente.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check text-success"></i> Clientes morosos</li>
+                        <li><i class="bi bi-check text-success"></i> Deudas vencidas</li>
+                        <li><i class="bi bi-check text-success"></i> Días de atraso</li>
+                        <li><i class="bi bi-check text-success"></i> Nivel de riesgo</li>
+                        <li><i class="bi bi-check text-success"></i> Análisis por antigüedad</li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a asp-action="Morosidad" class="btn btn-danger w-100">
+                        <i class="bi bi-clipboard-data"></i> Ver Reporte
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Funcionalidades de Exportación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-file-earmark-excel text-success"></i> Exportación a Excel</h6>
+                            <p class="text-muted">
+                                Todos los reportes pueden exportarse a formato Excel (.xlsx) para análisis adicional en hojas de cálculo.
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-file-earmark-pdf text-danger"></i> Exportación a PDF</h6>
+                            <p class="text-muted">
+                                Genera documentos PDF profesionales de tus reportes para compartir o archivar.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Nota:</strong> Las funciones de exportación requieren la instalación de paquetes adicionales (ClosedXML para Excel, QuestPDF para PDF). Contacta al administrador del sistema para habilitarlas.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

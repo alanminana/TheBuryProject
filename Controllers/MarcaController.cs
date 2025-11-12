@@ -1,3 +1,4 @@
+ï»¿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Models.Entities;
@@ -6,6 +7,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
+    [Authorize(Roles = "Admin,Gerente")]
     public class MarcaController : Controller
     {
         private readonly IMarcaService _marcaService;
@@ -27,7 +29,7 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                // Ejecutar búsqueda con filtros
+                // Ejecutar bï¿½squeda con filtros
                 var marcas = await _marcaService.SearchAsync(
                     searchTerm,
                     soloActivos,
@@ -121,10 +123,10 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
-                    // Verificar que el código no exista
+                    // Verificar que el cï¿½digo no exista
                     if (await _marcaService.ExistsCodigoAsync(viewModel.Codigo))
                     {
-                        ModelState.AddModelError("Codigo", "Ya existe una marca con este código");
+                        ModelState.AddModelError("Codigo", "Ya existe una marca con este cï¿½digo");
                         await CargarMarcasParaDropdown(viewModel.ParentId);
                         return View(viewModel);
                     }
@@ -204,10 +206,10 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
-                    // Verificar que el código no exista (excluyendo el registro actual)
+                    // Verificar que el cï¿½digo no exista (excluyendo el registro actual)
                     if (await _marcaService.ExistsCodigoAsync(viewModel.Codigo, id))
                     {
-                        ModelState.AddModelError("Codigo", "Ya existe otra marca con este código");
+                        ModelState.AddModelError("Codigo", "Ya existe otra marca con este cï¿½digo");
                         await CargarMarcasParaDropdown(viewModel.ParentId, id);
                         return View(viewModel);
                     }
@@ -228,7 +230,7 @@ namespace TheBuryProject.Controllers
                 }
                 catch (InvalidOperationException ex)
                 {
-                    _logger.LogWarning(ex, "Error de validación al actualizar marca {Id}", id);
+                    _logger.LogWarning(ex, "Error de validaciï¿½n al actualizar marca {Id}", id);
                     ModelState.AddModelError("", ex.Message);
                 }
                 catch (Exception ex)
@@ -293,12 +295,12 @@ namespace TheBuryProject.Controllers
                 }
                 else
                 {
-                    TempData["Error"] = "No se encontró la marca a eliminar";
+                    TempData["Error"] = "No se encontrï¿½ la marca a eliminar";
                 }
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogWarning(ex, "Error de validación al eliminar marca {Id}", id);
+                _logger.LogWarning(ex, "Error de validaciï¿½n al eliminar marca {Id}", id);
                 TempData["Error"] = ex.Message;
             }
             catch (Exception ex)

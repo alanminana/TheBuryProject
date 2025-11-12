@@ -1,0 +1,193 @@
+﻿@model List<TheBuryProject.ViewModels.ProductoCriticoViewModel>
+@{
+    ViewData["Title"] = "Productos Críticos";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2>🚨 Productos en Estado Crítico</h2>
+            <p class="text-muted">Productos con stock agotado o en nivel crítico que requieren atención inmediata</p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a Alertas
+            </a>
+            <form asp-action="GenerarAlertas" method="post" style="display:inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-arrow-clockwise"></i> Actualizar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <strong>¡Excelente!</strong> No hay productos en estado crítico. Todos los productos tienen stock adecuado.
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger mb-3">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <strong>Atención:</strong> Hay <strong>@Model.Count</strong> producto(s) en estado crítico que requieren reposición urgente.
+        </div>
+
+        <div class="row">
+            @foreach (var producto in Model.OrderBy(p => p.StockActual).ThenByDescending(p => p.DiasDesdeUltimaVenta))
+            {
+                var porcentajeStock = producto.StockMinimo > 0
+                ? (producto.StockActual / producto.StockMinimo) * 100
+                : 0;
+
+                var cardClass = producto.StockActual <= 0
+                ? "border-danger bg-danger bg-opacity-10"
+                : "border-warning bg-warning bg-opacity-10";
+
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100 @cardClass">
+                        <div class="card-header @(producto.StockActual <= 0 ? "bg-danger text-white" : "bg-warning")">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>
+                                    @if (producto.StockActual <= 0)
+                                    {
+                                        <i class="bi bi-exclamation-octagon-fill"></i>
+                                        <span>AGOTADO</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                        <span>CRÍTICO</span>
+                                    }
+                                </strong>
+                                <span class="badge bg-dark">@porcentajeStock.ToString("N0")% del mínimo</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <span class="badge bg-secondary">@producto.Codigo</span>
+                            </h5>
+                            <h6 class="card-subtitle mb-2">@producto.Nombre</h6>
+                            <p class="text-muted mb-3">
+                                <small>
+                                    <i class="bi bi-tag"></i> @producto.CategoriaNombre
+                                    @if (!string.IsNullOrEmpty(producto.MarcaNombre))
+                                    {
+                                        <span>| @producto.MarcaNombre</span>
+                                    }
+                                </small>
+                            </p>
+
+                            <hr />
+
+                            <div class="row text-center mb-3">
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Stock Actual</small>
+                                    <h3 class="mb-0 @(producto.StockActual <= 0 ? "text-danger" : "text-warning")">
+                                        @producto.StockActual.ToString("N0")
+                                    </h3>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Mínimo</small>
+                                    <h3 class="mb-0 text-secondary">
+                                        @producto.StockMinimo.ToString("N0")
+                                    </h3>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Faltante</small>
+                                    <h3 class="mb-0 text-danger">
+                                        @((producto.StockMinimo - producto.StockActual).ToString("N0"))
+                                    </h3>
+                                </div>
+                            </div>
+
+                            @if (producto.CantidadSugeridaReposicion > 0)
+                            {
+                                <div class="alert alert-info mb-3">
+                                    <strong><i class="bi bi-lightbulb"></i> Reposición sugerida:</strong><br />
+                                    <h4 class="mb-0 mt-2">+@producto.CantidadSugeridaReposicion.Value.ToString("N0") unidades</h4>
+                                    <small class="text-muted">
+                                        (Stock objetivo: @((producto.StockMinimo * 3).ToString("N0")) unidades)
+                                    </small>
+                                </div>
+                            }
+
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-cash-coin"></i>
+                                    <strong>Precio Compra:</strong> $@producto.PrecioCompra.ToString("N2")<br />
+                                    <i class="bi bi-tag"></i>
+                                    <strong>Precio Venta:</strong> $@producto.PrecioVenta.ToString("N2")
+                                </small>
+                            </div>
+
+                            @if (producto.UltimaVenta.HasValue)
+                            {
+                                <div class="alert alert-@(producto.DiasDesdeUltimaVenta > 30 ? "warning" : "secondary") mb-3">
+                                    <small>
+                                        <i class="bi bi-clock-history"></i>
+                                        <strong>Última venta:</strong> @producto.UltimaVenta.Value.ToString("dd/MM/yyyy")<br />
+                                        <span class="@(producto.DiasDesdeUltimaVenta > 30 ? "text-danger" : "")">
+                                            Hace @producto.DiasDesdeUltimaVenta día(s)
+                                        </span>
+                                    </small>
+                                </div>
+                            }
+
+                            @if (producto.AlertasPendientes > 0)
+                            {
+                                <div class="alert alert-danger mb-0">
+                                    <i class="bi bi-bell-fill"></i>
+                                    <strong>@producto.AlertasPendientes</strong> alerta(s) pendiente(s)
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer">
+                            <div class="btn-group w-100">
+                                <a asp-controller="Producto" asp-action="Details" asp-route-id="@producto.Id"
+                                   class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                                <a asp-controller="Producto" asp-action="Edit" asp-route-id="@producto.Id"
+                                   class="btn btn-sm btn-primary">
+                                    <i class="bi bi-pencil"></i> Editar Stock
+                                </a>
+                                <a asp-action="PorProducto" asp-route-id="@producto.Id"
+                                   class="btn btn-sm btn-warning">
+                                    <i class="bi bi-list-ul"></i> Alertas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-body">
+                <h5 class="card-title">📊 Resumen</h5>
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h3 class="text-danger">@Model.Count(p => p.StockActual <= 0)</h3>
+                        <small class="text-muted">Productos Agotados</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-warning">@Model.Count(p => p.StockActual > 0)</h3>
+                        <small class="text-muted">Stock Crítico</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-info">@Model.Sum(p => p.CantidadSugeridaReposicion ?? 0).ToString("N0")</h3>
+                        <small class="text-muted">Total Unidades Sugeridas</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-primary">$@Model.Sum(p => (p.CantidadSugeridaReposicion ?? 0) * p.PrecioCompra).ToString("N2")</h3>
+                        <small class="text-muted">Inversión Estimada</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

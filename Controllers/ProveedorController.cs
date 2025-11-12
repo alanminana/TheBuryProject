@@ -10,7 +10,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin,Contador")]
     public class ProveedorController : Controller
     {
         private readonly AppDbContext _context; // Agregar esta línea al inicio de la clase

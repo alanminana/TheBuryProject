@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Models;
@@ -8,6 +9,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
+    [Authorize(Roles = "Admin,Gerente")]
     public class CategoriaController : Controller
     {
         private readonly ICategoriaService _categoriaService;

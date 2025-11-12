@@ -1,0 +1,256 @@
+﻿@model TheBuryProject.Models.Entities.CierreCaja
+@{
+    ViewData["Title"] = "Detalles del Cierre";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-file-text"></i> Comprobante de Cierre de Caja</h2>
+        <div>
+            <button onclick="window.print()" class="btn btn-outline-primary">
+                <i class="bi bi-printer"></i> Imprimir
+            </button>
+            <a asp-action="Historial" class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history"></i> Ver Historial
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Encabezado del comprobante -->
+            <div class="text-center mb-4">
+                <h3>COMPROBANTE DE CIERRE DE CAJA</h3>
+                <p class="text-muted">Fecha: @Model.FechaCierre.ToString("dd/MM/yyyy HH:mm")</p>
+            </div>
+
+            <!-- Información general -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Información de la Caja</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Caja:</strong></td>
+                            <td>@Model.AperturaCaja.Caja.Nombre (@Model.AperturaCaja.Caja.Codigo)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sucursal:</strong></td>
+                            <td>@(Model.AperturaCaja.Caja.Sucursal ?? "-")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ubicación:</strong></td>
+                            <td>@(Model.AperturaCaja.Caja.Ubicacion ?? "-")</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>Información del Turno</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Apertura:</strong></td>
+                            <td>@Model.AperturaCaja.FechaApertura.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cierre:</strong></td>
+                            <td>@Model.FechaCierre.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Usuario Apertura:</strong></td>
+                            <td>@Model.AperturaCaja.UsuarioApertura</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Usuario Cierre:</strong></td>
+                            <td>@Model.UsuarioCierre</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Datos del sistema -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h5>Datos del Sistema</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <small class="text-muted">Monto Inicial</small>
+                                    <h5 class="text-primary">@Model.MontoInicialSistema.ToString("C")</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <small class="text-muted">Total Ingresos</small>
+                                    <h5 class="text-success">@Model.TotalIngresosSistema.ToString("C")</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <small class="text-muted">Total Egresos</small>
+                                    <h5 class="text-danger">@Model.TotalEgresosSistema.ToString("C")</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <small>Monto Esperado</small>
+                                    <h5>@Model.MontoEsperadoSistema.ToString("C")</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arqueo físico -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h5>Arqueo Físico</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <small class="text-muted">Efectivo</small>
+                                    <h5>@Model.EfectivoContado.ToString("C")</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <small class="text-muted">Cheques</small>
+                                    <h5>@Model.ChequesContados.ToString("C")</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <small class="text-muted">Vales/Otros</small>
+                                    <h5>@Model.ValesContados.ToString("C")</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <small>Total Real</small>
+                                    <h5>@Model.MontoTotalReal.ToString("C")</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Diferencia -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card @(Model.TieneDiferencia ? (Model.Diferencia > 0 ? "border-success" : "border-danger") : "border-success")">
+                        <div class="card-body text-center">
+                            <h5>Diferencia</h5>
+                            @if (Model.TieneDiferencia)
+                            {
+                                <h2 class="@(Model.Diferencia > 0 ? "text-success" : "text-danger")">
+                                    @(Model.Diferencia > 0 ? "+" : "")@Model.Diferencia.ToString("C")
+                                </h2>
+                                @if (Model.Diferencia > 0)
+                                {
+                                    <p class="text-success mb-0"><i class="bi bi-arrow-up-circle"></i> Sobrante</p>
+                                }
+                                else
+                                {
+                                    <p class="text-danger mb-0"><i class="bi bi-arrow-down-circle"></i> Faltante</p>
+                                }
+                            }
+                            else
+                            {
+                                <h2 class="text-success">
+                                    <i class="bi bi-check-circle"></i> $0.00
+                                </h2>
+                                <p class="text-success mb-0">Cierre exacto</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Justificación de diferencia -->
+            @if (Model.TieneDiferencia && !string.IsNullOrWhiteSpace(Model.JustificacionDiferencia))
+            {
+                <div class="alert alert-warning">
+                    <h6><i class="bi bi-exclamation-triangle"></i> Justificación de Diferencia:</h6>
+                    <p class="mb-0">@Model.JustificacionDiferencia</p>
+                </div>
+            }
+
+            <!-- Detalle de arqueo -->
+            @if (!string.IsNullOrWhiteSpace(Model.DetalleArqueo))
+            {
+                <div class="mb-4">
+                    <h6>Detalle de Billetes y Monedas:</h6>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <pre class="mb-0">@Model.DetalleArqueo</pre>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Observaciones -->
+            @if (!string.IsNullOrWhiteSpace(Model.ObservacionesCierre))
+            {
+                <div class="mb-4">
+                    <h6>Observaciones del Cierre:</h6>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <p class="mb-0">@Model.ObservacionesCierre</p>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Resumen de movimientos -->
+            <div class="mb-4">
+                <h5>Resumen de Movimientos</h5>
+                <p>
+                    <strong>Total de movimientos:</strong> @Model.AperturaCaja.Movimientos.Count<br />
+                    <strong>Ingresos:</strong> @Model.AperturaCaja.Movimientos.Count(m => m.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Ingreso)<br />
+                    <strong>Egresos:</strong> @Model.AperturaCaja.Movimientos.Count(m => m.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Egreso)
+                </p>
+            </div>
+
+            <!-- Firmas -->
+            <div class="row mt-5 pt-4">
+                <div class="col-md-6 text-center">
+                    <hr />
+                    <p class="mb-0"><strong>Firma Usuario Apertura</strong></p>
+                    <small>@Model.AperturaCaja.UsuarioApertura</small>
+                </div>
+                <div class="col-md-6 text-center">
+                    <hr />
+                    <p class="mb-0"><strong>Firma Usuario Cierre</strong></p>
+                    <small>@Model.UsuarioCierre</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style media="print">
+        .btn, .d-flex.justify-content-between {
+            display: none !important;
+        }
+    </style>
+}

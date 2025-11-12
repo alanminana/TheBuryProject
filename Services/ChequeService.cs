@@ -158,7 +158,7 @@ namespace TheBuryProject.Services
                     c.Banco.Contains(searchTerm) ||
                     (c.Proveedor != null && (
                         c.Proveedor.RazonSocial.Contains(searchTerm) ||
-                        c.Proveedor.NombreFantasia.Contains(searchTerm)
+                        (c.Proveedor.NombreFantasia != null && c.Proveedor.NombreFantasia.Contains(searchTerm))
                     )));
             }
 

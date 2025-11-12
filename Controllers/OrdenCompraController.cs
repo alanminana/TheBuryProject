@@ -1,4 +1,4 @@
-using AutoMapper;
+ï»¿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -9,7 +9,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin,Contador")]
     public class OrdenCompraController : Controller
     {
         private readonly IOrdenCompraService _ordenCompraService;
@@ -59,8 +59,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener las órdenes de compra");
-                TempData["Error"] = "Error al cargar las órdenes de compra";
+                _logger.LogError(ex, "Error al obtener las ï¿½rdenes de compra");
+                TempData["Error"] = "Error al cargar las ï¿½rdenes de compra";
                 return View(new List<OrdenCompraViewModel>());
             }
         }
@@ -105,7 +105,7 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar el formulario de creación");
+                _logger.LogError(ex, "Error al cargar el formulario de creaciï¿½n");
                 TempData["Error"] = "Error al cargar el formulario";
                 return RedirectToAction(nameof(Index));
             }
@@ -165,7 +165,7 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // No permitir editar órdenes recibidas o canceladas
+                // No permitir editar ï¿½rdenes recibidas o canceladas
                 if (orden.Estado == EstadoOrdenCompra.Recibida || orden.Estado == EstadoOrdenCompra.Cancelada)
                 {
                     TempData["Error"] = "No se puede editar una orden recibida o cancelada";
@@ -179,8 +179,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar la orden de compra {Id} para edición", id);
-                TempData["Error"] = "Error al cargar la orden para edición";
+                _logger.LogError(ex, "Error al cargar la orden de compra {Id} para ediciï¿½n", id);
+                TempData["Error"] = "Error al cargar la orden para ediciï¿½n";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -249,7 +249,7 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar la orden de compra {Id} para eliminación", id);
+                _logger.LogError(ex, "Error al cargar la orden de compra {Id} para eliminaciï¿½n", id);
                 TempData["Error"] = "Error al cargar la orden";
                 return RedirectToAction(nameof(Index));
             }
@@ -319,11 +319,11 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Solo se puede recepcionar si está confirmada o en tránsito
+                // Solo se puede recepcionar si estï¿½ confirmada o en trï¿½nsito
                 if (orden.Estado != EstadoOrdenCompra.Confirmada &&
                     orden.Estado != EstadoOrdenCompra.EnTransito)
                 {
-                    TempData["Error"] = "Solo se pueden recepcionar órdenes confirmadas o en tránsito";
+                    TempData["Error"] = "Solo se pueden recepcionar ï¿½rdenes confirmadas o en trï¿½nsito";
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
@@ -332,7 +332,7 @@ namespace TheBuryProject.Controllers
 
                 // DEBUG: Log para verificar datos
                 _logger.LogInformation("=== RECEPCIONAR ORDEN {Id} ===", id);
-                _logger.LogInformation("Número: {Numero}", viewModel.Numero);
+                _logger.LogInformation("Nï¿½mero: {Numero}", viewModel.Numero);
                 _logger.LogInformation("Proveedor: {Proveedor}", viewModel.ProveedorNombre);
                 _logger.LogInformation("Detalles Count: {Count}", viewModel.Detalles?.Count ?? 0);
 
@@ -350,7 +350,7 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar orden para recepción {Id}", id);
+                _logger.LogError(ex, "Error al cargar orden para recepciï¿½n {Id}", id);
                 TempData["Error"] = "Error al cargar la orden";
                 return RedirectToAction(nameof(Index));
             }
@@ -372,7 +372,7 @@ namespace TheBuryProject.Controllers
 
                 await _ordenCompraService.RecepcionarAsync(id, detalles);
 
-                TempData["Success"] = "Mercadería recepcionada exitosamente";
+                TempData["Success"] = "Mercaderï¿½a recepcionada exitosamente";
                 return RedirectToAction(nameof(Details), new { id });
             }
             catch (InvalidOperationException ex)
@@ -383,7 +383,7 @@ namespace TheBuryProject.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al recepcionar orden {Id}", id);
-                TempData["Error"] = "Error al recepcionar mercadería";
+                TempData["Error"] = "Error al recepcionar mercaderï¿½a";
                 return RedirectToAction(nameof(Recepcionar), new { id });
             }
         }

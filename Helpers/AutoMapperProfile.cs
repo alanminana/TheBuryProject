@@ -262,6 +262,102 @@ namespace TheBuryProject.Helpers
                 .ForMember(dest => dest.ClienteNombre, opt => opt.Ignore());
             CreateMap<AlertaCobranzaViewModel, AlertaCobranza>();
 
+            // =======================
+            // AlertaStock
+            // =======================
+            CreateMap<AlertaStock, AlertaStockViewModel>()
+                .ForMember(dest => dest.ProductoCodigo, opt => opt.MapFrom(src => src.Producto != null ? src.Producto.Codigo : string.Empty))
+                .ForMember(dest => dest.ProductoNombre, opt => opt.MapFrom(src => src.Producto != null ? src.Producto.Nombre : string.Empty))
+                .ForMember(dest => dest.CategoriaNombre, opt => opt.MapFrom(src => src.Producto != null && src.Producto.Categoria != null ? src.Producto.Categoria.Nombre : string.Empty))
+                .ForMember(dest => dest.MarcaNombre, opt => opt.MapFrom(src => src.Producto != null && src.Producto.Marca != null ? src.Producto.Marca.Nombre : string.Empty))
+                .ForMember(dest => dest.PorcentajeStockMinimo, opt => opt.MapFrom(src =>
+                    src.StockMinimo == 0 ? 0 : (src.StockActual / src.StockMinimo) * 100))
+                .ForMember(dest => dest.DiasDesdeAlerta, opt => opt.MapFrom(src =>
+                    (int)(DateTime.Now - src.FechaAlerta).TotalDays))
+                .ForMember(dest => dest.EstaVencida, opt => opt.MapFrom(src =>
+                    src.FechaResolucion == null && (DateTime.Now - src.FechaAlerta).TotalDays > 30));
+
+            CreateMap<AlertaStockViewModel, AlertaStock>()
+                .ForMember(dest => dest.Producto, opt => opt.Ignore());
+
+            // =======================
+            // PrecioHistorico
+            // =======================
+            CreateMap<PrecioHistorico, PrecioHistoricoViewModel>()
+                .ForMember(dest => dest.ProductoCodigo, opt => opt.MapFrom(src => src.Producto != null ? src.Producto.Codigo : string.Empty))
+                .ForMember(dest => dest.ProductoNombre, opt => opt.MapFrom(src => src.Producto != null ? src.Producto.Nombre : string.Empty))
+                .ForMember(dest => dest.PorcentajeCambioCompra, opt => opt.MapFrom(src =>
+                    src.PrecioCompraAnterior == 0 ? 0 : ((src.PrecioCompraNuevo - src.PrecioCompraAnterior) / src.PrecioCompraAnterior) * 100))
+                .ForMember(dest => dest.PorcentajeCambioVenta, opt => opt.MapFrom(src =>
+                    src.PrecioVentaAnterior == 0 ? 0 : ((src.PrecioVentaNuevo - src.PrecioVentaAnterior) / src.PrecioVentaAnterior) * 100))
+                .ForMember(dest => dest.MargenAnterior, opt => opt.MapFrom(src =>
+                    src.PrecioCompraAnterior == 0 ? 0 : ((src.PrecioVentaAnterior - src.PrecioCompraAnterior) / src.PrecioCompraAnterior) * 100))
+                .ForMember(dest => dest.MargenNuevo, opt => opt.MapFrom(src =>
+                    src.PrecioCompraNuevo == 0 ? 0 : ((src.PrecioVentaNuevo - src.PrecioCompraNuevo) / src.PrecioCompraNuevo) * 100));
+
+            CreateMap<PrecioHistoricoViewModel, PrecioHistorico>()
+                .ForMember(dest => dest.Producto, opt => opt.Ignore());
+
+            // =======================
+            // Autorizaciones
+            // =======================
+            CreateMap<UmbralAutorizacion, UmbralAutorizacionViewModel>().ReverseMap();
+
+            CreateMap<SolicitudAutorizacion, GestionarSolicitudViewModel>();
+
+            CreateMap<GestionarSolicitudViewModel, SolicitudAutorizacion>()
+                .ForMember(dest => dest.UsuarioAutorizador, opt => opt.Ignore())
+                .ForMember(dest => dest.FechaResolucion, opt => opt.Ignore());
+
+            // =======================
+            // Devoluciones y Garantías
+            // =======================
+            CreateMap<Devolucion, CrearDevolucionViewModel>()
+                .ForMember(dest => dest.Productos, opt => opt.Ignore());
+
+            CreateMap<CrearDevolucionViewModel, Devolucion>()
+                .ForMember(dest => dest.Venta, opt => opt.Ignore())
+                .ForMember(dest => dest.Cliente, opt => opt.Ignore())
+                .ForMember(dest => dest.Detalles, opt => opt.Ignore())
+                .ForMember(dest => dest.NotaCredito, opt => opt.Ignore())
+                .ForMember(dest => dest.RMA, opt => opt.Ignore());
+
+            CreateMap<DevolucionDetalle, ProductoDevolucionViewModel>()
+                .ForMember(dest => dest.ProductoNombre, opt => opt.MapFrom(src => src.Producto != null ? src.Producto.Nombre : string.Empty))
+                .ForMember(dest => dest.CantidadComprada, opt => opt.Ignore())
+                .ForMember(dest => dest.CantidadDevolver, opt => opt.MapFrom(src => src.Cantidad));
+
+            CreateMap<ProductoDevolucionViewModel, DevolucionDetalle>()
+                .ForMember(dest => dest.Cantidad, opt => opt.MapFrom(src => src.CantidadDevolver))
+                .ForMember(dest => dest.Producto, opt => opt.Ignore())
+                .ForMember(dest => dest.Devolucion, opt => opt.Ignore());
+
+            CreateMap<Garantia, CrearGarantiaViewModel>();
+
+            CreateMap<CrearGarantiaViewModel, Garantia>()
+                .ForMember(dest => dest.VentaDetalle, opt => opt.Ignore())
+                .ForMember(dest => dest.Producto, opt => opt.Ignore())
+                .ForMember(dest => dest.Cliente, opt => opt.Ignore())
+                .ForMember(dest => dest.NumeroGarantia, opt => opt.Ignore())
+                .ForMember(dest => dest.FechaVencimiento, opt => opt.Ignore())
+                .ForMember(dest => dest.Estado, opt => opt.Ignore());
+
+            CreateMap<RMA, CrearRMAViewModel>();
+
+            CreateMap<CrearRMAViewModel, RMA>()
+                .ForMember(dest => dest.Devolucion, opt => opt.Ignore())
+                .ForMember(dest => dest.Proveedor, opt => opt.Ignore())
+                .ForMember(dest => dest.NumeroRMA, opt => opt.Ignore())
+                .ForMember(dest => dest.FechaSolicitud, opt => opt.Ignore())
+                .ForMember(dest => dest.Estado, opt => opt.Ignore());
+
+            CreateMap<RMA, GestionarRMAViewModel>()
+                .ForMember(dest => dest.RMA, opt => opt.MapFrom(src => src));
+
+            CreateMap<GestionarRMAViewModel, RMA>()
+                .ForMember(dest => dest.Devolucion, opt => opt.Ignore())
+                .ForMember(dest => dest.Proveedor, opt => opt.Ignore());
+
         }
     }
 }

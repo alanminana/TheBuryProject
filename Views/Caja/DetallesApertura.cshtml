@@ -1,0 +1,176 @@
+﻿@model TheBuryProject.ViewModels.DetallesAperturaViewModel
+@{
+    ViewData["Title"] = "Detalles de Apertura";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-receipt"></i> Detalles de Apertura de Caja</h2>
+        <div>
+            <a asp-action="RegistrarMovimiento" asp-route-aperturaId="@Model.Apertura.Id" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Nuevo Movimiento
+            </a>
+            @if (!Model.Apertura.Cerrada)
+            {
+                <a asp-action="Cerrar" asp-route-aperturaId="@Model.Apertura.Id" class="btn btn-warning">
+                    <i class="bi bi-lock"></i> Cerrar Caja
+                </a>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Información de la apertura -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información General</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Caja:</strong> @Model.Apertura.Caja.Nombre (@Model.Apertura.Caja.Codigo)
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Usuario:</strong> @Model.Apertura.UsuarioApertura
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Fecha Apertura:</strong> @Model.Apertura.FechaApertura.ToString("dd/MM/yyyy HH:mm")
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Estado:</strong>
+                            @if (Model.Apertura.Cerrada)
+                            {
+                                <span class="badge bg-secondary">Cerrada</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Abierta</span>
+                            }
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Apertura.ObservacionesApertura))
+                    {
+                        <hr />
+                        <p class="mb-0"><strong>Observaciones:</strong> @Model.Apertura.ObservacionesApertura</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen financiero -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Monto Inicial</h6>
+                    <h3 class="text-primary">@Model.Apertura.MontoInicial.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Ingresos</h6>
+                    <h3 class="text-success">@Model.TotalIngresos.ToString("C")</h3>
+                    <small class="text-muted">@Model.Movimientos.Count(m => m.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Ingreso) movimientos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Egresos</h6>
+                    <h3 class="text-danger">@Model.TotalEgresos.ToString("C")</h3>
+                    <small class="text-muted">@Model.Movimientos.Count(m => m.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Egreso) movimientos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h6>Saldo Actual</h6>
+                    <h3>@Model.SaldoActual.ToString("C")</h3>
+                    <small>@Model.CantidadMovimientos movimientos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de movimientos -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Movimientos de Caja</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Movimientos.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha/Hora</th>
+                                <th>Tipo</th>
+                                <th>Concepto</th>
+                                <th>Descripción</th>
+                                <th>Referencia</th>
+                                <th class="text-end">Monto</th>
+                                <th>Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var mov in Model.Movimientos.OrderBy(m => m.FechaMovimiento))
+                            {
+                                <tr>
+                                    <td>@mov.FechaMovimiento.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        @if (mov.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Ingreso)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-arrow-down"></i> Ingreso</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger"><i class="bi bi-arrow-up"></i> Egreso</span>
+                                        }
+                                    </td>
+                                    <td>@mov.Concepto.ToString()</td>
+                                    <td>@mov.Descripcion</td>
+                                    <td>@(mov.Referencia ?? "-")</td>
+                                    <td class="text-end">
+                                        @if (mov.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Ingreso)
+                                        {
+                                            <span class="text-success">+@mov.Monto.ToString("C")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-danger">-@mov.Monto.ToString("C")</span>
+                                        }
+                                    </td>
+                                    <td>@mov.Usuario</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-active">
+                                <td colspan="5" class="text-end"><strong>Saldo Actual:</strong></td>
+                                <td class="text-end"><strong>@Model.SaldoActual.ToString("C")</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay movimientos registrados.
+                    <a asp-action="RegistrarMovimiento" asp-route-aperturaId="@Model.Apertura.Id" class="alert-link">Registrar primer movimiento</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

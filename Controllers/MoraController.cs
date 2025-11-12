@@ -5,7 +5,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    // [Authorize] // Deshabilitado temporalmente para desarrollo
+    [Authorize(Roles = "Admin,Gerente,Contador")]
     public class MoraController : Controller
     {
         private readonly IMoraService _moraService;

@@ -160,7 +160,7 @@
                             {
                                 <div class="col-md-4">
                                     <div class="form-check">
-                                        <input class="form-check-input" asp-for="@Model.GetType().GetProperty(doc).GetValue(Model)" />
+                                        <input class="form-check-input" asp-for="@Model.GetType().GetProperty(doc)!.GetValue(Model)" />
                                         <label class="form-check-label text-light">@doc.Replace("Tiene", "Tiene ").Replace("Servicio", "Servicio ")</label>
                                     </div>
                                 </div>

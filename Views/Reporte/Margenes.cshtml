@@ -1,0 +1,226 @@
+﻿@model TheBuryProject.ViewModels.ReporteMargenesViewModel
+@{
+    ViewData["Title"] = "Reporte de Márgenes";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2>💰 Análisis de Márgenes de Productos</h2>
+            <p class="text-muted">Evaluación de rentabilidad por producto</p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-funnel"></i> Filtros
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="get">
+                <div class="row">
+                    <div class="col-md-5 mb-3">
+                        <label class="form-label">Categoría</label>
+                        <select name="categoriaId" class="form-select">
+                            <option value="">Todas las categorías</option>
+                            @foreach (var categoria in ViewBag.Categorias)
+                            {
+                                <option value="@categoria.Value" selected="@(ViewBag.CategoriaId?.ToString() == categoria.Value)">
+                                    @categoria.Text
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-5 mb-3">
+                        <label class="form-label">Marca</label>
+                        <select name="marcaId" class="form-select">
+                            <option value="">Todas las marcas</option>
+                            @foreach (var marca in ViewBag.Marcas)
+                            {
+                                <option value="@marca.Value" selected="@(ViewBag.MarcaId?.ToString() == marca.Value)">
+                                    @marca.Text
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-search"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Margen Promedio</h6>
+                    <h2 class="text-primary mb-0">@Model.MargenPromedioGeneral.ToString("N1")%</h2>
+                    <small class="text-muted">del precio de venta</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Ganancia Potencial</h6>
+                    <h2 class="text-success mb-0">$@Model.GananciaTotalPotencial.ToString("N2")</h2>
+                    <small class="text-muted">si se vende todo el stock</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Productos Margen Bajo</h6>
+                    <h2 class="text-warning mb-0">@Model.ProductosConMargenBajo</h2>
+                    <small class="text-muted">menor a 20%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Productos Margen Alto</h6>
+                    <h2 class="text-info mb-0">@Model.ProductosConMargenAlto</h2>
+                    <small class="text-muted">mayor a 35%</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de Exportación -->
+    <div class="row mb-3">
+        <div class="col-md-12 text-end">
+            <a asp-action="ExportarMargenesExcel" asp-route-categoriaId="@ViewBag.CategoriaId" asp-route-marcaId="@ViewBag.MarcaId"
+               class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabla de Productos -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-table"></i> Detalle por Producto
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Marca</th>
+                            <th class="text-end">Precio Compra</th>
+                            <th class="text-end">Precio Venta</th>
+                            <th class="text-end">Ganancia</th>
+                            <th class="text-end">Margen %</th>
+                            <th class="text-center">Clasificación</th>
+                            <th class="text-end">Stock</th>
+                            <th class="text-end">Ganancia Potencial</th>
+                            <th class="text-end">Ventas 30d</th>
+                            <th class="text-end">Rotación %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var producto in Model.Productos)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="Producto" asp-action="Details" asp-route-id="@producto.Id">
+                                        @producto.Codigo
+                                    </a>
+                                </td>
+                                <td>@producto.Nombre</td>
+                                <td>@producto.CategoriaNombre</td>
+                                <td>@producto.MarcaNombre</td>
+                                <td class="text-end">$@producto.PrecioCompra.ToString("N2")</td>
+                                <td class="text-end">$@producto.PrecioVenta.ToString("N2")</td>
+                                <td class="text-end text-success">$@producto.Ganancia.ToString("N2")</td>
+                                <td class="text-end">
+                                    <strong>@producto.MargenPorcentaje.ToString("N1")%</strong>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @producto.BadgeMargen">
+                                        @producto.MargenCategoria
+                                    </span>
+                                </td>
+                                <td class="text-end">@producto.StockActual.ToString("N0")</td>
+                                <td class="text-end text-success">
+                                    <strong>$@producto.GananciaPotencial.ToString("N2")</strong>
+                                </td>
+                                <td class="text-end">@producto.VentasUltimos30Dias</td>
+                                <td class="text-end">
+                                    <span class="badge @(producto.RotacionMensual >= 50 ? "bg-success" : producto.RotacionMensual >= 25 ? "bg-warning" : "bg-secondary")">
+                                        @producto.RotacionMensual.ToString("N1")%
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-secondary">
+                            <th colspan="6" class="text-end">TOTALES:</th>
+                            <th class="text-end text-success">$@Model.Productos.Sum(p => p.Ganancia).ToString("N2")</th>
+                            <th class="text-end">@Model.MargenPromedioGeneral.ToString("N1")%</th>
+                            <th></th>
+                            <th class="text-end">@Model.Productos.Sum(p => p.StockActual).ToString("N0")</th>
+                            <th class="text-end text-success">$@Model.GananciaTotalPotencial.ToString("N2")</th>
+                            <th class="text-end">@Model.Productos.Sum(p => p.VentasUltimos30Dias)</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="card mt-3">
+        <div class="card-body">
+            <h6><i class="bi bi-info-circle"></i> Leyenda:</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Clasificación de Margen:</strong>
+                    <ul class="list-unstyled mt-2">
+                        <li><span class="badge bg-danger">Muy Bajo</span> - Menor a 10%</li>
+                        <li><span class="badge bg-warning">Bajo</span> - Entre 10% y 20%</li>
+                        <li><span class="badge bg-info">Normal</span> - Entre 20% y 35%</li>
+                        <li><span class="badge bg-primary">Alto</span> - Entre 35% y 50%</li>
+                        <li><span class="badge bg-success">Muy Alto</span> - Mayor a 50%</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <strong>Rotación de Stock:</strong>
+                    <ul class="list-unstyled mt-2">
+                        <li><span class="badge bg-success">Alta</span> - Mayor o igual a 50% mensual</li>
+                        <li><span class="badge bg-warning">Media</span> - Entre 25% y 50% mensual</li>
+                        <li><span class="badge bg-secondary">Baja</span> - Menor a 25% mensual</li>
+                    </ul>
+                    <p class="text-muted mt-2 mb-0">
+                        <small>
+                            <i class="bi bi-lightbulb"></i> La rotación indica qué porcentaje del stock se vendió en los últimos 30 días.
+                            Una rotación alta indica un producto de alta demanda.
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

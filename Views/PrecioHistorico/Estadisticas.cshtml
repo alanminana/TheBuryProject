@@ -1,0 +1,214 @@
+﻿@model TheBuryProject.ViewModels.PrecioHistoricoEstadisticasViewModel
+@{
+    ViewData["Title"] = "Estadísticas de Precios";
+    var fechaDesde = ViewBag.FechaDesde as DateTime?;
+    var fechaHasta = ViewBag.FechaHasta as DateTime?;
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2>📈 Estadísticas de Cambios de Precios</h2>
+            <p class="text-muted">
+                Período: @fechaDesde?.ToString("dd/MM/yyyy") - @fechaHasta?.ToString("dd/MM/yyyy")
+            </p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Historial
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtro de fechas -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form asp-action="Estadisticas" method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Fecha Desde</label>
+                    <input type="date" class="form-control" name="fechaDesde" value="@fechaDesde?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Fecha Hasta</label>
+                    <input type="date" class="form-control" name="fechaHasta" value="@fechaHasta?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumen general -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total de Cambios</h6>
+                    <h2 class="mb-0">@Model.TotalCambios</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Aumentos de Precio</h6>
+                    <h2 class="mb-0">@Model.CambiosConAumento</h2>
+                    <small>@(Model.TotalCambios > 0 ? ((Model.CambiosConAumento * 100.0 / Model.TotalCambios).ToString("N1")) : "0")%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Disminuciones</h6>
+                    <h2 class="mb-0">@Model.CambiosConDisminucion</h2>
+                    <small>@(Model.TotalCambios > 0 ? ((Model.CambiosConDisminucion * 100.0 / Model.TotalCambios).ToString("N1")) : "0")%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-title">Reversibles</h6>
+                    <h2 class="mb-0">@Model.CambiosReversibles</h2>
+                    <small>@(Model.TotalCambios > 0 ? ((Model.CambiosReversibles * 100.0 / Model.TotalCambios).ToString("N1")) : "0")%</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promedios -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">📊 Promedio de Aumentos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 text-center">
+                            <h6 class="text-muted">Precio de Compra</h6>
+                            <h3 class="text-danger">↑ @Model.PromedioAumentoCompra.ToString("N2")%</h3>
+                        </div>
+                        <div class="col-6 text-center">
+                            <h6 class="text-muted">Precio de Venta</h6>
+                            <h3 class="text-success">↑ @Model.PromedioAumentoVenta.ToString("N2")%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">📉 Promedio de Disminuciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 text-center">
+                            <h6 class="text-muted">Precio de Compra</h6>
+                            <h3 class="text-success">↓ @Math.Abs(Model.PromedioDisminucionCompra).ToString("N2")%</h3>
+                        </div>
+                        <div class="col-6 text-center">
+                            <h6 class="text-muted">Precio de Venta</h6>
+                            <h3 class="text-danger">↓ @Math.Abs(Model.PromedioDisminucionVenta).ToString("N2")%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Productos con más cambios -->
+    @if (Model.ProductosConMasCambios.Any())
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">🔄 Productos con Más Cambios de Precio</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Producto</th>
+                                <th>Cambios</th>
+                                <th>Precio Actual Compra</th>
+                                <th>Precio Actual Venta</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var producto in Model.ProductosConMasCambios)
+                            {
+                                <tr>
+                                    <td><strong>@producto.ProductoCodigo</strong></td>
+                                    <td>@producto.ProductoNombre</td>
+                                    <td>
+                                        <span class="badge bg-primary">@producto.TotalCambios cambios</span>
+                                    </td>
+                                    <td>$@producto.PrecioActualCompra.ToString("N2")</td>
+                                    <td>$@producto.PrecioActualVenta.ToString("N2")</td>
+                                    <td>
+                                        <a asp-action="HistorialProducto" asp-route-id="@producto.ProductoId"
+                                           class="btn btn-sm btn-info">
+                                            <i class="bi bi-clock-history"></i> Ver Historial
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Últimos cambios -->
+    @if (Model.UltimosCambios.Any())
+    {
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">⏱️ Últimos Cambios Realizados</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Producto</th>
+                                <th>Cambio Venta</th>
+                                <th>Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cambio in Model.UltimosCambios)
+                            {
+                                <tr>
+                                    <td>@cambio.FechaCambio.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <strong>@cambio.ProductoCodigo</strong> - @cambio.ProductoNombre
+                                    </td>
+                                    <td>
+                                        <span class="@cambio.EstiloCambioVenta">
+                                            @cambio.IconoCambioVenta @cambio.PorcentajeCambioVenta.ToString("N2")%
+                                        </span>
+                                    </td>
+                                    <td>@cambio.UsuarioModificacion</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>

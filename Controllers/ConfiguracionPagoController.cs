@@ -7,7 +7,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin")]
     public class ConfiguracionPagoController : Controller
     {
         private readonly IConfiguracionPagoService _configuracionPagoService;

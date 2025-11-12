@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
+    [Authorize(Roles = "Admin,Gerente,Vendedor")]
     public class CatalogoController : Controller
     {
         private readonly ICategoriaService _categoriaService;

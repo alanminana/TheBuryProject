@@ -9,11 +9,19 @@ namespace TheBuryProject.Services
     {
         private readonly AppDbContext _context;
         private readonly ILogger<ProductoService> _logger;
+        private readonly IPrecioHistoricoService _precioHistoricoService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ProductoService(AppDbContext context, ILogger<ProductoService> logger)
+        public ProductoService(
+            AppDbContext context,
+            ILogger<ProductoService> logger,
+            IPrecioHistoricoService precioHistoricoService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _logger = logger;
+            _precioHistoricoService = precioHistoricoService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<IEnumerable<Producto>> GetAllAsync()
@@ -299,6 +307,35 @@ namespace TheBuryProject.Services
                 if (producto.StockMinimo < 0)
                 {
                     throw new InvalidOperationException("El stock mínimo no puede ser negativo");
+                }
+
+                // Registrar cambio de precio si corresponde
+                bool preciosCambiaron =
+                    productoExistente.PrecioCompra != producto.PrecioCompra ||
+                    productoExistente.PrecioVenta != producto.PrecioVenta;
+
+                if (preciosCambiaron)
+                {
+                    var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
+
+                    await _precioHistoricoService.RegistrarCambioAsync(
+                        productoId: producto.Id,
+                        precioCompraAnterior: productoExistente.PrecioCompra,
+                        precioCompraNuevo: producto.PrecioCompra,
+                        precioVentaAnterior: productoExistente.PrecioVenta,
+                        precioVentaNuevo: producto.PrecioVenta,
+                        motivoCambio: null, // Se puede agregar en el futuro
+                        usuarioModificacion: usuario
+                    );
+
+                    _logger.LogInformation(
+                        "Registrado cambio de precio para producto {Codigo}. " +
+                        "Compra: ${PrecioCompraAnterior} → ${PrecioCompraNuevo}, " +
+                        "Venta: ${PrecioVentaAnterior} → ${PrecioVentaNuevo}",
+                        producto.Codigo,
+                        productoExistente.PrecioCompra, producto.PrecioCompra,
+                        productoExistente.PrecioVenta, producto.PrecioVenta
+                    );
                 }
 
                 producto.UpdatedAt = DateTime.UtcNow;

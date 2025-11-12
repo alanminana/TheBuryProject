@@ -1,0 +1,215 @@
+﻿@model List<TheBuryProject.Models.Entities.PrecioHistorico>
+@{
+    ViewData["Title"] = "Historial de Precios";
+    var producto = ViewBag.Producto as TheBuryProject.Models.Entities.Producto;
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2>📜 Historial de Precios</h2>
+            @if (producto != null)
+            {
+                <h4 class="text-primary">@producto.Codigo - @producto.Nombre</h4>
+                <div class="alert alert-info">
+                    <strong>Precios actuales:</strong>
+                    Compra: $@producto.PrecioCompra.ToString("N2") |
+                    Venta: $@producto.PrecioVenta.ToString("N2") |
+                    Margen: @(producto.PrecioVenta == 0 ? 0 : ((producto.PrecioVenta - producto.PrecioCompra) / producto.PrecioVenta * 100).ToString("N2"))%
+                </div>
+            }
+        </div>
+        <div class="col-auto">
+            @if (producto != null)
+            {
+                <a asp-action="Simular" asp-route-id="@producto.Id" class="btn btn-primary">
+                    <i class="bi bi-calculator"></i> Simular Cambio
+                </a>
+                <a asp-controller="Producto" asp-action="Edit" asp-route-id="@producto.Id" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Editar Producto
+                </a>
+            }
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> Este producto no tiene cambios de precio registrados.
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <strong>@Model.Count</strong> cambios de precio registrados
+            </div>
+            <div class="card-body p-0">
+                <div class="timeline p-4">
+                    @foreach (var cambio in Model)
+                    {
+                        <div class="timeline-item mb-4 pb-4 border-bottom">
+                            <div class="row">
+                                <div class="col-md-2">
+                                    <div class="text-center">
+                                        <div class="badge bg-secondary mb-2">
+                                            @cambio.FechaCambio.ToString("dd/MM/yyyy")
+                                        </div>
+                                        <div class="text-muted small">
+                                            @cambio.FechaCambio.ToString("HH:mm")
+                                        </div>
+                                        <div class="mt-2">
+                                            @if (cambio.PuedeRevertirse)
+                                            {
+                                                <span class="badge bg-success">Reversible</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">No reversible</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-10">
+                                    <h5>Cambio de precio realizado por: <strong>@cambio.UsuarioModificacion</strong></h5>
+
+                                    @if (!string.IsNullOrEmpty(cambio.MotivoCambio))
+                                    {
+                                        <div class="alert alert-light mb-3">
+                                            <strong>Motivo:</strong> @cambio.MotivoCambio
+                                        </div>
+                                    }
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="card">
+                                                <div class="card-header bg-light">
+                                                    <strong>Precio de Compra</strong>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <del class="text-muted">$@cambio.PrecioCompraAnterior.ToString("N2")</del>
+                                                        </div>
+                                                        <div>
+                                                            <i class="bi bi-arrow-right"></i>
+                                                        </div>
+                                                        <div>
+                                                            <strong class="@(cambio.PorcentajeCambioCompra >= 0 ? "text-danger" : "text-success")">
+                                                                $@cambio.PrecioCompraNuevo.ToString("N2")
+                                                            </strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mt-2 text-center">
+                                                        <span class="badge @(cambio.PorcentajeCambioCompra >= 0 ? "bg-danger" : "bg-success")">
+                                                            @(cambio.PorcentajeCambioCompra >= 0 ? "↑" : "↓") @Math.Abs(cambio.PorcentajeCambioCompra).ToString("N2")%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <div class="card">
+                                                <div class="card-header bg-light">
+                                                    <strong>Precio de Venta</strong>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <del class="text-muted">$@cambio.PrecioVentaAnterior.ToString("N2")</del>
+                                                        </div>
+                                                        <div>
+                                                            <i class="bi bi-arrow-right"></i>
+                                                        </div>
+                                                        <div>
+                                                            <strong class="@(cambio.PorcentajeCambioVenta >= 0 ? "text-success" : "text-danger")">
+                                                                $@cambio.PrecioVentaNuevo.ToString("N2")
+                                                            </strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mt-2 text-center">
+                                                        <span class="badge @(cambio.PorcentajeCambioVenta >= 0 ? "bg-success" : "bg-danger")">
+                                                            @(cambio.PorcentajeCambioVenta >= 0 ? "↑" : "↓") @Math.Abs(cambio.PorcentajeCambioVenta).ToString("N2")%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <div class="card">
+                                                <div class="card-header bg-light">
+                                                    <strong>Margen de Ganancia</strong>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <del class="text-muted">@cambio.MargenAnterior.ToString("N2")%</del>
+                                                        </div>
+                                                        <div>
+                                                            <i class="bi bi-arrow-right"></i>
+                                                        </div>
+                                                        <div>
+                                                            <strong class="@(cambio.MargenNuevo >= cambio.MargenAnterior ? "text-success" : "text-danger")">
+                                                                @cambio.MargenNuevo.ToString("N2")%
+                                                            </strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mt-2 text-center">
+                                                        @{
+                                                            var diferenciaMargen = cambio.MargenNuevo - cambio.MargenAnterior;
+                                                        }
+                                                        <span class="badge @(diferenciaMargen >= 0 ? "bg-success" : "bg-danger")">
+                                                            @(diferenciaMargen >= 0 ? "↑" : "↓") @Math.Abs(diferenciaMargen).ToString("N2")%
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @if (cambio.PuedeRevertirse && cambio.Id == Model.First().Id)
+                                    {
+                                        <div class="mt-3">
+                                            <form asp-action="Revertir" asp-route-id="@cambio.Id" method="post"
+                                                  onsubmit="return confirm('¿Está seguro de revertir este cambio? Los precios volverán a sus valores anteriores.');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-warning">
+                                                    <i class="bi bi-arrow-counterclockwise"></i> Revertir este cambio (Undo)
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+    }
+
+    .timeline-item {
+        position: relative;
+    }
+
+        .timeline-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 85px;
+            top: 60px;
+            bottom: -20px;
+            width: 2px;
+            background: #dee2e6;
+        }
+</style>

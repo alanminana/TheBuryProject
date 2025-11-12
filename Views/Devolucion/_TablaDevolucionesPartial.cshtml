@@ -1,0 +1,113 @@
+﻿@model List<TheBuryProject.Models.Entities.Devolucion>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Número</th>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Venta</th>
+                <th>Motivo</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Nota Crédito</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var devolucion in Model)
+            {
+                <tr>
+                    <td>
+                        <strong>@devolucion.NumeroDevolucion</strong>
+                    </td>
+                    <td>
+                        <small>@devolucion.FechaDevolucion.ToString("dd/MM/yyyy")</small>
+                    </td>
+                    <td>@(devolucion.Cliente?.NombreCompleto ?? "N/A")</td>
+                    <td>@(devolucion.Venta?.Numero ?? "N/A")</td>
+                    <td>
+                        <span class="badge bg-secondary">
+                            @devolucion.Motivo.ToString().Replace("DefectoFabrica", "Defecto de Fábrica")
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <strong>$@devolucion.TotalDevolucion.ToString("N2")</strong>
+                    </td>
+                    <td>
+                        @switch (devolucion.Estado)
+                        {
+                            case TheBuryProject.Models.Entities.EstadoDevolucion.Pendiente:
+                                <span class="badge bg-warning">Pendiente</span>
+                                break;
+                            case TheBuryProject.Models.Entities.EstadoDevolucion.EnRevision:
+                                <span class="badge bg-info">En Revisión</span>
+                                break;
+                            case TheBuryProject.Models.Entities.EstadoDevolucion.Aprobada:
+                                <span class="badge bg-success">Aprobada</span>
+                                break;
+                            case TheBuryProject.Models.Entities.EstadoDevolucion.Rechazada:
+                                <span class="badge bg-danger">Rechazada</span>
+                                break;
+                            case TheBuryProject.Models.Entities.EstadoDevolucion.Completada:
+                                <span class="badge bg-dark">Completada</span>
+                                break;
+                            default:
+                                <span class="badge bg-secondary">@devolucion.Estado</span>
+                                break;
+                        }
+                    </td>
+                    <td>
+                        @if (devolucion.NotaCreditoGenerada)
+                        {
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> Generada
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                    </td>
+                    <td>
+                        <a asp-action="Detalles" asp-route-id="@devolucion.Id"
+                           class="btn btn-sm btn-outline-info"
+                           data-bs-toggle="tooltip"
+                           title="Ver detalles">
+                            <i class="bi bi-eye"></i>
+                        </a>
+
+                        @if (devolucion.Estado == TheBuryProject.Models.Entities.EstadoDevolucion.Pendiente && User.IsInRole("Admin") || User.IsInRole("Gerente"))
+                        {
+                            <form asp-action="Aprobar" asp-route-id="@devolucion.Id"
+                                  method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-success"
+                                        data-bs-toggle="tooltip"
+                                        title="Aprobar devolución"
+                                        onclick="return confirm('¿Aprobar esta devolución?');">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                            </form>
+                        }
+
+                        @if (devolucion.Estado == TheBuryProject.Models.Entities.EstadoDevolucion.Aprobada && User.IsInRole("Admin") || User.IsInRole("Gerente"))
+                        {
+                            <form asp-action="Completar" asp-route-id="@devolucion.Id"
+                                  method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-primary"
+                                        data-bs-toggle="tooltip"
+                                        title="Completar devolución"
+                                        onclick="return confirm('¿Completar esta devolución y procesar stock?');">
+                                    <i class="bi bi-check2-all"></i>
+                                </button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

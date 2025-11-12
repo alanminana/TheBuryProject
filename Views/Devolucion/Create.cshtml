@@ -1,0 +1,243 @@
+﻿@using TheBuryProject.Models.Entities
+@using TheBuryProject.ViewModels
+@model CrearDevolucionViewModel
+@{
+    ViewData["Title"] = "Crear Devolución";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2><i class="bi bi-arrow-return-left me-2"></i>Crear Devolución</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Devoluciones</a></li>
+                    <li class="breadcrumb-item active">Crear</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    @if (Model.PuedeDevolver == false)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>No se puede procesar esta devolución.</strong>
+            La venta ha excedido el plazo permitido para devoluciones (@Model.DiasDesdeVenta días transcurridos).
+        </div>
+    }
+
+    <form asp-action="Crear" method="post">
+        <input type="hidden" asp-for="VentaId" />
+        <input type="hidden" asp-for="ClienteId" />
+
+        <!-- Información de la Venta -->
+        @if (Model.NumeroVenta != null)
+        {
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Información de la Venta</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <p><strong>Número:</strong> @Model.NumeroVenta</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Fecha:</strong> @Model.FechaVenta?.ToString("dd/MM/yyyy")</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Total:</strong> $@Model.TotalVenta?.ToString("N2")</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Días transcurridos:</strong> @Model.DiasDesdeVenta días</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Datos de la Devolución -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Datos de la Devolución</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Motivo" class="form-label"></label>
+                        <select asp-for="Motivo" class="form-select" asp-items="Html.GetEnumSelectList<MotivoDevolucion>()">
+                            <option value="">-- Seleccione un motivo --</option>
+                        </select>
+                        <span asp-validation-for="Motivo" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Cliente</label>
+                        <input type="text" class="form-control" value="@ViewBag.Clientes" readonly />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label asp-for="Descripcion" class="form-label"></label>
+                        <textarea asp-for="Descripcion" class="form-control" rows="4" placeholder="Describa detalladamente el motivo de la devolución..."></textarea>
+                        <span asp-validation-for="Descripcion" class="text-danger"></span>
+                        <small class="form-text text-muted">Mínimo 20 caracteres, máximo 1000 caracteres.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Productos a Devolver -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>Productos a Devolver</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.Productos.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad Comprada</th>
+                                    <th>Cantidad a Devolver</th>
+                                    <th>Precio Unitario</th>
+                                    <th>Estado</th>
+                                    <th>Accesorios</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Productos.Count; i++)
+                                {
+                                    <tr>
+                                        <td>
+                                            @Model.Productos[i].ProductoNombre
+                                            <input type="hidden" asp-for="Productos[i].ProductoId" />
+                                            <input type="hidden" asp-for="Productos[i].ProductoNombre" />
+                                            <input type="hidden" asp-for="Productos[i].CantidadComprada" />
+                                            <input type="hidden" asp-for="Productos[i].PrecioUnitario" />
+                                        </td>
+                                        <td>@Model.Productos[i].CantidadComprada</td>
+                                        <td>
+                                            <input type="number" asp-for="Productos[i].CantidadDevolver"
+                                                   class="form-control form-control-sm cantidad-devolver"
+                                                   min="0" max="@Model.Productos[i].CantidadComprada"
+                                                   data-index="@i" />
+                                        </td>
+                                        <td>$@Model.Productos[i].PrecioUnitario.ToString("N2")</td>
+                                        <td>
+                                            <select asp-for="Productos[i].EstadoProducto" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<EstadoProductoDevuelto>()"></select>
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="checkbox" asp-for="Productos[i].AccesoriosCompletos" class="form-check-input" id="accesorios_@i" />
+                                                <label class="form-check-label" for="accesorios_@i">Completos</label>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <strong class="subtotal" id="subtotal_@i">$0.00</strong>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="6" class="text-end"><strong>Total a Devolver:</strong></td>
+                                    <td><strong class="fs-5 text-primary" id="totalDevolucion">$0.00</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Seleccione una venta primero para ver los productos disponibles para devolución.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary" id="btnGuardar" disabled>
+                        <i class="bi bi-save me-1"></i>Crear Devolución
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Calcular subtotales y total
+            function calcularTotales() {
+                let total = 0;
+                let hayProductos = false;
+
+                $('.cantidad-devolver').each(function() {
+                    const index = $(this).data('index');
+                    const cantidad = parseInt($(this).val()) || 0;
+                    const precio = parseFloat($(`input[name="Productos[${index}].PrecioUnitario"]`).val()) || 0;
+                    const subtotal = cantidad * precio;
+
+                    $(`#subtotal_${index}`).text('$' + subtotal.toFixed(2));
+                    total += subtotal;
+
+                    if (cantidad > 0) {
+                        hayProductos = true;
+                    }
+                });
+
+                $('#totalDevolucion').text('$' + total.toFixed(2));
+
+                // Habilitar/deshabilitar botón según si hay productos
+                $('#btnGuardar').prop('disabled', !hayProductos);
+            }
+
+            // Event listener para cambios en cantidades
+            $('.cantidad-devolver').on('input', calcularTotales);
+
+            // Calcular al cargar
+            calcularTotales();
+
+            // Validar que la descripción tenga al menos 20 caracteres
+            $('form').on('submit', function(e) {
+                const descripcion = $('textarea[name="Descripcion"]').val();
+                if (descripcion.length < 20) {
+                    e.preventDefault();
+                    alert('La descripción debe tener al menos 20 caracteres.');
+                    return false;
+                }
+
+                let hayProductos = false;
+                $('.cantidad-devolver').each(function() {
+                    if (parseInt($(this).val()) > 0) {
+                        hayProductos = true;
+                        return false;
+                    }
+                });
+
+                if (!hayProductos) {
+                    e.preventDefault();
+                    alert('Debe seleccionar al menos un producto para devolver.');
+                    return false;
+                }
+            });
+        });
+    </script>
+}

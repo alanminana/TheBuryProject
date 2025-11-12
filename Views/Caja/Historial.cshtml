@@ -1,0 +1,211 @@
+﻿@model TheBuryProject.ViewModels.HistorialCierresViewModel
+@{
+    ViewData["Title"] = "Historial de Cierres";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-clock-history"></i> Historial de Cierres de Caja</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form asp-action="Historial" method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Caja</label>
+                    <select name="cajaId" class="form-select" asp-items="ViewBag.Cajas">
+                        <option value="">Todas las cajas</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Desde</label>
+                    <input type="date" name="fechaDesde" class="form-control" value="@ViewBag.FechaDesde?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Hasta</label>
+                    <input type="date" name="fechaHasta" class="form-control" value="@ViewBag.FechaHasta?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Cierres</h6>
+                    <h3 class="text-primary">@Model.TotalCierres</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Cierres Exactos</h6>
+                    <h3 class="text-success">@(Model.TotalCierres - Model.CierresConDiferencia)</h3>
+                    <small class="text-muted">@Model.PorcentajeCierresExactos.ToString("F1")%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Sobrantes</h6>
+                    <h3 class="text-success">@Model.TotalDiferenciasPositivas.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Faltantes</h6>
+                    <h3 class="text-danger">@Model.TotalDiferenciasNegativas.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de cierres -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Lista de Cierres</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Cierres.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha Cierre</th>
+                                <th>Caja</th>
+                                <th>Usuario Apertura</th>
+                                <th>Usuario Cierre</th>
+                                <th class="text-end">Monto Esperado</th>
+                                <th class="text-end">Monto Real</th>
+                                <th class="text-end">Diferencia</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cierre in Model.Cierres)
+                            {
+                                <tr>
+                                    <td>@cierre.FechaCierre.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <strong>@cierre.AperturaCaja.Caja.Nombre</strong><br />
+                                        <small class="text-muted">@cierre.AperturaCaja.Caja.Codigo</small>
+                                    </td>
+                                    <td>@cierre.AperturaCaja.UsuarioApertura</td>
+                                    <td>@cierre.UsuarioCierre</td>
+                                    <td class="text-end">@cierre.MontoEsperadoSistema.ToString("C")</td>
+                                    <td class="text-end">@cierre.MontoTotalReal.ToString("C")</td>
+                                    <td class="text-end">
+                                        @if (cierre.TieneDiferencia)
+                                        {
+                                            @if (cierre.Diferencia > 0)
+                                            {
+                                                <span class="text-success">+@cierre.Diferencia.ToString("C")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-danger">@cierre.Diferencia.ToString("C")</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">$0.00</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (cierre.TieneDiferencia)
+                                        {
+                                            @if (cierre.Diferencia > 0)
+                                            {
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-arrow-up"></i> Sobrante
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-arrow-down"></i> Faltante
+                                                </span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check"></i> Exacto
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-action="DetallesCierre" asp-route-id="@cierre.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No se encontraron cierres con los filtros aplicados.
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Análisis de diferencias -->
+    @if (Model.CierresConDiferencia > 0)
+    {
+        <div class="card mt-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Cierres con Diferencias</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Análisis de Sobrantes</h6>
+                        <ul>
+                            @foreach (var cierre in Model.Cierres.Where(c => c.Diferencia > 0).OrderByDescending(c => c.Diferencia).Take(5))
+                            {
+                                <li>
+                                    <strong>@cierre.AperturaCaja.Caja.Nombre</strong> - @cierre.FechaCierre.ToString("dd/MM/yyyy"):
+                                    <span class="text-success">+@cierre.Diferencia.ToString("C")</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Análisis de Faltantes</h6>
+                        <ul>
+                            @foreach (var cierre in Model.Cierres.Where(c => c.Diferencia < 0).OrderBy(c => c.Diferencia).Take(5))
+                            {
+                                <li>
+                                    <strong>@cierre.AperturaCaja.Caja.Nombre</strong> - @cierre.FechaCierre.ToString("dd/MM/yyyy"):
+                                    <span class="text-danger">@cierre.Diferencia.ToString("C")</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

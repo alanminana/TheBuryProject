@@ -1,0 +1,279 @@
+﻿@model TheBuryProject.ViewModels.ReporteMorosidadViewModel
+@{
+    ViewData["Title"] = "Reporte de Morosidad";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2>⚠️ Reporte de Morosidad</h2>
+            <p class="text-muted">Análisis de cartera morosa y créditos vencidos</p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Resumen General -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Deuda Vencida Total</h6>
+                    <h2 class="text-danger mb-0">$@Model.TotalDeudaVencida.ToString("N2")</h2>
+                    <small class="text-muted">@Model.CantidadCreditosVencidos créditos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Deuda Vigente</h6>
+                    <h2 class="text-warning mb-0">$@Model.TotalDeudaVigente.ToString("N2")</h2>
+                    <small class="text-muted">cuotas futuras</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Clientes Morosos</h6>
+                    <h2 class="text-info mb-0">@Model.CantidadClientesMorosos</h2>
+                    <small class="text-muted">clientes con atraso</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-secondary">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Promedio por Cliente</h6>
+                    <h2 class="text-secondary mb-0">$@Model.PromedioDeudaPorCliente.ToString("N2")</h2>
+                    <small class="text-muted">deuda promedio</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Análisis por Antigüedad -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-clock-history"></i> Análisis por Antigüedad de Deuda
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <div class="p-3 border rounded">
+                        <h6 class="text-muted">30-60 días</h6>
+                        <h3 class="text-warning mb-0">$@Model.DeudaMayor30Dias.ToString("N2")</h3>
+                        <small class="text-muted">
+                            @((Model.TotalDeudaVencida > 0 ? (Model.DeudaMayor30Dias / Model.TotalDeudaVencida) * 100 : 0).ToString("N1"))%
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded">
+                        <h6 class="text-muted">60-90 días</h6>
+                        <h3 class="text-danger mb-0">$@Model.DeudaMayor60Dias.ToString("N2")</h3>
+                        <small class="text-muted">
+                            @((Model.TotalDeudaVencida > 0 ? (Model.DeudaMayor60Dias / Model.TotalDeudaVencida) * 100 : 0).ToString("N1"))%
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded">
+                        <h6 class="text-muted">Más de 90 días</h6>
+                        <h3 class="text-dark mb-0">$@Model.DeudaMayor90Dias.ToString("N2")</h3>
+                        <small class="text-muted">
+                            @((Model.TotalDeudaVencida > 0 ? (Model.DeudaMayor90Dias / Model.TotalDeudaVencida) * 100 : 0).ToString("N1"))%
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de Exportación -->
+    <div class="row mb-3">
+        <div class="col-md-12 text-end">
+            <a asp-action="ExportarMorosidadExcel" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+            </a>
+            <a asp-action="ExportarMorosidadPdf" class="btn btn-danger">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabla de Clientes Morosos -->
+    @if (Model.ClientesMorosos.Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-people"></i> Detalle de Clientes Morosos
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Documento</th>
+                                <th>Teléfono</th>
+                                <th class="text-center">Créditos Vencidos</th>
+                                <th class="text-end">Deuda Vencida</th>
+                                <th class="text-end">Deuda Vigente</th>
+                                <th class="text-end">Total Deuda</th>
+                                <th>Primera Cuota Vencida</th>
+                                <th class="text-center">Días Atraso</th>
+                                <th class="text-center">Nivel Riesgo</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cliente in Model.ClientesMorosos)
+                            {
+                                var totalDeuda = cliente.TotalDeudaVencida + cliente.TotalDeudaVigente;
+                                <tr>
+                                    <td>
+                                        <a asp-controller="Cliente" asp-action="Details" asp-route-id="@cliente.ClienteId">
+                                            @cliente.ClienteNombre
+                                        </a>
+                                    </td>
+                                    <td>@cliente.ClienteDocumento</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(cliente.ClienteTelefono))
+                                        {
+                                            <i class="bi bi-telephone"></i>
+                                            @cliente.ClienteTelefono
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-danger">@cliente.CantidadCreditosVencidos</span>
+                                    </td>
+                                    <td class="text-end text-danger">
+                                        <strong>$@cliente.TotalDeudaVencida.ToString("N2")</strong>
+                                    </td>
+                                    <td class="text-end text-warning">
+                                        $@cliente.TotalDeudaVigente.ToString("N2")
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>$@totalDeuda.ToString("N2")</strong>
+                                    </td>
+                                    <td>@cliente.FechaPrimerVencimiento?.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-center">
+                                        <span class="badge @(cliente.DiasMaximoAtraso >= 90 ? "bg-dark" : cliente.DiasMaximoAtraso >= 60 ? "bg-danger" : "bg-warning")">
+                                            @cliente.DiasMaximoAtraso días
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge @cliente.BadgeRiesgo">
+                                            @cliente.NivelRiesgo
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-controller="Cliente" asp-action="Details" asp-route-id="@cliente.ClienteId"
+                                               class="btn btn-info" title="Ver Cliente">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-controller="Credito" asp-action="Details" asp-route-id="@cliente.CreditoIdMasAntiguo"
+                                               class="btn btn-warning" title="Ver Crédito Más Antiguo">
+                                                <i class="bi bi-credit-card"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-secondary">
+                                <th colspan="4" class="text-end">TOTALES:</th>
+                                <th class="text-end text-danger">$@Model.TotalDeudaVencida.ToString("N2")</th>
+                                <th class="text-end text-warning">$@Model.TotalDeudaVigente.ToString("N2")</th>
+                                <th class="text-end">$@(Model.TotalDeudaVencida + Model.TotalDeudaVigente).ToString("N2")</th>
+                                <th colspan="4"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recomendaciones -->
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb"></i> Recomendaciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>📞 Acciones Sugeridas:</h6>
+                        <ul>
+                            @if (Model.ClientesMorosos.Any(c => c.DiasMaximoAtraso >= 90))
+                            {
+                                <li class="text-danger">
+                                    <strong>Urgente:</strong> @Model.ClientesMorosos.Count(c => c.DiasMaximoAtraso >= 90) cliente(s)
+                                    con más de 90 días de atraso requieren acción legal inmediata.
+                                </li>
+                            }
+                            @if (Model.ClientesMorosos.Any(c => c.DiasMaximoAtraso >= 60 && c.DiasMaximoAtraso < 90))
+                            {
+                                <li class="text-warning">
+                                    <strong>Importante:</strong> @Model.ClientesMorosos.Count(c => c.DiasMaximoAtraso >= 60 && c.DiasMaximoAtraso < 90) cliente(s)
+                                    entre 60-90 días requieren seguimiento telefónico intensivo.
+                                </li>
+                            }
+                            @if (Model.ClientesMorosos.Any(c => c.DiasMaximoAtraso < 60))
+                            {
+                                <li class="text-info">
+                                    @Model.ClientesMorosos.Count(c => c.DiasMaximoAtraso < 60) cliente(s)
+                                    con menos de 60 días pueden regularizar con recordatorios y facilidades de pago.
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>📊 Análisis de Riesgo:</h6>
+                        <ul>
+                            <li>
+                                <strong>Riesgo Crítico:</strong>
+                                @Model.ClientesMorosos.Count(c => c.NivelRiesgo == "Crítico") cliente(s)
+                                ($@Model.ClientesMorosos.Where(c => c.NivelRiesgo == "Crítico").Sum(c => c.TotalDeudaVencida).ToString("N2"))
+                            </li>
+                            <li>
+                                <strong>Riesgo Alto:</strong>
+                                @Model.ClientesMorosos.Count(c => c.NivelRiesgo == "Alto") cliente(s)
+                                ($@Model.ClientesMorosos.Where(c => c.NivelRiesgo == "Alto").Sum(c => c.TotalDeudaVencida).ToString("N2"))
+                            </li>
+                            <li>
+                                <strong>Riesgo Medio:</strong>
+                                @Model.ClientesMorosos.Count(c => c.NivelRiesgo == "Medio") cliente(s)
+                                ($@Model.ClientesMorosos.Where(c => c.NivelRiesgo == "Medio").Sum(c => c.TotalDeudaVencida).ToString("N2"))
+                            </li>
+                            <li>
+                                <strong>Riesgo Bajo:</strong>
+                                @Model.ClientesMorosos.Count(c => c.NivelRiesgo == "Bajo") cliente(s)
+                                ($@Model.ClientesMorosos.Where(c => c.NivelRiesgo == "Bajo").Sum(c => c.TotalDeudaVencida).ToString("N2"))
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <strong>¡Excelente!</strong> No hay clientes con deudas vencidas. La cartera está al día.
+        </div>
+    }
+</div>

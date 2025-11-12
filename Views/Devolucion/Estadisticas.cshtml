@@ -1,0 +1,372 @@
+﻿@using TheBuryProject.Models.Entities
+@using TheBuryProject.ViewModels
+@model EstadisticasDevolucionViewModel
+
+@{
+    ViewData["Title"] = "Estadísticas de Devoluciones";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2><i class="bi bi-graph-up me-2"></i>Estadísticas de Devoluciones</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Devoluciones</a></li>
+                    <li class="breadcrumb-item active">Estadísticas</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="Estadisticas" method="get">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label for="desde" class="form-label">Fecha Desde</label>
+                        <input type="date" class="form-control" id="desde" name="desde" value="@Model.FechaDesde.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-4">
+                        <label for="hasta" class="form-label">Fecha Hasta</label>
+                        <input type="date" class="form-control" id="hasta" name="hasta" value="@Model.FechaHasta.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-1"></i>Filtrar
+                        </button>
+                        <a asp-action="Estadisticas" class="btn btn-secondary">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- KPIs Principales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Total Devoluciones</h6>
+                            <h2 class="mb-0">@Model.TotalDevoluciones</h2>
+                            <small>Del @Model.FechaDesde.ToString("dd/MM/yyyy") al @Model.FechaHasta.ToString("dd/MM/yyyy")</small>
+                        </div>
+                        <i class="bi bi-arrow-return-left fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Monto Total Devuelto</h6>
+                            <h2 class="mb-0">$@Model.MontoTotalDevuelto.ToString("N2")</h2>
+                            <small>Impacto financiero</small>
+                        </div>
+                        <i class="bi bi-currency-dollar fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">RMAs Pendientes</h6>
+                            <h2 class="mb-0">@Model.RMAsPendientes</h2>
+                            <small>Requieren atención</small>
+                        </div>
+                        <i class="bi bi-hourglass-split fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Promedio Devolución</h6>
+                            <h2 class="mb-0">$@(Model.TotalDevoluciones > 0 ? (Model.MontoTotalDevuelto / Model.TotalDevoluciones).ToString("N2") : "0.00")</h2>
+                            <small>Por devolución</small>
+                        </div>
+                        <i class="bi bi-calculator fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <!-- Devoluciones por Motivo -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Devoluciones por Motivo</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.DevolucionesPorMotivo.Any())
+                    {
+                        <canvas id="chartMotivos" height="250"></canvas>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>No hay datos de devoluciones en el período seleccionado.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Productos Devueltos -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Productos Más Devueltos</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.ProductosMasDevueltos.Any())
+                    {
+                        <canvas id="chartProductos" height="250"></canvas>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>No hay datos de productos devueltos en el período seleccionado.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tablas Detalladas -->
+    <div class="row">
+        <!-- Devoluciones por Motivo (Tabla) -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Detalle por Motivo</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.DevolucionesPorMotivo.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Motivo</th>
+                                        <th class="text-end">Cantidad</th>
+                                        <th class="text-end">Porcentaje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var motivo in Model.DevolucionesPorMotivo.OrderByDescending(m => m.Value))
+                                    {
+                                        var porcentaje = Model.TotalDevoluciones > 0
+                                            ? ((decimal)motivo.Value / Model.TotalDevoluciones * 100)
+                                            : 0;
+                                        <tr>
+                                            <td>
+                                                <strong>@motivo.Key.ToString()</strong>
+                                            </td>
+                                            <td class="text-end">@motivo.Value</td>
+                                            <td class="text-end">
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar" role="progressbar" style="width: @porcentaje%" aria-valuenow="@porcentaje" aria-valuemin="0" aria-valuemax="100">
+                                                        @porcentaje.ToString("N1")%
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th>Total</th>
+                                        <th class="text-end">@Model.TotalDevoluciones</th>
+                                        <th class="text-end">100%</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>No hay datos disponibles.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Productos (Tabla) -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Top 10 Productos Devueltos</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.ProductosMasDevueltos.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Producto</th>
+                                        <th>Categoría</th>
+                                        <th class="text-end">Stock Actual</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int posicion = 1;
+                                    }
+                                    @foreach (var producto in Model.ProductosMasDevueltos)
+                                    {
+                                        var alertClass = producto.StockActual < producto.StockMinimo ? "table-warning" : "";
+                                        <tr class="@alertClass">
+                                            <td><strong>@posicion</strong></td>
+                                            <td>@producto.Nombre</td>
+                                            <td><small>@producto.Categoria</small></td>
+                                            <td class="text-end">
+                                                @producto.StockActual unidades
+                                                @if (producto.StockActual < producto.StockMinimo)
+                                                {
+                                                    <i class="bi bi-exclamation-triangle text-warning" title="Stock bajo"></i>
+                                                }
+                                            </td>
+                                        </tr>
+                                        posicion++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>No hay datos disponibles.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">Exportar Estadísticas</h6>
+                    <small class="text-muted">Descarga un reporte completo del período seleccionado</small>
+                </div>
+                <div>
+                    <button class="btn btn-success" disabled>
+                        <i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel
+                    </button>
+                    <button class="btn btn-danger" disabled>
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Exportar a PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Gráfico de Devoluciones por Motivo
+            @if (Model.DevolucionesPorMotivo.Any())
+            {
+                <text>
+                const ctxMotivos = document.getElementById('chartMotivos').getContext('2d');
+                new Chart(ctxMotivos, {
+                    type: 'pie',
+                    data: {
+                        labels: [@Html.Raw(string.Join(",", Model.DevolucionesPorMotivo.Select(m => $"'{m.Key.ToString()}'")))],
+                        datasets: [{
+                            label: 'Cantidad',
+                            data: [@Html.Raw(string.Join(",", Model.DevolucionesPorMotivo.Select(m => m.Value)))],
+                            backgroundColor: [
+                                'rgb(255, 99, 132)',
+                                'rgb(54, 162, 235)',
+                                'rgb(255, 205, 86)',
+                                'rgb(75, 192, 192)',
+                                'rgb(153, 102, 255)',
+                                'rgb(255, 159, 64)',
+                                'rgb(201, 203, 207)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+                </text>
+            }
+
+            // Gráfico de Productos Más Devueltos
+            @if (Model.ProductosMasDevueltos.Any())
+            {
+                <text>
+                const ctxProductos = document.getElementById('chartProductos').getContext('2d');
+                new Chart(ctxProductos, {
+                    type: 'bar',
+                    data: {
+                        labels: [@Html.Raw(string.Join(",", Model.ProductosMasDevueltos.Select(p => $"'{p.Nombre}'")))],
+                        datasets: [{
+                            label: 'Veces Devuelto',
+                            data: [@Html.Raw(string.Join(",", Model.ProductosMasDevueltos.Select(p => "1")))], // Placeholder - should be actual count
+                            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                            borderColor: 'rgb(54, 162, 235)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+                </text>
+            }
+        });
+    </script>
+}

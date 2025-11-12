@@ -1,4 +1,5 @@
-using AutoMapper;
+ï»¿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Models.Entities;
@@ -7,6 +8,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
+    [Authorize(Roles = "Admin,Gerente")]
     public class ProductoController : Controller
     {
         private readonly IProductoService _productoService;
@@ -41,7 +43,7 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                // Ejecutar búsqueda con filtros
+                // Ejecutar bï¿½squeda con filtros
                 var productos = await _productoService.SearchAsync(
                     searchTerm,
                     categoriaId,
@@ -112,7 +114,7 @@ namespace TheBuryProject.Controllers
             }
         }
         /// <summary>
-        /// Carga los dropdowns de Categorías y Marcas para los formularios
+        /// Carga los dropdowns de Categorï¿½as y Marcas para los formularios
         /// </summary>
         private async Task CargarDropdownsAsync(int? categoriaSeleccionada = null, int? marcaSeleccionada = null)
         {
@@ -149,10 +151,10 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
-                    // Verificar que el código no exista
+                    // Verificar que el cï¿½digo no exista
                     if (await _productoService.ExistsCodigoAsync(viewModel.Codigo))
                     {
-                        ModelState.AddModelError("Codigo", "Ya existe un producto con este código");
+                        ModelState.AddModelError("Codigo", "Ya existe un producto con este cï¿½digo");
                         await CargarDropdownsAsync(viewModel.CategoriaId, viewModel.MarcaId);
                         return View(viewModel);
                     }
@@ -165,7 +167,7 @@ namespace TheBuryProject.Controllers
                 }
                 catch (InvalidOperationException ex)
                 {
-                    _logger.LogWarning(ex, "Error de validación al crear producto");
+                    _logger.LogWarning(ex, "Error de validaciï¿½n al crear producto");
                     ModelState.AddModelError("", ex.Message);
                 }
                 catch (Exception ex)
@@ -221,10 +223,10 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
-                    // Verificar que el código no exista en otro producto
+                    // Verificar que el cï¿½digo no exista en otro producto
                     if (await _productoService.ExistsCodigoAsync(viewModel.Codigo, id))
                     {
-                        ModelState.AddModelError("Codigo", "Ya existe otro producto con este código");
+                        ModelState.AddModelError("Codigo", "Ya existe otro producto con este cï¿½digo");
                         await CargarDropdownsAsync(viewModel.CategoriaId, viewModel.MarcaId);
                         return View(viewModel);
                     }
@@ -237,7 +239,7 @@ namespace TheBuryProject.Controllers
                 }
                 catch (InvalidOperationException ex)
                 {
-                    _logger.LogWarning(ex, "Error de validación al actualizar producto {Id}", id);
+                    _logger.LogWarning(ex, "Error de validaciï¿½n al actualizar producto {Id}", id);
                     ModelState.AddModelError("", ex.Message);
                 }
                 catch (Exception ex)
@@ -292,12 +294,12 @@ namespace TheBuryProject.Controllers
                 }
                 else
                 {
-                    TempData["Error"] = "No se encontró el producto a eliminar";
+                    TempData["Error"] = "No se encontrï¿½ el producto a eliminar";
                 }
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogWarning(ex, "Error de validación al eliminar producto {Id}", id);
+                _logger.LogWarning(ex, "Error de validaciï¿½n al eliminar producto {Id}", id);
                 TempData["Error"] = ex.Message;
             }
             catch (Exception ex)
@@ -310,7 +312,7 @@ namespace TheBuryProject.Controllers
         }
 
         /// <summary>
-        /// Carga los dropdowns de Categorías y Marcas para los formularios
+        /// Carga los dropdowns de Categorï¿½as y Marcas para los formularios
         /// </summary>
         /// <summary>
         /// Carga los dropdowns para los filtros

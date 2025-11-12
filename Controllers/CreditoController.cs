@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,7 +13,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin,Gerente")]
     public class CreditoController : Controller
     {
         private readonly ICreditoService _creditoService;
@@ -47,8 +47,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al listar créditos");
-                TempData["Error"] = "Error al cargar los créditos";
+                _logger.LogError(ex, "Error al listar crï¿½ditos");
+                TempData["Error"] = "Error al cargar los crï¿½ditos";
                 return View(new List<CreditoViewModel>());
             }
         }
@@ -61,7 +61,7 @@ namespace TheBuryProject.Controllers
                 var credito = await _creditoService.GetByIdAsync(id);
                 if (credito == null)
                 {
-                    TempData["Error"] = "Crédito no encontrado";
+                    TempData["Error"] = "Crï¿½dito no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -72,8 +72,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener crédito {Id}", id);
-                TempData["Error"] = "Error al cargar el crédito";
+                _logger.LogError(ex, "Error al obtener crï¿½dito {Id}", id);
+                TempData["Error"] = "Error al cargar el crï¿½dito";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -95,7 +95,7 @@ namespace TheBuryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreditoViewModel viewModel)
         {
-            _logger.LogInformation("=== INICIANDO CREACIÓN DE LÍNEA DE CRÉDITO ===");
+            _logger.LogInformation("=== INICIANDO CREACIï¿½N DE Lï¿½NEA DE CRï¿½DITO ===");
             _logger.LogInformation("ClienteId: {ClienteId}", viewModel.ClienteId);
             _logger.LogInformation("MontoSolicitado: {Monto}", viewModel.MontoSolicitado);
             _logger.LogInformation("TasaInteres: {Tasa}", viewModel.TasaInteres);
@@ -107,7 +107,7 @@ namespace TheBuryProject.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogWarning("ModelState inválido. Errores:");
+                    _logger.LogWarning("ModelState invï¿½lido. Errores:");
                     foreach (var key in ModelState.Keys)
                     {
                         var errors = ModelState[key]?.Errors;
@@ -124,21 +124,21 @@ namespace TheBuryProject.Controllers
                     return View(viewModel);
                 }
 
-                _logger.LogInformation("ModelState válido. Llamando a CreateAsync...");
+                _logger.LogInformation("ModelState vï¿½lido. Llamando a CreateAsync...");
                 var credito = await _creditoService.CreateAsync(viewModel);
 
-                _logger.LogInformation("Línea de crédito creada. Id: {Id}, Numero: {Numero}",
+                _logger.LogInformation("Lï¿½nea de crï¿½dito creada. Id: {Id}, Numero: {Numero}",
                     credito.Id, credito.Numero);
 
-                TempData["Success"] = $"Línea de Crédito {credito.Numero} creada exitosamente";
+                TempData["Success"] = $"Lï¿½nea de Crï¿½dito {credito.Numero} creada exitosamente";
                 return RedirectToAction(nameof(Details), new { id = credito.Id });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear línea de crédito. Mensaje: {Message}", ex.Message);
+                _logger.LogError(ex, "Error al crear lï¿½nea de crï¿½dito. Mensaje: {Message}", ex.Message);
                 _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace);
 
-                ModelState.AddModelError("", "Error al crear la línea de crédito: " + ex.Message);
+                ModelState.AddModelError("", "Error al crear la lï¿½nea de crï¿½dito: " + ex.Message);
                 await CargarViewBags(viewModel.ClienteId, viewModel.GaranteId);
                 return View(viewModel);
             }
@@ -152,13 +152,13 @@ namespace TheBuryProject.Controllers
                 var credito = await _creditoService.GetByIdAsync(id);
                 if (credito == null)
                 {
-                    TempData["Error"] = "Crédito no encontrado";
+                    TempData["Error"] = "Crï¿½dito no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
 
                 if (credito.Estado != Models.Enums.EstadoCredito.Solicitado)
                 {
-                    TempData["Error"] = "Solo se pueden editar créditos en estado Solicitado";
+                    TempData["Error"] = "Solo se pueden editar crï¿½ditos en estado Solicitado";
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
@@ -167,8 +167,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar crédito para editar: {Id}", id);
-                TempData["Error"] = "Error al cargar el crédito";
+                _logger.LogError(ex, "Error al cargar crï¿½dito para editar: {Id}", id);
+                TempData["Error"] = "Error al cargar el crï¿½dito";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -195,19 +195,19 @@ namespace TheBuryProject.Controllers
                 var resultado = await _creditoService.UpdateAsync(viewModel);
                 if (resultado)
                 {
-                    TempData["Success"] = "Crédito actualizado exitosamente";
+                    TempData["Success"] = "Crï¿½dito actualizado exitosamente";
                     return RedirectToAction(nameof(Details), new { id });
                 }
                 else
                 {
-                    TempData["Error"] = "No se pudo actualizar el crédito";
+                    TempData["Error"] = "No se pudo actualizar el crï¿½dito";
                     return RedirectToAction(nameof(Index));
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar crédito: {Id}", id);
-                ModelState.AddModelError("", "Error al actualizar el crédito: " + ex.Message);
+                _logger.LogError(ex, "Error al actualizar crï¿½dito: {Id}", id);
+                ModelState.AddModelError("", "Error al actualizar el crï¿½dito: " + ex.Message);
                 await CargarViewBags(viewModel.ClienteId, viewModel.GaranteId);
                 return View(viewModel);
             }
@@ -221,7 +221,7 @@ namespace TheBuryProject.Controllers
                 var credito = await _creditoService.GetByIdAsync(id);
                 if (credito == null)
                 {
-                    TempData["Error"] = "Crédito no encontrado";
+                    TempData["Error"] = "Crï¿½dito no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -229,8 +229,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar crédito para eliminar: {Id}", id);
-                TempData["Error"] = "Error al cargar el crédito";
+                _logger.LogError(ex, "Error al cargar crï¿½dito para eliminar: {Id}", id);
+                TempData["Error"] = "Error al cargar el crï¿½dito";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -245,17 +245,17 @@ namespace TheBuryProject.Controllers
                 var resultado = await _creditoService.DeleteAsync(id);
                 if (resultado)
                 {
-                    TempData["Success"] = "Crédito eliminado exitosamente";
+                    TempData["Success"] = "Crï¿½dito eliminado exitosamente";
                 }
                 else
                 {
-                    TempData["Error"] = "No se pudo eliminar el crédito";
+                    TempData["Error"] = "No se pudo eliminar el crï¿½dito";
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar crédito: {Id}", id);
-                TempData["Error"] = "Error al eliminar el crédito: " + ex.Message;
+                _logger.LogError(ex, "Error al eliminar crï¿½dito: {Id}", id);
+                TempData["Error"] = "Error al eliminar el crï¿½dito: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Index));
@@ -288,8 +288,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al simular crédito");
-                ModelState.AddModelError("", "Error al simular el crédito: " + ex.Message);
+                _logger.LogError(ex, "Error al simular crï¿½dito");
+                ModelState.AddModelError("", "Error al simular el crï¿½dito: " + ex.Message);
                 return View(modelo);
             }
         }
@@ -306,17 +306,17 @@ namespace TheBuryProject.Controllers
 
                 if (resultado)
                 {
-                    TempData["Success"] = "Crédito aprobado exitosamente";
+                    TempData["Success"] = "Crï¿½dito aprobado exitosamente";
                 }
                 else
                 {
-                    TempData["Error"] = "No se pudo aprobar el crédito";
+                    TempData["Error"] = "No se pudo aprobar el crï¿½dito";
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al aprobar crédito: {Id}", id);
-                TempData["Error"] = "Error al aprobar el crédito: " + ex.Message;
+                _logger.LogError(ex, "Error al aprobar crï¿½dito: {Id}", id);
+                TempData["Error"] = "Error al aprobar el crï¿½dito: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Details), new { id });
@@ -332,25 +332,25 @@ namespace TheBuryProject.Controllers
                 var credito = await _creditoService.GetByIdAsync(id);
                 if (credito == null)
                 {
-                    TempData["Error"] = "Crédito no encontrado";
+                    TempData["Error"] = "Crï¿½dito no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
 
                 if (credito.Estado != Models.Enums.EstadoCredito.Solicitado)
                 {
-                    TempData["Error"] = "Solo se pueden rechazar créditos en estado Solicitado";
+                    TempData["Error"] = "Solo se pueden rechazar crï¿½ditos en estado Solicitado";
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
                 credito.Estado = Models.Enums.EstadoCredito.Rechazado;
                 await _creditoService.UpdateAsync(credito);
 
-                TempData["Success"] = "Crédito rechazado";
+                TempData["Success"] = "Crï¿½dito rechazado";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al rechazar crédito: {Id}", id);
-                TempData["Error"] = "Error al rechazar el crédito: " + ex.Message;
+                _logger.LogError(ex, "Error al rechazar crï¿½dito: {Id}", id);
+                TempData["Error"] = "Error al rechazar el crï¿½dito: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Details), new { id });
@@ -366,19 +366,19 @@ namespace TheBuryProject.Controllers
                 var credito = await _creditoService.GetByIdAsync(id);
                 if (credito == null)
                 {
-                    TempData["Error"] = "Crédito no encontrado";
+                    TempData["Error"] = "Crï¿½dito no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
 
                 credito.Estado = Models.Enums.EstadoCredito.Cancelado;
                 await _creditoService.UpdateAsync(credito);
 
-                TempData["Success"] = "Crédito cancelado";
+                TempData["Success"] = "Crï¿½dito cancelado";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cancelar crédito: {Id}", id);
-                TempData["Error"] = "Error al cancelar el crédito: " + ex.Message;
+                _logger.LogError(ex, "Error al cancelar crï¿½dito: {Id}", id);
+                TempData["Error"] = "Error al cancelar el crï¿½dito: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Details), new { id });
@@ -392,7 +392,7 @@ namespace TheBuryProject.Controllers
                 var credito = await _creditoService.GetByIdAsync(id);
                 if (credito == null)
                 {
-                    TempData["Error"] = "Crédito no encontrado";
+                    TempData["Error"] = "Crï¿½dito no encontrado";
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -436,7 +436,7 @@ namespace TheBuryProject.Controllers
                     var credito = await _creditoService.GetByIdAsync(modelo.CreditoId);
                     if (credito == null)
                     {
-                        TempData["Error"] = "Crédito no encontrado";
+                        TempData["Error"] = "Crï¿½dito no encontrado";
                         return RedirectToAction(nameof(Index));
                     }
 
@@ -474,13 +474,13 @@ namespace TheBuryProject.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: API endpoint para evaluar crédito en tiempo real
+        // GET: API endpoint para evaluar crï¿½dito en tiempo real
         [HttpGet]
         public async Task<IActionResult> EvaluarCredito(int clienteId, decimal montoSolicitado, int? garanteId = null)
         {
             try
             {
-                _logger.LogInformation("Evaluando crédito para cliente {ClienteId}, monto {Monto}", clienteId, montoSolicitado);
+                _logger.LogInformation("Evaluando crï¿½dito para cliente {ClienteId}, monto {Monto}", clienteId, montoSolicitado);
 
                 var evaluacion = await _evaluacionService.EvaluarSolicitudAsync(clienteId, montoSolicitado, garanteId);
 
@@ -488,8 +488,8 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al evaluar crédito");
-                return StatusCode(500, new { error = "Error al evaluar crédito: " + ex.Message });
+                _logger.LogError(ex, "Error al evaluar crï¿½dito");
+                return StatusCode(500, new { error = "Error al evaluar crï¿½dito: " + ex.Message });
             }
         }
 
@@ -533,7 +533,7 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        #region Métodos Privados
+        #region Mï¿½todos Privados
 
         private async Task CargarViewBags(int? clienteIdSeleccionado = null, int? garanteIdSeleccionado = null)
         {

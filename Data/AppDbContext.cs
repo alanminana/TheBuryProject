@@ -11,14 +11,20 @@ namespace TheBuryProject.Data
     /// </summary>
     public class AppDbContext : IdentityDbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options)
+        private readonly IHttpContextAccessor? _httpContextAccessor;
+
+        public AppDbContext(
+            DbContextOptions<AppDbContext> options,
+            IHttpContextAccessor? httpContextAccessor = null)
             : base(options)
         {
+            _httpContextAccessor = httpContextAccessor;
         }
         // DbSets - Cada uno representa una tabla en la base de datos
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<Marca> Marcas { get; set; }
         public DbSet<Producto> Productos { get; set; }
+        public DbSet<PrecioHistorico> PreciosHistoricos { get; set; }
 
         // Proveedores
         public DbSet<Proveedor> Proveedores { get; set; }
@@ -55,38 +61,32 @@ namespace TheBuryProject.Data
         public DbSet<ConfiguracionMora> ConfiguracionesMora { get; set; }
         public DbSet<LogMora> LogsMora { get; set; }
         public DbSet<AlertaCobranza> AlertasCobranza { get; set; }
-        public DbSet<EvaluacionCredito> EvaluacionesCredito { get; set; }
+        public DbSet<AlertaStock> AlertasStock { get; set; }
+
+        // Módulo de Autorizaciones
+        public DbSet<UmbralAutorizacion> UmbralesAutorizacion { get; set; }
+        public DbSet<SolicitudAutorizacion> SolicitudesAutorizacion { get; set; }
+
+        // Módulo de Devoluciones y Garantías
+        public DbSet<Devolucion> Devoluciones { get; set; }
+        public DbSet<DevolucionDetalle> DevolucionDetalles { get; set; }
+        public DbSet<Garantia> Garantias { get; set; }
+        public DbSet<RMA> RMAs { get; set; }
+        public DbSet<NotaCredito> NotasCredito { get; set; }
+
+        // Módulo de Cajas
+        public DbSet<Caja> Cajas { get; set; }
+        public DbSet<AperturaCaja> AperturasCaja { get; set; }
+        public DbSet<MovimientoCaja> MovimientosCaja { get; set; }
+        public DbSet<CierreCaja> CierresCaja { get; set; }
+
+        // Módulo de Notificaciones
+        public DbSet<Notificacion> Notificaciones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<EvaluacionCredito>(entity =>
-            {
-                entity.ToTable("EvaluacionesCredito");
 
-                entity.HasKey(e => e.Id);
-
-                entity.HasOne(e => e.Credito)
-                    .WithOne() // o .WithMany() si un crédito puede tener múltiples evaluaciones
-                    .HasForeignKey<EvaluacionCredito>(e => e.CreditoId)
-                    .OnDelete(DeleteBehavior.Cascade); // o Restrict según lógica de negocio
-
-                entity.HasOne(e => e.Cliente)
-                    .WithMany()
-                    .HasForeignKey(e => e.ClienteId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.Property(e => e.PuntajeRiesgoCliente).HasPrecision(5, 2);
-                entity.Property(e => e.RelacionCuotaIngreso).HasPrecision(5, 2);
-                entity.Property(e => e.PuntajeFinal).HasPrecision(5, 2);
-                entity.Property(e => e.MontoSolicitado).HasPrecision(18, 2);
-                entity.Property(e => e.SueldoCliente).HasPrecision(18, 2);
-
-                entity.Property(e => e.Motivo).HasMaxLength(1000);
-                entity.Property(e => e.Observaciones).HasMaxLength(2000);
-
-                entity.HasIndex(e => e.FechaEvaluacion);
-            });
             // Configuración de Categoria
             modelBuilder.Entity<Categoria>(entity =>
             {
@@ -179,6 +179,36 @@ namespace TheBuryProject.Data
 
                 entity.Property(e => e.StockMinimo)
                     .HasPrecision(18, 2);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // Configuración de PrecioHistorico
+            modelBuilder.Entity<PrecioHistorico>(entity =>
+            {
+                entity.HasOne(e => e.Producto)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.PrecioCompraAnterior)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.PrecioCompraNuevo)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.PrecioVentaAnterior)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.PrecioVentaNuevo)
+                    .HasPrecision(18, 2);
+
+                entity.HasIndex(e => e.ProductoId);
+                entity.HasIndex(e => e.FechaCambio);
+                entity.HasIndex(e => e.UsuarioModificacion);
 
                 entity.Property(e => e.RowVersion)
                     .IsRowVersion();
@@ -599,6 +629,94 @@ namespace TheBuryProject.Data
                     .HasForeignKey(e => e.VentaId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+            // =======================
+            // Configuración para Caja
+            // =======================
+            modelBuilder.Entity<Caja>(entity =>
+            {
+                entity.HasIndex(e => e.Codigo)
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0");
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // Configuración para AperturaCaja
+            // =======================
+            modelBuilder.Entity<AperturaCaja>(entity =>
+            {
+                entity.HasOne(e => e.Caja)
+                    .WithMany(c => c.Aperturas)
+                    .HasForeignKey(e => e.CajaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // Configuración para MovimientoCaja
+            // =======================
+            modelBuilder.Entity<MovimientoCaja>(entity =>
+            {
+                entity.HasOne(e => e.AperturaCaja)
+                    .WithMany(a => a.Movimientos)
+                    .HasForeignKey(e => e.AperturaCajaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+
+                entity.HasIndex(e => e.FechaMovimiento);
+                entity.HasIndex(e => e.Tipo);
+                entity.HasIndex(e => e.Concepto);
+            });
+
+            // =======================
+            // Configuración para CierreCaja
+            // =======================
+            modelBuilder.Entity<CierreCaja>(entity =>
+            {
+                entity.HasOne(e => e.AperturaCaja)
+                    .WithOne(a => a.Cierre)
+                    .HasForeignKey<CierreCaja>(e => e.AperturaCajaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+
+                entity.HasIndex(e => e.FechaCierre);
+                entity.HasIndex(e => e.TieneDiferencia);
+            });
+
+            // =======================
+            // Configuración para Notificacion
+            // =======================
+            modelBuilder.Entity<Notificacion>(entity =>
+            {
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+
+                entity.HasIndex(e => e.UsuarioDestino);
+                entity.HasIndex(e => e.Leida);
+                entity.HasIndex(e => e.FechaNotificacion);
+                entity.HasIndex(e => e.Tipo);
+                entity.HasIndex(e => e.Prioridad);
+            });
+
             // Seed de datos inicial
             SeedData(modelBuilder);
         }
@@ -767,6 +885,39 @@ namespace TheBuryProject.Data
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
 
+            // Configuración para AlertaStock
+            modelBuilder.Entity<AlertaStock>(entity =>
+            {
+                entity.ToTable("AlertasStock");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Producto)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.StockActual)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.StockMinimo)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.CantidadSugeridaReposicion)
+                    .HasPrecision(18, 2);
+
+                entity.HasIndex(e => e.ProductoId);
+                entity.HasIndex(e => e.FechaAlerta);
+                entity.HasIndex(e => e.Tipo);
+                entity.HasIndex(e => e.Prioridad);
+                entity.HasIndex(e => e.Estado);
+                entity.HasIndex(e => e.NotificacionUrgente);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
             // Configuración para ConfiguracionMora
             modelBuilder.Entity<ConfiguracionMora>(entity =>
             {
@@ -796,6 +947,190 @@ namespace TheBuryProject.Data
 
                 entity.HasIndex(e => e.FechaEjecucion);
                 entity.HasIndex(e => e.Exitoso);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // Configuración para Devolucion
+            modelBuilder.Entity<Devolucion>(entity =>
+            {
+                entity.ToTable("Devoluciones");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.NumeroDevolucion)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.TotalDevolucion)
+                    .HasPrecision(18, 2);
+
+                entity.HasIndex(e => e.NumeroDevolucion).IsUnique();
+                entity.HasIndex(e => e.VentaId);
+                entity.HasIndex(e => e.ClienteId);
+                entity.HasIndex(e => e.FechaDevolucion);
+                entity.HasIndex(e => e.Estado);
+
+                entity.HasOne(e => e.Venta)
+                    .WithMany()
+                    .HasForeignKey(e => e.VentaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(e => e.Detalles)
+                    .WithOne(d => d.Devolucion)
+                    .HasForeignKey(d => d.DevolucionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // Configuración para DevolucionDetalle
+            modelBuilder.Entity<DevolucionDetalle>(entity =>
+            {
+                entity.ToTable("DevolucionDetalles");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.PrecioUnitario)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Subtotal)
+                    .HasPrecision(18, 2);
+
+                entity.HasIndex(e => e.DevolucionId);
+                entity.HasIndex(e => e.ProductoId);
+
+                entity.HasOne(e => e.Devolucion)
+                    .WithMany(d => d.Detalles)
+                    .HasForeignKey(e => e.DevolucionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Producto)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // Configuración para Garantia
+            modelBuilder.Entity<Garantia>(entity =>
+            {
+                entity.ToTable("Garantias");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.NumeroGarantia)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.HasIndex(e => e.NumeroGarantia).IsUnique();
+                entity.HasIndex(e => e.VentaDetalleId);
+                entity.HasIndex(e => e.ProductoId);
+                entity.HasIndex(e => e.ClienteId);
+                entity.HasIndex(e => e.FechaInicio);
+                entity.HasIndex(e => e.FechaVencimiento);
+                entity.HasIndex(e => e.Estado);
+
+                entity.HasOne(e => e.VentaDetalle)
+                    .WithMany()
+                    .HasForeignKey(e => e.VentaDetalleId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Producto)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // Configuración para RMA
+            modelBuilder.Entity<RMA>(entity =>
+            {
+                entity.ToTable("RMAs");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.NumeroRMA)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.MontoReembolso)
+                    .HasPrecision(18, 2);
+
+                entity.HasIndex(e => e.NumeroRMA).IsUnique();
+                entity.HasIndex(e => e.DevolucionId);
+                entity.HasIndex(e => e.ProveedorId);
+                entity.HasIndex(e => e.FechaSolicitud);
+                entity.HasIndex(e => e.Estado);
+
+                entity.HasOne(e => e.Devolucion)
+                    .WithOne(d => d.RMA)
+                    .HasForeignKey<RMA>(e => e.DevolucionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Proveedor)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProveedorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // Configuración para NotaCredito
+            modelBuilder.Entity<NotaCredito>(entity =>
+            {
+                entity.ToTable("NotasCredito");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.NumeroNotaCredito)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.MontoTotal)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.MontoUtilizado)
+                    .HasPrecision(18, 2);
+
+                entity.HasIndex(e => e.NumeroNotaCredito).IsUnique();
+                entity.HasIndex(e => e.DevolucionId);
+                entity.HasIndex(e => e.ClienteId);
+                entity.HasIndex(e => e.FechaEmision);
+                entity.HasIndex(e => e.FechaVencimiento);
+                entity.HasIndex(e => e.Estado);
+
+                entity.HasOne(e => e.Devolucion)
+                    .WithOne(d => d.NotaCredito)
+                    .HasForeignKey<NotaCredito>(e => e.DevolucionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.Property(e => e.RowVersion)
                     .IsRowVersion();
@@ -846,18 +1181,19 @@ namespace TheBuryProject.Data
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             var entries = ChangeTracker.Entries<BaseEntity>();
+            var currentUser = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
 
             foreach (var entry in entries)
             {
                 if (entry.State == EntityState.Added)
                 {
                     entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.CreatedBy = "System";
+                    entry.Entity.CreatedBy = currentUser;
                 }
                 else if (entry.State == EntityState.Modified)
                 {
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
-                    entry.Entity.UpdatedBy = "System";
+                    entry.Entity.UpdatedBy = currentUser;
 
                     entry.Property(e => e.CreatedAt).IsModified = false;
                     entry.Property(e => e.CreatedBy).IsModified = false;

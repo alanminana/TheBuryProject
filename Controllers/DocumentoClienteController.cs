@@ -9,7 +9,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin,Gerente")]
     public class DocumentoClienteController : Controller
     {
         private readonly IDocumentoClienteService _documentoService;

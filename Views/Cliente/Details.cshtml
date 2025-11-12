@@ -1,6 +1,4 @@
-﻿@model TheBuryProject.ViewModels.ClienteViewModel
-@model TheBuryProject.ViewModels.ClienteDetalleViewModel
-
+﻿@model TheBuryProject.ViewModels.ClienteDetalleViewModel
 
 @{
     ViewData["Title"] = "Detalles del Cliente";
@@ -11,16 +9,16 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="fw-bold">
-                    <i class="bi bi-person text-primary"></i> @Model.NombreCompleto
+                    <i class="bi bi-person text-primary"></i> @Model.Cliente.NombreCompleto
                 </h2>
                 <div class="d-flex gap-2 flex-wrap">
-                    @if (Model.Activo)
+                    @if (Model.Cliente.Activo)
                     {
-                        <a asp-controller="Credito" asp-action="Create" asp-route-clienteId="@Model.Id" class="btn btn-success">
+                        <a asp-controller="Credito" asp-action="Create" asp-route-clienteId="@Model.Cliente.Id" class="btn btn-success">
                             <i class="bi bi-cash-coin"></i> Solicitar Crédito
                         </a>
                     }
-                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <a asp-action="Edit" asp-route-id="@Model.Cliente.Id" class="btn btn-warning">
                         <i class="bi bi-pencil"></i> Editar
                     </a>
                     <a asp-action="Index" class="btn btn-secondary">
@@ -36,69 +34,214 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             }
-
-            <!-- Indicadores principales -->
-            <!-- ... (todo el contenido anterior se mantiene igual) ... -->
-            <!-- Documentación Presentada -->
-            <div class="card bg-dark border-secondary shadow-sm mb-3">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Documentación Presentada</h5>
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i> @TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-                <div class="card-body">
-                    <div class="row row-cols-1 row-cols-md-3 g-2">
-                        <div class="col">
-                            @((Model.TieneReciboSueldo) ?
-                                                        Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Recibo de Sueldo</strong>") :
-                                                        Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Recibo de Sueldo</span>"))
+            }
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" id="clienteTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link @(Model.TabActivo == "informacion" ? "active" : "")" href="#informacion" data-bs-toggle="tab">Información</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(Model.TabActivo == "documentos" ? "active" : "")" href="#documentos" data-bs-toggle="tab">Documentos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(Model.TabActivo == "creditos" ? "active" : "")" href="#creditos" data-bs-toggle="tab">Créditos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(Model.TabActivo == "evaluacion" ? "active" : "")" href="#evaluacion" data-bs-toggle="tab">Evaluación Crediticia</a>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="clienteTabsContent">
+                <!-- Información -->
+                <div class="tab-pane fade @(Model.TabActivo == "informacion" ? "show active" : "")" id="informacion">
+                    <div class="card bg-dark border-secondary shadow-sm mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="bi bi-person-badge"></i> Datos Personales</h5>
                         </div>
-                        <div class="col">
-                            @((Model.TieneVeraz) ?
-                                                        Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Veraz</strong>") :
-                                                        Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Veraz</span>"))
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-md-4"><strong>Documento:</strong> @Model.Cliente.TipoDocumento @Model.Cliente.NumeroDocumento</div>
+                                <div class="col-md-4"><strong>Edad:</strong> @Model.Cliente.Edad años</div>
+                                <div class="col-md-4"><strong>Estado Civil:</strong> @Model.Cliente.EstadoCivil</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-6"><strong>Teléfono:</strong> @Model.Cliente.Telefono</div>
+                                <div class="col-md-6"><strong>Email:</strong> @Model.Cliente.Email</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-8"><strong>Domicilio:</strong> @Model.Cliente.Domicilio</div>
+                                <div class="col-md-4"><strong>Localidad:</strong> @Model.Cliente.Localidad</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4"><strong>Provincia:</strong> @Model.Cliente.Provincia</div>
+                                <div class="col-md-4"><strong>Código Postal:</strong> @Model.Cliente.CodigoPostal</div>
+                            </div>
                         </div>
-                        <div class="col">
-                            @((Model.TieneImpuesto) ?
-                                                        Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Impuesto</strong>") :
-                                                        Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Impuesto</span>"))
+                    </div>
+
+                    <!-- Documentación Presentada -->
+                    <div class="card bg-dark border-secondary shadow-sm mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Documentación Presentada</h5>
                         </div>
-                        <div class="col">
-                            @((Model.TieneServicioLuz) ?
-                                                        Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Servicio de Luz</strong>") :
-                                                        Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Servicio de Luz</span>"))
+                        <div class="card-body">
+                            <div class="row row-cols-1 row-cols-md-3 g-2">
+                                <div class="col">
+                                    @((Model.Cliente.TieneReciboSueldo)
+                                                                        ? Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Recibo de Sueldo</strong>")
+                                                                        : Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Recibo de Sueldo</span>"))
+                                </div>
+                                <div class="col">
+                                    @((Model.Cliente.TieneVeraz)
+                                                                        ? Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Veraz</strong>")
+                                                                        : Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Veraz</span>"))
+                                </div>
+                                <div class="col">
+                                    @((Model.Cliente.TieneImpuesto)
+                                                                        ? Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Impuesto</strong>")
+                                                                        : Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Impuesto</span>"))
+                                </div>
+                                <div class="col">
+                                    @((Model.Cliente.TieneServicioLuz)
+                                                                        ? Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Servicio de Luz</strong>")
+                                                                        : Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Servicio de Luz</span>"))
+                                </div>
+                                <div class="col">
+                                    @((Model.Cliente.TieneServicioGas)
+                                                                        ? Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Servicio de Gas</strong>")
+                                                                        : Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Servicio de Gas</span>"))
+                                </div>
+                                <div class="col">
+                                    @((Model.Cliente.TieneServicioAgua)
+                                                                        ? Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Servicio de Agua</strong>")
+                                                                        : Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Servicio de Agua</span>"))
+                                </div>
+                            </div>
                         </div>
-                        <div class="col">
-                            @((Model.TieneServicioGas) ?
-                                                        Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Servicio de Gas</strong>") :
-                                                        Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Servicio de Gas</span>"))
+                    </div>
+                </div>
+
+                <!-- Documentos -->
+                <div class="tab-pane fade @(Model.TabActivo == "documentos" ? "show active" : "")" id="documentos">
+                    <div class="card bg-dark border-0 shadow-sm mb-3">
+                        <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Documentos</h5>
+                            <a asp-controller="DocumentoCliente" asp-action="Upload" asp-route-clienteId="@Model.Cliente.Id" class="btn btn-sm btn-info text-dark">
+                                <i class="bi bi-upload me-1"></i>Subir Documento
+                            </a>
                         </div>
-                        <div class="col">
-                            @((Model.TieneServicioAgua) ?
-                                                        Html.Raw("<i class='bi bi-check-circle-fill text-success'></i> <strong>Servicio de Agua</strong>") :
-                                                        Html.Raw("<i class='bi bi-x-circle text-muted'></i> <span class='text-secondary'>Servicio de Agua</span>"))
+                        <div class="card-body">
+                            @if (Model.Documentos?.Count > 0)
+                            {
+                                <table class="table table-dark table-striped table-bordered align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Estado</th>
+                                            <th>Fecha</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var doc in Model.Documentos)
+                                        {
+                                            <tr>
+                                                <td>@doc.TipoDocumentoNombre</td>
+                                                <td>@doc.Estado</td>
+                                                <td>@doc.FechaSubida.ToShortDateString()</td>
+                                                <td>
+                                                    <a asp-controller="DocumentoCliente" asp-action="Download" asp-route-id="@doc.Id" class="btn btn-sm btn-primary">
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <p class="text-secondary text-center">No hay documentos cargados.</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Créditos -->
+                <div class="tab-pane fade @(Model.TabActivo == "creditos" ? "show active" : "")" id="creditos">
+                    <div class="card bg-dark border-0 shadow-sm mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="bi bi-cash-coin"></i> Créditos Activos</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.CreditosActivos?.Count > 0)
+                            {
+                                <table class="table table-dark table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Monto</th>
+                                            <th>Estado</th>
+                                            <th>Fecha</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var c in Model.CreditosActivos)
+                                        {
+                                            <tr>
+                                                <td>@c.MontoAprobado.ToString("C")</td>
+                                                <td>@c.Estado</td>
+                                                <td>@(c.FechaAprobacion?.ToShortDateString() ?? c.FechaSolicitud.ToShortDateString())</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <p class="text-secondary text-center">No tiene créditos activos.</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evaluación Crediticia -->
+                <div class="tab-pane fade @(Model.TabActivo == "evaluacion" ? "show active" : "")" id="evaluacion">
+                    <div class="card bg-dark border-0 shadow-sm mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="bi bi-graph-up"></i> Evaluación Crediticia</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-md-4"><strong>Score Crediticio:</strong> @Model.EvaluacionCredito.ScoreCrediticio</div>
+                                <div class="col-md-4"><strong>Nivel de Riesgo:</strong> @Model.EvaluacionCredito.NivelRiesgo</div>
+                                <div class="col-md-4"><strong>Capacidad de Pago:</strong> @Model.EvaluacionCredito.CapacidadPagoMensual.ToString("C")</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4"><strong>Porcentaje Endeudamiento:</strong> @Model.EvaluacionCredito.PorcentajeEndeudamiento.ToString("F2")%</div>
+                                <div class="col-md-4"><strong>Monto Máximo:</strong> @Model.EvaluacionCredito.MontoMaximoDisponible.ToString("C")</div>
+                                <div class="col-md-4"><strong>Requiere Garante:</strong> @(Model.EvaluacionCredito.RequiereGarante ? "Sí" : "No")</div>
+                            </div>
+                            @if (Model.EvaluacionCredito.AlertasYRecomendaciones?.Any() == true)
+                            {
+                                <h6 class="mt-3 text-warning"><i class="bi bi-exclamation-triangle"></i> Recomendaciones:</h6>
+                                <ul>
+                                    @foreach (var alerta in Model.EvaluacionCredito.AlertasYRecomendaciones)
+                                    {
+                                        <li>@alerta</li>
+                                    }
+                                </ul>
+                            }
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Documentos del Cliente -->
-            <div class="card bg-dark border-0 shadow-sm mb-3">
-                <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Documentos</h5>
-                    <a asp-controller="DocumentoCliente" asp-action="Upload" asp-route-clienteId="@Model.Id" class="btn btn-sm btn-info text-dark">
-                        <i class="bi bi-upload me-1"></i>Subir Documento
-                    </a>
-                </div>
-                <div class="card-body" id="documentosCliente">
-                    <div class="text-center py-3">
-                        <div class="spinner-border text-info" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Observaciones, Auditoría, Acciones -->
-            <!-- ... (resto del contenido igual) ... -->
         </div>
     </div>
 </div>
@@ -113,7 +256,7 @@
             $.ajax({
                 url: '@Url.Action("GetDocumentosByCliente", "DocumentoCliente")',
                 type: 'GET',
-                data: { clienteId: @Model.Id },
+                data: { clienteId: '@Model.Cliente.Id' }, // FIX: Use string interpolation for Razor variable inside JS object
                 success: function(documentos) {
                     mostrarDocumentos(documentos);
                 },
@@ -129,8 +272,8 @@
                     <div class="text-center py-3 text-muted">
                         <i class="bi bi-inbox display-6 d-block mb-2"></i>
                         <p>No hay documentos cargados</p>
-                        <a href="@Url.Action("Upload", "DocumentoCliente", new { clienteId = Model.Id })" class="btn btn-sm btn-info text-dark">
-                            <i class="bi bi-upload me-1"></i>Subir Documento
+                                    <a href="@Url.Action("Upload", "DocumentoCliente", new { clienteId = Model.Cliente.Id })" class="btn btn-sm btn-info text-dark">
+                                    <i class="bi bi-upload me-1"></i>Subir Documento
                         </a>
                     </div>
                 `);

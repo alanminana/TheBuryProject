@@ -11,7 +11,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin,Gerente,Vendedor")]
     public class ClienteController : Controller
     {
         private readonly IClienteService _clienteService;

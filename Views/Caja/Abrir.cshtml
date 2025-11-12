@@ -1,0 +1,67 @@
+﻿@model TheBuryProject.ViewModels.AbrirCajaViewModel
+@{
+    ViewData["Title"] = "Abrir Caja";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-unlock"></i> Abrir Caja</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Abrir" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="CajaId" class="form-label"></label>
+                            <select asp-for="CajaId" class="form-select" asp-items="ViewBag.Cajas">
+                                <option value="">-- Seleccione una caja --</option>
+                            </select>
+                            <span asp-validation-for="CajaId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="MontoInicial" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="MontoInicial" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                            </div>
+                            <span asp-validation-for="MontoInicial" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                Monto en efectivo con el que inicia la caja
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ObservacionesApertura" class="form-label"></label>
+                            <textarea asp-for="ObservacionesApertura" class="form-control" rows="3" placeholder="Observaciones opcionales..."></textarea>
+                            <span asp-validation-for="ObservacionesApertura" class="text-danger"></span>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Importante:</strong> Una vez abierta la caja, se registrarán todos los movimientos hasta su cierre.
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-unlock"></i> Abrir Caja
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

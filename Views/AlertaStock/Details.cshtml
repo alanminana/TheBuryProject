@@ -1,0 +1,259 @@
+﻿@model TheBuryProject.ViewModels.AlertaStockViewModel
+@{
+    ViewData["Title"] = "Detalle de Alerta";
+}
+
+<div class="container">
+    <div class="row mb-3">
+        <div class="col">
+            <h2>📋 Detalle de Alerta de Stock</h2>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Información de la Alerta -->
+            <div class="card mb-3">
+                <div class="card-header @Model.BadgeTipo">
+                    <h5 class="mb-0 text-white">
+                        <i class="@Model.IconoTipo"></i> @Model.TipoDescripcion
+                        <span class="badge bg-dark float-end">@Model.PrioridadDescripcion</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted">Estado</label>
+                            <div>
+                                <span class="badge @Model.BadgeEstado fs-6">
+                                    @Model.EstadoDescripcion
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted">Fecha de Alerta</label>
+                            <div>
+                                <i class="bi bi-calendar"></i> @Model.FechaAlerta.ToString("dd/MM/yyyy HH:mm")
+                                <br />
+                                <small class="text-muted">Hace @Model.DiasDesdeAlerta día(s)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.EstaVencida)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <strong>¡Alerta vencida!</strong> Esta alerta lleva más de 7 días sin resolverse.
+                        </div>
+                    }
+
+                    @if (Model.NotificacionUrgente)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="bi bi-bell-fill"></i>
+                            <strong>Notificación urgente</strong> - Requiere atención inmediata
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Mensaje</label>
+                        <p class="lead">@Model.Mensaje</p>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Observaciones))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Observaciones</label>
+                            <p>@Model.Observaciones</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Información del Producto -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box"></i> Información del Producto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h4 class="mb-3">
+                        <span class="badge bg-secondary">@Model.ProductoCodigo</span>
+                        @Model.ProductoNombre
+                    </h4>
+
+                    <p class="text-muted">
+                        <i class="bi bi-tag"></i> @Model.CategoriaNombre
+                    </p>
+
+                    <hr />
+
+                    <div class="row text-center mb-3">
+                        <div class="col-md-4">
+                            <h3 class="@(Model.StockActual == 0 ? "text-danger" : Model.StockActual <= (Model.StockMinimo * 0.3m) ? "text-warning" : "text-secondary")">
+                                @Model.StockActual.ToString("N0")
+                            </h3>
+                            <small class="text-muted">Stock Actual</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h3 class="text-primary">@Model.StockMinimo.ToString("N0")</h3>
+                            <small class="text-muted">Stock Mínimo</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h3 class="text-info">@Model.PorcentajeStockMinimo.ToString("N0")%</h3>
+                            <small class="text-muted">% del Mínimo</small>
+                        </div>
+                    </div>
+
+                    @if (Model.CantidadSugeridaReposicion.HasValue)
+                    {
+                        <div class="alert alert-info">
+                            <h5><i class="bi bi-lightbulb"></i> Reposición Sugerida</h5>
+                            <h2 class="mb-0">+@Model.CantidadSugeridaReposicion.Value.ToString("N0") unidades</h2>
+                            <small class="text-muted">
+                                Stock objetivo: @((Model.StockMinimo * 3).ToString("N0")) unidades
+                            </small>
+                        </div>
+                    }
+
+                    <div class="mt-3">
+                        <a asp-controller="Producto" asp-action="Details" asp-route-id="@Model.ProductoId"
+                           class="btn btn-info w-100 mb-2">
+                            <i class="bi bi-eye"></i> Ver Detalles del Producto
+                        </a>
+                        <a asp-controller="Producto" asp-action="Edit" asp-route-id="@Model.ProductoId"
+                           class="btn btn-primary w-100">
+                            <i class="bi bi-pencil"></i> Editar Producto
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Acciones -->
+            @if (Model.Estado == TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)
+            {
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-check-circle"></i> Acciones
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="Resolver" asp-route-id="@Model.Id" method="post" class="mb-2">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label class="form-label">Observaciones (opcional)</label>
+                                <textarea name="observaciones" class="form-control" rows="3"
+                                      placeholder="Ej: Stock repuesto mediante orden de compra #123"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-check-circle"></i> Resolver Alerta
+                            </button>
+                        </form>
+
+                        <hr />
+
+                        <form asp-action="Ignorar" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label class="form-label">Motivo (opcional)</label>
+                                <textarea name="observaciones" class="form-control" rows="3"
+                                      placeholder="Ej: Producto descontinuado"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-secondary w-100"
+                                    onclick="return confirm('¿Está seguro de ignorar esta alerta?')">
+                                <i class="bi bi-x-circle"></i> Ignorar Alerta
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card mb-3">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle"></i> Resolución
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.FechaResolucion.HasValue)
+                        {
+                            <p>
+                                <strong>Fecha:</strong><br />
+                                @Model.FechaResolucion.Value.ToString("dd/MM/yyyy HH:mm")
+                            </p>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.UsuarioResolucion))
+                        {
+                            <p>
+                                <strong>Usuario:</strong><br />
+                                <i class="bi bi-person"></i> @Model.UsuarioResolucion
+                            </p>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.Observaciones))
+                        {
+                            <p>
+                                <strong>Observaciones:</strong><br />
+                                @Model.Observaciones
+                            </p>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Estadísticas Rápidas -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Datos Adicionales
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Prioridad</small>
+                        <h5>
+                            <span class="badge @Model.BadgePrioridad">
+                                @Model.PrioridadDescripcion
+                            </span>
+                        </h5>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Tipo de Alerta</small>
+                        <h5>
+                            <span class="badge @Model.BadgeTipo">
+                                <i class="@Model.IconoTipo"></i> @Model.TipoDescripcion
+                            </span>
+                        </h5>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Días desde creación</small>
+                        <h4 class="mb-0 @(Model.EstaVencida ? "text-danger" : "")">
+                            @Model.DiasDesdeAlerta
+                        </h4>
+                    </div>
+
+                    @if (Model.NotificacionUrgente)
+                    {
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-bell-fill"></i> Urgente
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -44,6 +44,7 @@ builder.Services.AddSingleton<IMapper>(sp =>
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();  // ← Esta línea
+builder.Services.AddScoped<IPrecioHistoricoService, PrecioHistoricoService>();
 builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();  // ← AGREGAR ESTA LÍNEA
 builder.Services.AddScoped<IMovimientoStockService, MovimientoStockService>();
@@ -57,9 +58,19 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IMoraService, MoraService>();
 builder.Services.AddScoped<IEvaluacionCreditoService, EvaluacionCreditoService>();
 builder.Services.AddScoped<IDocumentoClienteService, DocumentoClienteService>();
+builder.Services.AddScoped<IAlertaStockService, AlertaStockService>();
+builder.Services.AddScoped<IReporteService, ReporteService>();
+builder.Services.AddScoped<IAutorizacionService, AutorizacionService>();
+builder.Services.AddScoped<IDevolucionService, DevolucionService>();
+builder.Services.AddScoped<ICajaService, CajaService>();
+builder.Services.AddScoped<INotificacionService, NotificacionService>();
 
-// Servicio en background para procesamiento automático de mora
+// Servicios en background para procesamiento automático
 builder.Services.AddHostedService<MoraBackgroundService>();
+builder.Services.AddHostedService<AlertaStockBackgroundService>();
+
+// Agregar IHttpContextAccessor para acceder al usuario actual en DbContext
+builder.Services.AddHttpContextAccessor();
 
 // 5. Configuración de MVC
 builder.Services.AddControllersWithViews();
@@ -92,5 +103,28 @@ app.MapControllerRoute(
 
 // 10. Mapeo de Razor Pages (para Identity UI)
 app.MapRazorPages();
+
+// 11. Inicializar base de datos (roles y usuario admin)
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        // Inicializar roles y usuario administrador
+        await DbInitializer.Initialize(services);
+
+        // En desarrollo, crear usuarios de prueba
+        if (app.Environment.IsDevelopment())
+        {
+            await DbInitializer.CreateTestUsersAsync(services);
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error durante la inicialización de la base de datos");
+    }
+}
 
 app.Run();

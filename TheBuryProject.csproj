@@ -13,12 +13,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Models\Entities\AlertaStock.cs" />
     <None Include="Views\Cliente\_DocumentacionCliente.cshtml" />
     <None Include="Views\Cliente\_SolicitarCredito.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="15.1.0" />
+    <PackageReference Include="ClosedXML" Version="0.102.2" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.21" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.21" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.21" />
@@ -27,6 +29,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="QuestPDF" Version="2024.3.0" />
   </ItemGroup>
 
 </Project>

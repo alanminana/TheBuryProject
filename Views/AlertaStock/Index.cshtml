@@ -1,0 +1,314 @@
+﻿@model TheBuryProject.ViewModels.PaginatedResult<TheBuryProject.ViewModels.AlertaStockViewModel>
+@{
+    ViewData["Title"] = "Alertas de Stock";
+    var filtro = ViewBag.Filtro as TheBuryProject.ViewModels.AlertaStockFiltroViewModel;
+    var tiposAlerta = ViewBag.TiposAlerta as TheBuryProject.Models.Enums.TipoAlertaStock[];
+    var prioridades = ViewBag.Prioridades as TheBuryProject.Models.Enums.PrioridadAlerta[];
+    var estados = ViewBag.Estados as TheBuryProject.Models.Enums.EstadoAlerta[];
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2>⚠️ Alertas de Stock</h2>
+            <p class="text-muted">Gestión de alertas automáticas de productos con stock bajo</p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Pendientes" class="btn btn-warning">
+                <i class="bi bi-exclamation-triangle"></i> Ver Pendientes
+            </a>
+            <a asp-action="Criticos" class="btn btn-danger">
+                <i class="bi bi-exclamation-octagon"></i> Productos Críticos
+            </a>
+            <a asp-action="Estadisticas" class="btn btn-info">
+                <i class="bi bi-bar-chart"></i> Estadísticas
+            </a>
+            <form asp-action="GenerarAlertas" method="post" style="display:inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-primary" onclick="return confirm('¿Generar alertas de stock manualmente?')">
+                    <i class="bi bi-arrow-clockwise"></i> Generar Alertas
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form asp-action="Index" method="get">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Código Producto</label>
+                        <input type="text" class="form-control" name="ProductoCodigo" value="@filtro?.ProductoCodigo" placeholder="Buscar por código..." />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Nombre Producto</label>
+                        <input type="text" class="form-control" name="ProductoNombre" value="@filtro?.ProductoNombre" placeholder="Buscar por nombre..." />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" name="Tipo">
+                            <option value="">Todos</option>
+                            @if (tiposAlerta != null)
+                            {
+                                @foreach (var tipo in tiposAlerta)
+                                {
+                                    <option value="@((int)tipo)" selected="@(filtro?.Tipo == tipo)">@tipo</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Prioridad</label>
+                        <select class="form-select" name="Prioridad">
+                            <option value="">Todas</option>
+                            @if (prioridades != null)
+                            {
+                                @foreach (var prioridad in prioridades)
+                                {
+                                    <option value="@((int)prioridad)" selected="@(filtro?.Prioridad == prioridad)">@prioridad</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Estado</label>
+                        <select class="form-select" name="Estado">
+                            <option value="">Todos</option>
+                            @if (estados != null)
+                            {
+                                @foreach (var estado in estados)
+                                {
+                                    <option value="@((int)estado)" selected="@(filtro?.Estado == estado)">@estado</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-3">
+                        <div class="form-check mt-4">
+                            <input class="form-check-input" type="checkbox" name="SoloUrgentes" value="true" id="soloUrgentes" @(filtro?.SoloUrgentes == true ? "checked" : "") />
+                            <label class="form-check-label" for="soloUrgentes">
+                                Solo urgentes
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check mt-4">
+                            <input class="form-check-input" type="checkbox" name="SoloVencidas" value="true" id="soloVencidas" @(filtro?.SoloVencidas == true ? "checked" : "") />
+                            <label class="form-check-label" for="soloVencidas">
+                                Solo vencidas (>7 días)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resultados -->
+    @if (Model.TotalRecords == 0)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle"></i> No hay alertas de stock con los filtros especificados.
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-header">
+                <strong>@Model.TotalRecords</strong> alertas encontradas
+                (Mostrando @Model.FirstRecord - @Model.LastRecord)
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Tipo</th>
+                                <th>Prioridad</th>
+                                <th>Stock</th>
+                                <th>Reposición</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var alerta in Model.Items)
+                            {
+                                <tr class="@(alerta.NotificacionUrgente ? "table-danger" : "") @(alerta.EstaVencida ? "table-warning" : "")">
+                                    <td>
+                                        <strong>@alerta.ProductoCodigo</strong><br />
+                                        <small class="text-muted">@alerta.ProductoNombre</small><br />
+                                        <small class="badge bg-secondary">@alerta.CategoriaNombre</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge @alerta.BadgeTipo">
+                                            <i class="@alerta.IconoTipo"></i> @alerta.TipoDescripcion
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @alerta.BadgePrioridad">
+                                            @alerta.PrioridadDescripcion
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>@alerta.StockActual</strong> / @alerta.StockMinimo<br />
+                                        <small class="text-muted">@alerta.PorcentajeStockMinimo.ToString("N0")%</small>
+                                    </td>
+                                    <td>
+                                        @if (alerta.CantidadSugeridaReposicion.HasValue)
+                                        {
+                                            <span class="badge bg-info">
+                                                +@alerta.CantidadSugeridaReposicion.Value.ToString("N0") unidades
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small>@alerta.FechaAlerta.ToString("dd/MM/yyyy HH:mm")</small><br />
+                                        @if (alerta.EstaVencida)
+                                        {
+                                            <small class="text-danger">
+                                                <i class="bi bi-clock"></i> Vencida (@alerta.DiasDesdeAlerta días)
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">Hace @alerta.DiasDesdeAlerta día(s)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge @alerta.BadgeEstado">
+                                            @alerta.EstadoDescripcion
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-controller="Producto" asp-action="Details" asp-route-id="@alerta.ProductoId"
+                                               class="btn btn-sm btn-info" title="Ver producto">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            @if (alerta.Estado == TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-success"
+                                                        onclick="resolverAlerta(@alerta.Id, '@alerta.ProductoNombre')"
+                                                        title="Resolver">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-secondary"
+                                                        onclick="ignorarAlerta(@alerta.Id, '@alerta.ProductoNombre')"
+                                                        title="Ignorar">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @if (Model.TotalPages > 1)
+            {
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination mb-0 justify-content-center">
+                            <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                                <a class="page-link" asp-action="Index" asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                            </li>
+                            @for (int i = 1; i <= Model.TotalPages && i <= 10; i++)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" asp-action="Index" asp-route-PageNumber="@i">@i</a>
+                                </li>
+                            }
+                            <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                                <a class="page-link" asp-action="Index" asp-route-PageNumber="@(Model.PageNumber + 1)">Siguiente</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function resolverAlerta(id, producto) {
+            var observaciones = prompt(`Resolver alerta de "${producto}".\n\nObservaciones (opcional):`);
+            if (observaciones !== null) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("Resolver")/' + id;
+
+                var tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                form.appendChild(tokenInput);
+
+                if (observaciones) {
+                    var obsInput = document.createElement('input');
+                    obsInput.type = 'hidden';
+                    obsInput.name = 'observaciones';
+                    obsInput.value = observaciones;
+                    form.appendChild(obsInput);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function ignorarAlerta(id, producto) {
+            if (confirm(`¿Ignorar alerta de "${producto}"?`)) {
+                var observaciones = prompt('Motivo (opcional):');
+                if (observaciones !== null) {
+                    var form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '@Url.Action("Ignorar")/' + id;
+
+                    var tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    form.appendChild(tokenInput);
+
+                    if (observaciones) {
+                        var obsInput = document.createElement('input');
+                        obsInput.type = 'hidden';
+                        obsInput.name = 'observaciones';
+                        obsInput.value = observaciones;
+                        form.appendChild(obsInput);
+                    }
+
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
+        }
+    </script>
+}
+
+@Html.AntiForgeryToken()
