@@ -1,6 +1,6 @@
 ﻿@using TheBuryProject.Models.Entities
 @using TheBuryProject.ViewModels
-@model RMAsListViewModel
+@model EstadisticasDevolucionViewModel
 @{
     ViewData["Title"] = "Estadísticas de Devoluciones";
 }
@@ -296,75 +296,75 @@
             // Gráfico de Devoluciones por Motivo
             @if (Model.DevolucionesPorMotivo.Any())
             {
-                    <text>
-                    const ctxMotivos = document.getElementById('chartMotivos').getContext('2d');
-                    new Chart(ctxMotivos, {
-                        type: 'pie',
-                        data: {
-                            labels: [@Html.Raw(string.Join(",", Model.DevolucionesPorMotivo.Select(m => $"'{m.Key.ToString()}'")))],
-                            datasets: [{
-                                label: 'Cantidad',
-                                data: [@Html.Raw(string.Join(",", Model.DevolucionesPorMotivo.Select(m => m.Value)))],
-                                backgroundColor: [
-                                    'rgb(255, 99, 132)',
-                                    'rgb(54, 162, 235)',
-                                    'rgb(255, 205, 86)',
-                                    'rgb(75, 192, 192)',
-                                    'rgb(153, 102, 255)',
-                                    'rgb(255, 159, 64)',
-                                    'rgb(201, 203, 207)'
-                                ]
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom'
+                        <text>
+                        const ctxMotivos = document.getElementById('chartMotivos').getContext('2d');
+                        new Chart(ctxMotivos, {
+                            type: 'pie',
+                            data: {
+                                labels: [@Html.Raw(string.Join(",", Model.DevolucionesPorMotivo.Select(m => $"'{m.Key.ToString()}'")))],
+                                datasets: [{
+                                    label: 'Cantidad',
+                                    data: [@Html.Raw(string.Join(",", Model.DevolucionesPorMotivo.Select(m => m.Value)))],
+                                    backgroundColor: [
+                                        'rgb(255, 99, 132)',
+                                        'rgb(54, 162, 235)',
+                                        'rgb(255, 205, 86)',
+                                        'rgb(75, 192, 192)',
+                                        'rgb(153, 102, 255)',
+                                        'rgb(255, 159, 64)',
+                                        'rgb(201, 203, 207)'
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    }
                                 }
                             }
-                        }
-                    });
-                    </text>
+                        });
+                        </text>
             }
 
             // Gráfico de Productos Más Devueltos
             @if (Model.ProductosMasDevueltos.Any())
             {
-                    <text>
-                    const ctxProductos = document.getElementById('chartProductos').getContext('2d');
-                    new Chart(ctxProductos, {
-                        type: 'bar',
-                        data: {
-                            labels: [@Html.Raw(string.Join(",", Model.ProductosMasDevueltos.Select(p => $"'{p.Nombre}'")))],
-                            datasets: [{
-                                label: 'Veces Devuelto',
-                                data: [@Html.Raw(string.Join(",", Model.ProductosMasDevueltos.Select(p => "1")))], // Placeholder - should be actual count
-                                backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                                borderColor: 'rgb(54, 162, 235)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        stepSize: 1
+                        <text>
+                        const ctxProductos = document.getElementById('chartProductos').getContext('2d');
+                        new Chart(ctxProductos, {
+                            type: 'bar',
+                            data: {
+                                labels: [@Html.Raw(string.Join(",", Model.ProductosMasDevueltos.Select(p => $"'{p.Nombre}'")))],
+                                datasets: [{
+                                    label: 'Veces Devuelto',
+                                    data: [@Html.Raw(string.Join(",", Model.ProductosMasDevueltos.Select(p => "1")))], // Placeholder - should be actual count
+                                    backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                                    borderColor: 'rgb(54, 162, 235)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            stepSize: 1
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        display: false
                                     }
                                 }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
                             }
-                        }
-                    });
-                    </text>
+                        });
+                        </text>
             }
         });
     </script>

@@ -65,7 +65,7 @@ public class DevolucionController : Controller
     /// Formulario para crear nueva devolución
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Crear(int? ventaId)
+    public async Task<IActionResult> Create(int? ventaId)
     {
         var viewModel = new CrearDevolucionViewModel();
 
@@ -82,7 +82,6 @@ public class DevolucionController : Controller
                 viewModel.DiasDesdeVenta = await _devolucionService.ObtenerDiasDesdeVentaAsync(venta.Id);
                 viewModel.PuedeDevolver = await _devolucionService.PuedeDevolverVentaAsync(venta.Id);
 
-                // Cargar productos de la venta
                 foreach (var detalle in venta.Detalles)
                 {
                     viewModel.Productos.Add(new ProductoDevolucionViewModel
@@ -102,11 +101,11 @@ public class DevolucionController : Controller
     }
 
     /// <summary>
-    /// Procesar creación de devolución
+    /// Procesar creación de devolución (POST)
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Crear(CrearDevolucionViewModel model)
+    public async Task<IActionResult> Create(CrearDevolucionViewModel model)
     {
         if (!ModelState.IsValid)
         {
@@ -116,7 +115,6 @@ public class DevolucionController : Controller
 
         try
         {
-            // Validar que puede devolver
             if (!await _devolucionService.PuedeDevolverVentaAsync(model.VentaId))
             {
                 ModelState.AddModelError("", "Ha excedido el plazo para devolver esta venta (30 días)");
@@ -124,7 +122,6 @@ public class DevolucionController : Controller
                 return View(model);
             }
 
-            // Crear devolución
             var devolucion = new Devolucion
             {
                 VentaId = model.VentaId,
@@ -134,7 +131,6 @@ public class DevolucionController : Controller
                 FechaDevolucion = DateTime.Now
             };
 
-            // Crear detalles
             var detalles = model.Productos
                 .Where(p => p.CantidadDevolver > 0)
                 .Select(p => new DevolucionDetalle
@@ -194,217 +190,6 @@ public class DevolucionController : Controller
         };
 
         await CargarListasAsync();
-        return View(viewModel);
-    }
-
-    /// <summary>
-    /// Aprobar devolución
-    /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Aprobar(int id)
-    {
-        try
-        {
-            var usuario = await _userManager.GetUserAsync(User);
-            await _devolucionService.AprobarDevolucionAsync(id, usuario?.UserName ?? "Admin");
-            TempData["Success"] = "Devolución aprobada exitosamente. Se generó una nota de crédito.";
-        }
-        catch (Exception ex)
-        {
-            TempData["Error"] = $"Error al aprobar devolución: {ex.Message}";
-        }
-
-        return RedirectToAction(nameof(Detalles), new { id });
-    }
-
-    /// <summary>
-    /// Rechazar devolución
-    /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Rechazar(int id, string motivo)
-    {
-        if (string.IsNullOrWhiteSpace(motivo))
-        {
-            TempData["Error"] = "Debe proporcionar un motivo para rechazar la devolución";
-            return RedirectToAction(nameof(Detalles), new { id });
-        }
-
-        try
-        {
-            await _devolucionService.RechazarDevolucionAsync(id, motivo);
-            TempData["Success"] = "Devolución rechazada";
-        }
-        catch (Exception ex)
-        {
-            TempData["Error"] = $"Error al rechazar devolución: {ex.Message}";
-        }
-
-        return RedirectToAction(nameof(Detalles), new { id });
-    }
-
-    /// <summary>
-    /// Completar devolución (procesar stock)
-    /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Completar(int id)
-    {
-        try
-        {
-            await _devolucionService.CompletarDevolucionAsync(id);
-            TempData["Success"] = "Devolución completada. Stock actualizado según las acciones definidas.";
-        }
-        catch (Exception ex)
-        {
-            TempData["Error"] = $"Error al completar devolución: {ex.Message}";
-        }
-
-        return RedirectToAction(nameof(Detalles), new { id });
-    }
-
-    #endregion
-
-    #region Garantías
-
-    /// <summary>
-    /// Lista de garantías
-    /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
-    public async Task<IActionResult> Garantias()
-    {
-        var todasGarantias = await _devolucionService.ObtenerTodasGarantiasAsync();
-        var proximasVencer = await _devolucionService.ObtenerGarantiasProximasVencerAsync(30);
-
-        var viewModel = new GarantiasListViewModel
-        {
-            Vigentes = todasGarantias.Where(g => g.Estado == EstadoGarantia.Vigente && g.FechaVencimiento >= DateTime.Now).ToList(),
-            ProximasVencer = proximasVencer,
-            Vencidas = todasGarantias.Where(g => g.FechaVencimiento < DateTime.Now || g.Estado == EstadoGarantia.Vencida).ToList(),
-            EnUso = todasGarantias.Where(g => g.Estado == EstadoGarantia.EnUso).ToList(),
-            TotalVigentes = todasGarantias.Count(g => g.Estado == EstadoGarantia.Vigente),
-            TotalProximasVencer = proximasVencer.Count
-        };
-
-        return View(viewModel);
-    }
-
-    #endregion
-
-    #region RMAs
-
-    /// <summary>
-    /// Lista de RMAs
-    /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
-    public async Task<IActionResult> RMAs()
-    {
-        var todosRMAs = await _devolucionService.ObtenerTodosRMAsAsync();
-
-        var viewModel = new RMAsListViewModel
-        {
-            Pendientes = todosRMAs.Where(r => r.Estado == EstadoRMA.Pendiente).ToList(),
-            EnProceso = todosRMAs.Where(r => r.Estado == EstadoRMA.AprobadoProveedor ||
-                                              r.Estado == EstadoRMA.EnTransito ||
-                                              r.Estado == EstadoRMA.RecibidoProveedor ||
-                                              r.Estado == EstadoRMA.EnEvaluacion).ToList(),
-            Resueltos = todosRMAs.Where(r => r.Estado == EstadoRMA.Resuelto || r.Estado == EstadoRMA.Rechazado).ToList(),
-            TotalPendientes = todosRMAs.Count(r => r.Estado == EstadoRMA.Pendiente),
-            TotalEnProceso = todosRMAs.Count(r => r.Estado != EstadoRMA.Pendiente && r.Estado != EstadoRMA.Resuelto && r.Estado != EstadoRMA.Rechazado),
-            TotalResueltos = todosRMAs.Count(r => r.Estado == EstadoRMA.Resuelto)
-        };
-
-        return View(viewModel);
-    }
-
-    /// <summary>
-    /// Crear RMA para una devolución
-    /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CrearRMA(int devolucionId, int proveedorId, string motivoSolicitud)
-    {
-        try
-        {
-            var rma = new RMA
-            {
-                DevolucionId = devolucionId,
-                ProveedorId = proveedorId,
-                MotivoSolicitud = motivoSolicitud
-            };
-
-            await _devolucionService.CrearRMAAsync(rma);
-            TempData["Success"] = $"RMA {rma.NumeroRMA} creado exitosamente";
-        }
-        catch (Exception ex)
-        {
-            TempData["Error"] = $"Error al crear RMA: {ex.Message}";
-        }
-
-        return RedirectToAction(nameof(Detalles), new { id = devolucionId });
-    }
-
-    #endregion
-
-    #region Notas de Crédito
-
-    /// <summary>
-    /// Ver notas de crédito de un cliente
-    /// </summary>
-    public async Task<IActionResult> NotasCredito(int clienteId)
-    {
-        var cliente = await _clienteService.GetByIdAsync(clienteId);
-        if (cliente == null)
-        {
-            TempData["Error"] = "Cliente no encontrado";
-            return RedirectToAction("Index", "Cliente");
-        }
-
-        var todasNotas = await _devolucionService.ObtenerNotasCreditoPorClienteAsync(clienteId);
-        var creditoDisponible = await _devolucionService.ObtenerCreditoDisponibleClienteAsync(clienteId);
-
-        var viewModel = new NotasCreditoClienteViewModel
-        {
-            ClienteId = clienteId,
-            ClienteNombre = cliente.NombreCompleto ?? "Cliente",
-            NotasVigentes = todasNotas.Where(nc => nc.MontoDisponible > 0 && nc.Estado == EstadoNotaCredito.Vigente).ToList(),
-            NotasUtilizadas = todasNotas.Where(nc => nc.MontoDisponible == 0 || nc.Estado == EstadoNotaCredito.UtilizadaTotalmente).ToList(),
-            CreditoTotalDisponible = creditoDisponible
-        };
-
-        return View(viewModel);
-    }
-
-    #endregion
-
-    #region Estadísticas
-
-    /// <summary>
-    /// Estadísticas de devoluciones
-    /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
-    public async Task<IActionResult> Estadisticas(DateTime? desde, DateTime? hasta)
-    {
-        var fechaDesde = desde ?? DateTime.Now.AddMonths(-1);
-        var fechaHasta = hasta ?? DateTime.Now;
-
-        var viewModel = new EstadisticasDevolucionViewModel
-        {
-            FechaDesde = fechaDesde,
-            FechaHasta = fechaHasta,
-            DevolucionesPorMotivo = await _devolucionService.ObtenerEstadisticasMotivoDevolucionAsync(fechaDesde, fechaHasta),
-            ProductosMasDevueltos = await _devolucionService.ObtenerProductosMasDevueltosAsync(10),
-            MontoTotalDevuelto = await _devolucionService.ObtenerTotalDevolucionesPeriodoAsync(fechaDesde, fechaHasta),
-            RMAsPendientes = await _devolucionService.ObtenerCantidadRMAsPendientesAsync()
-        };
-
-        viewModel.TotalDevoluciones = viewModel.DevolucionesPorMotivo.Values.Sum();
-
         return View(viewModel);
     }
 
