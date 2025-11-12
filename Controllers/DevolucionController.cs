@@ -77,7 +77,7 @@ public class DevolucionController : Controller
                 viewModel.VentaId = venta.Id;
                 viewModel.ClienteId = venta.ClienteId;
                 viewModel.NumeroVenta = venta.Numero;
-                viewModel.ClienteNombre = venta.Cliente?.NombreCompleto ?? "Cliente";
+                viewModel.ClienteNombre = venta.ClienteNombre;
                 viewModel.FechaVenta = venta.FechaVenta;
                 viewModel.TotalVenta = venta.Total;
                 viewModel.DiasDesdeVenta = await _devolucionService.ObtenerDiasDesdeVentaAsync(venta.Id);
