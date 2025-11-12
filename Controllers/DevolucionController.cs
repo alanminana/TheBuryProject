@@ -82,6 +82,13 @@ public class DevolucionController : Controller
                 viewModel.DiasDesdeVenta = await _devolucionService.ObtenerDiasDesdeVentaAsync(venta.Id);
                 viewModel.PuedeDevolver = await _devolucionService.PuedeDevolverVentaAsync(venta.Id);
 
+                // ✅ Agrega el nombre completo del cliente aquí
+                var cliente = await _clienteService.GetByIdAsync(venta.ClienteId);
+                if (cliente != null)
+                {
+                    viewModel.ClienteNombre = $"{cliente.Apellido}, {cliente.Nombre}";
+                }
+
                 foreach (var detalle in venta.Detalles)
                 {
                     viewModel.Productos.Add(new ProductoDevolucionViewModel
@@ -99,6 +106,7 @@ public class DevolucionController : Controller
         await CargarListasAsync();
         return View(viewModel);
     }
+
 
     /// <summary>
     /// Procesar creación de devolución (POST)

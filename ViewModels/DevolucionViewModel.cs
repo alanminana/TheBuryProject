@@ -11,6 +11,7 @@ public class CrearDevolucionViewModel
     [Required(ErrorMessage = "La venta es obligatoria")]
     [Display(Name = "Venta")]
     public int VentaId { get; set; }
+    public string? ClienteNombre { get; set; }
 
     [Required(ErrorMessage = "El cliente es obligatorio")]
     [Display(Name = "Cliente")]
