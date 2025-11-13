@@ -19,6 +19,7 @@ namespace TheBuryProject.Services
         public async Task<IEnumerable<Cliente>> GetAllAsync()
         {
             return await _context.Clientes
+                .Where(c => !c.IsDeleted)
                 .Include(c => c.Creditos)
                 .OrderBy(c => c.Apellido)
                 .ThenBy(c => c.Nombre)
@@ -122,6 +123,7 @@ namespace TheBuryProject.Services
             string? orderDirection = null)
         {
             var query = _context.Clientes
+                .Where(c => !c.IsDeleted)
                 .Include(c => c.Creditos)
                 .AsQueryable();
 
@@ -134,7 +136,7 @@ namespace TheBuryProject.Services
                     c.Apellido.ToLower().Contains(searchTerm) ||
                     c.NumeroDocumento.Contains(searchTerm) ||
                     (c.Email != null && c.Email.ToLower().Contains(searchTerm)) ||
-                    c.Telefono.Contains(searchTerm));
+                    (c.Telefono != null && c.Telefono.Contains(searchTerm)));
             }
 
             if (!string.IsNullOrWhiteSpace(tipoDocumento))
