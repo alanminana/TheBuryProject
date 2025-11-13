@@ -116,7 +116,7 @@ public class DevolucionService : IDevolucionService
 
         existente.Descripcion = devolucion.Descripcion;
         existente.ObservacionesInternas = devolucion.ObservacionesInternas;
-        existente.UpdatedAt = DateTime.Now;
+        existente.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return existente;
@@ -137,8 +137,8 @@ public class DevolucionService : IDevolucionService
 
         devolucion.Estado = EstadoDevolucion.Aprobada;
         devolucion.AprobadoPor = aprobadoPor;
-        devolucion.FechaAprobacion = DateTime.Now;
-        devolucion.UpdatedAt = DateTime.Now;
+        devolucion.FechaAprobacion = DateTime.UtcNow;
+        devolucion.UpdatedAt = DateTime.UtcNow;
 
         // Generar nota de crédito automáticamente
         var notaCredito = new NotaCredito
@@ -146,10 +146,10 @@ public class DevolucionService : IDevolucionService
             DevolucionId = devolucion.Id,
             ClienteId = devolucion.ClienteId,
             NumeroNotaCredito = await GenerarNumeroNotaCreditoAsync(),
-            FechaEmision = DateTime.Now,
+            FechaEmision = DateTime.UtcNow,
             MontoTotal = devolucion.TotalDevolucion,
             Estado = EstadoNotaCredito.Vigente,
-            FechaVencimiento = DateTime.Now.AddYears(1)
+            FechaVencimiento = DateTime.UtcNow.AddYears(1)
         };
 
         _context.NotasCredito.Add(notaCredito);
@@ -169,7 +169,7 @@ public class DevolucionService : IDevolucionService
 
         devolucion.Estado = EstadoDevolucion.Rechazada;
         devolucion.ObservacionesInternas = motivo;
-        devolucion.UpdatedAt = DateTime.Now;
+        devolucion.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return devolucion;
@@ -189,7 +189,7 @@ public class DevolucionService : IDevolucionService
         }
 
         devolucion.Estado = EstadoDevolucion.Completada;
-        devolucion.UpdatedAt = DateTime.Now;
+        devolucion.UpdatedAt = DateTime.UtcNow;
 
         // Procesar stock según acción recomendada en cada detalle
         foreach (var detalle in devolucion.Detalles)
@@ -230,7 +230,7 @@ public class DevolucionService : IDevolucionService
             .FirstOrDefaultAsync();
 
         int siguiente = (ultimaDevolucion?.Id ?? 0) + 1;
-        return $"DEV-{DateTime.Now:yyyyMM}-{siguiente:D6}";
+        return $"DEV-{DateTime.UtcNow:yyyyMM}-{siguiente:D6}";
     }
 
     public async Task<bool> PuedeDevolverVentaAsync(int ventaId)
@@ -245,7 +245,7 @@ public class DevolucionService : IDevolucionService
         var venta = await _context.Ventas.FindAsync(ventaId);
         if (venta == null) return int.MaxValue;
 
-        return (DateTime.Now - venta.FechaVenta).Days;
+        return (DateTime.UtcNow - venta.FechaVenta).Days;
     }
 
     #endregion
@@ -289,7 +289,7 @@ public class DevolucionService : IDevolucionService
 
         detalle.EstadoProducto = estado;
         detalle.AccionRecomendada = accion;
-        detalle.UpdatedAt = DateTime.Now;
+        detalle.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return detalle;
@@ -302,7 +302,7 @@ public class DevolucionService : IDevolucionService
 
         detalle.AccesoriosCompletos = completos;
         detalle.AccesoriosFaltantes = faltantes;
-        detalle.UpdatedAt = DateTime.Now;
+        detalle.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return true;
@@ -324,7 +324,7 @@ public class DevolucionService : IDevolucionService
 
     public async Task<List<Garantia>> ObtenerGarantiasVigentesAsync()
     {
-        var hoy = DateTime.Now;
+        var hoy = DateTime.UtcNow;
         return await _context.Garantias
             .Include(g => g.Cliente)
             .Include(g => g.Producto)
@@ -382,7 +382,7 @@ public class DevolucionService : IDevolucionService
 
         existente.Estado = garantia.Estado;
         existente.ObservacionesActivacion = garantia.ObservacionesActivacion;
-        existente.UpdatedAt = DateTime.Now;
+        existente.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return existente;
@@ -394,12 +394,12 @@ public class DevolucionService : IDevolucionService
         if (garantia == null) return false;
 
         return garantia.Estado == EstadoGarantia.Vigente &&
-               garantia.FechaVencimiento >= DateTime.Now;
+               garantia.FechaVencimiento >= DateTime.UtcNow;
     }
 
     public async Task<List<Garantia>> ObtenerGarantiasProximasVencerAsync(int dias = 30)
     {
-        var hoy = DateTime.Now;
+        var hoy = DateTime.UtcNow;
         var fechaLimite = hoy.AddDays(dias);
 
         return await _context.Garantias
@@ -420,7 +420,7 @@ public class DevolucionService : IDevolucionService
             .FirstOrDefaultAsync();
 
         int siguiente = (ultimaGarantia?.Id ?? 0) + 1;
-        return $"GAR-{DateTime.Now:yyyyMM}-{siguiente:D6}";
+        return $"GAR-{DateTime.UtcNow:yyyyMM}-{siguiente:D6}";
     }
 
     #endregion
@@ -502,7 +502,7 @@ public class DevolucionService : IDevolucionService
         }
 
         existente.ObservacionesProveedor = rma.ObservacionesProveedor;
-        existente.UpdatedAt = DateTime.Now;
+        existente.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return existente;
@@ -517,9 +517,9 @@ public class DevolucionService : IDevolucionService
         }
 
         rma.Estado = EstadoRMA.AprobadoProveedor;
-        rma.FechaAprobacion = DateTime.Now;
+        rma.FechaAprobacion = DateTime.UtcNow;
         rma.NumeroRMAProveedor = numeroRMAProveedor;
-        rma.UpdatedAt = DateTime.Now;
+        rma.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return rma;
@@ -534,9 +534,9 @@ public class DevolucionService : IDevolucionService
         }
 
         rma.Estado = EstadoRMA.EnTransito;
-        rma.FechaEnvio = DateTime.Now;
+        rma.FechaEnvio = DateTime.UtcNow;
         rma.NumeroGuiaEnvio = numeroGuia;
-        rma.UpdatedAt = DateTime.Now;
+        rma.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return rma;
@@ -551,8 +551,8 @@ public class DevolucionService : IDevolucionService
         }
 
         rma.Estado = EstadoRMA.RecibidoProveedor;
-        rma.FechaRecepcionProveedor = DateTime.Now;
-        rma.UpdatedAt = DateTime.Now;
+        rma.FechaRecepcionProveedor = DateTime.UtcNow;
+        rma.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return rma;
@@ -568,10 +568,10 @@ public class DevolucionService : IDevolucionService
 
         rma.Estado = EstadoRMA.Resuelto;
         rma.TipoResolucion = tipoResolucion;
-        rma.FechaResolucion = DateTime.Now;
+        rma.FechaResolucion = DateTime.UtcNow;
         rma.MontoReembolso = montoReembolso;
         rma.DetalleResolucion = detalleResolucion;
-        rma.UpdatedAt = DateTime.Now;
+        rma.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return rma;
@@ -584,7 +584,7 @@ public class DevolucionService : IDevolucionService
             .FirstOrDefaultAsync();
 
         int siguiente = (ultimoRMA?.Id ?? 0) + 1;
-        return $"RMA-{DateTime.Now:yyyyMM}-{siguiente:D6}";
+        return $"RMA-{DateTime.UtcNow:yyyyMM}-{siguiente:D6}";
     }
 
     #endregion
@@ -612,7 +612,7 @@ public class DevolucionService : IDevolucionService
 
     public async Task<List<NotaCredito>> ObtenerNotasCreditoVigentesAsync(int clienteId)
     {
-        var hoy = DateTime.Now;
+        var hoy = DateTime.UtcNow;
         return await _context.NotasCredito
             .Where(nc => nc.ClienteId == clienteId &&
                         !nc.IsDeleted &&
@@ -673,7 +673,7 @@ public class DevolucionService : IDevolucionService
             notaCredito.Estado = EstadoNotaCredito.UtilizadaParcialmente;
         }
 
-        notaCredito.UpdatedAt = DateTime.Now;
+        notaCredito.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
         return notaCredito;
@@ -692,7 +692,7 @@ public class DevolucionService : IDevolucionService
             .FirstOrDefaultAsync();
 
         int siguiente = (ultimaNotaCredito?.Id ?? 0) + 1;
-        return $"NC-{DateTime.Now:yyyyMM}-{siguiente:D6}";
+        return $"NC-{DateTime.UtcNow:yyyyMM}-{siguiente:D6}";
     }
 
     #endregion

@@ -25,6 +25,7 @@ namespace TheBuryProject.Services
             try
             {
                 return await _context.Marcas
+                    .Where(m => !m.IsDeleted)
                     .Include(m => m.Parent)
                     .OrderBy(m => m.Nombre)
                     .ToListAsync();

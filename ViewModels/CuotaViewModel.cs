@@ -62,8 +62,8 @@ namespace TheBuryProject.ViewModels
 
         // Propiedades calculadas
         public string EstadoTexto => Estado.ToString();
-        public bool EstaVencida => Estado == EstadoCuota.Vencida || (Estado == EstadoCuota.Pendiente && FechaVencimiento < DateTime.Now);
-        public int DiasAtraso => EstaVencida ? (DateTime.Now - FechaVencimiento).Days : 0;
+        public bool EstaVencida => Estado == EstadoCuota.Vencida || (Estado == EstadoCuota.Pendiente && FechaVencimiento < DateTime.UtcNow);
+        public int DiasAtraso => EstaVencida ? (DateTime.UtcNow - FechaVencimiento).Days : 0;
         public decimal SaldoPendiente => MontoTotal + MontoPunitorio - MontoPagado;
     }
 }

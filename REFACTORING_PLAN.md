@@ -318,7 +318,13 @@ Cargar todos los precios vigentes en un query y trabajar en memoria.
 1. ✅ Bug de estado de crédito corregido (ClienteController.cs:531)
    - Cambiado: `Estado = Activo` (siempre) → `Estado = AprobarConExcepcion ? Solicitado : Aprobado`
    - Ahora los créditos con excepción quedan en estado "Solicitado" para revisión
-2. ✅ Soft delete implementado en ClienteService (GetAllAsync y SearchAsync)
+2. ✅ Soft delete implementado en TODOS los servicios:
+   - ClienteService (GetAllAsync y SearchAsync)
+   - ChequeService.GetAllAsync
+   - CategoriaService.GetAllAsync
+   - ProveedorService.GetAllAsync
+   - MarcaService.GetAllAsync
+   - ProductoService.GetAllAsync
 3. ✅ NullReference en búsqueda de teléfono corregido
 
 ### Fase 2 - Eliminación de Duplicación ⏸️ POSPUESTA
@@ -331,8 +337,12 @@ Cargar todos los precios vigentes en un query y trabajar en memoria.
 8. ✅ Umbrales configurables desde appsettings.json (PrecioService.cs:607)
 
 ### Fase 4 - Mejoras del Modelo ✅ COMPLETADA
-9. ✅ Campos de motivo separados en PriceChangeBatch (MotivoCancelacion, MotivoReversion)
-10. ✅ DateTime.UtcNow unificado en ClienteController y CambiosPreciosController
+9. ✅ Campos de motivo separados en PriceChangeBatch (MotivoCancelacion, MotivoReversion, CanceladoPor, FechaCancelacion)
+10. ✅ DateTime.UtcNow unificado en TODO el sistema (~100+ ocurrencias):
+   - Controllers: ClienteController, CambiosPreciosController, CreditoController, DevolucionController, ReporteController
+   - Services: DevolucionService, AutorizacionService, CajaService
+   - ViewModels: DevolucionViewModel, CreditoViewModel, CuotaViewModel, DatosChequeViewModel, FacturaViewModel, PagarCuotaViewModel, VentaViewModel
+   - Models: AperturaCaja, Cheque, CierreCaja, Credito, DatosCheque, Devolucion, EvaluacionCredito, Factura, MovimientoCaja, Notificacion, OrdenCompra, Venta, DocumentoCliente
 
 ### Fase 5 - Optimizaciones ⏸️ PENDIENTE
 11. ⏸️ Corregir CantidadProductos (requiere testing)

@@ -22,7 +22,7 @@ namespace TheBuryProject.Models.Entities
 
         [Required]
         [DataType(DataType.Date)]
-        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal Subtotal { get; set; }

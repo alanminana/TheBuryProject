@@ -28,7 +28,7 @@ namespace TheBuryProject.Models.Entities
 
         public EstadoDocumento Estado { get; set; } = EstadoDocumento.Pendiente;
 
-        public DateTime FechaSubida { get; set; } = DateTime.Now;
+        public DateTime FechaSubida { get; set; } = DateTime.UtcNow;
 
         public DateTime? FechaVencimiento { get; set; } // Para docs que expiran (ej: recibo de sueldo)
 

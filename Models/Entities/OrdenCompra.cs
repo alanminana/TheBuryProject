@@ -19,7 +19,7 @@ namespace TheBuryProject.Models.Entities
         /// <summary>
         /// Fecha de emisión de la orden
         /// </summary>
-        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Fecha estimada de entrega

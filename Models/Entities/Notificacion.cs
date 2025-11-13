@@ -37,7 +37,7 @@ namespace TheBuryProject.Models.Entities
 
         public DateTime? FechaLeida { get; set; }
 
-        public DateTime FechaNotificacion { get; set; } = DateTime.Now;
+        public DateTime FechaNotificacion { get; set; } = DateTime.UtcNow;
 
         // Referencia opcional a la entidad origen
         [StringLength(100)]

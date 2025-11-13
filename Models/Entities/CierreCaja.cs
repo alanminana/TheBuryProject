@@ -13,7 +13,7 @@ namespace TheBuryProject.Models.Entities
         public int AperturaCajaId { get; set; }
 
         [Required]
-        public DateTime FechaCierre { get; set; } = DateTime.Now;
+        public DateTime FechaCierre { get; set; } = DateTime.UtcNow;
 
         // Montos calculados del sistema
         [Required]

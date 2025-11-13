@@ -13,7 +13,7 @@ namespace TheBuryProject.Models.Entities
         public int CajaId { get; set; }
 
         [Required]
-        public DateTime FechaApertura { get; set; } = DateTime.Now;
+        public DateTime FechaApertura { get; set; } = DateTime.UtcNow;
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]

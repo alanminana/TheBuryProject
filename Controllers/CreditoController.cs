@@ -84,7 +84,7 @@ namespace TheBuryProject.Controllers
             await CargarViewBags();
             return View(new CreditoViewModel
             {
-                FechaSolicitud = DateTime.Now,
+                FechaSolicitud = DateTime.UtcNow,
                 TasaInteres = 0.05m,
                 CantidadCuotas = 12
             });
@@ -411,7 +411,7 @@ namespace TheBuryProject.Controllers
                 var modelo = new PagarCuotaViewModel
                 {
                     CreditoId = credito.Id,
-                    FechaPago = DateTime.Now
+                    FechaPago = DateTime.UtcNow
                 };
 
                 return View(modelo);

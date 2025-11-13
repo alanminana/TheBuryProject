@@ -43,7 +43,7 @@ namespace TheBuryProject.Models.Entities
         /// <summary>
         /// Fecha de emisión del cheque
         /// </summary>
-        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Fecha de vencimiento/cobro del cheque

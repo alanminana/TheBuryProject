@@ -14,7 +14,7 @@ namespace TheBuryProject.Models.Entities
         public int AperturaCajaId { get; set; }
 
         [Required]
-        public DateTime FechaMovimiento { get; set; } = DateTime.Now;
+        public DateTime FechaMovimiento { get; set; } = DateTime.UtcNow;
 
         [Required]
         public TipoMovimientoCaja Tipo { get; set; }

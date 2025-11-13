@@ -26,7 +26,7 @@ namespace TheBuryProject.Models.Entities
 
         public EstadoCredito Estado { get; set; } = EstadoCredito.Solicitado;
 
-        public DateTime FechaSolicitud { get; set; } = DateTime.Now;
+        public DateTime FechaSolicitud { get; set; } = DateTime.UtcNow;
         public DateTime? FechaAprobacion { get; set; }
         public DateTime? FechaFinalizacion { get; set; }
         public DateTime? FechaPrimeraCuota { get; set; }

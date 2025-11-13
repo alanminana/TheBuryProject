@@ -26,7 +26,7 @@ namespace TheBuryProject.ViewModels
         [Display(Name = "Fecha de Emisión")]
         [Required]
         [DataType(DataType.Date)]
-        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
         [Display(Name = "Subtotal")]
         [DisplayFormat(DataFormatString = "{0:C2}")]

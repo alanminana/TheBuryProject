@@ -159,7 +159,7 @@ namespace TheBuryProject.Services
             var apertura = new AperturaCaja
             {
                 CajaId = model.CajaId,
-                FechaApertura = DateTime.Now,
+                FechaApertura = DateTime.UtcNow,
                 MontoInicial = model.MontoInicial,
                 UsuarioApertura = usuario,
                 ObservacionesApertura = model.ObservacionesApertura,
@@ -240,7 +240,7 @@ namespace TheBuryProject.Services
             var movimiento = new MovimientoCaja
             {
                 AperturaCajaId = model.AperturaCajaId,
-                FechaMovimiento = DateTime.Now,
+                FechaMovimiento = DateTime.UtcNow,
                 Tipo = model.Tipo,
                 Concepto = model.Concepto,
                 Monto = model.Monto,
@@ -332,7 +332,7 @@ namespace TheBuryProject.Services
             var cierre = new CierreCaja
             {
                 AperturaCajaId = model.AperturaCajaId,
-                FechaCierre = DateTime.Now,
+                FechaCierre = DateTime.UtcNow,
                 MontoInicialSistema = apertura.MontoInicial,
                 TotalIngresosSistema = ingresos,
                 TotalEgresosSistema = egresos,

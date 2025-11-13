@@ -19,7 +19,7 @@ public class Devolucion : BaseEntity
     public string NumeroDevolucion { get; set; } = string.Empty;
 
     [Required]
-    public DateTime FechaDevolucion { get; set; } = DateTime.Now;
+    public DateTime FechaDevolucion { get; set; } = DateTime.UtcNow;
 
     [Required]
     public MotivoDevolucion Motivo { get; set; }
@@ -159,7 +159,7 @@ public class RMA : BaseEntity
     public string NumeroRMA { get; set; } = string.Empty;
 
     [Required]
-    public DateTime FechaSolicitud { get; set; } = DateTime.Now;
+    public DateTime FechaSolicitud { get; set; } = DateTime.UtcNow;
 
     [Required]
     public EstadoRMA Estado { get; set; } = EstadoRMA.Pendiente;
@@ -213,7 +213,7 @@ public class NotaCredito : BaseEntity
     public string NumeroNotaCredito { get; set; } = string.Empty;
 
     [Required]
-    public DateTime FechaEmision { get; set; } = DateTime.Now;
+    public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
     [Required]
     public decimal MontoTotal { get; set; }

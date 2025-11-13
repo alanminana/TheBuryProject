@@ -54,7 +54,7 @@ public class DevolucionController : Controller
             TotalAprobadas = todasDevoluciones.Count(d => d.Estado == EstadoDevolucion.Aprobada),
             TotalRechazadas = todasDevoluciones.Count(d => d.Estado == EstadoDevolucion.Rechazada),
             MontoTotalMes = todasDevoluciones
-                .Where(d => d.FechaDevolucion >= DateTime.Now.AddMonths(-1) && d.Estado == EstadoDevolucion.Completada)
+                .Where(d => d.FechaDevolucion >= DateTime.UtcNow.AddMonths(-1) && d.Estado == EstadoDevolucion.Completada)
                 .Sum(d => d.TotalDevolucion)
         };
 
@@ -149,7 +149,7 @@ public class DevolucionController : Controller
                 ClienteId = model.ClienteId,
                 Motivo = model.Motivo,
                 Descripcion = model.Descripcion,
-                FechaDevolucion = DateTime.Now
+                FechaDevolucion = DateTime.UtcNow
             };
 
             // Crear detalles
@@ -300,9 +300,9 @@ public class DevolucionController : Controller
 
         var viewModel = new GarantiasListViewModel
         {
-            Vigentes = todasGarantias.Where(g => g.Estado == EstadoGarantia.Vigente && g.FechaVencimiento >= DateTime.Now).ToList(),
+            Vigentes = todasGarantias.Where(g => g.Estado == EstadoGarantia.Vigente && g.FechaVencimiento >= DateTime.UtcNow).ToList(),
             ProximasVencer = proximasVencer,
-            Vencidas = todasGarantias.Where(g => g.FechaVencimiento < DateTime.Now || g.Estado == EstadoGarantia.Vencida).ToList(),
+            Vencidas = todasGarantias.Where(g => g.FechaVencimiento < DateTime.UtcNow || g.Estado == EstadoGarantia.Vencida).ToList(),
             EnUso = todasGarantias.Where(g => g.Estado == EstadoGarantia.EnUso).ToList(),
             TotalVigentes = todasGarantias.Count(g => g.Estado == EstadoGarantia.Vigente),
             TotalProximasVencer = proximasVencer.Count
@@ -321,8 +321,8 @@ public class DevolucionController : Controller
     [Authorize(Roles = "Admin,Gerente")]
     public async Task<IActionResult> RMAs(DateTime? desde, DateTime? hasta)
     {
-        var fechaDesde = desde ?? DateTime.Now.AddMonths(-1);
-        var fechaHasta = hasta ?? DateTime.Now;
+        var fechaDesde = desde ?? DateTime.UtcNow.AddMonths(-1);
+        var fechaHasta = hasta ?? DateTime.UtcNow;
 
         var viewModel = new EstadisticasDevolucionViewModel
         {
@@ -408,8 +408,8 @@ public class DevolucionController : Controller
     [Authorize(Roles = "Admin,Gerente")]
     public async Task<IActionResult> Estadisticas(DateTime? desde, DateTime? hasta)
     {
-        var fechaDesde = desde ?? DateTime.Now.AddMonths(-1);
-        var fechaHasta = hasta ?? DateTime.Now;
+        var fechaDesde = desde ?? DateTime.UtcNow.AddMonths(-1);
+        var fechaHasta = hasta ?? DateTime.UtcNow;
 
         var viewModel = new EstadisticasDevolucionViewModel
         {

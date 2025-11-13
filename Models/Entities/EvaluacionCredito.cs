@@ -34,7 +34,7 @@ namespace TheBuryProject.Models.Entities
         [StringLength(2000)]
         public string? Observaciones { get; set; }
 
-        public DateTime FechaEvaluacion { get; set; } = DateTime.Now;
+        public DateTime FechaEvaluacion { get; set; } = DateTime.UtcNow;
 
         // Navigation
         public virtual Credito Credito { get; set; } = null!;

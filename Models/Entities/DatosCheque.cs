@@ -26,7 +26,7 @@ namespace TheBuryProject.Models.Entities
         public string? CUIT { get; set; }
 
         [Required]
-        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
         [Required]
         public DateTime FechaVencimiento { get; set; }

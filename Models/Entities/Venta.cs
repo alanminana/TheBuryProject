@@ -13,7 +13,7 @@ namespace TheBuryProject.Models.Entities
         public int ClienteId { get; set; }
 
         [Required]
-        public DateTime FechaVenta { get; set; } = DateTime.Now;
+        public DateTime FechaVenta { get; set; } = DateTime.UtcNow;
 
         [Required]
         public EstadoVenta Estado { get; set; } = EstadoVenta.Cotizacion;

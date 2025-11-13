@@ -72,7 +72,7 @@ public class AutorizacionService : IAutorizacionService
         existente.ValorMaximo = umbral.ValorMaximo;
         existente.Descripcion = umbral.Descripcion;
         existente.Activo = umbral.Activo;
-        existente.UpdatedAt = DateTime.Now;
+        existente.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return existente;
@@ -211,9 +211,9 @@ public class AutorizacionService : IAutorizacionService
 
         solicitud.Estado = EstadoSolicitud.Aprobada;
         solicitud.UsuarioAutorizador = autorizador;
-        solicitud.FechaResolucion = DateTime.Now;
+        solicitud.FechaResolucion = DateTime.UtcNow;
         solicitud.ComentarioResolucion = comentario ?? "Aprobado";
-        solicitud.UpdatedAt = DateTime.Now;
+        solicitud.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return solicitud;
@@ -234,9 +234,9 @@ public class AutorizacionService : IAutorizacionService
 
         solicitud.Estado = EstadoSolicitud.Rechazada;
         solicitud.UsuarioAutorizador = autorizador;
-        solicitud.FechaResolucion = DateTime.Now;
+        solicitud.FechaResolucion = DateTime.UtcNow;
         solicitud.ComentarioResolucion = comentario;
-        solicitud.UpdatedAt = DateTime.Now;
+        solicitud.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return solicitud;
@@ -256,9 +256,9 @@ public class AutorizacionService : IAutorizacionService
         }
 
         solicitud.Estado = EstadoSolicitud.Cancelada;
-        solicitud.FechaResolucion = DateTime.Now;
+        solicitud.FechaResolucion = DateTime.UtcNow;
         solicitud.ComentarioResolucion = "Cancelada por el solicitante";
-        solicitud.UpdatedAt = DateTime.Now;
+        solicitud.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return solicitud;
