@@ -8,7 +8,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public class ProductoController : Controller
     {
         private readonly IProductoService _productoService;

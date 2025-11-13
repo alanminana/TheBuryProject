@@ -6,7 +6,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "Admin,Gerente,Vendedor")]
+    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
     public class CatalogoController : Controller
     {
         private readonly ICategoriaService _categoriaService;

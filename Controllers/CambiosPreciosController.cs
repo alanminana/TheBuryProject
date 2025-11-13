@@ -1,0 +1,603 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Filters;
+using TheBuryProject.Models.Enums;
+using TheBuryProject.Services.Interfaces;
+using TheBuryProject.ViewModels;
+using System.Text.Json;
+
+namespace TheBuryProject.Controllers;
+
+/// <summary>
+/// Controlador para gestión de cambios masivos de precios
+/// Workflow: Simulación → Autorización → Aplicación → Reversión
+/// </summary>
+[Authorize]
+[PermisoRequerido(Modulo = "precios", Accion = "view")]
+public class CambiosPreciosController : Controller
+{
+    private readonly IPrecioService _precioService;
+    private readonly IProductoService _productoService;
+    private readonly ICategoriaService _categoriaService;
+    private readonly IMarcaService _marcaService;
+    private readonly ILogger<CambiosPreciosController> _logger;
+
+    public CambiosPreciosController(
+        IPrecioService precioService,
+        IProductoService productoService,
+        ICategoriaService categoriaService,
+        IMarcaService marcaService,
+        ILogger<CambiosPreciosController> logger)
+    {
+        _precioService = precioService;
+        _productoService = productoService;
+        _categoriaService = categoriaService;
+        _marcaService = marcaService;
+        _logger = logger;
+    }
+
+    // ============================================
+    // INDEX - Listar batches de cambios
+    // ============================================
+
+    /// <summary>
+    /// Lista todos los batches de cambios con filtros
+    /// </summary>
+    public async Task<IActionResult> Index(EstadoBatch? estado = null, int page = 1, int pageSize = 20)
+    {
+        try
+        {
+            var skip = (page - 1) * pageSize;
+            var batches = await _precioService.GetBatchesAsync(
+                estado: estado,
+                fechaDesde: null,
+                fechaHasta: null,
+                skip: skip,
+                take: pageSize);
+
+            var viewModel = new BatchListViewModel
+            {
+                Batches = batches.Select(b => new BatchViewModel
+                {
+                    Id = b.Id,
+                    Nombre = b.Nombre,
+                    TipoCambio = b.TipoCambio,
+                    TipoCambioDisplay = b.TipoCambio.ToString(),
+                    TipoAplicacion = b.TipoAplicacion,
+                    TipoAplicacionDisplay = b.TipoAplicacion.ToString(),
+                    ValorCambio = b.ValorCambio,
+                    Estado = b.Estado,
+                    EstadoDisplay = b.Estado.ToString(),
+                    CantidadProductos = b.CantidadProductos,
+                    PorcentajePromedioCambio = b.PorcentajePromedioCambio,
+                    SolicitadoPor = b.SolicitadoPor,
+                    FechaSolicitud = b.FechaSolicitud,
+                    AprobadoPor = b.AprobadoPor,
+                    FechaAprobacion = b.FechaAprobacion,
+                    AplicadoPor = b.AplicadoPor,
+                    FechaAplicacion = b.FechaAplicacion,
+                    RequiereAutorizacion = b.RequiereAutorizacion
+                }).ToList(),
+                EstadoFiltro = estado,
+                PaginaActual = page,
+                TamanioPagina = pageSize
+            };
+
+            return View(viewModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al listar batches de cambios");
+            TempData["Error"] = "Error al cargar los batches de cambios.";
+            return View(new BatchListViewModel());
+        }
+    }
+
+    // ============================================
+    // SIMULAR - Crear nueva simulación
+    // ============================================
+
+    /// <summary>
+    /// Muestra el formulario para simular un cambio masivo de precios
+    /// </summary>
+    [HttpGet]
+    [PermisoRequerido(Modulo = "precios", Accion = "simulate")]
+    public async Task<IActionResult> Simular()
+    {
+        try
+        {
+            await CargarDatosParaSimulacion();
+
+            var viewModel = new SimularCambioMasivoViewModel
+            {
+                TipoCambio = TipoCambio.PorcentajeSobrePrecioActual,
+                TipoAplicacion = TipoAplicacion.Aumento,
+                ValorCambio = 0,
+                ListasIds = new List<int>()
+            };
+
+            return View(viewModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al cargar formulario de simulación");
+            TempData["Error"] = "Error al cargar el formulario.";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    /// <summary>
+    /// Procesa la simulación de un cambio masivo
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [PermisoRequerido(Modulo = "precios", Accion = "simulate")]
+    public async Task<IActionResult> Simular(SimularCambioMasivoViewModel viewModel)
+    {
+        if (!ModelState.IsValid)
+        {
+            await CargarDatosParaSimulacion();
+            return View(viewModel);
+        }
+
+        try
+        {
+            if (viewModel.ListasIds == null || !viewModel.ListasIds.Any())
+            {
+                ModelState.AddModelError("ListasIds", "Debe seleccionar al menos una lista de precios.");
+                await CargarDatosParaSimulacion();
+                return View(viewModel);
+            }
+
+            var batch = await _precioService.SimularCambioMasivoAsync(
+                nombre: viewModel.Nombre,
+                tipoCambio: viewModel.TipoCambio,
+                tipoAplicacion: viewModel.TipoAplicacion,
+                valorCambio: viewModel.ValorCambio,
+                listasIds: viewModel.ListasIds,
+                categoriaIds: viewModel.CategoriasIds,
+                marcaIds: viewModel.MarcasIds,
+                productoIds: viewModel.ProductosIds);
+
+            TempData["Success"] = $"Simulación '{batch.Nombre}' creada exitosamente. {batch.CantidadProductos} productos afectados.";
+            return RedirectToAction(nameof(Preview), new { id = batch.Id });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al crear simulación");
+            ModelState.AddModelError("", "Error al crear la simulación: " + ex.Message);
+            await CargarDatosParaSimulacion();
+            return View(viewModel);
+        }
+    }
+
+    // ============================================
+    // PREVIEW - Ver resultados de simulación
+    // ============================================
+
+    /// <summary>
+    /// Muestra los resultados de una simulación
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Preview(int id, int page = 1, int pageSize = 50)
+    {
+        try
+        {
+            var batch = await _precioService.GetSimulacionAsync(id);
+            if (batch == null)
+            {
+                TempData["Error"] = "Simulación no encontrada.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var skip = (page - 1) * pageSize;
+            var items = await _precioService.GetItemsSimulacionAsync(id, skip, pageSize);
+
+            // Parsear estadísticas del JSON
+            Dictionary<string, object>? estadisticas = null;
+            if (!string.IsNullOrEmpty(batch.SimulacionJson))
+            {
+                estadisticas = JsonSerializer.Deserialize<Dictionary<string, object>>(batch.SimulacionJson);
+            }
+
+            var viewModel = new SimulacionViewModel
+            {
+                BatchId = batch.Id,
+                Nombre = batch.Nombre,
+                TipoCambio = batch.TipoCambio,
+                TipoAplicacion = batch.TipoAplicacion,
+                ValorCambio = batch.ValorCambio,
+                Estado = batch.Estado,
+                CantidadProductos = batch.CantidadProductos,
+                PorcentajePromedioCambio = batch.PorcentajePromedioCambio,
+                SolicitadoPor = batch.SolicitadoPor,
+                FechaSolicitud = batch.FechaSolicitud,
+                RequiereAutorizacion = batch.RequiereAutorizacion,
+                Items = items.Select(i => new SimulacionItemViewModel
+                {
+                    ProductoCodigo = i.ProductoCodigo,
+                    ProductoNombre = i.ProductoNombre,
+                    ListaId = i.ListaId,
+                    PrecioAnterior = i.PrecioAnterior,
+                    PrecioNuevo = i.PrecioNuevo,
+                    DiferenciaValor = i.DiferenciaValor,
+                    DiferenciaPorcentaje = i.DiferenciaPorcentaje,
+                    Costo = i.Costo,
+                    MargenAnterior = i.MargenAnterior,
+                    MargenNuevo = i.MargenNuevo,
+                    TieneAdvertencia = i.TieneAdvertencia,
+                    MensajeAdvertencia = i.MensajeAdvertencia
+                }).ToList(),
+                PaginaActual = page,
+                TamanioPagina = pageSize,
+                Estadisticas = estadisticas
+            };
+
+            return View(viewModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener preview de simulación {BatchId}", id);
+            TempData["Error"] = "Error al cargar la simulación.";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    // ============================================
+    // AUTORIZAR - Aprobar o rechazar batch
+    // ============================================
+
+    /// <summary>
+    /// Muestra el formulario para autorizar (aprobar/rechazar) un batch
+    /// </summary>
+    [HttpGet]
+    [PermisoRequerido(Modulo = "precios", Accion = "authorize")]
+    public async Task<IActionResult> Autorizar(int id)
+    {
+        try
+        {
+            var batch = await _precioService.GetSimulacionAsync(id);
+            if (batch == null)
+            {
+                TempData["Error"] = "Batch no encontrado.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (batch.Estado != EstadoBatch.Simulado)
+            {
+                TempData["Error"] = "Solo se pueden autorizar batches en estado Simulado.";
+                return RedirectToAction(nameof(Preview), new { id });
+            }
+
+            var viewModel = new AutorizarBatchViewModel
+            {
+                BatchId = batch.Id,
+                Nombre = batch.Nombre,
+                TipoCambio = batch.TipoCambio,
+                ValorCambio = batch.ValorCambio,
+                CantidadProductos = batch.CantidadProductos,
+                PorcentajePromedioCambio = batch.PorcentajePromedioCambio,
+                SolicitadoPor = batch.SolicitadoPor,
+                FechaSolicitud = batch.FechaSolicitud
+            };
+
+            return View(viewModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al cargar formulario de autorización {BatchId}", id);
+            TempData["Error"] = "Error al cargar el formulario de autorización.";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    /// <summary>
+    /// Aprueba un batch de cambios
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [PermisoRequerido(Modulo = "precios", Accion = "authorize")]
+    public async Task<IActionResult> Aprobar(int id, string? notas)
+    {
+        try
+        {
+            var aprobadoPor = User.Identity?.Name ?? "Sistema";
+            var batch = await _precioService.AprobarBatchAsync(id, aprobadoPor, notas);
+
+            TempData["Success"] = $"Batch '{batch.Nombre}' aprobado exitosamente.";
+            return RedirectToAction(nameof(Preview), new { id = batch.Id });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al aprobar batch {BatchId}", id);
+            TempData["Error"] = "Error al aprobar el batch: " + ex.Message;
+            return RedirectToAction(nameof(Autorizar), new { id });
+        }
+    }
+
+    /// <summary>
+    /// Rechaza un batch de cambios
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [PermisoRequerido(Modulo = "precios", Accion = "authorize")]
+    public async Task<IActionResult> Rechazar(int id, string motivo)
+    {
+        if (string.IsNullOrWhiteSpace(motivo))
+        {
+            TempData["Error"] = "Debe especificar un motivo para rechazar.";
+            return RedirectToAction(nameof(Autorizar), new { id });
+        }
+
+        try
+        {
+            var rechazadoPor = User.Identity?.Name ?? "Sistema";
+            var batch = await _precioService.RechazarBatchAsync(id, rechazadoPor, motivo);
+
+            TempData["Success"] = $"Batch '{batch.Nombre}' rechazado.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al rechazar batch {BatchId}", id);
+            TempData["Error"] = "Error al rechazar el batch: " + ex.Message;
+            return RedirectToAction(nameof(Autorizar), new { id });
+        }
+    }
+
+    /// <summary>
+    /// Cancela un batch antes de ser aplicado
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [PermisoRequerido(Modulo = "precios", Accion = "update")]
+    public async Task<IActionResult> Cancelar(int id, string? motivo)
+    {
+        try
+        {
+            var canceladoPor = User.Identity?.Name ?? "Sistema";
+            var batch = await _precioService.CancelarBatchAsync(id, canceladoPor, motivo);
+
+            TempData["Success"] = $"Batch '{batch.Nombre}' cancelado.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al cancelar batch {BatchId}", id);
+            TempData["Error"] = "Error al cancelar el batch: " + ex.Message;
+            return RedirectToAction(nameof(Preview), new { id });
+        }
+    }
+
+    // ============================================
+    // APLICAR - Aplicar batch aprobado
+    // ============================================
+
+    /// <summary>
+    /// Muestra el formulario para aplicar un batch aprobado
+    /// </summary>
+    [HttpGet]
+    [PermisoRequerido(Modulo = "precios", Accion = "apply")]
+    public async Task<IActionResult> Aplicar(int id)
+    {
+        try
+        {
+            var batch = await _precioService.GetSimulacionAsync(id);
+            if (batch == null)
+            {
+                TempData["Error"] = "Batch no encontrado.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (batch.Estado != EstadoBatch.Aprobado)
+            {
+                TempData["Error"] = "Solo se pueden aplicar batches en estado Aprobado.";
+                return RedirectToAction(nameof(Preview), new { id });
+            }
+
+            var viewModel = new AplicarBatchViewModel
+            {
+                BatchId = batch.Id,
+                Nombre = batch.Nombre,
+                CantidadProductos = batch.CantidadProductos,
+                AprobadoPor = batch.AprobadoPor,
+                FechaAprobacion = batch.FechaAprobacion,
+                FechaVigencia = DateTime.Now
+            };
+
+            return View(viewModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al cargar formulario de aplicación {BatchId}", id);
+            TempData["Error"] = "Error al cargar el formulario.";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    /// <summary>
+    /// Procesa la aplicación de un batch aprobado
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [PermisoRequerido(Modulo = "precios", Accion = "apply")]
+    public async Task<IActionResult> AplicarConfirmed(int id, DateTime? fechaVigencia)
+    {
+        try
+        {
+            var aplicadoPor = User.Identity?.Name ?? "Sistema";
+            var batch = await _precioService.AplicarBatchAsync(id, aplicadoPor, fechaVigencia);
+
+            TempData["Success"] = $"Batch '{batch.Nombre}' aplicado exitosamente. {batch.CantidadProductos} precios actualizados.";
+            return RedirectToAction(nameof(Preview), new { id = batch.Id });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al aplicar batch {BatchId}", id);
+            TempData["Error"] = "Error al aplicar el batch: " + ex.Message;
+            return RedirectToAction(nameof(Aplicar), new { id });
+        }
+    }
+
+    // ============================================
+    // REVERTIR - Revertir batch aplicado
+    // ============================================
+
+    /// <summary>
+    /// Muestra el formulario para revertir un batch aplicado
+    /// </summary>
+    [HttpGet]
+    [PermisoRequerido(Modulo = "precios", Accion = "revert")]
+    public async Task<IActionResult> Revertir(int id)
+    {
+        try
+        {
+            var batch = await _precioService.GetSimulacionAsync(id);
+            if (batch == null)
+            {
+                TempData["Error"] = "Batch no encontrado.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (batch.Estado != EstadoBatch.Aplicado)
+            {
+                TempData["Error"] = "Solo se pueden revertir batches en estado Aplicado.";
+                return RedirectToAction(nameof(Preview), new { id });
+            }
+
+            var viewModel = new RevertirBatchViewModel
+            {
+                BatchId = batch.Id,
+                Nombre = batch.Nombre,
+                CantidadProductos = batch.CantidadProductos,
+                AplicadoPor = batch.AplicadoPor,
+                FechaAplicacion = batch.FechaAplicacion,
+                FechaVigencia = batch.FechaVigencia
+            };
+
+            return View(viewModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al cargar formulario de reversión {BatchId}", id);
+            TempData["Error"] = "Error al cargar el formulario.";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    /// <summary>
+    /// Procesa la reversión de un batch aplicado
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [PermisoRequerido(Modulo = "precios", Accion = "revert")]
+    public async Task<IActionResult> RevertirConfirmed(int id, string motivo)
+    {
+        if (string.IsNullOrWhiteSpace(motivo))
+        {
+            TempData["Error"] = "Debe especificar un motivo para revertir.";
+            return RedirectToAction(nameof(Revertir), new { id });
+        }
+
+        try
+        {
+            var revertidoPor = User.Identity?.Name ?? "Sistema";
+            var batch = await _precioService.RevertirBatchAsync(id, revertidoPor, motivo);
+
+            TempData["Success"] = $"Batch '{batch.Nombre}' revertido exitosamente.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al revertir batch {BatchId}", id);
+            TempData["Error"] = "Error al revertir el batch: " + ex.Message;
+            return RedirectToAction(nameof(Revertir), new { id });
+        }
+    }
+
+    // ============================================
+    // HISTORIAL - Ver historial de precios
+    // ============================================
+
+    /// <summary>
+    /// Muestra el historial de precios de un producto
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Historial(int productoId, int? listaId)
+    {
+        try
+        {
+            var producto = await _productoService.GetByIdAsync(productoId);
+            if (producto == null)
+            {
+                TempData["Error"] = "Producto no encontrado.";
+                return RedirectToAction("Index", "Productos");
+            }
+
+            List<Models.Entities.ProductoPrecioLista> historial;
+
+            if (listaId.HasValue)
+            {
+                historial = await _precioService.GetHistorialPreciosAsync(productoId, listaId.Value);
+            }
+            else
+            {
+                historial = await _precioService.GetPreciosProductoAsync(productoId);
+            }
+
+            var viewModel = new HistorialPreciosViewModel
+            {
+                ProductoId = productoId,
+                ProductoCodigo = producto.Codigo,
+                ProductoNombre = producto.Nombre,
+                ListaId = listaId,
+                Precios = historial.Select(p => new PrecioHistorialItemViewModel
+                {
+                    ListaId = p.ListaId,
+                    ListaNombre = p.Lista.Nombre,
+                    VigenciaDesde = p.VigenciaDesde,
+                    VigenciaHasta = p.VigenciaHasta,
+                    Costo = p.Costo,
+                    Precio = p.Precio,
+                    MargenPorcentaje = p.MargenPorcentaje,
+                    EsManual = p.EsManual,
+                    EsVigente = p.EsVigente,
+                    CreadoPor = p.CreadoPor,
+                    Notas = p.Notas
+                }).OrderByDescending(p => p.VigenciaDesde).ToList()
+            };
+
+            // Cargar listas para el filtro
+            var listas = await _precioService.GetAllListasAsync();
+            ViewBag.Listas = new SelectList(listas, "Id", "Nombre", listaId);
+
+            return View(viewModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener historial de precios para producto {ProductoId}", productoId);
+            TempData["Error"] = "Error al cargar el historial de precios.";
+            return RedirectToAction("Index", "Productos");
+        }
+    }
+
+    // ============================================
+    // MÉTODOS AUXILIARES
+    // ============================================
+
+    /// <summary>
+    /// Carga datos necesarios para el formulario de simulación
+    /// </summary>
+    private async Task CargarDatosParaSimulacion()
+    {
+        var listas = await _precioService.GetAllListasAsync();
+        ViewBag.Listas = new SelectList(listas, "Id", "Nombre");
+
+        var categorias = await _categoriaService.GetAllAsync();
+        ViewBag.Categorias = new SelectList(categorias, "Id", "Nombre");
+
+        var marcas = await _marcaService.GetAllAsync();
+        ViewBag.Marcas = new SelectList(marcas, "Id", "Nombre");
+    }
+}

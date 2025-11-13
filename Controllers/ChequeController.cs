@@ -9,7 +9,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "Admin,Contador")]
+    [Authorize(Roles = "SuperAdmin,Contador")]
     public class ChequeController : Controller
     {
         private readonly IChequeService _chequeService;

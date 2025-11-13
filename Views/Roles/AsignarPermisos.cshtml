@@ -1,0 +1,168 @@
+﻿@model AsignarPermisosViewModel
+
+@{
+    ViewData["Title"] = "Asignar Permisos";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Roles</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.RoleId">@Model.RoleName</a></li>
+                    <li class="breadcrumb-item active">Asignar Permisos</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-key me-2"></i>Asignar Permisos: @Model.RoleName</h2>
+                <a asp-action="Details" asp-route-id="@Model.RoleId" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Instrucciones:</strong> Selecciona o deselecciona los permisos para este rol. Los cambios se guardan automáticamente.
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Modulos.Any())
+    {
+        @* Agrupar por categoría *@
+        var categorias = Model.Modulos.GroupBy(m => m.Categoria).OrderBy(g => g.Key);
+
+        @foreach (var categoria in categorias)
+        {
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h4 class="border-bottom pb-2">
+                        <i class="bi bi-folder me-2"></i>@categoria.Key
+                    </h4>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                @foreach (var modulo in categoria.OrderBy(m => m.ModuloNombre))
+                {
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="@modulo.Icono me-1"></i>
+                                        @modulo.ModuloNombre
+                                    </h6>
+                                    <small class="text-muted">@modulo.ModuloClave</small>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                @if (modulo.Acciones.Any())
+                                {
+                                    @foreach (var accion in modulo.Acciones.OrderBy(a => a.AccionNombre))
+                                    {
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input permiso-checkbox"
+                                                   type="checkbox"
+                                                   id="permiso_@(modulo.ModuloId)_@(accion.AccionId)"
+                                                   data-role-id="@Model.RoleId"
+                                                   data-modulo-id="@modulo.ModuloId"
+                                                   data-accion-id="@accion.AccionId"
+                                                   @(accion.Seleccionada ? "checked" : "") />
+                                            <label class="form-check-label" for="permiso_@(modulo.ModuloId)_@(accion.AccionId)">
+                                                @accion.AccionNombre
+                                                <small class="text-muted">(@accion.AccionClave)</small>
+                                            </label>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-muted mb-0"><small>Sin acciones disponibles</small></p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    No hay módulos disponibles en el sistema.
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Handle checkbox changes
+            $('.permiso-checkbox').on('change', function () {
+                const checkbox = $(this);
+                const roleId = checkbox.data('role-id');
+                const moduloId = checkbox.data('modulo-id');
+                const accionId = checkbox.data('accion-id');
+                const asignar = checkbox.is(':checked');
+
+                // Disable checkbox while processing
+                checkbox.prop('disabled', true);
+
+                // Send AJAX request
+                $.ajax({
+                    url: '@Url.Action("TogglePermiso", "Roles")',
+                    type: 'POST',
+                    data: {
+                        roleId: roleId,
+                        moduloId: moduloId,
+                        accionId: accionId,
+                        asignar: asignar,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            // Show success feedback
+                            const label = checkbox.next('label');
+                            label.addClass('text-success');
+                            setTimeout(function () {
+                                label.removeClass('text-success');
+                            }, 1000);
+                        } else {
+                            // Revert checkbox on error
+                            checkbox.prop('checked', !asignar);
+                            alert('Error: ' + (response.message || 'No se pudo actualizar el permiso'));
+                        }
+                    },
+                    error: function () {
+                        // Revert checkbox on error
+                        checkbox.prop('checked', !asignar);
+                        alert('Error de conexión. Por favor, intente nuevamente.');
+                    },
+                    complete: function () {
+                        // Re-enable checkbox
+                        checkbox.prop('disabled', false);
+                    }
+                });
+            });
+        });
+    </script>
+
+    @* Anti-forgery token for AJAX requests *@
+    @Html.AntiForgeryToken()
+}

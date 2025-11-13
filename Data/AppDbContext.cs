@@ -88,6 +88,12 @@ namespace TheBuryProject.Data
         public DbSet<ModuloSistema> ModulosSistema { get; set; }
         public DbSet<AccionModulo> AccionesModulo { get; set; }
 
+        // Módulo de Precios con Historial
+        public DbSet<ListaPrecio> ListasPrecios { get; set; }
+        public DbSet<ProductoPrecioLista> ProductosPrecios { get; set; }
+        public DbSet<PriceChangeBatch> PriceChangeBatches { get; set; }
+        public DbSet<PriceChangeItem> PriceChangeItems { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -722,6 +728,238 @@ namespace TheBuryProject.Data
                 entity.HasIndex(e => e.Prioridad);
             });
 
+            // =======================
+            // Configuración para ListaPrecio
+            // =======================
+            modelBuilder.Entity<ListaPrecio>(entity =>
+            {
+                entity.ToTable("ListasPrecios");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Nombre)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.Codigo)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.Descripcion)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.MargenPorcentaje)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.RecargoPorcentaje)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.ReglasJson)
+                    .HasColumnType("nvarchar(max)");
+
+                entity.HasIndex(e => e.Codigo)
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0");
+
+                entity.HasIndex(e => e.Activa);
+                entity.HasIndex(e => e.EsPredeterminada);
+                entity.HasIndex(e => e.Orden);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // Configuración para ProductoPrecioLista
+            // =======================
+            modelBuilder.Entity<ProductoPrecioLista>(entity =>
+            {
+                entity.ToTable("ProductosPrecios");
+                entity.HasKey(e => e.Id);
+
+                // Índice compuesto único para la clave de negocio
+                entity.HasIndex(e => new { e.ProductoId, e.ListaId, e.VigenciaDesde })
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0");
+
+                entity.Property(e => e.Costo)
+                    .IsRequired()
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Precio)
+                    .IsRequired()
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.MargenPorcentaje)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.MargenValor)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.CreadoPor)
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Notas)
+                    .HasMaxLength(500);
+
+                // Índices para consultas comunes
+                entity.HasIndex(e => new { e.ProductoId, e.ListaId, e.EsVigente });
+                entity.HasIndex(e => e.VigenciaDesde);
+                entity.HasIndex(e => e.VigenciaHasta);
+                entity.HasIndex(e => e.BatchId);
+
+                // Relaciones
+                entity.HasOne(e => e.Producto)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Lista)
+                    .WithMany(l => l.Precios)
+                    .HasForeignKey(e => e.ListaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Batch)
+                    .WithMany()
+                    .HasForeignKey(e => e.BatchId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // Configuración para PriceChangeBatch
+            // =======================
+            modelBuilder.Entity<PriceChangeBatch>(entity =>
+            {
+                entity.ToTable("PriceChangeBatches");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Nombre)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.ValorCambio)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.AlcanceJson)
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
+
+                entity.Property(e => e.ListasAfectadasJson)
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
+
+                entity.Property(e => e.SimulacionJson)
+                    .HasColumnType("nvarchar(max)");
+
+                entity.Property(e => e.SolicitadoPor)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.AprobadoPor)
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.AplicadoPor)
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.RevertidoPor)
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.MotivoRechazo)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.Notas)
+                    .HasMaxLength(1000);
+
+                entity.Property(e => e.PorcentajePromedioCambio)
+                    .HasPrecision(5, 2);
+
+                // Índices
+                entity.HasIndex(e => e.Estado);
+                entity.HasIndex(e => e.TipoCambio);
+                entity.HasIndex(e => e.FechaSolicitud);
+                entity.HasIndex(e => e.FechaAplicacion);
+                entity.HasIndex(e => e.SolicitadoPor);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // Configuración para PriceChangeItem
+            // =======================
+            modelBuilder.Entity<PriceChangeItem>(entity =>
+            {
+                entity.ToTable("PriceChangeItems");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.ProductoCodigo)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.ProductoNombre)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.PrecioAnterior)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.PrecioNuevo)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.DiferenciaValor)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.DiferenciaPorcentaje)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.Costo)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.MargenAnterior)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.MargenNuevo)
+                    .HasPrecision(5, 2);
+
+                entity.Property(e => e.MensajeAdvertencia)
+                    .HasMaxLength(500);
+
+                // Índices
+                entity.HasIndex(e => e.BatchId);
+                entity.HasIndex(e => e.ProductoId);
+                entity.HasIndex(e => e.ListaId);
+                entity.HasIndex(e => e.TieneAdvertencia);
+
+                // Relaciones
+                entity.HasOne(e => e.Batch)
+                    .WithMany(b => b.Items)
+                    .HasForeignKey(e => e.BatchId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Producto)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Lista)
+                    .WithMany()
+                    .HasForeignKey(e => e.ListaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
             // Seed de datos inicial
             SeedData(modelBuilder);
         }
@@ -1280,16 +1518,18 @@ namespace TheBuryProject.Data
                 entity.ToTable("UmbralesAutorizacion");
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.MontoMinimo)
+                entity.Property(e => e.Rol)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.ValorMaximo)
                     .HasPrecision(18, 2);
 
-                entity.Property(e => e.MontoMaximo)
-                    .HasPrecision(18, 2);
+                entity.Property(e => e.Descripcion)
+                    .HasMaxLength(500);
 
-                entity.Property(e => e.PorcentajeDescuentoMaximo)
-                    .HasPrecision(5, 2);
-
-                entity.HasIndex(e => e.Tipo);
+                entity.HasIndex(e => e.TipoUmbral);
+                entity.HasIndex(e => e.Rol);
                 entity.HasIndex(e => e.Activo);
 
                 entity.Property(e => e.RowVersion)
@@ -1306,14 +1546,39 @@ namespace TheBuryProject.Data
                 entity.ToTable("SolicitudesAutorizacion");
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.Monto)
+                entity.Property(e => e.UsuarioSolicitante)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.RolSolicitante)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.ValorSolicitado)
                     .HasPrecision(18, 2);
 
-                entity.HasIndex(e => e.Tipo);
+                entity.Property(e => e.ValorPermitido)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.TipoOperacion)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Justificacion)
+                    .IsRequired()
+                    .HasMaxLength(1000);
+
+                entity.Property(e => e.UsuarioAutorizador)
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.ComentarioResolucion)
+                    .HasMaxLength(500);
+
+                entity.HasIndex(e => e.TipoUmbral);
                 entity.HasIndex(e => e.Estado);
-                entity.HasIndex(e => e.FechaSolicitud);
-                entity.HasIndex(e => e.SolicitadoPor);
-                entity.HasIndex(e => e.AprobadoPor);
+                entity.HasIndex(e => e.UsuarioSolicitante);
+                entity.HasIndex(e => e.UsuarioAutorizador);
+                entity.HasIndex(e => e.FechaResolucion);
 
                 entity.Property(e => e.RowVersion)
                     .IsRowVersion();

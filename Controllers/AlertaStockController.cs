@@ -6,7 +6,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public class AlertaStockController : Controller
     {
         private readonly IAlertaStockService _alertaStockService;

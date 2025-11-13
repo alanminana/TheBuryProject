@@ -4,7 +4,7 @@ using TheBuryProject.Services.Interfaces;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "Admin,Gerente,Contador")]
+    [Authorize(Roles = "SuperAdmin,Administrador,Gerente,Contador")]
     public class DashboardController : Controller
     {
         private readonly IDashboardService _dashboardService;

@@ -1,0 +1,69 @@
+﻿@model EliminarAccionViewModel
+
+@{
+    ViewData["Title"] = "Eliminar Acción";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Acciones</a></li>
+                    <li class="breadcrumb-item active">Eliminar</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="bi bi-trash me-2"></i>Confirmar Eliminación</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>¿Está seguro que desea eliminar esta acción?</strong>
+                    </div>
+
+                    <dl class="row">
+                        <dt class="col-sm-3">Módulo:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-info">@Model.ModuloNombre</span>
+                        </dd>
+
+                        <dt class="col-sm-3">Acción:</dt>
+                        <dd class="col-sm-9"><strong>@Model.Nombre</strong></dd>
+
+                        <dt class="col-sm-3">Clave:</dt>
+                        <dd class="col-sm-9"><code>@Model.Clave</code></dd>
+                    </dl>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Advertencia:</strong> Al eliminar esta acción, se removerán todos los permisos basados en ella de todos los roles.
+                    </div>
+
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle me-2"></i>
+                        <strong>ATENCIÓN:</strong> Esta acción no se puede deshacer.
+                    </div>
+
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i>Eliminar Acción
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

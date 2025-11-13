@@ -1,0 +1,138 @@
+﻿@model TheBuryProject.ViewModels.HistorialPreciosViewModel
+
+@{
+    ViewData["Title"] = "Historial de Precios - " + Model.ProductoNombre;
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-sm mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4><i class="bi bi-clock-history"></i> Historial de Precios</h4>
+            <a asp-controller="Productos" asp-action="Details" asp-route-id="@Model.ProductoId" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Volver al Producto
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h5>@Model.ProductoNombre</h5>
+                    <p class="text-muted">Código: <code>@Model.ProductoCodigo</code></p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <form asp-action="Historial" method="get" class="row g-2">
+                        <input type="hidden" name="productoId" value="@Model.ProductoId" />
+                        <div class="col-auto">
+                            <label class="col-form-label">Filtrar por lista:</label>
+                        </div>
+                        <div class="col-auto">
+                            <select name="listaId" class="form-select" onchange="this.form.submit()">
+                                <option value="">Todas las listas</option>
+                                @foreach (var lista in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.Listas)
+                                {
+                                    <option value="@lista.Value" selected="@lista.Selected">@lista.Text</option>
+                                }
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <i class="bi bi-list-ul"></i> Historial (@Model.Precios.Count registros)
+        </div>
+        <div class="card-body">
+            @if (Model.Precios.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Lista</th>
+                                <th>Vigencia Desde</th>
+                                <th>Vigencia Hasta</th>
+                                <th class="text-end">Costo</th>
+                                <th class="text-end">Precio</th>
+                                <th class="text-center">Margen %</th>
+                                <th class="text-center">Tipo</th>
+                                <th class="text-center">Estado</th>
+                                <th>Creado Por</th>
+                                <th>Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var precio in Model.Precios)
+                            {
+                                <tr class="@(precio.EsVigente ? "table-success" : "")">
+                                    <td>@precio.ListaNombre</td>
+                                    <td>@precio.VigenciaDesde.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        @if (precio.VigenciaHasta.HasValue)
+                                        {
+                                            <span>@precio.VigenciaHasta.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">$@precio.Costo.ToString("N2")</td>
+                                    <td class="text-end"><strong>$@precio.Precio.ToString("N2")</strong></td>
+                                    <td class="text-center">@precio.MargenPorcentaje.ToString("N2")%</td>
+                                    <td class="text-center">
+                                        @if (precio.EsManual)
+                                        {
+                                            <span class="badge bg-warning text-dark">Manual</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-info">Automático</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (precio.EsVigente)
+                                        {
+                                            <span class="badge bg-success">Vigente</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Histórico</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(precio.CreadoPor))
+                                        {
+                                            <small>@precio.CreadoPor</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(precio.Notas))
+                                        {
+                                            <small title="@precio.Notas">@precio.Notas.Substring(0, Math.Min(30, precio.Notas.Length))...</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle"></i> No hay historial de precios para este producto.
+                </div>
+            }
+        </div>
+    </div>
+</div>

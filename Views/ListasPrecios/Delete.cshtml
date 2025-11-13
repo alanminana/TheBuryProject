@@ -1,0 +1,86 @@
+﻿@model TheBuryProject.ViewModels.ListaPrecioViewModel
+
+@{
+    ViewData["Title"] = "Eliminar Lista de Precios";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4><i class="bi bi-exclamation-triangle"></i> Eliminar Lista de Precios</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>¿Está seguro que desea eliminar esta lista de precios?</strong>
+                        <p class="mb-0 mt-2">Esta acción marcará la lista como eliminada (soft delete) y no podrá ser utilizada.</p>
+                    </div>
+
+                    <dl class="row">
+                        <dt class="col-sm-3">Código:</dt>
+                        <dd class="col-sm-9">
+                            <strong>@Model.Codigo</strong>
+                            @if (Model.EsPredeterminada)
+                            {
+                                <span class="badge bg-warning text-dark ms-1">
+                                    <i class="bi bi-star-fill"></i> Predeterminada
+                                </span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-3">Nombre:</dt>
+                        <dd class="col-sm-9">@Model.Nombre</dd>
+
+                        <dt class="col-sm-3">Tipo:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-info">@Model.TipoDisplay</span>
+                        </dd>
+
+                        <dt class="col-sm-3">Estado:</dt>
+                        <dd class="col-sm-9">
+                            @if (Model.Activa)
+                            {
+                                <span class="badge bg-success">Activa</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactiva</span>
+                            }
+                        </dd>
+
+                        @if (!string.IsNullOrEmpty(Model.Descripcion))
+                        {
+                            <dt class="col-sm-3">Descripción:</dt>
+                            <dd class="col-sm-9">@Model.Descripcion</dd>
+                        }
+                    </dl>
+
+                    @if (Model.EsPredeterminada)
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-x-circle-fill"></i>
+                            <strong>ADVERTENCIA:</strong> Esta es la lista predeterminada del sistema.
+                            Asegúrese de establecer otra lista como predeterminada antes de eliminar esta.
+                        </div>
+                    }
+
+                    <hr>
+
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Confirmar Eliminación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

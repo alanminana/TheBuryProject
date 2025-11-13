@@ -1,0 +1,104 @@
+﻿@model AccionDetalleViewModel
+
+@{
+    ViewData["Title"] = "Detalles de la Acción";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Acciones</a></li>
+                    <li class="breadcrumb-item active">Detalles</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="bi bi-lightning me-2"></i>@Model.Nombre
+                    @if (Model.Activo)
+                    {
+                        <span class="badge bg-success">Activo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Inactivo</span>
+                    }
+                </h2>
+                <div>
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </a>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información de la Acción</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Módulo:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-info">@Model.ModuloNombre</span>
+                            <br />
+                            <small class="text-muted">Clave: <code>@Model.ModuloClave</code></small>
+                        </dd>
+
+                        <dt class="col-sm-4">Nombre:</dt>
+                        <dd class="col-sm-8"><strong>@Model.Nombre</strong></dd>
+
+                        <dt class="col-sm-4">Clave:</dt>
+                        <dd class="col-sm-8"><code>@Model.Clave</code></dd>
+
+                        <dt class="col-sm-4">Claim generado:</dt>
+                        <dd class="col-sm-8">
+                            <code>@Model.ModuloClave.@Model.Clave</code>
+                            <br />
+                            <small class="text-muted">Este es el permiso que se asigna a los roles</small>
+                        </dd>
+
+                        @if (!string.IsNullOrEmpty(Model.Descripcion))
+                        {
+                            <dt class="col-sm-4">Descripción:</dt>
+                            <dd class="col-sm-8">@Model.Descripcion</dd>
+                        }
+
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Activo)
+                            {
+                                <span class="badge bg-success">Activo</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactivo</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Creado:</dt>
+                        <dd class="col-sm-8">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                    </dl>
+
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Nota:</strong> Esta acción se puede asignar a roles desde la interfaz de
+                        <a asp-controller="Roles" asp-action="Index" class="alert-link">Gestión de Roles</a>.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

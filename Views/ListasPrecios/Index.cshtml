@@ -1,0 +1,155 @@
+﻿@model List<TheBuryProject.ViewModels.ListaPrecioViewModel>
+
+@{
+    ViewData["Title"] = "Listas de Precios";
+    var incluirInactivas = ViewBag.IncluirInactivas ?? false;
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-tags"></i> Listas de Precios</h2>
+        @if (User.HasClaim("Permission", "precios:create"))
+        {
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nueva Lista
+            </a>
+        }
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list"></i> Listado de Listas de Precios</span>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="incluirInactivas"
+                       @(incluirInactivas ? "checked" : "")
+                       onchange="window.location.href='@Url.Action("Index")?incluirInactivas=' + this.checked">
+                <label class="form-check-label" for="incluirInactivas">Incluir inactivas</label>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th class="text-center">Margen %</th>
+                                <th class="text-center">Recargo %</th>
+                                <th class="text-center">Cuotas</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var lista in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@lista.Codigo</strong>
+                                        @if (lista.EsPredeterminada)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-1" title="Lista Predeterminada">
+                                                <i class="bi bi-star-fill"></i>
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>@lista.Nombre</td>
+                                    <td>
+                                        <span class="badge bg-info">@lista.TipoDisplay</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (lista.MargenPorcentaje.HasValue)
+                                        {
+                                            <span>@lista.MargenPorcentaje.Value.ToString("N2")%</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (lista.RecargoPorcentaje.HasValue && lista.RecargoPorcentaje.Value > 0)
+                                        {
+                                            <span>@lista.RecargoPorcentaje.Value.ToString("N2")%</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (lista.CantidadCuotas.HasValue && lista.CantidadCuotas > 1)
+                                        {
+                                            <span>@lista.CantidadCuotas</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (lista.Activa)
+                                        {
+                                            <span class="badge bg-success">Activa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Inactiva</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="Details" asp-route-id="@lista.Id"
+                                               class="btn btn-outline-info" title="Ver Detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            @if (User.HasClaim("Permission", "precios:update"))
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@lista.Id"
+                                                   class="btn btn-outline-warning" title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            }
+                                            @if (User.HasClaim("Permission", "precios:delete") && !lista.EsPredeterminada)
+                                            {
+                                                <a asp-action="Delete" asp-route-id="@lista.Id"
+                                                   class="btn btn-outline-danger" title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle"></i> No hay listas de precios registradas.
+                </div>
+            }
+        </div>
+    </div>
+</div>

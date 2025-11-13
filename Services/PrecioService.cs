@@ -1,0 +1,883 @@
+﻿using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using TheBuryProject.Data;
+using TheBuryProject.Models.Entities;
+using TheBuryProject.Models.Enums;
+using TheBuryProject.Services.Interfaces;
+
+namespace TheBuryProject.Services;
+
+/// <summary>
+/// Implementación del servicio de gestión de precios con historial
+/// </summary>
+public class PrecioService : IPrecioService
+{
+    private readonly AppDbContext _context;
+    private readonly ILogger<PrecioService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public PrecioService(
+        AppDbContext context,
+        ILogger<PrecioService> logger,
+        IHttpContextAccessor httpContextAccessor)
+    {
+        _context = context;
+        _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    private string GetCurrentUser() =>
+        _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+
+    #region Gestión de Listas de Precios
+
+    public async Task<List<ListaPrecio>> GetAllListasAsync(bool soloActivas = true)
+    {
+        var query = _context.ListasPrecios.AsQueryable();
+
+        if (soloActivas)
+            query = query.Where(l => l.Activa);
+
+        return await query
+            .OrderBy(l => l.Orden)
+            .ThenBy(l => l.Nombre)
+            .ToListAsync();
+    }
+
+    public async Task<ListaPrecio?> GetListaByIdAsync(int id)
+    {
+        return await _context.ListasPrecios
+            .Include(l => l.Precios)
+            .FirstOrDefaultAsync(l => l.Id == id);
+    }
+
+    public async Task<ListaPrecio?> GetListaPredeterminadaAsync()
+    {
+        return await _context.ListasPrecios
+            .FirstOrDefaultAsync(l => l.EsPredeterminada && l.Activa);
+    }
+
+    public async Task<ListaPrecio> CreateListaAsync(ListaPrecio lista)
+    {
+        // Si es predeterminada, quitar flag de otras
+        if (lista.EsPredeterminada)
+        {
+            var otras = await _context.ListasPrecios
+                .Where(l => l.EsPredeterminada)
+                .ToListAsync();
+
+            foreach (var otra in otras)
+                otra.EsPredeterminada = false;
+        }
+
+        _context.ListasPrecios.Add(lista);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Lista de precios creada: {Nombre} por {User}",
+            lista.Nombre, GetCurrentUser());
+
+        return lista;
+    }
+
+    public async Task<ListaPrecio> UpdateListaAsync(ListaPrecio lista)
+    {
+        var existing = await _context.ListasPrecios.FindAsync(lista.Id);
+        if (existing == null)
+            throw new InvalidOperationException($"Lista de precios {lista.Id} no encontrada");
+
+        // Si se marca como predeterminada, quitar flag de otras
+        if (lista.EsPredeterminada && !existing.EsPredeterminada)
+        {
+            var otras = await _context.ListasPrecios
+                .Where(l => l.EsPredeterminada && l.Id != lista.Id)
+                .ToListAsync();
+
+            foreach (var otra in otras)
+                otra.EsPredeterminada = false;
+        }
+
+        existing.Nombre = lista.Nombre;
+        existing.Codigo = lista.Codigo;
+        existing.Tipo = lista.Tipo;
+        existing.Descripcion = lista.Descripcion;
+        existing.MargenPorcentaje = lista.MargenPorcentaje;
+        existing.RecargoPorcentaje = lista.RecargoPorcentaje;
+        existing.CantidadCuotas = lista.CantidadCuotas;
+        existing.Activa = lista.Activa;
+        existing.EsPredeterminada = lista.EsPredeterminada;
+        existing.Orden = lista.Orden;
+        existing.ReglasJson = lista.ReglasJson;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Lista de precios actualizada: {Id} por {User}",
+            lista.Id, GetCurrentUser());
+
+        return existing;
+    }
+
+    public async Task<bool> DeleteListaAsync(int id)
+    {
+        var lista = await _context.ListasPrecios.FindAsync(id);
+        if (lista == null)
+            return false;
+
+        // Verificar si tiene precios asociados
+        var tienePrecios = await _context.ProductosPrecios
+            .AnyAsync(p => p.ListaId == id);
+
+        if (tienePrecios)
+        {
+            // Soft delete
+            lista.IsDeleted = true;
+            lista.Activa = false;
+        }
+        else
+        {
+            _context.ListasPrecios.Remove(lista);
+        }
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Lista de precios eliminada: {Id} por {User}",
+            id, GetCurrentUser());
+
+        return true;
+    }
+
+    #endregion
+
+    #region Consulta de Precios Vigentes
+
+    public async Task<ProductoPrecioLista?> GetPrecioVigenteAsync(
+        int productoId,
+        int listaId,
+        DateTime? fecha = null)
+    {
+        fecha ??= DateTime.UtcNow;
+
+        return await _context.ProductosPrecios
+            .Include(p => p.Producto)
+            .Include(p => p.Lista)
+            .Where(p => p.ProductoId == productoId
+                     && p.ListaId == listaId
+                     && p.VigenciaDesde <= fecha
+                     && (p.VigenciaHasta == null || p.VigenciaHasta >= fecha)
+                     && p.EsVigente)
+            .OrderByDescending(p => p.VigenciaDesde)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<List<ProductoPrecioLista>> GetPreciosProductoAsync(
+        int productoId,
+        DateTime? fecha = null)
+    {
+        fecha ??= DateTime.UtcNow;
+
+        return await _context.ProductosPrecios
+            .Include(p => p.Lista)
+            .Where(p => p.ProductoId == productoId
+                     && p.VigenciaDesde <= fecha
+                     && (p.VigenciaHasta == null || p.VigenciaHasta >= fecha)
+                     && p.EsVigente)
+            .OrderBy(p => p.Lista.Orden)
+            .ToListAsync();
+    }
+
+    public async Task<List<ProductoPrecioLista>> GetHistorialPreciosAsync(
+        int productoId,
+        int listaId)
+    {
+        return await _context.ProductosPrecios
+            .Include(p => p.Lista)
+            .Include(p => p.Batch)
+            .Where(p => p.ProductoId == productoId && p.ListaId == listaId)
+            .OrderByDescending(p => p.VigenciaDesde)
+            .ToListAsync();
+    }
+
+    #endregion
+
+    #region Gestión de Precios Individuales
+
+    public async Task<ProductoPrecioLista> SetPrecioManualAsync(
+        int productoId,
+        int listaId,
+        decimal precio,
+        decimal costo,
+        DateTime? vigenciaDesde = null,
+        string? notas = null)
+    {
+        vigenciaDesde ??= DateTime.UtcNow;
+
+        // Marcar como no vigente el precio anterior
+        var preciosAnteriores = await _context.ProductosPrecios
+            .Where(p => p.ProductoId == productoId
+                     && p.ListaId == listaId
+                     && p.EsVigente)
+            .ToListAsync();
+
+        foreach (var anterior in preciosAnteriores)
+        {
+            anterior.EsVigente = false;
+            anterior.VigenciaHasta = vigenciaDesde.Value.AddSeconds(-1);
+        }
+
+        // Crear nuevo precio
+        var margenValor = precio - costo;
+        var margenPorcentaje = costo > 0 ? (margenValor / costo) * 100 : 0;
+
+        var nuevoPrecio = new ProductoPrecioLista
+        {
+            ProductoId = productoId,
+            ListaId = listaId,
+            VigenciaDesde = vigenciaDesde.Value,
+            Costo = costo,
+            Precio = precio,
+            MargenValor = margenValor,
+            MargenPorcentaje = margenPorcentaje,
+            EsManual = true,
+            EsVigente = true,
+            CreadoPor = GetCurrentUser(),
+            Notas = notas
+        };
+
+        _context.ProductosPrecios.Add(nuevoPrecio);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Precio manual establecido: Producto {ProductoId}, Lista {ListaId}, Precio {Precio} por {User}",
+            productoId, listaId, precio, GetCurrentUser());
+
+        return nuevoPrecio;
+    }
+
+    public async Task<decimal> CalcularPrecioAutomaticoAsync(
+        int productoId,
+        int listaId,
+        decimal costo)
+    {
+        var lista = await _context.ListasPrecios.FindAsync(listaId);
+        if (lista == null)
+            throw new InvalidOperationException($"Lista {listaId} no encontrada");
+
+        decimal precio = costo;
+
+        // Aplicar margen si está configurado
+        if (lista.MargenPorcentaje.HasValue && lista.MargenPorcentaje.Value > 0)
+        {
+            precio = costo * (1 + lista.MargenPorcentaje.Value / 100);
+        }
+
+        // Aplicar recargo si está configurado
+        if (lista.RecargoPorcentaje.HasValue && lista.RecargoPorcentaje.Value > 0)
+        {
+            precio = precio * (1 + lista.RecargoPorcentaje.Value / 100);
+        }
+
+        // Aplicar redondeo
+        precio = AplicarRedondeo(precio, lista.ReglasJson);
+
+        return precio;
+    }
+
+    #endregion
+
+    #region Cambios Masivos - Simulación
+
+    public async Task<PriceChangeBatch> SimularCambioMasivoAsync(
+        string nombre,
+        TipoCambio tipoCambio,
+        TipoAplicacion tipoAplicacion,
+        decimal valorCambio,
+        List<int> listasIds,
+        List<int>? categoriaIds = null,
+        List<int>? marcaIds = null,
+        List<int>? productoIds = null)
+    {
+        var currentUser = GetCurrentUser();
+
+        // Obtener productos afectados
+        var query = _context.Productos.AsQueryable();
+
+        if (productoIds != null && productoIds.Any())
+        {
+            query = query.Where(p => productoIds.Contains(p.Id));
+        }
+        else
+        {
+            if (categoriaIds != null && categoriaIds.Any())
+                query = query.Where(p => categoriaIds.Contains(p.CategoriaId));
+
+            if (marcaIds != null && marcaIds.Any())
+                query = query.Where(p => marcaIds.Contains(p.MarcaId));
+        }
+
+        var productos = await query.ToListAsync();
+
+        // Crear batch
+        var batch = new PriceChangeBatch
+        {
+            Nombre = nombre,
+            TipoCambio = tipoCambio,
+            TipoAplicacion = tipoAplicacion,
+            ValorCambio = valorCambio,
+            AlcanceJson = JsonSerializer.Serialize(new
+            {
+                categorias = categoriaIds,
+                marcas = marcaIds,
+                productos = productoIds
+            }),
+            ListasAfectadasJson = JsonSerializer.Serialize(listasIds),
+            Estado = EstadoBatch.Simulado,
+            SolicitadoPor = currentUser,
+            FechaSolicitud = DateTime.UtcNow,
+            CantidadProductos = productos.Count * listasIds.Count
+        };
+
+        _context.PriceChangeBatches.Add(batch);
+        await _context.SaveChangesAsync();
+
+        // Crear items de simulación
+        var items = new List<PriceChangeItem>();
+        decimal sumatoriaCambios = 0;
+        int countCambios = 0;
+
+        foreach (var producto in productos)
+        {
+            foreach (var listaId in listasIds)
+            {
+                var precioActual = await GetPrecioVigenteAsync(producto.Id, listaId);
+                if (precioActual == null)
+                {
+                    _logger.LogWarning(
+                        "Producto {ProductoId} no tiene precio en lista {ListaId}",
+                        producto.Id, listaId);
+                    continue;
+                }
+
+                // Calcular nuevo precio
+                decimal precioNuevo = CalcularNuevoPrecio(
+                    precioActual.Precio,
+                    precioActual.Costo,
+                    tipoCambio,
+                    tipoAplicacion,
+                    valorCambio);
+
+                var diferencia = precioNuevo - precioActual.Precio;
+                var diferenciaPorcentaje = precioActual.Precio > 0
+                    ? (diferencia / precioActual.Precio) * 100
+                    : 0;
+
+                var margenNuevo = precioActual.Costo > 0
+                    ? ((precioNuevo - precioActual.Costo) / precioActual.Costo) * 100
+                    : 0;
+
+                var item = new PriceChangeItem
+                {
+                    BatchId = batch.Id,
+                    ProductoId = producto.Id,
+                    ListaId = listaId,
+                    ProductoCodigo = producto.Codigo,
+                    ProductoNombre = producto.Nombre,
+                    PrecioAnterior = precioActual.Precio,
+                    PrecioNuevo = precioNuevo,
+                    DiferenciaValor = diferencia,
+                    DiferenciaPorcentaje = diferenciaPorcentaje,
+                    Costo = precioActual.Costo,
+                    MargenAnterior = precioActual.MargenPorcentaje,
+                    MargenNuevo = margenNuevo
+                };
+
+                // Validar advertencias
+                if (margenNuevo < 0)
+                {
+                    item.TieneAdvertencia = true;
+                    item.MensajeAdvertencia = $"Margen negativo: {margenNuevo:F2}%";
+                }
+                else if (precioNuevo <= 0)
+                {
+                    item.TieneAdvertencia = true;
+                    item.MensajeAdvertencia = "Precio resultante es cero o negativo";
+                }
+
+                items.Add(item);
+
+                sumatoriaCambios += Math.Abs(diferenciaPorcentaje);
+                countCambios++;
+            }
+        }
+
+        _context.PriceChangeItems.AddRange(items);
+
+        // Actualizar batch con estadísticas
+        batch.PorcentajePromedioCambio = countCambios > 0
+            ? sumatoriaCambios / countCambios
+            : 0;
+
+        batch.SimulacionJson = JsonSerializer.Serialize(new
+        {
+            totalProductos = productos.Count,
+            totalItems = items.Count,
+            promedioAumento = batch.PorcentajePromedioCambio,
+            itemsConAdvertencia = items.Count(i => i.TieneAdvertencia)
+        });
+
+        // Verificar si requiere autorización
+        batch.RequiereAutorizacion = await RequiereAutorizacionAsync(batch.Id);
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Simulación creada: {BatchId} - {Nombre} por {User}",
+            batch.Id, batch.Nombre, currentUser);
+
+        return batch;
+    }
+
+    private decimal CalcularNuevoPrecio(
+        decimal precioActual,
+        decimal costo,
+        TipoCambio tipoCambio,
+        TipoAplicacion tipoAplicacion,
+        decimal valorCambio)
+    {
+        decimal precioNuevo = precioActual;
+        decimal baseCalculo = precioActual;
+
+        // Determinar la base de cálculo según el tipo de cambio
+        switch (tipoCambio)
+        {
+            case TipoCambio.PorcentajeSobrePrecioActual:
+                baseCalculo = precioActual;
+                break;
+
+            case TipoCambio.PorcentajeSobreCosto:
+                baseCalculo = costo;
+                break;
+
+            case TipoCambio.ValorAbsoluto:
+                baseCalculo = precioActual;
+                break;
+
+            case TipoCambio.AsignacionDirecta:
+                return valorCambio; // Asignación directa, ignorar tipoAplicacion
+        }
+
+        // Aplicar el cambio según si es aumento o disminución
+        if (tipoCambio == TipoCambio.PorcentajeSobrePrecioActual ||
+            tipoCambio == TipoCambio.PorcentajeSobreCosto)
+        {
+            // Cambio porcentual
+            if (tipoAplicacion == TipoAplicacion.Aumento)
+                precioNuevo = baseCalculo * (1 + valorCambio / 100);
+            else // Disminucion
+                precioNuevo = baseCalculo * (1 - valorCambio / 100);
+        }
+        else if (tipoCambio == TipoCambio.ValorAbsoluto)
+        {
+            // Cambio por valor absoluto
+            if (tipoAplicacion == TipoAplicacion.Aumento)
+                precioNuevo = precioActual + valorCambio;
+            else // Disminucion
+                precioNuevo = precioActual - valorCambio;
+        }
+
+        return precioNuevo;
+    }
+
+    public async Task<PriceChangeBatch?> GetSimulacionAsync(int batchId)
+    {
+        return await _context.PriceChangeBatches
+            .Include(b => b.Items)
+            .FirstOrDefaultAsync(b => b.Id == batchId);
+    }
+
+    public async Task<List<PriceChangeItem>> GetItemsSimulacionAsync(
+        int batchId,
+        int skip = 0,
+        int take = 50)
+    {
+        return await _context.PriceChangeItems
+            .Include(i => i.Producto)
+            .Include(i => i.Lista)
+            .Where(i => i.BatchId == batchId)
+            .OrderBy(i => i.ProductoCodigo)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
+    }
+
+    #endregion
+
+    #region Cambios Masivos - Autorización
+
+    public async Task<PriceChangeBatch> AprobarBatchAsync(
+        int batchId,
+        string aprobadoPor,
+        string? notas = null)
+    {
+        var batch = await _context.PriceChangeBatches.FindAsync(batchId);
+        if (batch == null)
+            throw new InvalidOperationException($"Batch {batchId} no encontrado");
+
+        if (batch.Estado != EstadoBatch.Simulado)
+            throw new InvalidOperationException(
+                $"Batch {batchId} no está en estado Simulado (estado actual: {batch.Estado})");
+
+        batch.Estado = EstadoBatch.Aprobado;
+        batch.AprobadoPor = aprobadoPor;
+        batch.FechaAprobacion = DateTime.UtcNow;
+
+        if (!string.IsNullOrEmpty(notas))
+            batch.Notas = notas;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Batch aprobado: {BatchId} por {User}",
+            batchId, aprobadoPor);
+
+        return batch;
+    }
+
+    public async Task<PriceChangeBatch> RechazarBatchAsync(
+        int batchId,
+        string rechazadoPor,
+        string motivo)
+    {
+        var batch = await _context.PriceChangeBatches.FindAsync(batchId);
+        if (batch == null)
+            throw new InvalidOperationException($"Batch {batchId} no encontrado");
+
+        if (batch.Estado != EstadoBatch.Simulado)
+            throw new InvalidOperationException(
+                $"Batch {batchId} no está en estado Simulado");
+
+        batch.Estado = EstadoBatch.Rechazado;
+        batch.MotivoRechazo = motivo;
+        batch.AprobadoPor = rechazadoPor; // Quien rechaza
+        batch.FechaAprobacion = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Batch rechazado: {BatchId} por {User} - Motivo: {Motivo}",
+            batchId, rechazadoPor, motivo);
+
+        return batch;
+    }
+
+    public async Task<PriceChangeBatch> CancelarBatchAsync(
+        int batchId,
+        string canceladoPor,
+        string? motivo = null)
+    {
+        var batch = await _context.PriceChangeBatches.FindAsync(batchId);
+        if (batch == null)
+            throw new InvalidOperationException($"Batch {batchId} no encontrado");
+
+        if (batch.Estado == EstadoBatch.Aplicado)
+            throw new InvalidOperationException(
+                "No se puede cancelar un batch ya aplicado. Use Revertir en su lugar.");
+
+        batch.Estado = EstadoBatch.Cancelado;
+        batch.MotivoRechazo = motivo;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Batch cancelado: {BatchId} por {User}",
+            batchId, canceladoPor);
+
+        return batch;
+    }
+
+    public async Task<bool> RequiereAutorizacionAsync(int batchId)
+    {
+        var batch = await _context.PriceChangeBatches.FindAsync(batchId);
+        if (batch == null)
+            return false;
+
+        // Umbral por defecto: 10%
+        // TODO: Obtener de configuración del sistema
+        const decimal umbralPorcentaje = 10.0m;
+
+        return batch.PorcentajePromedioCambio.HasValue &&
+               Math.Abs(batch.PorcentajePromedioCambio.Value) >= umbralPorcentaje;
+    }
+
+    #endregion
+
+    #region Cambios Masivos - Aplicación
+
+    public async Task<PriceChangeBatch> AplicarBatchAsync(
+        int batchId,
+        string aplicadoPor,
+        DateTime? fechaVigencia = null)
+    {
+        var batch = await _context.PriceChangeBatches
+            .Include(b => b.Items)
+            .FirstOrDefaultAsync(b => b.Id == batchId);
+
+        if (batch == null)
+            throw new InvalidOperationException($"Batch {batchId} no encontrado");
+
+        if (batch.Estado != EstadoBatch.Aprobado)
+            throw new InvalidOperationException(
+                $"Batch {batchId} debe estar Aprobado para aplicarse (estado actual: {batch.Estado})");
+
+        fechaVigencia ??= DateTime.UtcNow;
+
+        // Aplicar en transacción
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            foreach (var item in batch.Items)
+            {
+                // Marcar precio actual como no vigente
+                var preciosAnteriores = await _context.ProductosPrecios
+                    .Where(p => p.ProductoId == item.ProductoId
+                             && p.ListaId == item.ListaId
+                             && p.EsVigente)
+                    .ToListAsync();
+
+                foreach (var anterior in preciosAnteriores)
+                {
+                    anterior.EsVigente = false;
+                    anterior.VigenciaHasta = fechaVigencia.Value.AddSeconds(-1);
+                }
+
+                // Crear nuevo precio
+                var nuevoPrecio = new ProductoPrecioLista
+                {
+                    ProductoId = item.ProductoId,
+                    ListaId = item.ListaId,
+                    VigenciaDesde = fechaVigencia.Value,
+                    Costo = item.Costo ?? 0,
+                    Precio = item.PrecioNuevo,
+                    MargenValor = item.PrecioNuevo - (item.Costo ?? 0),
+                    MargenPorcentaje = item.MargenNuevo ?? 0,
+                    EsManual = false,
+                    EsVigente = true,
+                    BatchId = batchId,
+                    CreadoPor = aplicadoPor,
+                    Notas = $"Aplicado desde batch: {batch.Nombre}"
+                };
+
+                _context.ProductosPrecios.Add(nuevoPrecio);
+
+                // Marcar item como aplicado
+                item.Aplicado = true;
+            }
+
+            // Actualizar batch
+            batch.Estado = EstadoBatch.Aplicado;
+            batch.AplicadoPor = aplicadoPor;
+            batch.FechaAplicacion = DateTime.UtcNow;
+            batch.FechaVigencia = fechaVigencia;
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation(
+                "Batch aplicado exitosamente: {BatchId} - {CantidadItems} items por {User}",
+                batchId, batch.Items.Count, aplicadoPor);
+
+            return batch;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error al aplicar batch {BatchId}", batchId);
+            throw;
+        }
+    }
+
+    public async Task<PriceChangeBatch> RevertirBatchAsync(
+        int batchId,
+        string revertidoPor,
+        string motivo)
+    {
+        var batch = await _context.PriceChangeBatches
+            .Include(b => b.Items)
+            .FirstOrDefaultAsync(b => b.Id == batchId);
+
+        if (batch == null)
+            throw new InvalidOperationException($"Batch {batchId} no encontrado");
+
+        if (batch.Estado != EstadoBatch.Aplicado)
+            throw new InvalidOperationException(
+                $"Solo se pueden revertir batches Aplicados (estado actual: {batch.Estado})");
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var fechaReversion = DateTime.UtcNow;
+
+            foreach (var item in batch.Items.Where(i => i.Aplicado))
+            {
+                // Marcar precio actual (del batch) como no vigente
+                var preciosDelBatch = await _context.ProductosPrecios
+                    .Where(p => p.ProductoId == item.ProductoId
+                             && p.ListaId == item.ListaId
+                             && p.BatchId == batchId
+                             && p.EsVigente)
+                    .ToListAsync();
+
+                foreach (var precio in preciosDelBatch)
+                {
+                    precio.EsVigente = false;
+                    precio.VigenciaHasta = fechaReversion.AddSeconds(-1);
+                }
+
+                // Restaurar precio anterior
+                var nuevoPrecio = new ProductoPrecioLista
+                {
+                    ProductoId = item.ProductoId,
+                    ListaId = item.ListaId,
+                    VigenciaDesde = fechaReversion,
+                    Costo = item.Costo ?? 0,
+                    Precio = item.PrecioAnterior,
+                    MargenValor = item.PrecioAnterior - (item.Costo ?? 0),
+                    MargenPorcentaje = item.MargenAnterior ?? 0,
+                    EsManual = false,
+                    EsVigente = true,
+                    CreadoPor = revertidoPor,
+                    Notas = $"Revertido desde batch {batchId}: {motivo}"
+                };
+
+                _context.ProductosPrecios.Add(nuevoPrecio);
+
+                // Marcar item como revertido
+                item.Revertido = true;
+            }
+
+            // Actualizar batch
+            batch.Estado = EstadoBatch.Revertido;
+            batch.RevertidoPor = revertidoPor;
+            batch.FechaReversion = fechaReversion;
+            batch.MotivoRechazo = motivo;
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation(
+                "Batch revertido exitosamente: {BatchId} por {User} - Motivo: {Motivo}",
+                batchId, revertidoPor, motivo);
+
+            return batch;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error al revertir batch {BatchId}", batchId);
+            throw;
+        }
+    }
+
+    #endregion
+
+    #region Reportes y Estadísticas
+
+    public async Task<List<PriceChangeBatch>> GetBatchesAsync(
+        EstadoBatch? estado = null,
+        DateTime? fechaDesde = null,
+        DateTime? fechaHasta = null,
+        int skip = 0,
+        int take = 50)
+    {
+        var query = _context.PriceChangeBatches.AsQueryable();
+
+        if (estado.HasValue)
+            query = query.Where(b => b.Estado == estado.Value);
+
+        if (fechaDesde.HasValue)
+            query = query.Where(b => b.FechaSolicitud >= fechaDesde.Value);
+
+        if (fechaHasta.HasValue)
+            query = query.Where(b => b.FechaSolicitud <= fechaHasta.Value);
+
+        return await query
+            .OrderByDescending(b => b.FechaSolicitud)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
+    }
+
+    public async Task<Dictionary<string, object>> GetEstadisticasBatchAsync(int batchId)
+    {
+        var batch = await _context.PriceChangeBatches
+            .Include(b => b.Items)
+            .FirstOrDefaultAsync(b => b.Id == batchId);
+
+        if (batch == null)
+            return new Dictionary<string, object>();
+
+        var stats = new Dictionary<string, object>
+        {
+            ["TotalItems"] = batch.Items.Count,
+            ["ItemsAplicados"] = batch.Items.Count(i => i.Aplicado),
+            ["ItemsRevertidos"] = batch.Items.Count(i => i.Revertido),
+            ["ItemsConAdvertencia"] = batch.Items.Count(i => i.TieneAdvertencia),
+            ["PorcentajePromedioCambio"] = batch.PorcentajePromedioCambio ?? 0,
+            ["AumentoMaximo"] = batch.Items.Max(i => i.DiferenciaPorcentaje),
+            ["AumentoMinimo"] = batch.Items.Min(i => i.DiferenciaPorcentaje),
+            ["DiferenciaTotal"] = batch.Items.Sum(i => i.DiferenciaValor)
+        };
+
+        return stats;
+    }
+
+    public async Task<byte[]> ExportarHistorialPreciosAsync(
+        List<int> productoIds,
+        DateTime fechaDesde,
+        DateTime fechaHasta)
+    {
+        // TODO: Implementar exportación a Excel/CSV
+        // Por ahora retorna array vacío
+        await Task.CompletedTask;
+        return Array.Empty<byte>();
+    }
+
+    #endregion
+
+    #region Validaciones y Utilidades
+
+    public async Task<(bool esValido, string? mensaje)> ValidarMargenMinimoAsync(
+        decimal precio,
+        decimal costo,
+        int listaId)
+    {
+        // TODO: Obtener margen mínimo de configuración
+        const decimal margenMinimo = 10.0m;
+
+        var margen = CalcularMargen(precio, costo);
+
+        if (margen < margenMinimo)
+        {
+            return (false, $"El margen {margen:F2}% es inferior al mínimo permitido ({margenMinimo}%)");
+        }
+
+        await Task.CompletedTask;
+        return (true, null);
+    }
+
+    public decimal CalcularMargen(decimal precio, decimal costo)
+    {
+        if (costo <= 0)
+            return 0;
+
+        return ((precio - costo) / costo) * 100;
+    }
+
+    public decimal AplicarRedondeo(decimal precio, string? reglaRedondeo = null)
+    {
+        // Redondeo por defecto a centena
+        return Math.Round(precio / 100) * 100;
+
+        // TODO: Implementar reglas personalizadas desde JSON
+    }
+
+    #endregion
+}

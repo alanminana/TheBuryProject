@@ -57,6 +57,26 @@
                         </a>
                     </li>
 
+                    <!-- PRECIOS -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-currency-dollar me-1"></i>Precios
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li>
+                                <a class="dropdown-item" asp-controller="ListasPrecios" asp-action="Index">
+                                    <i class="bi bi-tags me-2"></i>Listas de Precios
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="CambiosPrecios" asp-action="Index">
+                                    <i class="bi bi-shuffle me-2"></i>Cambios Masivos
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <!-- VENTAS -->
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Venta" asp-action="Index">
@@ -78,11 +98,34 @@
                         </a>
                     </li>
 
-                    <!-- ROLES Y PERMISOS -->
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Roles" asp-action="Index">
-                            <i class="bi bi-shield me-1"></i>Roles
+                    <!-- ADMINISTRACIÓN -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-shield-lock me-1"></i>Administración
                         </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li>
+                                <a class="dropdown-item" asp-controller="Roles" asp-action="Index">
+                                    <i class="bi bi-shield me-2"></i>Roles
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Modulos" asp-action="Index">
+                                    <i class="bi bi-grid me-2"></i>Módulos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Acciones" asp-action="Index">
+                                    <i class="bi bi-lightning me-2"></i>Acciones
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Usuarios" asp-action="Index">
+                                    <i class="bi bi-people me-2"></i>Usuarios
+                                </a>
+                            </li>
+                        </ul>
                     </li>
 
                     <!-- AUTORIZACIONES -->

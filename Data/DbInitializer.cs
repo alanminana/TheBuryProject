@@ -1,15 +1,16 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Data.Seeds;
 
 namespace TheBuryProject.Data
 {
     /// <summary>
-    /// Inicializador de base de datos para crear roles y usuarios por defecto
+    /// Inicializador de base de datos para crear roles, permisos y usuarios por defecto
     /// </summary>
     public static class DbInitializer
     {
         /// <summary>
-        /// Inicializa roles y usuario administrador
+        /// Inicializa roles, módulos, permisos y usuario administrador
         /// </summary>
         public static async Task Initialize(IServiceProvider serviceProvider)
         {
@@ -29,8 +30,9 @@ namespace TheBuryProject.Data
                 await context.Database.MigrateAsync();
                 logger.LogInformation("Migraciones aplicadas exitosamente");
 
-                // Crear roles si no existen
-                await CreateRolesAsync(roleManager, logger);
+                // Ejecutar seeder de roles, módulos y permisos
+                await RolesPermisosSeeder.SeedAsync(context, roleManager);
+                logger.LogInformation("Roles, módulos y permisos inicializados exitosamente");
 
                 // Crear usuario administrador si no existe
                 await CreateAdminUserAsync(userManager, logger);
@@ -46,37 +48,7 @@ namespace TheBuryProject.Data
         }
 
         /// <summary>
-        /// Crea los roles del sistema
-        /// </summary>
-        private static async Task CreateRolesAsync(RoleManager<IdentityRole> roleManager, ILogger logger)
-        {
-            string[] roles = { "Admin", "Gerente", "Vendedor", "Contador" };
-
-            foreach (var roleName in roles)
-            {
-                if (!await roleManager.RoleExistsAsync(roleName))
-                {
-                    var result = await roleManager.CreateAsync(new IdentityRole(roleName));
-                    if (result.Succeeded)
-                    {
-                        logger.LogInformation("Rol creado: {RoleName}", roleName);
-                    }
-                    else
-                    {
-                        logger.LogError("Error al crear rol {RoleName}: {Errors}",
-                            roleName,
-                            string.Join(", ", result.Errors.Select(e => e.Description)));
-                    }
-                }
-                else
-                {
-                    logger.LogInformation("Rol ya existe: {RoleName}", roleName);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Crea el usuario administrador por defecto
+        /// Crea el usuario administrador por defecto con rol SuperAdmin
         /// </summary>
         private static async Task CreateAdminUserAsync(UserManager<IdentityUser> userManager, ILogger logger)
         {
@@ -100,9 +72,9 @@ namespace TheBuryProject.Data
                 {
                     logger.LogInformation("Usuario administrador creado: {Email}", adminEmail);
 
-                    // Asignar rol Admin
-                    await userManager.AddToRoleAsync(adminUser, "Admin");
-                    logger.LogInformation("Rol 'Admin' asignado al usuario {Email}", adminEmail);
+                    // Asignar rol SuperAdmin
+                    await userManager.AddToRoleAsync(adminUser, "SuperAdmin");
+                    logger.LogInformation("Rol 'SuperAdmin' asignado al usuario {Email}", adminEmail);
 
                     logger.LogWarning("Credenciales de administrador por defecto:");
                     logger.LogWarning("  Email: {Email}", adminEmail);
@@ -119,11 +91,11 @@ namespace TheBuryProject.Data
             {
                 logger.LogInformation("Usuario administrador ya existe: {Email}", adminEmail);
 
-                // Verificar que tenga el rol Admin
-                if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+                // Verificar que tenga el rol SuperAdmin
+                if (!await userManager.IsInRoleAsync(adminUser, "SuperAdmin"))
                 {
-                    await userManager.AddToRoleAsync(adminUser, "Admin");
-                    logger.LogInformation("Rol 'Admin' asignado al usuario existente {Email}", adminEmail);
+                    await userManager.AddToRoleAsync(adminUser, "SuperAdmin");
+                    logger.LogInformation("Rol 'SuperAdmin' asignado al usuario existente {Email}", adminEmail);
                 }
             }
         }
@@ -140,8 +112,12 @@ namespace TheBuryProject.Data
 
             var testUsers = new[]
             {
+                new { Email = "administrador@thebury.com", Password = "Admin123!", Role = "Administrador" },
                 new { Email = "gerente@thebury.com", Password = "Gerente123!", Role = "Gerente" },
                 new { Email = "vendedor@thebury.com", Password = "Vendedor123!", Role = "Vendedor" },
+                new { Email = "cajero@thebury.com", Password = "Cajero123!", Role = "Cajero" },
+                new { Email = "repositor@thebury.com", Password = "Repositor123!", Role = "Repositor" },
+                new { Email = "tecnico@thebury.com", Password = "Tecnico123!", Role = "Tecnico" },
                 new { Email = "contador@thebury.com", Password = "Contador123!", Role = "Contador" }
             };
 

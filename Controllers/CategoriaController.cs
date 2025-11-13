@@ -9,7 +9,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public class CategoriaController : Controller
     {
         private readonly ICategoriaService _categoriaService;

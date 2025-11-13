@@ -11,7 +11,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "Admin,Gerente,Vendedor")]
+    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
     public class ClienteController : Controller
     {
         private readonly IClienteService _clienteService;

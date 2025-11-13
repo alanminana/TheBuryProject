@@ -1,0 +1,81 @@
+﻿@model TheBuryProject.ViewModels.RevertirBatchViewModel
+
+@{
+    ViewData["Title"] = "Revertir Cambio de Precios";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4><i class="bi bi-arrow-counterclockwise"></i> Revertir Cambio de Precios</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>¿Está seguro que desea revertir este cambio de precios?</strong>
+                        <p class="mb-0 mt-2">Esta acción restaurará los precios anteriores para todos los productos afectados.</p>
+                    </div>
+
+                    <dl class="row">
+                        <dt class="col-sm-4">Nombre:</dt>
+                        <dd class="col-sm-8"><strong>@Model.Nombre</strong></dd>
+
+                        <dt class="col-sm-4">Productos Afectados:</dt>
+                        <dd class="col-sm-8"><strong class="text-primary">@Model.CantidadProductos</strong></dd>
+
+                        <dt class="col-sm-4">Aplicado por:</dt>
+                        <dd class="col-sm-8">
+                            @Model.AplicadoPor<br>
+                            <small>@Model.FechaAplicacion?.ToString("dd/MM/yyyy HH:mm")</small>
+                        </dd>
+
+                        <dt class="col-sm-4">Vigencia:</dt>
+                        <dd class="col-sm-8">
+                            @Model.FechaVigencia?.ToString("dd/MM/yyyy HH:mm")
+                        </dd>
+                    </dl>
+
+                    <hr>
+
+                    <form asp-action="RevertirConfirmed" method="post">
+                        <input type="hidden" name="id" value="@Model.BatchId" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Motivo de la Reversión *</label>
+                            <textarea name="motivo" class="form-control" rows="4" placeholder="Especifique el motivo de la reversión..." required></textarea>
+                            <small class="text-muted">Este motivo quedará registrado en el historial</small>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Información sobre la reversión:</strong>
+                            <ul class="mb-0">
+                                <li>Se crearán nuevos registros de precios con los valores anteriores</li>
+                                <li>Los precios actuales se marcarán como no vigentes</li>
+                                <li>El historial completo quedará preservado</li>
+                                <li>Esta operación es <strong>transaccional</strong> (todo o nada)</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Preview" asp-route-id="@Model.BatchId" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('¿Está ABSOLUTAMENTE SEGURO de revertir este cambio?\n\nEsta acción restaurará los precios anteriores para ' + @Model.CantidadProductos + ' productos.')">
+                                <i class="bi bi-arrow-counterclockwise"></i> Revertir Cambio AHORA
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

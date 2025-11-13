@@ -39,7 +39,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Lista de todas las devoluciones
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> Index()
     {
         var todasDevoluciones = await _devolucionService.ObtenerTodasDevolucionesAsync();
@@ -245,7 +245,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Aprobar devolución
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Aprobar(int id)
@@ -267,7 +267,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Rechazar devolución
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Rechazar(int id, string motivo)
@@ -294,7 +294,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Completar devolución (procesar stock)
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Completar(int id)
@@ -319,7 +319,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Lista de garantías
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> Garantias()
     {
         var todasGarantias = await _devolucionService.ObtenerTodasGarantiasAsync();
@@ -345,7 +345,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Estadísticas de RMAs y devoluciones
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> RMAs(DateTime? desde, DateTime? hasta)
     {
         var fechaDesde = desde ?? DateTime.Now.AddMonths(-1);
@@ -369,7 +369,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Crear RMA para una devolución
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearRMA(int devolucionId, int proveedorId, string motivoSolicitud)
@@ -432,7 +432,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Estadísticas de devoluciones
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> Estadisticas(DateTime? desde, DateTime? hasta)
     {
         var fechaDesde = desde ?? DateTime.Now.AddMonths(-1);

@@ -30,7 +30,7 @@ public class CajaController : Controller
 
     #region CRUD de Cajas
 
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> Index()
     {
         var cajas = await _cajaService.ObtenerTodasCajasAsync();
@@ -46,7 +46,7 @@ public class CajaController : Controller
         return View(viewModel);
     }
 
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public IActionResult Create()
     {
         return View();
@@ -54,7 +54,7 @@ public class CajaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> Create(CajaViewModel model)
     {
         if (!ModelState.IsValid)
@@ -76,7 +76,7 @@ public class CajaController : Controller
         }
     }
 
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> Edit(int id)
     {
         var caja = await _cajaService.ObtenerCajaPorIdAsync(id);
@@ -103,7 +103,7 @@ public class CajaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> Edit(int id, CajaViewModel model)
     {
         if (!ModelState.IsValid)
@@ -148,7 +148,7 @@ public class CajaController : Controller
 
     #region Apertura de Caja
 
-    [Authorize(Roles = "Admin,Gerente,Vendedor")]
+    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
     public async Task<IActionResult> Abrir(int? cajaId)
     {
         var cajas = await _cajaService.ObtenerTodasCajasAsync();
@@ -171,7 +171,7 @@ public class CajaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,Gerente,Vendedor")]
+    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
     public async Task<IActionResult> Abrir(AbrirCajaViewModel model)
     {
         if (!ModelState.IsValid)
@@ -202,7 +202,7 @@ public class CajaController : Controller
 
     #region Movimientos
 
-    [Authorize(Roles = "Admin,Gerente,Vendedor")]
+    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
     public async Task<IActionResult> RegistrarMovimiento(int aperturaId)
     {
         var apertura = await _cajaService.ObtenerAperturaPorIdAsync(aperturaId);
@@ -226,7 +226,7 @@ public class CajaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,Gerente,Vendedor")]
+    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
     public async Task<IActionResult> RegistrarMovimiento(MovimientoCajaViewModel model)
     {
         if (!ModelState.IsValid)
@@ -265,7 +265,7 @@ public class CajaController : Controller
 
     #region Cierre de Caja
 
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> Cerrar(int aperturaId)
     {
         try
@@ -297,7 +297,7 @@ public class CajaController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> Cerrar(CerrarCajaViewModel model)
     {
         if (!ModelState.IsValid)
@@ -343,7 +343,7 @@ public class CajaController : Controller
 
     #region Detalles y Reportes
 
-    [Authorize(Roles = "Admin,Gerente,Vendedor")]
+    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
     public async Task<IActionResult> DetallesApertura(int id)
     {
         try
@@ -359,7 +359,7 @@ public class CajaController : Controller
         }
     }
 
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> DetallesCierre(int id)
     {
         var cierre = await _cajaService.ObtenerCierrePorIdAsync(id);
@@ -372,7 +372,7 @@ public class CajaController : Controller
         return View(cierre);
     }
 
-    [Authorize(Roles = "Admin,Gerente,Contador")]
+    [Authorize(Roles = "SuperAdmin,Gerente,Contador")]
     public async Task<IActionResult> Historial(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
     {
         var cierres = await _cajaService.ObtenerHistorialCierresAsync(cajaId, fechaDesde, fechaHasta);

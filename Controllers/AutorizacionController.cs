@@ -29,7 +29,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Lista de todos los umbrales configurados
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> Index()
     {
         var umbrales = await _autorizacionService.ObtenerTodosUmbralesAsync();
@@ -185,7 +185,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Lista de solicitudes de autorización
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public async Task<IActionResult> Solicitudes()
     {
         var usuario = await _userManager.GetUserAsync(User);
@@ -289,7 +289,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Aprobar solicitud
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AprobarSolicitud(int id, string? comentario)
@@ -311,7 +311,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Rechazar solicitud
     /// </summary>
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RechazarSolicitud(int id, string comentario)

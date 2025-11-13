@@ -1,0 +1,125 @@
+﻿@model RolDetalleViewModel
+
+@{
+    ViewData["Title"] = "Detalles del Rol";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Roles</a></li>
+                    <li class="breadcrumb-item active">Detalles</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-shield me-2"></i>@Model.Nombre</h2>
+                <div>
+                    <a asp-action="AsignarPermisos" asp-route-id="@Model.Id" class="btn btn-warning">
+                        <i class="bi bi-key me-1"></i>Asignar Permisos
+                    </a>
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </a>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Permisos -->
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-key me-2"></i>Permisos Asignados (@Model.Permisos.Count)</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Permisos.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Módulo</th>
+                                        <th>Acción</th>
+                                        <th>Claim</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var permiso in Model.Permisos.OrderBy(p => p.ModuloNombre).ThenBy(p => p.AccionNombre))
+                                    {
+                                        <tr>
+                                            <td><span class="badge bg-info">@permiso.ModuloNombre</span></td>
+                                            <td>@permiso.AccionNombre</td>
+                                            <td><code>@permiso.ClaimValue</code></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-key" style="font-size: 3rem;"></i>
+                            <p class="mt-2">No hay permisos asignados a este rol</p>
+                            <a asp-action="AsignarPermisos" asp-route-id="@Model.Id" class="btn btn-sm btn-warning">
+                                <i class="bi bi-plus-circle me-1"></i>Asignar Permisos
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Usuarios -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Usuarios (@Model.Usuarios.Count)</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Usuarios.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var usuario in Model.Usuarios)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center p-2">
+                                    <div>
+                                        <i class="bi bi-person-circle me-1"></i>
+                                        <small>@usuario.Email</small>
+                                    </div>
+                                    @if (usuario.EmailConfirmed)
+                                    {
+                                        <i class="bi bi-check-circle text-success" title="Email confirmado"></i>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                        <div class="text-center mt-2">
+                            <a asp-action="Usuarios" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-success">
+                                Ver todos los usuarios
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-3 text-muted">
+                            <i class="bi bi-people" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0"><small>No hay usuarios con este rol</small></p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

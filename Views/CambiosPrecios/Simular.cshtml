@@ -1,0 +1,135 @@
+﻿@model TheBuryProject.ViewModels.SimularCambioMasivoViewModel
+
+@{
+    ViewData["Title"] = "Simular Cambio Masivo de Precios";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4><i class="bi bi-calculator"></i> Simular Cambio Masivo de Precios</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Simular" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="row">
+                            <!-- Configuración del Cambio -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3"><i class="bi bi-gear"></i> Configuración del Cambio</h5>
+
+                                <div class="mb-3">
+                                    <label asp-for="Nombre" class="form-label">Nombre de la Simulación *</label>
+                                    <input asp-for="Nombre" class="form-control" placeholder="Ej: Aumento general 15% - Enero 2024" />
+                                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="TipoCambio" class="form-label">Tipo de Cambio *</label>
+                                    <select asp-for="TipoCambio" class="form-select" asp-items="Html.GetEnumSelectList<TheBuryProject.Models.Enums.TipoCambio>()">
+                                        <option value="">Seleccione un tipo</option>
+                                    </select>
+                                    <span asp-validation-for="TipoCambio" class="text-danger"></span>
+                                    <small class="text-muted">Sobre qué base se calcula el cambio</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="TipoAplicacion" class="form-label">Tipo de Aplicación *</label>
+                                    <select asp-for="TipoAplicacion" class="form-select" asp-items="Html.GetEnumSelectList<TheBuryProject.Models.Enums.TipoAplicacion>()">
+                                        <option value="">Seleccione un tipo</option>
+                                    </select>
+                                    <span asp-validation-for="TipoAplicacion" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="ValorCambio" class="form-label">Valor del Cambio *</label>
+                                    <input asp-for="ValorCambio" type="number" step="0.01" class="form-control" placeholder="Ej: 15.50" />
+                                    <span asp-validation-for="ValorCambio" class="text-danger"></span>
+                                    <small class="text-muted">Porcentaje o valor absoluto según tipo de cambio</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Listas de Precios Afectadas *</label>
+                                    <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                        @foreach (var lista in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Listas)
+                                        {
+                                            <div class="form-check">
+                                                <input type="checkbox" name="ListasIds" value="@lista.Value" class="form-check-input" id="lista_@lista.Value" />
+                                                <label class="form-check-label" for="lista_@lista.Value">
+                                                    @lista.Text
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+                                    <span asp-validation-for="ListasIds" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <!-- Filtros de Productos -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3"><i class="bi bi-funnel"></i> Filtros de Productos</h5>
+
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Filtros opcionales:</strong> Si no selecciona ningún filtro, se aplicará a todos los productos.
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Categorías</label>
+                                    <select name="CategoriaIds" class="form-select" multiple size="5">
+                                        @foreach (var categoria in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Categorias)
+                                        {
+                                            <option value="@categoria.Value">@categoria.Text</option>
+                                        }
+                                    </select>
+                                    <small class="text-muted">Mantén Ctrl/Cmd para seleccionar múltiples</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Marcas</label>
+                                    <select name="MarcaIds" class="form-select" multiple size="5">
+                                        @foreach (var marca in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Marcas)
+                                        {
+                                            <option value="@marca.Value">@marca.Text</option>
+                                        }
+                                    </select>
+                                    <small class="text-muted">Mantén Ctrl/Cmd para seleccionar múltiples</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">IDs de Productos Específicos</label>
+                                    <textarea name="ProductoIdsText" class="form-control" rows="3" placeholder="Ingrese IDs separados por comas: 1,2,3,4"></textarea>
+                                    <small class="text-muted">Opcional: lista de IDs separados por comas</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Importante:</strong> Esta acción solo creará una simulación. Los precios NO se modificarán hasta que la simulación sea autorizada y aplicada.
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-calculator"></i> Simular Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

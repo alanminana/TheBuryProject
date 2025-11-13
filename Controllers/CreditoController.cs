@@ -13,7 +13,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "Admin,Gerente")]
+    [Authorize(Roles = "SuperAdmin,Gerente")]
     public class CreditoController : Controller
     {
         private readonly ICreditoService _creditoService;
