@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TheBuryProject.Migrations
 {
     /// <inheritdoc />
-    public partial class AgregarSistemaPreciosConHistorial : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -471,8 +471,8 @@ namespace TheBuryProject.Migrations
                 name: "AspNetUserLogins",
                 columns: table => new
                 {
-                    LoginProvider = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    ProviderKey = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
@@ -516,8 +516,8 @@ namespace TheBuryProject.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    LoginProvider = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -1914,8 +1914,8 @@ namespace TheBuryProject.Migrations
                 columns: new[] { "Id", "Activo", "Codigo", "ControlSerieDefault", "CreatedAt", "CreatedBy", "Descripcion", "IsDeleted", "Nombre", "ParentId", "UpdatedAt", "UpdatedBy" },
                 values: new object[,]
                 {
-                    { 1, true, "ELEC", true, new DateTime(2025, 11, 13, 5, 41, 54, 41, DateTimeKind.Utc).AddTicks(6954), "System", "Productos electrónicos", false, "Electrónica", null, null, null },
-                    { 2, true, "FRIO", true, new DateTime(2025, 11, 13, 5, 41, 54, 41, DateTimeKind.Utc).AddTicks(6957), "System", "Heladeras, freezers y aire acondicionado", false, "Refrigeración", null, null, null }
+                    { 1, true, "ELEC", true, new DateTime(2025, 11, 13, 6, 44, 45, 30, DateTimeKind.Utc).AddTicks(4661), "System", "Productos electrónicos", false, "Electrónica", null, null, null },
+                    { 2, true, "FRIO", true, new DateTime(2025, 11, 13, 6, 44, 45, 30, DateTimeKind.Utc).AddTicks(4664), "System", "Heladeras, freezers y aire acondicionado", false, "Refrigeración", null, null, null }
                 });
 
             migrationBuilder.InsertData(
@@ -1923,9 +1923,9 @@ namespace TheBuryProject.Migrations
                 columns: new[] { "Id", "Activo", "Codigo", "CreatedAt", "CreatedBy", "Descripcion", "IsDeleted", "Nombre", "PaisOrigen", "ParentId", "UpdatedAt", "UpdatedBy" },
                 values: new object[,]
                 {
-                    { 1, true, "SAM", new DateTime(2025, 11, 13, 5, 41, 54, 49, DateTimeKind.Utc).AddTicks(7465), "System", "Electrónica y electrodomésticos", false, "Samsung", "Corea del Sur", null, null, null },
-                    { 2, true, "LG", new DateTime(2025, 11, 13, 5, 41, 54, 49, DateTimeKind.Utc).AddTicks(7470), "System", "Electrónica y electrodomésticos", false, "LG", "Corea del Sur", null, null, null },
-                    { 3, true, "WHI", new DateTime(2025, 11, 13, 5, 41, 54, 49, DateTimeKind.Utc).AddTicks(7473), "System", "Electrodomésticos", false, "Whirlpool", "Estados Unidos", null, null, null }
+                    { 1, true, "SAM", new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6370), "System", "Electrónica y electrodomésticos", false, "Samsung", "Corea del Sur", null, null, null },
+                    { 2, true, "LG", new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6376), "System", "Electrónica y electrodomésticos", false, "LG", "Corea del Sur", null, null, null },
+                    { 3, true, "WHI", new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6379), "System", "Electrodomésticos", false, "Whirlpool", "Estados Unidos", null, null, null }
                 });
 
             migrationBuilder.CreateIndex(

@@ -167,12 +167,10 @@ namespace TheBuryProject.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ProviderKey")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ProviderDisplayName")
                         .HasColumnType("nvarchar(max)");
@@ -209,12 +207,10 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("LoginProvider")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Value")
                         .HasColumnType("nvarchar(max)");
@@ -654,7 +650,7 @@ namespace TheBuryProject.Migrations
                             Activo = true,
                             Codigo = "ELEC",
                             ControlSerieDefault = true,
-                            CreatedAt = new DateTime(2025, 11, 13, 5, 41, 54, 41, DateTimeKind.Utc).AddTicks(6954),
+                            CreatedAt = new DateTime(2025, 11, 13, 6, 44, 45, 30, DateTimeKind.Utc).AddTicks(4661),
                             CreatedBy = "System",
                             Descripcion = "Productos electrónicos",
                             IsDeleted = false,
@@ -666,7 +662,7 @@ namespace TheBuryProject.Migrations
                             Activo = true,
                             Codigo = "FRIO",
                             ControlSerieDefault = true,
-                            CreatedAt = new DateTime(2025, 11, 13, 5, 41, 54, 41, DateTimeKind.Utc).AddTicks(6957),
+                            CreatedAt = new DateTime(2025, 11, 13, 6, 44, 45, 30, DateTimeKind.Utc).AddTicks(4664),
                             CreatedBy = "System",
                             Descripcion = "Heladeras, freezers y aire acondicionado",
                             IsDeleted = false,
@@ -2268,7 +2264,7 @@ namespace TheBuryProject.Migrations
                             Id = 1,
                             Activo = true,
                             Codigo = "SAM",
-                            CreatedAt = new DateTime(2025, 11, 13, 5, 41, 54, 49, DateTimeKind.Utc).AddTicks(7465),
+                            CreatedAt = new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6370),
                             CreatedBy = "System",
                             Descripcion = "Electrónica y electrodomésticos",
                             IsDeleted = false,
@@ -2280,7 +2276,7 @@ namespace TheBuryProject.Migrations
                             Id = 2,
                             Activo = true,
                             Codigo = "LG",
-                            CreatedAt = new DateTime(2025, 11, 13, 5, 41, 54, 49, DateTimeKind.Utc).AddTicks(7470),
+                            CreatedAt = new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6376),
                             CreatedBy = "System",
                             Descripcion = "Electrónica y electrodomésticos",
                             IsDeleted = false,
@@ -2292,7 +2288,7 @@ namespace TheBuryProject.Migrations
                             Id = 3,
                             Activo = true,
                             Codigo = "WHI",
-                            CreatedAt = new DateTime(2025, 11, 13, 5, 41, 54, 49, DateTimeKind.Utc).AddTicks(7473),
+                            CreatedAt = new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6379),
                             CreatedBy = "System",
                             Descripcion = "Electrodomésticos",
                             IsDeleted = false,
