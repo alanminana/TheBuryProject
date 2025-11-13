@@ -528,7 +528,7 @@ namespace TheBuryProject.Controllers
                     CFTEA = cftea,
                     TotalAPagar = totalAPagar,
                     SaldoPendiente = totalAPagar,
-                    Estado = model.AprobarConExcepcion ? EstadoCredito.PendienteAprobacion : EstadoCredito.Aprobado,
+                    Estado = model.AprobarConExcepcion ? EstadoCredito.Solicitado : EstadoCredito.Aprobado,
                     FechaSolicitud = DateTime.UtcNow,
                     FechaAprobacion = DateTime.UtcNow,
                     FechaPrimeraCuota = DateTime.UtcNow.AddMonths(1),

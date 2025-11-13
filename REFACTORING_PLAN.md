@@ -316,6 +316,8 @@ Cargar todos los precios vigentes en un query y trabajar en memoria.
 
 ### Fase 1 - Bugs Críticos ✅ COMPLETADA
 1. ✅ Bug de estado de crédito corregido (ClienteController.cs:531)
+   - Cambiado: `Estado = Activo` (siempre) → `Estado = AprobarConExcepcion ? Solicitado : Aprobado`
+   - Ahora los créditos con excepción quedan en estado "Solicitado" para revisión
 2. ✅ Soft delete implementado en ClienteService (GetAllAsync y SearchAsync)
 3. ✅ NullReference en búsqueda de teléfono corregido
 
