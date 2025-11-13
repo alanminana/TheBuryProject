@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheBuryProject.Data;
 
@@ -11,9 +12,11 @@ using TheBuryProject.Data;
 namespace TheBuryProject.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251113070130_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -650,7 +653,7 @@ namespace TheBuryProject.Migrations
                             Activo = true,
                             Codigo = "ELEC",
                             ControlSerieDefault = true,
-                            CreatedAt = new DateTime(2025, 11, 13, 14, 51, 38, 341, DateTimeKind.Utc).AddTicks(9623),
+                            CreatedAt = new DateTime(2025, 11, 13, 7, 1, 30, 382, DateTimeKind.Utc).AddTicks(808),
                             CreatedBy = "System",
                             Descripcion = "Productos electrónicos",
                             IsDeleted = false,
@@ -662,7 +665,7 @@ namespace TheBuryProject.Migrations
                             Activo = true,
                             Codigo = "FRIO",
                             ControlSerieDefault = true,
-                            CreatedAt = new DateTime(2025, 11, 13, 14, 51, 38, 341, DateTimeKind.Utc).AddTicks(9628),
+                            CreatedAt = new DateTime(2025, 11, 13, 7, 1, 30, 382, DateTimeKind.Utc).AddTicks(812),
                             CreatedBy = "System",
                             Descripcion = "Heladeras, freezers y aire acondicionado",
                             IsDeleted = false,
@@ -2076,9 +2079,6 @@ namespace TheBuryProject.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<decimal?>("MargenMinimoPorcentaje")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<decimal?>("MargenPorcentaje")
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
@@ -2088,20 +2088,12 @@ namespace TheBuryProject.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Notas")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
                     b.Property<int>("Orden")
                         .HasColumnType("int");
 
                     b.Property<decimal?>("RecargoPorcentaje")
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
-
-                    b.Property<string>("ReglaRedondeo")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("ReglasJson")
                         .HasColumnType("nvarchar(max)");
@@ -2275,7 +2267,7 @@ namespace TheBuryProject.Migrations
                             Id = 1,
                             Activo = true,
                             Codigo = "SAM",
-                            CreatedAt = new DateTime(2025, 11, 13, 14, 51, 38, 350, DateTimeKind.Utc).AddTicks(9335),
+                            CreatedAt = new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4753),
                             CreatedBy = "System",
                             Descripcion = "Electrónica y electrodomésticos",
                             IsDeleted = false,
@@ -2287,7 +2279,7 @@ namespace TheBuryProject.Migrations
                             Id = 2,
                             Activo = true,
                             Codigo = "LG",
-                            CreatedAt = new DateTime(2025, 11, 13, 14, 51, 38, 350, DateTimeKind.Utc).AddTicks(9342),
+                            CreatedAt = new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4755),
                             CreatedBy = "System",
                             Descripcion = "Electrónica y electrodomésticos",
                             IsDeleted = false,
@@ -2299,7 +2291,7 @@ namespace TheBuryProject.Migrations
                             Id = 3,
                             Activo = true,
                             Codigo = "WHI",
-                            CreatedAt = new DateTime(2025, 11, 13, 14, 51, 38, 350, DateTimeKind.Utc).AddTicks(9347),
+                            CreatedAt = new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4758),
                             CreatedBy = "System",
                             Descripcion = "Electrodomésticos",
                             IsDeleted = false,

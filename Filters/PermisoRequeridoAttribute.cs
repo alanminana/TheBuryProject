@@ -38,6 +38,13 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
             return;
         }
 
+        // TEMPORAL: En desarrollo, permitir acceso si está autenticado
+        var env = context.HttpContext.RequestServices.GetService<IWebHostEnvironment>();
+        if (env?.IsDevelopment() == true)
+        {
+            return; // Permitir acceso en desarrollo
+        }
+
         // Si AllowSuperAdmin está habilitado y el usuario es SuperAdmin, permitir
         if (AllowSuperAdmin && user.IsInRole(TheBuryProject.Models.Constants.Roles.SuperAdmin))
         {

@@ -42,6 +42,11 @@ public class ListaPrecio : BaseEntity
     public decimal? MargenPorcentaje { get; set; }
 
     /// <summary>
+    /// Margen mínimo permitido en porcentaje (validación)
+    /// </summary>
+    public decimal? MargenMinimoPorcentaje { get; set; }
+
+    /// <summary>
     /// Recargo adicional sobre precio base (ej: 10% para tarjeta)
     /// </summary>
     public decimal? RecargoPorcentaje { get; set; }
@@ -50,6 +55,12 @@ public class ListaPrecio : BaseEntity
     /// Cantidad de cuotas (para listas de tarjeta)
     /// </summary>
     public int? CantidadCuotas { get; set; }
+
+    /// <summary>
+    /// Regla de redondeo: "ninguno", "decena", "centena", "unidad"
+    /// </summary>
+    [StringLength(20)]
+    public string? ReglaRedondeo { get; set; }
 
     /// <summary>
     /// Indica si esta lista está activa
@@ -71,6 +82,12 @@ public class ListaPrecio : BaseEntity
     /// Ejemplo: {"redondeo": "centena", "margenMinimo": 25}
     /// </summary>
     public string? ReglasJson { get; set; }
+
+    /// <summary>
+    /// Notas o comentarios adicionales sobre la lista
+    /// </summary>
+    [StringLength(1000)]
+    public string? Notas { get; set; }
 
     // Navegación
     public virtual ICollection<ProductoPrecioLista> Precios { get; set; } = new List<ProductoPrecioLista>();

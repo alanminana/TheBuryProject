@@ -8,12 +8,9 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-tags"></i> Listas de Precios</h2>
-        @if (User.HasClaim("Permission", "precios:create"))
-        {
-            <a asp-action="Create" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nueva Lista
-            </a>
-        }
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Lista
+        </a>
     </div>
 
     @if (TempData["Success"] != null)
@@ -122,14 +119,11 @@
                                                class="btn btn-outline-info" title="Ver Detalles">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            @if (User.HasClaim("Permission", "precios:update"))
-                                            {
-                                                <a asp-action="Edit" asp-route-id="@lista.Id"
-                                                   class="btn btn-outline-warning" title="Editar">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                            }
-                                            @if (User.HasClaim("Permission", "precios:delete") && !lista.EsPredeterminada)
+                                            <a asp-action="Edit" asp-route-id="@lista.Id"
+                                               class="btn btn-outline-warning" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            @if (!lista.EsPredeterminada)
                                             {
                                                 <a asp-action="Delete" asp-route-id="@lista.Id"
                                                    class="btn btn-outline-danger" title="Eliminar">

@@ -12,8 +12,8 @@ using TheBuryProject.Data;
 namespace TheBuryProject.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251113064445_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251113145139_AgregarColumnasListaPrecio")]
+    partial class AgregarColumnasListaPrecio
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -653,7 +653,7 @@ namespace TheBuryProject.Migrations
                             Activo = true,
                             Codigo = "ELEC",
                             ControlSerieDefault = true,
-                            CreatedAt = new DateTime(2025, 11, 13, 6, 44, 45, 30, DateTimeKind.Utc).AddTicks(4661),
+                            CreatedAt = new DateTime(2025, 11, 13, 14, 51, 38, 341, DateTimeKind.Utc).AddTicks(9623),
                             CreatedBy = "System",
                             Descripcion = "Productos electrónicos",
                             IsDeleted = false,
@@ -665,7 +665,7 @@ namespace TheBuryProject.Migrations
                             Activo = true,
                             Codigo = "FRIO",
                             ControlSerieDefault = true,
-                            CreatedAt = new DateTime(2025, 11, 13, 6, 44, 45, 30, DateTimeKind.Utc).AddTicks(4664),
+                            CreatedAt = new DateTime(2025, 11, 13, 14, 51, 38, 341, DateTimeKind.Utc).AddTicks(9628),
                             CreatedBy = "System",
                             Descripcion = "Heladeras, freezers y aire acondicionado",
                             IsDeleted = false,
@@ -2079,6 +2079,9 @@ namespace TheBuryProject.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<decimal?>("MargenMinimoPorcentaje")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal?>("MargenPorcentaje")
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
@@ -2088,12 +2091,20 @@ namespace TheBuryProject.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("Notas")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<int>("Orden")
                         .HasColumnType("int");
 
                     b.Property<decimal?>("RecargoPorcentaje")
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("ReglaRedondeo")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("ReglasJson")
                         .HasColumnType("nvarchar(max)");
@@ -2267,7 +2278,7 @@ namespace TheBuryProject.Migrations
                             Id = 1,
                             Activo = true,
                             Codigo = "SAM",
-                            CreatedAt = new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6370),
+                            CreatedAt = new DateTime(2025, 11, 13, 14, 51, 38, 350, DateTimeKind.Utc).AddTicks(9335),
                             CreatedBy = "System",
                             Descripcion = "Electrónica y electrodomésticos",
                             IsDeleted = false,
@@ -2279,7 +2290,7 @@ namespace TheBuryProject.Migrations
                             Id = 2,
                             Activo = true,
                             Codigo = "LG",
-                            CreatedAt = new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6376),
+                            CreatedAt = new DateTime(2025, 11, 13, 14, 51, 38, 350, DateTimeKind.Utc).AddTicks(9342),
                             CreatedBy = "System",
                             Descripcion = "Electrónica y electrodomésticos",
                             IsDeleted = false,
@@ -2291,7 +2302,7 @@ namespace TheBuryProject.Migrations
                             Id = 3,
                             Activo = true,
                             Codigo = "WHI",
-                            CreatedAt = new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6379),
+                            CreatedAt = new DateTime(2025, 11, 13, 14, 51, 38, 350, DateTimeKind.Utc).AddTicks(9347),
                             CreatedBy = "System",
                             Descripcion = "Electrodomésticos",
                             IsDeleted = false,

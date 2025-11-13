@@ -1914,8 +1914,8 @@ namespace TheBuryProject.Migrations
                 columns: new[] { "Id", "Activo", "Codigo", "ControlSerieDefault", "CreatedAt", "CreatedBy", "Descripcion", "IsDeleted", "Nombre", "ParentId", "UpdatedAt", "UpdatedBy" },
                 values: new object[,]
                 {
-                    { 1, true, "ELEC", true, new DateTime(2025, 11, 13, 6, 44, 45, 30, DateTimeKind.Utc).AddTicks(4661), "System", "Productos electrónicos", false, "Electrónica", null, null, null },
-                    { 2, true, "FRIO", true, new DateTime(2025, 11, 13, 6, 44, 45, 30, DateTimeKind.Utc).AddTicks(4664), "System", "Heladeras, freezers y aire acondicionado", false, "Refrigeración", null, null, null }
+                    { 1, true, "ELEC", true, new DateTime(2025, 11, 13, 7, 1, 30, 382, DateTimeKind.Utc).AddTicks(808), "System", "Productos electrónicos", false, "Electrónica", null, null, null },
+                    { 2, true, "FRIO", true, new DateTime(2025, 11, 13, 7, 1, 30, 382, DateTimeKind.Utc).AddTicks(812), "System", "Heladeras, freezers y aire acondicionado", false, "Refrigeración", null, null, null }
                 });
 
             migrationBuilder.InsertData(
@@ -1923,9 +1923,9 @@ namespace TheBuryProject.Migrations
                 columns: new[] { "Id", "Activo", "Codigo", "CreatedAt", "CreatedBy", "Descripcion", "IsDeleted", "Nombre", "PaisOrigen", "ParentId", "UpdatedAt", "UpdatedBy" },
                 values: new object[,]
                 {
-                    { 1, true, "SAM", new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6370), "System", "Electrónica y electrodomésticos", false, "Samsung", "Corea del Sur", null, null, null },
-                    { 2, true, "LG", new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6376), "System", "Electrónica y electrodomésticos", false, "LG", "Corea del Sur", null, null, null },
-                    { 3, true, "WHI", new DateTime(2025, 11, 13, 6, 44, 45, 38, DateTimeKind.Utc).AddTicks(6379), "System", "Electrodomésticos", false, "Whirlpool", "Estados Unidos", null, null, null }
+                    { 1, true, "SAM", new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4753), "System", "Electrónica y electrodomésticos", false, "Samsung", "Corea del Sur", null, null, null },
+                    { 2, true, "LG", new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4755), "System", "Electrónica y electrodomésticos", false, "LG", "Corea del Sur", null, null, null },
+                    { 3, true, "WHI", new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4758), "System", "Electrodomésticos", false, "Whirlpool", "Estados Unidos", null, null, null }
                 });
 
             migrationBuilder.CreateIndex(
