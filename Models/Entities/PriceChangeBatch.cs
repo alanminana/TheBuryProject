@@ -118,10 +118,33 @@ public class PriceChangeBatch : BaseEntity
     public DateTime? FechaReversion { get; set; }
 
     /// <summary>
-    /// Motivo de rechazo o cancelación
+    /// Usuario que canceló el batch
+    /// </summary>
+    [StringLength(50)]
+    public string? CanceladoPor { get; set; }
+
+    /// <summary>
+    /// Fecha de cancelación
+    /// </summary>
+    public DateTime? FechaCancelacion { get; set; }
+
+    /// <summary>
+    /// Motivo de rechazo
     /// </summary>
     [StringLength(500)]
     public string? MotivoRechazo { get; set; }
+
+    /// <summary>
+    /// Motivo de cancelación
+    /// </summary>
+    [StringLength(500)]
+    public string? MotivoCancelacion { get; set; }
+
+    /// <summary>
+    /// Motivo de reversión
+    /// </summary>
+    [StringLength(500)]
+    public string? MotivoReversion { get; set; }
 
     /// <summary>
     /// Notas adicionales sobre el batch

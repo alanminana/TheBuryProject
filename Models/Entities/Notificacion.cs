@@ -1,11 +1,11 @@
-using System.ComponentModel.DataAnnotations;
+ï»¿using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Notificación en el sistema
+    /// Notificaciï¿½n en el sistema
     /// </summary>
     public class Notificacion : BaseEntity
     {
@@ -37,7 +37,7 @@ namespace TheBuryProject.Models.Entities
 
         public DateTime? FechaLeida { get; set; }
 
-        public DateTime FechaNotificacion { get; set; } = DateTime.Now;
+        public DateTime FechaNotificacion { get; set; } = DateTime.UtcNow;
 
         // Referencia opcional a la entidad origen
         [StringLength(100)]

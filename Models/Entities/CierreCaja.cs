@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+ï»¿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TheBuryProject.Models.Base;
 
@@ -13,7 +13,7 @@ namespace TheBuryProject.Models.Entities
         public int AperturaCajaId { get; set; }
 
         [Required]
-        public DateTime FechaCierre { get; set; } = DateTime.Now;
+        public DateTime FechaCierre { get; set; } = DateTime.UtcNow;
 
         // Montos calculados del sistema
         [Required]
@@ -32,7 +32,7 @@ namespace TheBuryProject.Models.Entities
         [Column(TypeName = "decimal(18,2)")]
         public decimal MontoEsperadoSistema { get; set; }
 
-        // Montos del arqueo físico
+        // Montos del arqueo fï¿½sico
         [Required]
         [Column(TypeName = "decimal(18,2)")]
         public decimal EfectivoContado { get; set; }
@@ -68,7 +68,7 @@ namespace TheBuryProject.Models.Entities
         [StringLength(2000)]
         public string? DetalleArqueo { get; set; }
 
-        // Navegación
+        // Navegaciï¿½n
         public virtual AperturaCaja AperturaCaja { get; set; } = null!;
     }
 }

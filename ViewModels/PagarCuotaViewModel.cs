@@ -32,7 +32,7 @@ namespace TheBuryProject.ViewModels
         [Display(Name = "Fecha de Pago")]
         [Required(ErrorMessage = "La fecha de pago es requerida")]
         [DataType(DataType.Date)]
-        public DateTime FechaPago { get; set; } = DateTime.Now;
+        public DateTime FechaPago { get; set; } = DateTime.UtcNow;
 
         [Display(Name = "Medio de Pago")]
         [Required(ErrorMessage = "El medio de pago es requerido")]

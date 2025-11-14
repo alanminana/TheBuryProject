@@ -1,13 +1,13 @@
-using System.ComponentModel.DataAnnotations;
+ï»¿using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Registro de evaluación crediticia automática
+    /// Registro de evaluaciï¿½n crediticia automï¿½tica
     /// </summary>
-    public class EvaluacionCredito : BaseEntity 
+    public class EvaluacionCredito : BaseEntity
     {
         public int CreditoId { get; set; }
         public int ClienteId { get; set; }
@@ -25,16 +25,16 @@ namespace TheBuryProject.Models.Entities
         public bool TieneBuenHistorial { get; set; }
         public bool TieneGarante { get; set; }
 
-        // Puntuación calculada
+        // Puntuaciï¿½n calculada
         public decimal PuntajeFinal { get; set; } // 0-100
 
         [StringLength(1000)]
-        public string? Motivo { get; set; } // Explicación del resultado
+        public string? Motivo { get; set; } // Explicaciï¿½n del resultado
 
         [StringLength(2000)]
         public string? Observaciones { get; set; }
 
-        public DateTime FechaEvaluacion { get; set; } = DateTime.Now;
+        public DateTime FechaEvaluacion { get; set; } = DateTime.UtcNow;
 
         // Navigation
         public virtual Credito Credito { get; set; } = null!;

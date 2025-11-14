@@ -29,6 +29,7 @@ namespace TheBuryProject.Services
             try
             {
                 return await _context.Productos
+                    .Where(p => !p.IsDeleted)
                     .Include(p => p.Categoria)
                     .Include(p => p.Marca)
                     .OrderBy(p => p.Nombre)

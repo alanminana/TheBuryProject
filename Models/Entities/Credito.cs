@@ -1,11 +1,11 @@
-using System.ComponentModel.DataAnnotations;
+ï»¿using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Representa un crédito otorgado a un cliente
+    /// Representa un crï¿½dito otorgado a un cliente
     /// </summary>
     public class Credito : BaseEntity
     {
@@ -26,7 +26,7 @@ namespace TheBuryProject.Models.Entities
 
         public EstadoCredito Estado { get; set; } = EstadoCredito.Solicitado;
 
-        public DateTime FechaSolicitud { get; set; } = DateTime.Now;
+        public DateTime FechaSolicitud { get; set; } = DateTime.UtcNow;
         public DateTime? FechaAprobacion { get; set; }
         public DateTime? FechaFinalizacion { get; set; }
         public DateTime? FechaPrimeraCuota { get; set; }
@@ -37,7 +37,7 @@ namespace TheBuryProject.Models.Entities
         public int? GaranteId { get; set; }
         public bool RequiereGarante { get; set; } = false;
 
-        // Datos de aprobación
+        // Datos de aprobaciï¿½n
         [StringLength(100)]
         public string? AprobadoPor { get; set; }
 

@@ -1,10 +1,10 @@
-using System.ComponentModel.DataAnnotations;
+ï»¿using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Base;
 
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Datos específicos del cheque asociado a una venta
+    /// Datos especï¿½ficos del cheque asociado a una venta
     /// </summary>
     public class DatosCheque : BaseEntity
     {
@@ -26,7 +26,7 @@ namespace TheBuryProject.Models.Entities
         public string? CUIT { get; set; }
 
         [Required]
-        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
         [Required]
         public DateTime FechaVencimiento { get; set; }

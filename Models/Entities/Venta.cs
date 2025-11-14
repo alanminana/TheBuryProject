@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+ï»¿using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Enums;
 
@@ -13,7 +13,7 @@ namespace TheBuryProject.Models.Entities
         public int ClienteId { get; set; }
 
         [Required]
-        public DateTime FechaVenta { get; set; } = DateTime.Now;
+        public DateTime FechaVenta { get; set; } = DateTime.UtcNow;
 
         [Required]
         public EstadoVenta Estado { get; set; } = EstadoVenta.Cotizacion;
@@ -26,10 +26,10 @@ namespace TheBuryProject.Models.Entities
         public decimal IVA { get; set; }
         public decimal Total { get; set; }
 
-        // Crédito personal
+        // Crï¿½dito personal
         public int? CreditoId { get; set; }
 
-        // Autorización
+        // Autorizaciï¿½n
         public EstadoAutorizacionVenta EstadoAutorizacion { get; set; } = EstadoAutorizacionVenta.NoRequiere;
         public bool RequiereAutorizacion { get; set; } = false;
 
@@ -49,7 +49,7 @@ namespace TheBuryProject.Models.Entities
         [StringLength(1000)]
         public string? MotivoRechazo { get; set; }
 
-        // Información adicional
+        // Informaciï¿½n adicional
         [StringLength(200)]
         public string? VendedorNombre { get; set; }
 

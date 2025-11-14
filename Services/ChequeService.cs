@@ -25,6 +25,7 @@ namespace TheBuryProject.Services
         public async Task<IEnumerable<Cheque>> GetAllAsync()
         {
             return await _context.Cheques
+                .Where(c => !c.IsDeleted)
                 .AsNoTracking()
                 .Include(c => c.Proveedor)
                 .Include(c => c.OrdenCompra)

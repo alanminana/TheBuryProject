@@ -11,12 +11,13 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
+    [Authorize(Roles = "Admin,Gerente,Vendedor")]
     public class ClienteController : Controller
     {
         private readonly IClienteService _clienteService;
         private readonly IDocumentoClienteService _documentoService;
         private readonly ICreditoService _creditoService;
+        private readonly IEvaluacionCreditoService _evaluacionService;
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly ILogger<ClienteController> _logger;
@@ -25,6 +26,7 @@ namespace TheBuryProject.Controllers
             IClienteService clienteService,
             IDocumentoClienteService documentoService,
             ICreditoService creditoService,
+            IEvaluacionCreditoService evaluacionService,
             AppDbContext context,
             IMapper mapper,
             ILogger<ClienteController> logger)
@@ -32,6 +34,7 @@ namespace TheBuryProject.Controllers
             _clienteService = clienteService;
             _documentoService = documentoService;
             _creditoService = creditoService;
+            _evaluacionService = evaluacionService;
             _context = context;
             _mapper = mapper;
             _logger = logger;
@@ -464,8 +467,8 @@ namespace TheBuryProject.Controllers
                         Nombre = model.GaranteNombre,
                         Telefono = model.GaranteTelefono,
                         Relacion = "Garante",
-                        CreatedAt = DateTime.Now,
-                        UpdatedAt = DateTime.Now,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
                         IsDeleted = false
                     };
 
@@ -506,7 +509,7 @@ namespace TheBuryProject.Controllers
                 }
 
                 // Generar número de crédito
-                var numeroCreditoBase = $"CRE-{DateTime.Now:yyyyMMdd}-{cliente.NumeroDocumento}";
+                var numeroCreditoBase = $"CRE-{DateTime.UtcNow:yyyyMMdd}-{cliente.NumeroDocumento}";
                 var creditosExistentes = await _context.Creditos
                     .Where(c => c.Numero.StartsWith(numeroCreditoBase))
                     .CountAsync();
@@ -525,18 +528,18 @@ namespace TheBuryProject.Controllers
                     CFTEA = cftea,
                     TotalAPagar = totalAPagar,
                     SaldoPendiente = totalAPagar,
-                    Estado = model.AprobarConExcepcion ? EstadoCredito.Activo : EstadoCredito.Activo,
-                    FechaSolicitud = DateTime.Now,
-                    FechaAprobacion = DateTime.Now,
-                    FechaPrimeraCuota = DateTime.Now.AddMonths(1),
+                    Estado = model.AprobarConExcepcion ? EstadoCredito.Solicitado : EstadoCredito.Aprobado,
+                    FechaSolicitud = DateTime.UtcNow,
+                    FechaAprobacion = DateTime.UtcNow,
+                    FechaPrimeraCuota = DateTime.UtcNow.AddMonths(1),
                     GaranteId = garanteId,
                     RequiereGarante = garanteId.HasValue,
                     AprobadoPor = model.AprobarConExcepcion ? model.AutorizadoPor : "Sistema",
                     Observaciones = model.AprobarConExcepcion
                         ? $"APROBADO CON EXCEPCIÓN: {model.MotivoExcepcion}\n{model.Observaciones}"
                         : model.Observaciones,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
                     IsDeleted = false
                 };
 
@@ -544,7 +547,7 @@ namespace TheBuryProject.Controllers
                 await _context.SaveChangesAsync();
 
                 // Generar cuotas
-                var fechaVencimiento = credito.FechaPrimeraCuota ?? DateTime.Now.AddMonths(1);
+                var fechaVencimiento = credito.FechaPrimeraCuota ?? DateTime.UtcNow.AddMonths(1);
                 var cuotas = new List<Cuota>();
 
                 for (int i = 1; i <= model.CantidadCuotas; i++)
@@ -568,8 +571,8 @@ namespace TheBuryProject.Controllers
                         Estado = EstadoCuota.Pendiente,
                         MontoPagado = 0,
                         MontoPunitorio = 0,
-                        CreatedAt = DateTime.Now,
-                        UpdatedAt = DateTime.Now,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
                         IsDeleted = false
                     };
 

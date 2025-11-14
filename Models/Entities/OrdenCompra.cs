@@ -10,16 +10,16 @@ namespace TheBuryProject.Models.Entities
     public class OrdenCompra : BaseEntity
     {
         /// <summary>
-        /// Número de orden de compra (formato: OC-YYYYMMDD-0001)
+        /// N?mero de orden de compra (formato: OC-YYYYMMDD-0001)
         /// </summary>
         [Required]
         [StringLength(50)]
         public string Numero { get; set; } = string.Empty;
 
         /// <summary>
-        /// Fecha de emisión de la orden
+        /// Fecha de emisi?n de la orden
         /// </summary>
-        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Fecha estimada de entrega
@@ -27,7 +27,7 @@ namespace TheBuryProject.Models.Entities
         public DateTime? FechaEntregaEstimada { get; set; }
 
         /// <summary>
-        /// Fecha real de recepción
+        /// Fecha real de recepci?n
         /// </summary>
         public DateTime? FechaRecepcion { get; set; }
 
@@ -67,7 +67,7 @@ namespace TheBuryProject.Models.Entities
         [StringLength(1000)]
         public string? Observaciones { get; set; }
 
-        // Navegación
+        // Navegaci?n
         public virtual Proveedor Proveedor { get; set; } = null!;
         public virtual ICollection<OrdenCompraDetalle> Detalles { get; set; } = new List<OrdenCompraDetalle>();
     }

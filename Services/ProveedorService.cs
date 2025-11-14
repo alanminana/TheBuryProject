@@ -21,6 +21,7 @@ namespace TheBuryProject.Services
             try
             {
                 return await _context.Proveedores
+                    .Where(p => !p.IsDeleted)
                     .Include(p => p.ProveedorProductos)
                         .ThenInclude(pp => pp.Producto)
                     .Include(p => p.ProveedorMarcas)

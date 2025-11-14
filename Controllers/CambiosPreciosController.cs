@@ -403,7 +403,7 @@ public class CambiosPreciosController : Controller
                 CantidadProductos = batch.CantidadProductos,
                 AprobadoPor = batch.AprobadoPor,
                 FechaAprobacion = batch.FechaAprobacion,
-                FechaVigencia = DateTime.Now
+                FechaVigencia = DateTime.UtcNow
             };
 
             return View(viewModel);

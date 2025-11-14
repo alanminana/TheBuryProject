@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+ï»¿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Enums;
@@ -22,7 +22,7 @@ namespace TheBuryProject.Models.Entities
 
         [Required]
         [DataType(DataType.Date)]
-        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal Subtotal { get; set; }
@@ -45,7 +45,7 @@ namespace TheBuryProject.Models.Entities
         [StringLength(500)]
         public string? MotivoAnulacion { get; set; }
 
-        // Navegación
+        // Navegaciï¿½n
         public virtual Venta Venta { get; set; } = null!;
     }
 }

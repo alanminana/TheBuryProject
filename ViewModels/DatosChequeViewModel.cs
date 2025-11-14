@@ -30,7 +30,7 @@ namespace TheBuryProject.ViewModels
         [Display(Name = "Fecha de Emisión")]
         [Required(ErrorMessage = "La fecha de emisión es requerida")]
         [DataType(DataType.Date)]
-        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
         [Display(Name = "Fecha de Vencimiento")]
         [Required(ErrorMessage = "La fecha de vencimiento es requerida")]

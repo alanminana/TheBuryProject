@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+ï»¿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TheBuryProject.Models.Base;
 
@@ -13,7 +13,7 @@ namespace TheBuryProject.Models.Entities
         public int CajaId { get; set; }
 
         [Required]
-        public DateTime FechaApertura { get; set; } = DateTime.Now;
+        public DateTime FechaApertura { get; set; } = DateTime.UtcNow;
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
@@ -28,7 +28,7 @@ namespace TheBuryProject.Models.Entities
 
         public bool Cerrada { get; set; } = false;
 
-        // Navegación
+        // Navegaciï¿½n
         public virtual Caja Caja { get; set; } = null!;
         public virtual ICollection<MovimientoCaja> Movimientos { get; set; } = new List<MovimientoCaja>();
         public virtual CierreCaja? Cierre { get; set; }

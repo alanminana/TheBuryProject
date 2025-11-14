@@ -52,7 +52,7 @@ namespace TheBuryProject.ViewModels
 
         [Display(Name = "Fecha de Solicitud")]
         [DataType(DataType.Date)]
-        public DateTime FechaSolicitud { get; set; } = DateTime.Now;
+        public DateTime FechaSolicitud { get; set; } = DateTime.UtcNow;
 
         [Display(Name = "Fecha de Aprobación")]
         [DataType(DataType.Date)]

@@ -20,7 +20,7 @@ namespace TheBuryProject.ViewModels
         [Display(Name = "Fecha de Venta")]
         [Required]
         [DataType(DataType.Date)]
-        public DateTime FechaVenta { get; set; } = DateTime.Now;
+        public DateTime FechaVenta { get; set; } = DateTime.UtcNow;
 
         [Display(Name = "Estado")]
         public EstadoVenta Estado { get; set; } = EstadoVenta.Cotizacion;

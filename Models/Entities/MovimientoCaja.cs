@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+ï»¿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Enums;
@@ -14,7 +14,7 @@ namespace TheBuryProject.Models.Entities
         public int AperturaCajaId { get; set; }
 
         [Required]
-        public DateTime FechaMovimiento { get; set; } = DateTime.Now;
+        public DateTime FechaMovimiento { get; set; } = DateTime.UtcNow;
 
         [Required]
         public TipoMovimientoCaja Tipo { get; set; }
@@ -42,7 +42,7 @@ namespace TheBuryProject.Models.Entities
         [StringLength(500)]
         public string? Observaciones { get; set; }
 
-        // Navegación
+        // Navegaciï¿½n
         public virtual AperturaCaja AperturaCaja { get; set; } = null!;
     }
 }

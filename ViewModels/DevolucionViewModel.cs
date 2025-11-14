@@ -139,7 +139,7 @@ public class CrearGarantiaViewModel
     [Required]
     [Display(Name = "Fecha de Inicio")]
     [DataType(DataType.Date)]
-    public DateTime FechaInicio { get; set; } = DateTime.Now;
+    public DateTime FechaInicio { get; set; } = DateTime.UtcNow;
 
     [Required]
     [Range(1, 60, ErrorMessage = "Los meses de garantía deben estar entre 1 y 60")]
@@ -244,8 +244,8 @@ public class NotasCreditoClienteViewModel
 /// </summary>
 public class EstadisticasDevolucionViewModel
 {
-    public DateTime FechaDesde { get; set; } = DateTime.Now.AddMonths(-1);
-    public DateTime FechaHasta { get; set; } = DateTime.Now;
+    public DateTime FechaDesde { get; set; } = DateTime.UtcNow.AddMonths(-1);
+    public DateTime FechaHasta { get; set; } = DateTime.UtcNow;
 
     public int TotalDevoluciones { get; set; }
     public decimal MontoTotalDevuelto { get; set; }

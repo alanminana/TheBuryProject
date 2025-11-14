@@ -1,10 +1,10 @@
-using System.ComponentModel.DataAnnotations;
+ï»¿using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Base;
 
 namespace TheBuryProject.Models.Entities;
 
 /// <summary>
-/// Registro de devolución de productos vendidos
+/// Registro de devoluciï¿½n de productos vendidos
 /// </summary>
 public class Devolucion : BaseEntity
 {
@@ -19,7 +19,7 @@ public class Devolucion : BaseEntity
     public string NumeroDevolucion { get; set; } = string.Empty;
 
     [Required]
-    public DateTime FechaDevolucion { get; set; } = DateTime.Now;
+    public DateTime FechaDevolucion { get; set; } = DateTime.UtcNow;
 
     [Required]
     public MotivoDevolucion Motivo { get; set; }
@@ -49,7 +49,7 @@ public class Devolucion : BaseEntity
 
     public DateTime? FechaAprobacion { get; set; }
 
-    // Navegación
+    // Navegaciï¿½n
     public virtual Venta Venta { get; set; } = null!;
     public virtual Cliente Cliente { get; set; } = null!;
     public virtual RMA? RMA { get; set; }
@@ -94,14 +94,14 @@ public class DevolucionDetalle : BaseEntity
 
     public AccionProducto AccionRecomendada { get; set; } = AccionProducto.Cuarentena;
 
-    // Navegación
+    // Navegaciï¿½n
     public virtual Devolucion Devolucion { get; set; } = null!;
     public virtual Producto Producto { get; set; } = null!;
     public virtual Garantia? Garantia { get; set; }
 }
 
 /// <summary>
-/// Registro de garantía de producto
+/// Registro de garantï¿½a de producto
 /// </summary>
 public class Garantia : BaseEntity
 {
@@ -137,7 +137,7 @@ public class Garantia : BaseEntity
     [StringLength(500)]
     public string? ObservacionesActivacion { get; set; }
 
-    // Navegación
+    // Navegaciï¿½n
     public virtual VentaDetalle VentaDetalle { get; set; } = null!;
     public virtual Producto Producto { get; set; } = null!;
     public virtual Cliente Cliente { get; set; } = null!;
@@ -159,7 +159,7 @@ public class RMA : BaseEntity
     public string NumeroRMA { get; set; } = string.Empty;
 
     [Required]
-    public DateTime FechaSolicitud { get; set; } = DateTime.Now;
+    public DateTime FechaSolicitud { get; set; } = DateTime.UtcNow;
 
     [Required]
     public EstadoRMA Estado { get; set; } = EstadoRMA.Pendiente;
@@ -192,13 +192,13 @@ public class RMA : BaseEntity
     [StringLength(500)]
     public string? ObservacionesProveedor { get; set; }
 
-    // Navegación
+    // Navegaciï¿½n
     public virtual Proveedor Proveedor { get; set; } = null!;
     public virtual Devolucion Devolucion { get; set; } = null!;
 }
 
 /// <summary>
-/// Nota de crédito generada por devolución
+/// Nota de crï¿½dito generada por devoluciï¿½n
 /// </summary>
 public class NotaCredito : BaseEntity
 {
@@ -213,7 +213,7 @@ public class NotaCredito : BaseEntity
     public string NumeroNotaCredito { get; set; } = string.Empty;
 
     [Required]
-    public DateTime FechaEmision { get; set; } = DateTime.Now;
+    public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
     [Required]
     public decimal MontoTotal { get; set; }
@@ -230,7 +230,7 @@ public class NotaCredito : BaseEntity
     [StringLength(500)]
     public string? Observaciones { get; set; }
 
-    // Navegación
+    // Navegaciï¿½n
     public virtual Devolucion Devolucion { get; set; } = null!;
     public virtual Cliente Cliente { get; set; } = null!;
 }
@@ -241,10 +241,10 @@ public class NotaCredito : BaseEntity
 
 public enum MotivoDevolucion
 {
-    [Display(Name = "Defecto de Fábrica")]
+    [Display(Name = "Defecto de Fï¿½brica")]
     DefectoFabrica = 0,
 
-    [Display(Name = "Producto Dañado")]
+    [Display(Name = "Producto Daï¿½ado")]
     ProductoDanado = 1,
 
     [Display(Name = "No Cumple Expectativas")]
@@ -253,7 +253,7 @@ public enum MotivoDevolucion
     [Display(Name = "Producto Incorrecto")]
     ProductoIncorrecto = 3,
 
-    [Display(Name = "Garantía")]
+    [Display(Name = "Garantï¿½a")]
     Garantia = 4,
 
     [Display(Name = "Arrepentimiento")]
@@ -268,7 +268,7 @@ public enum EstadoDevolucion
     [Display(Name = "Pendiente")]
     Pendiente = 0,
 
-    [Display(Name = "En Revisión")]
+    [Display(Name = "En Revisiï¿½n")]
     EnRevision = 1,
 
     [Display(Name = "Aprobada")]
@@ -298,7 +298,7 @@ public enum EstadoProductoDevuelto
     [Display(Name = "Defectuoso")]
     Defectuoso = 3,
 
-    [Display(Name = "Dañado")]
+    [Display(Name = "Daï¿½ado")]
     Danado = 4
 }
 
@@ -310,7 +310,7 @@ public enum AccionProducto
     [Display(Name = "Cuarentena")]
     Cuarentena = 1,
 
-    [Display(Name = "Reparación")]
+    [Display(Name = "Reparaciï¿½n")]
     Reparacion = 2,
 
     [Display(Name = "Devolver a Proveedor (RMA)")]
@@ -346,13 +346,13 @@ public enum EstadoRMA
     [Display(Name = "Aprobado por Proveedor")]
     AprobadoProveedor = 1,
 
-    [Display(Name = "En Tránsito")]
+    [Display(Name = "En Trï¿½nsito")]
     EnTransito = 2,
 
     [Display(Name = "Recibido por Proveedor")]
     RecibidoProveedor = 3,
 
-    [Display(Name = "En Evaluación")]
+    [Display(Name = "En Evaluaciï¿½n")]
     EnEvaluacion = 4,
 
     [Display(Name = "Resuelto")]
@@ -367,7 +367,7 @@ public enum TipoResolucionRMA
     [Display(Name = "Reemplazo")]
     Reemplazo = 0,
 
-    [Display(Name = "Reparación")]
+    [Display(Name = "Reparaciï¿½n")]
     Reparacion = 1,
 
     [Display(Name = "Reembolso Total")]
@@ -376,7 +376,7 @@ public enum TipoResolucionRMA
     [Display(Name = "Reembolso Parcial")]
     ReembolsoParcial = 3,
 
-    [Display(Name = "Crédito")]
+    [Display(Name = "Crï¿½dito")]
     Credito = 4
 }
 

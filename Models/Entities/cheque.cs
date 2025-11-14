@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+ï»¿using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Enums;
 
@@ -10,7 +10,7 @@ namespace TheBuryProject.Models.Entities
     public class Cheque : BaseEntity
     {
         /// <summary>
-        /// Número de cheque
+        /// Nï¿½mero de cheque
         /// </summary>
         [Required]
         [StringLength(50)]
@@ -30,7 +30,7 @@ namespace TheBuryProject.Models.Entities
         public string? Sucursal { get; set; }
 
         /// <summary>
-        /// Número de cuenta
+        /// Nï¿½mero de cuenta
         /// </summary>
         [StringLength(50)]
         public string? NumeroCuenta { get; set; }
@@ -41,9 +41,9 @@ namespace TheBuryProject.Models.Entities
         public decimal Monto { get; set; }
 
         /// <summary>
-        /// Fecha de emisión del cheque
+        /// Fecha de emisiï¿½n del cheque
         /// </summary>
-        public DateTime FechaEmision { get; set; } = DateTime.Now;
+        public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// Fecha de vencimiento/cobro del cheque
@@ -65,12 +65,12 @@ namespace TheBuryProject.Models.Entities
         public EstadoCheque Estado { get; set; } = EstadoCheque.Emitido;
 
         /// <summary>
-        /// Fecha en que se entregó el cheque al proveedor
+        /// Fecha en que se entregï¿½ el cheque al proveedor
         /// </summary>
         public DateTime? FechaEntrega { get; set; }
 
         /// <summary>
-        /// Fecha en que se cobró el cheque
+        /// Fecha en que se cobrï¿½ el cheque
         /// </summary>
         public DateTime? FechaCobro { get; set; }
 
@@ -80,7 +80,7 @@ namespace TheBuryProject.Models.Entities
         [StringLength(500)]
         public string? Observaciones { get; set; }
 
-        // Navegación
+        // Navegaciï¿½n
         public virtual Proveedor Proveedor { get; set; } = null!;
         public virtual OrdenCompra? OrdenCompra { get; set; }
     }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
@@ -15,15 +16,18 @@ public class PrecioService : IPrecioService
     private readonly AppDbContext _context;
     private readonly ILogger<PrecioService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IConfiguration _configuration;
 
     public PrecioService(
         AppDbContext context,
         ILogger<PrecioService> logger,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IConfiguration configuration)
     {
         _context = context;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
+        _configuration = configuration;
     }
 
     private string GetCurrentUser() =>
@@ -276,7 +280,7 @@ public class PrecioService : IPrecioService
         }
 
         // Aplicar redondeo
-        precio = AplicarRedondeo(precio, lista.ReglasJson);
+        precio = AplicarRedondeo(precio, lista.ReglaRedondeo);
 
         return precio;
     }
@@ -599,9 +603,8 @@ public class PrecioService : IPrecioService
         if (batch == null)
             return false;
 
-        // Umbral por defecto: 10%
-        // TODO: Obtener de configuración del sistema
-        const decimal umbralPorcentaje = 10.0m;
+        // Obtener umbral de configuración, por defecto 10%
+        var umbralPorcentaje = _configuration.GetValue<decimal>("Precios:UmbralAutorizacionPorcentaje", 10.0m);
 
         return batch.PorcentajePromedioCambio.HasValue &&
                Math.Abs(batch.PorcentajePromedioCambio.Value) >= umbralPorcentaje;
@@ -849,8 +852,9 @@ public class PrecioService : IPrecioService
         decimal costo,
         int listaId)
     {
-        // TODO: Obtener margen mínimo de configuración
-        const decimal margenMinimo = 10.0m;
+        // Obtener margen mínimo de la lista de precios
+        var lista = await _context.ListasPrecios.FindAsync(listaId);
+        var margenMinimo = lista?.MargenMinimoPorcentaje ?? 10.0m;
 
         var margen = CalcularMargen(precio, costo);
 
@@ -859,7 +863,6 @@ public class PrecioService : IPrecioService
             return (false, $"El margen {margen:F2}% es inferior al mínimo permitido ({margenMinimo}%)");
         }
 
-        await Task.CompletedTask;
         return (true, null);
     }
 
@@ -873,10 +876,20 @@ public class PrecioService : IPrecioService
 
     public decimal AplicarRedondeo(decimal precio, string? reglaRedondeo = null)
     {
-        // Redondeo por defecto a centena
-        return Math.Round(precio / 100) * 100;
+        if (string.IsNullOrWhiteSpace(reglaRedondeo))
+        {
+            // Redondeo por defecto a centena
+            return Math.Round(precio / 100) * 100;
+        }
 
-        // TODO: Implementar reglas personalizadas desde JSON
+        return reglaRedondeo.ToLower() switch
+        {
+            "ninguno" => precio,
+            "unidad" => Math.Round(precio, 0),
+            "decena" => Math.Round(precio / 10) * 10,
+            "centena" => Math.Round(precio / 100) * 100,
+            _ => Math.Round(precio / 100) * 100 // Default a centena
+        };
     }
 
     #endregion
