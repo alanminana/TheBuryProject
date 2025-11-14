@@ -335,12 +335,32 @@ public class PrecioService : IPrecioService
             ListasAfectadasJson = JsonSerializer.Serialize(listasIds),
             Estado = EstadoBatch.Simulado,
             SolicitadoPor = currentUser,
-            FechaSolicitud = DateTime.UtcNow,
-            CantidadProductos = productos.Count * listasIds.Count
+            FechaSolicitud = DateTime.UtcNow
         };
 
         _context.PriceChangeBatches.Add(batch);
         await _context.SaveChangesAsync();
+
+        // Cargar TODOS los precios vigentes de una vez (optimización N+1)
+        var productoIds2 = productos.Select(p => p.Id).ToList();
+        var fechaActual = DateTime.UtcNow;
+        var preciosVigentes = await _context.ProductosPrecios
+            .Include(p => p.Producto)
+            .Include(p => p.Lista)
+            .Where(p => productoIds2.Contains(p.ProductoId)
+                     && listasIds.Contains(p.ListaId)
+                     && p.VigenciaDesde <= fechaActual
+                     && (p.VigenciaHasta == null || p.VigenciaHasta >= fechaActual)
+                     && p.EsVigente)
+            .ToListAsync();
+
+        // Crear diccionario para lookup rápido O(1)
+        var preciosPorProductoYLista = preciosVigentes
+            .GroupBy(p => new { p.ProductoId, p.ListaId })
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(p => p.VigenciaDesde).First()
+            );
 
         // Crear items de simulación
         var items = new List<PriceChangeItem>();
@@ -351,8 +371,9 @@ public class PrecioService : IPrecioService
         {
             foreach (var listaId in listasIds)
             {
-                var precioActual = await GetPrecioVigenteAsync(producto.Id, listaId);
-                if (precioActual == null)
+                // Lookup en memoria O(1) en lugar de query
+                var key = new { ProductoId = producto.Id, ListaId = listaId };
+                if (!preciosPorProductoYLista.TryGetValue(key, out var precioActual))
                 {
                     _logger.LogWarning(
                         "Producto {ProductoId} no tiene precio en lista {ListaId}",
@@ -429,6 +450,9 @@ public class PrecioService : IPrecioService
 
         // Verificar si requiere autorización
         batch.RequiereAutorizacion = await RequiereAutorizacionAsync(batch.Id);
+
+        // Actualizar cantidad de productos con items reales
+        batch.CantidadProductos = items.Count;
 
         await _context.SaveChangesAsync();
 
