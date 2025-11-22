@@ -7,21 +7,21 @@ namespace TheBuryProject.Services.Interfaces
     {
         Task<List<VentaViewModel>> GetAllAsync(VentaFilterViewModel? filter = null);
         Task<VentaViewModel?> GetByIdAsync(int id);
-        Task<VentaViewModel> CreateAsync(VentaViewModel viewModel, string? usuarioActual = null);
-        Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel, string? usuarioActual = null);
+        Task<VentaViewModel> CreateAsync(VentaViewModel viewModel);
+        Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel);
         Task<bool> DeleteAsync(int id);
         Task<bool> ConfirmarVentaAsync(int id);
         Task<bool> CancelarVentaAsync(int id, string motivo);
         Task<bool> FacturarVentaAsync(int id, FacturaViewModel facturaViewModel);
         Task<bool> ValidarStockAsync(int ventaId);
 
-        // Nuevos métodos para autorización
+        // Nuevos mÃ©todos para autorizaciÃ³n
         Task<bool> SolicitarAutorizacionAsync(int id, string usuarioSolicita, string motivo);
         Task<bool> AutorizarVentaAsync(int id, string usuarioAutoriza, string motivo);
         Task<bool> RechazarVentaAsync(int id, string usuarioAutoriza, string motivo);
         Task<bool> RequiereAutorizacionAsync(VentaViewModel viewModel);
 
-        // Métodos para datos adicionales
+        // MÃ©todos para datos adicionales
         Task<bool> GuardarDatosTarjetaAsync(int ventaId, DatosTarjetaViewModel datosTarjeta);
         Task<bool> GuardarDatosChequeAsync(int ventaId, DatosChequeViewModel datosCheque);
         Task<DatosTarjetaViewModel> CalcularCuotasTarjetaAsync(int tarjetaId, decimal monto, int cuotas);
