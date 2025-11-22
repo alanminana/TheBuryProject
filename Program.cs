@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
+using TheBuryProject.Extensions;
 using TheBuryProject.Helpers;
 using TheBuryProject.Services;
 using TheBuryProject.Services.Interfaces;
@@ -41,22 +42,31 @@ builder.Services.AddSingleton<IMapper>(sp =>
 });
 
 // 4. Registro de servicios (Dependency Injection)
+
+// 4.1 Infraestructura base
+builder.Services.AddHttpContextAccessor();
+
+// 4.2 Servicios auxiliares de ventas (registra: CurrentUserService, FinancialCalculationService, VentaValidator, VentaNumberGenerator)
+builder.Services.AddVentaServices();
+
+// 4.3 Servicios principales
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
-builder.Services.AddScoped<IProductoService, ProductoService>();  // ← Esta línea
+builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<IPrecioHistoricoService, PrecioHistoricoService>();
 builder.Services.AddScoped<IProveedorService, ProveedorService>();
-builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();  // ← AGREGAR ESTA LÍNEA
+builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();
 builder.Services.AddScoped<IMovimientoStockService, MovimientoStockService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<ICreditoService, CreditoService>();
 builder.Services.AddScoped<IVentaService, VentaService>();
 builder.Services.AddScoped<IConfiguracionPagoService, ConfiguracionPagoService>();
 builder.Services.AddScoped<IRolService, RolService>();
-// Servicios de precios
-builder.Services.AddScoped<IPrecioService, PrecioService>();
-builder.Services.AddScoped<IPrecioHistoricoService, PrecioHistoricoService>();
 
+// 4.4 Servicios de precios
+builder.Services.AddScoped<IPrecioService, PrecioService>();
+
+// 4.5 Otros servicios
 builder.Services.AddScoped<IChequeService, ChequeService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IMoraService, MoraService>();
@@ -69,12 +79,10 @@ builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 builder.Services.AddScoped<ICajaService, CajaService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
 
-// Servicios en background para procesamiento automático
+// 4.6 Servicios en background
 builder.Services.AddHostedService<MoraBackgroundService>();
 builder.Services.AddHostedService<AlertaStockBackgroundService>();
-builder.Services.AddHostedService<DocumentoVencidoBackgroundService>();  // ← AGREGAR ESTA LÍNEA
-// Agregar IHttpContextAccessor para acceder al usuario actual en DbContext
-builder.Services.AddHttpContextAccessor();
+builder.Services.AddHostedService<DocumentoVencidoBackgroundService>();
 
 // 5. Configuración de MVC
 builder.Services.AddControllersWithViews();

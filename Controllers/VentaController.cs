@@ -184,8 +184,8 @@ namespace TheBuryProject.Controllers
 
                 // 🛠️ NUEVO: Capturar usuario actual
                 var usuarioActual = User?.Identity?.Name ?? "Sistema";
-                
-                var venta = await _ventaService.CreateAsync(viewModel, usuarioActual);  // ✅ PASAR USUARIO
+
+                var venta = await _ventaService.CreateAsync(viewModel);
 
                 if (venta.RequiereAutorizacion)
                 {
@@ -270,9 +270,9 @@ namespace TheBuryProject.Controllers
 
                 // ✅ NUEVO: Capturar usuario actual
                 var usuarioActual = User?.Identity?.Name ?? "Sistema";
-                
-                var resultado = await _ventaService.UpdateAsync(id, viewModel, usuarioActual);  // ✅ PASAR USUARIO
-                
+
+                var resultado = await _ventaService.UpdateAsync(id, viewModel);
+
                 if (resultado == null)
                 {
                     TempData["Error"] = "Venta no encontrada";
@@ -453,7 +453,6 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                // TODO: Obtener usuario actual del sistema de autenticación
                 var usuarioAutoriza = User.Identity?.Name ?? "Administrador";
 
                 var resultado = await _ventaService.AutorizarVentaAsync(id, usuarioAutoriza, motivo);
@@ -516,7 +515,6 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Rechazar), new { id });
                 }
 
-                // TODO: Obtener usuario actual del sistema de autenticación
                 var usuarioAutoriza = User.Identity?.Name ?? "Administrador";
 
                 var resultado = await _ventaService.RechazarVentaAsync(id, usuarioAutoriza, motivo);
@@ -644,30 +642,10 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        // GET: API endpoint para obtener créditos disponibles del cliente
-        // GET: API endpoint para obtener créditos disponibles del cliente
-        // GET: API endpoint para obtener créditos disponibles del cliente
-        [HttpGet]
         public async Task<IActionResult> GetCreditosCliente(int clienteId)
         {
             try
             {
-                _logger.LogInformation("=== OBTENIENDO CREDITOS PARA CLIENTE {ClienteId} ===", clienteId);
-
-                // Primero obtener TODOS los créditos del cliente para ver qué hay
-                var todosCreditosCliente = await _context.Creditos
-                    .Where(c => c.ClienteId == clienteId)
-                    .ToListAsync();
-
-                _logger.LogInformation("Total de créditos del cliente (sin filtros): {Count}", todosCreditosCliente.Count);
-
-                foreach (var c in todosCreditosCliente)
-                {
-                    _logger.LogInformation("  - Crédito {Numero}: Estado={Estado}, SaldoPendiente={Saldo}, MontoAprobado={Monto}",
-                        c.Numero, c.Estado, c.SaldoPendiente, c.MontoAprobado);
-                }
-
-                // Ahora obtener solo los créditos disponibles
                 var creditos = await _context.Creditos
                     .Where(c => c.ClienteId == clienteId
                              && (c.Estado == EstadoCredito.Activo || c.Estado == EstadoCredito.Aprobado)
@@ -684,11 +662,9 @@ namespace TheBuryProject.Controllers
                     })
                     .ToListAsync();
 
-                _logger.LogInformation("Se encontraron {Count} créditos disponibles para cliente {ClienteId}", creditos.Count, clienteId);
-
-                if (creditos.Count == 0)
+                if (!creditos.Any())
                 {
-                    _logger.LogWarning("No hay créditos disponibles. Criterios: Estado=Activo O Aprobado, SaldoPendiente > 0");
+                    _logger.LogWarning("No se encontraron créditos disponibles para cliente {ClienteId}", clienteId);
                 }
 
                 return Json(creditos);
