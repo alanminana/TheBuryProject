@@ -182,9 +182,6 @@ namespace TheBuryProject.Controllers
                     }
                 }
 
-                // 🛠️ NUEVO: Capturar usuario actual
-                var usuarioActual = User?.Identity?.Name ?? "Sistema";
-
                 var venta = await _ventaService.CreateAsync(viewModel);
 
                 if (venta.RequiereAutorizacion)
@@ -267,9 +264,6 @@ namespace TheBuryProject.Controllers
                     await CargarViewBags(viewModel.ClienteId);
                     return View(viewModel);
                 }
-
-                // ✅ NUEVO: Capturar usuario actual
-                var usuarioActual = User?.Identity?.Name ?? "Sistema";
 
                 var resultado = await _ventaService.UpdateAsync(id, viewModel);
 
