@@ -28,7 +28,10 @@ namespace TheBuryProject.Helpers
             CreateMap<Producto, ProductoViewModel>()
                 .ForMember(d => d.CategoriaNombre, o => o.MapFrom(s => s.Categoria != null ? s.Categoria.Nombre : null))
                 .ForMember(d => d.MarcaNombre, o => o.MapFrom(s => s.Marca != null ? s.Marca.Nombre : null));
-
+            CreateMap<Producto, ProductoViewModel>()
+    .ForMember(dest => dest.CategoriaNombre, opt => opt.MapFrom(src => src.Categoria.Nombre))
+    .ForMember(dest => dest.MarcaNombre, opt => opt.MapFrom(src => src.Marca.Nombre))
+    .ReverseMap();
             CreateMap<ProductoViewModel, Producto>();
 
             // =======================
@@ -125,7 +128,7 @@ namespace TheBuryProject.Helpers
                         : (int?)null))
                 .ForMember(d => d.CreditosActivos, o => o.MapFrom(s => s.Creditos.Count(c =>
                     c.Estado == EstadoCredito.Activo)))
-                .ForMember(d => d.TotalAdeudado, o => o.MapFrom(s => s.Creditos
+                .ForMember(d => d.MontoAdeudado, o => o.MapFrom(s => s.Creditos 
                     .Where(c => c.Estado == EstadoCredito.Activo)
                     .Sum(c => c.SaldoPendiente)));
 

@@ -1,4 +1,6 @@
 ﻿@model TheBuryProject.ViewModels.ClienteDetalleViewModel
+@using TheBuryProject.Models.Enums
+@using TheBuryProject.Helpers
 
 <!-- Alertas de documentación -->
 @if (!Model.EvaluacionCredito.TieneDocumentosCompletos)
@@ -40,23 +42,18 @@ else
                     <label class="form-label text-light fw-semibold">Tipo de Documento *</label>
                     <select name="TipoDocumento" class="form-select bg-body-secondary text-light border-0" required>
                         <option value="">Seleccione...</option>
-                        <option value="0">DNI</option>
-                        <option value="1">Recibo de Sueldo</option>
-                        <option value="2">Servicio de Luz</option>
-                        <option value="3">Servicio de Gas</option>
-                        <option value="4">Servicio de Agua</option>
-                        <option value="5">Constancia CUIL</option>
-                        <option value="6">Declaración Jurada</option>
-                        <option value="7">Veraz</option>
-                        <option value="8">Otro</option>
+                        @foreach (TipoDocumentoCliente tipo in Enum.GetValues(typeof(TipoDocumentoCliente)))
+                        {
+                            <option value="@((int)tipo)">@tipo.GetDisplayName()</option>
+                        }
                     </select>
                 </div>
 
                 <div class="col-md-4">
                     <label class="form-label text-light fw-semibold">Archivo *</label>
                     <input type="file" name="Archivo" class="form-control bg-body-secondary text-light border-0"
-                           accept=".pdf,.jpg,.jpeg,.png" required />
-                    <div class="form-text text-muted">Formatos: PDF, JPG, PNG (Max 5MB)</div>
+                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required />
+                    <div class="form-text text-muted">Formatos: PDF, JPG, PNG, DOC, DOCX (Max 5MB)</div>
                 </div>
 
                 <div class="col-md-2">
@@ -154,14 +151,14 @@ else
                                 <td class="text-center px-4">
                                     <div class="btn-group btn-group-sm">
                                         <a asp-controller="DocumentoCliente" asp-action="Details" asp-route-id="@doc.Id"
-                                           class="btn btn-outline-info" title="Ver detalles" target="_blank">
+                                           class="btn btn-outline-info" title="Ver detalles">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <a asp-controller="DocumentoCliente" asp-action="Descargar" asp-route-id="@doc.Id"
                                            class="btn btn-outline-success" title="Descargar">
                                             <i class="bi bi-download"></i>
                                         </a>
-                                        @if (doc.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
+                                        @if (doc.Estado == EstadoDocumento.Pendiente)
                                         {
                                             <form asp-controller="DocumentoCliente" asp-action="Delete" asp-route-id="@doc.Id"
                                                   method="post" class="d-inline"
@@ -208,7 +205,7 @@ else
                 <div class="card-body">
                     <h6 class="text-secondary mb-2">Verificados</h6>
                     <h3 class="fw-bold text-success mb-0">
-                        @Model.Documentos.Count(d => d.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Verificado)
+                        @Model.Documentos.Count(d => d.Estado == EstadoDocumento.Verificado)
                     </h3>
                 </div>
             </div>
@@ -218,7 +215,7 @@ else
                 <div class="card-body">
                     <h6 class="text-secondary mb-2">Pendientes</h6>
                     <h3 class="fw-bold text-warning mb-0">
-                        @Model.Documentos.Count(d => d.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
+                        @Model.Documentos.Count(d => d.Estado == EstadoDocumento.Pendiente)
                     </h3>
                 </div>
             </div>
@@ -228,7 +225,7 @@ else
                 <div class="card-body">
                     <h6 class="text-secondary mb-2">Rechazados</h6>
                     <h3 class="fw-bold text-danger mb-0">
-                        @Model.Documentos.Count(d => d.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Rechazado)
+                        @Model.Documentos.Count(d => d.Estado == EstadoDocumento.Rechazado)
                     </h3>
                 </div>
             </div>

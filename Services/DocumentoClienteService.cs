@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TheBuryProject.Data;
+using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -69,18 +70,11 @@ namespace TheBuryProject.Services
                     throw new Exception("Debe seleccionar un archivo");
                 }
 
-                // Validar tamaño (máximo 5MB)
-                if (viewModel.Archivo.Length > 5 * 1024 * 1024)
+                // CAMBIO: Usar helper de validación mejorado
+                var (isValid, errorMessage) = DocumentoValidationHelper.ValidateFile(viewModel.Archivo);
+                if (!isValid)
                 {
-                    throw new Exception("El archivo no puede superar los 5 MB");
-                }
-
-                // Validar extensión
-                var extensionesPermitidas = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
-                var extension = Path.GetExtension(viewModel.Archivo.FileName).ToLowerInvariant();
-                if (!extensionesPermitidas.Contains(extension))
-                {
-                    throw new Exception($"Extensión no permitida. Solo se aceptan: {string.Join(", ", extensionesPermitidas)}");
+                    throw new Exception(errorMessage);
                 }
 
                 // Crear carpeta si no existe
@@ -90,9 +84,15 @@ namespace TheBuryProject.Services
                     Directory.CreateDirectory(uploadPath);
                 }
 
-                // Generar nombre único
+                // CAMBIO: Validar ruta para prevenir path traversal
+                var extension = Path.GetExtension(viewModel.Archivo.FileName).ToLowerInvariant();
                 var nombreArchivo = $"{viewModel.ClienteId}_{viewModel.TipoDocumento}_{DateTime.Now:yyyyMMddHHmmss}{extension}";
-                var rutaCompleta = Path.Combine(uploadPath, nombreArchivo);
+                
+                var (pathValid, rutaCompleta, pathError) = DocumentoValidationHelper.NormalizePath(uploadPath, nombreArchivo);
+                if (!pathValid)
+                {
+                    throw new Exception(pathError);
+                }
 
                 // Guardar archivo
                 using (var stream = new FileStream(rutaCompleta, FileMode.Create))
@@ -252,36 +252,53 @@ namespace TheBuryProject.Services
             }
         }
 
-        public async Task<List<DocumentoClienteViewModel>> BuscarAsync(DocumentoClienteFilterViewModel filtro)
+        public async Task<(List<DocumentoClienteViewModel> Documentos, int Total)> BuscarAsync(DocumentoClienteFilterViewModel filtro)
         {
-            var query = _context.Set<DocumentoCliente>()
-                .Include(d => d.Cliente)
-                .Where(d => !d.IsDeleted)
-                .AsQueryable();
+            try
+            {
+                var query = _context.Set<DocumentoCliente>()
+                    .Include(d => d.Cliente)
+                    .Where(d => !d.IsDeleted)
+                    .AsQueryable();
 
-            if (filtro.ClienteId.HasValue)
-                query = query.Where(d => d.ClienteId == filtro.ClienteId.Value);
+                if (filtro.ClienteId.HasValue)
+                    query = query.Where(d => d.ClienteId == filtro.ClienteId.Value);
 
-            if (filtro.TipoDocumento.HasValue)
-                query = query.Where(d => d.TipoDocumento == filtro.TipoDocumento.Value);
+                if (filtro.TipoDocumento.HasValue)
+                    query = query.Where(d => d.TipoDocumento == (TipoDocumentoCliente)filtro.TipoDocumento.Value);
 
-            if (filtro.Estado.HasValue)
-                query = query.Where(d => d.Estado == filtro.Estado.Value);
+                if (filtro.Estado.HasValue)
+                    query = query.Where(d => d.Estado == filtro.Estado.Value);
 
-            if (filtro.SoloPendientes)
-                query = query.Where(d => d.Estado == EstadoDocumento.Pendiente);
+                if (filtro.SoloPendientes)
+                    query = query.Where(d => d.Estado == EstadoDocumento.Pendiente);
 
-            if (filtro.SoloVencidos)
-                query = query.Where(d => d.Estado == EstadoDocumento.Vencido ||
-                                        (d.FechaVencimiento.HasValue && d.FechaVencimiento.Value < DateTime.Today));
+                if (filtro.SoloVencidos)
+                    query = query.Where(d => d.Estado == EstadoDocumento.Vencido ||
+                                            (d.FechaVencimiento.HasValue && d.FechaVencimiento.Value < DateTime.Today));
 
-            var documentos = await query
-                .OrderByDescending(d => d.FechaSubida)
-                .ToListAsync();
+                // CAMBIO: Contar total antes de paginación
+                var total = await query.CountAsync();
 
-            filtro.TotalResultados = documentos.Count;
+                // CAMBIO: Aplicar paginación
+                var pageNumber = filtro.PageNumber > 0 ? filtro.PageNumber : 1;
+                var pageSize = filtro.PageSize > 0 ? filtro.PageSize : 10;
 
-            return _mapper.Map<List<DocumentoClienteViewModel>>(documentos);
+                var documentos = await query
+                    .OrderByDescending(d => d.FechaSubida)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                filtro.TotalResultados = total;
+
+                return (_mapper.Map<List<DocumentoClienteViewModel>>(documentos), total);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al buscar documentos");
+                throw;
+            }
         }
 
         public async Task MarcarVencidosAsync()

@@ -4,7 +4,8 @@ using TheBuryProject.Models.Base;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Representa un cliente del sistema que puede solicitar cr�ditos
+    /// Representa un cliente del sistema que puede solicitar créditos
+    /// La documentación se gestiona en la tabla DocumentoCliente (no en booleanos)
     /// </summary>
     public class Cliente : BaseEntity
     {
@@ -64,20 +65,12 @@ namespace TheBuryProject.Models.Entities
         public string? Empleador { get; set; }
 
         [StringLength(100)]
-        public string? TipoEmpleo { get; set; } // Relaci�n de dependencia, Aut�nomo, Monotributista
+        public string? TipoEmpleo { get; set; } // Relación de dependencia, Autónomo, Monotributista
 
         public decimal? Sueldo { get; set; }
 
         [StringLength(20)]
         public string? TelefonoLaboral { get; set; }
-
-        // Documentaci�n
-        public bool TieneReciboSueldo { get; set; } = false;
-        public bool TieneVeraz { get; set; } = false;
-        public bool TieneImpuesto { get; set; } = false;
-        public bool TieneServicioLuz { get; set; } = false;
-        public bool TieneServicioGas { get; set; } = false;
-        public bool TieneServicioAgua { get; set; } = false;
 
         // Control de Riesgo
         public decimal PuntajeRiesgo { get; set; } = 5.0m; // 0 a 10 (5 = neutro)
@@ -95,5 +88,6 @@ namespace TheBuryProject.Models.Entities
         public virtual Garante? Garante { get; set; }
         public virtual ICollection<Credito> Creditos { get; set; } = new List<Credito>();
         public virtual ICollection<Garante> ComoGarante { get; set; } = new List<Garante>();
+        public virtual ICollection<DocumentoCliente> Documentos { get; set; } = new List<DocumentoCliente>();
     }
 }

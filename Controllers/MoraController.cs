@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
@@ -9,11 +10,16 @@ namespace TheBuryProject.Controllers
     public class MoraController : Controller
     {
         private readonly IMoraService _moraService;
+        private readonly IMapper _mapper;
         private readonly ILogger<MoraController> _logger;
 
-        public MoraController(IMoraService moraService, ILogger<MoraController> logger)
+        public MoraController(
+            IMoraService moraService,
+            IMapper mapper,
+            ILogger<MoraController> logger)
         {
             _moraService = moraService;
+            _mapper = mapper;
             _logger = logger;
         }
 
@@ -26,34 +32,8 @@ namespace TheBuryProject.Controllers
 
                 var viewModel = new MoraIndexViewModel
                 {
-                    Configuracion = new ConfiguracionMoraViewModel
-                    {
-                        Id = config.Id,
-                        DiasGracia = config.DiasGracia,
-                        PorcentajeRecargo = config.PorcentajeRecargo,
-                        CalculoAutomatico = config.CalculoAutomatico,
-                        NotificacionAutomatica = config.NotificacionAutomatica,
-                        JobActivo = config.JobActivo,
-                        HoraEjecucion = config.HoraEjecucion,
-                        UltimaEjecucion = config.UltimaEjecucion
-                    },
-                    Alertas = alertas.Select(a => new AlertaCobranzaViewModel
-                    {
-                        Id = a.Id,
-                        CreditoId = a.CreditoId,
-                        ClienteId = a.ClienteId,
-                        ClienteNombre = a.Cliente != null ? $"{a.Cliente.Apellido}, {a.Cliente.Nombre}" : "N/A",
-                        ClienteDocumento = a.Cliente?.NumeroDocumento ?? "N/A",
-                        Tipo = a.Tipo,
-                        Prioridad = a.Prioridad,
-                        Mensaje = a.Mensaje,
-                        MontoVencido = a.MontoVencido,
-                        CuotasVencidas = a.CuotasVencidas,
-                        FechaAlerta = a.FechaAlerta,
-                        Resuelta = a.Resuelta,
-                        FechaResolucion = a.FechaResolucion,
-                        Observaciones = a.Observaciones
-                    }).ToList(),
+                    Configuracion = _mapper.Map<ConfiguracionMoraViewModel>(config), // ✅ AutoMapper
+                    Alertas = alertas,
                     TotalAlertas = alertas.Count,
                     AlertasPendientes = alertas.Count(a => !a.Resuelta),
                     AlertasResueltas = alertas.Count(a => a.Resuelta),
@@ -111,18 +91,11 @@ namespace TheBuryProject.Controllers
         }
 
         [HttpPost]
+        // ✅ OPTIMIZADO: Sin query innecesaria
         public async Task<IActionResult> ResolverAlerta(int id, string? observaciones)
         {
             try
             {
-                var alerta = await _moraService.GetAlertaByIdAsync(id);
-
-                if (alerta == null)
-                {
-                    TempData["Error"] = "Alerta no encontrada";
-                    return RedirectToAction(nameof(Index));
-                }
-
                 var resultado = await _moraService.ResolverAlertaAsync(id, observaciones);
 
                 if (resultado)

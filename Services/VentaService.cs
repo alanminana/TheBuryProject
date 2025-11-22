@@ -8,23 +8,28 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Services
 {
-    public class REFACTORING_PLAN : IVentaService
+    public class VentaService : IVentaService
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
-        private readonly ILogger<REFACTORING_PLAN> _logger;
+        private readonly ILogger<VentaService> _logger;
         private readonly IConfiguracionPagoService _configuracionPagoService;
+        private readonly IAlertaStockService _alertaStockService;  // ✅ NUEVO
 
-        public REFACTORING_PLAN(
+        private static readonly object _lockNumeroVenta = new object(); // ✅ AGREGAR AL PRINCIPIO DE LA CLASE
+
+        public VentaService(
             AppDbContext context,
             IMapper mapper,
-            ILogger<REFACTORING_PLAN> logger,
-            IConfiguracionPagoService configuracionPagoService)
+            ILogger<VentaService> logger,
+            IConfiguracionPagoService configuracionPagoService,
+            IAlertaStockService alertaStockService)  // ✅ NUEVO PARÁMETRO
         {
             _context = context;
             _mapper = mapper;
             _logger = logger;
             _configuracionPagoService = configuracionPagoService;
+            _alertaStockService = alertaStockService;  // ✅ NUEVO
         }
 
         public async Task<List<VentaViewModel>> GetAllAsync(VentaFilterViewModel? filter = null)
@@ -34,7 +39,6 @@ namespace TheBuryProject.Services
                 .Include(v => v.Credito)
                 .Include(v => v.Detalles)
                     .ThenInclude(d => d.Producto)
-                .Include(v => v.Facturas)
                 .Include(v => v.DatosTarjeta)
                 .Include(v => v.DatosCheque)
                 .Where(v => !v.IsDeleted)
@@ -100,7 +104,7 @@ namespace TheBuryProject.Services
             return viewModel;
         }
 
-        public async Task<VentaViewModel> CreateAsync(VentaViewModel viewModel)
+        public async Task<VentaViewModel> CreateAsync(VentaViewModel viewModel, string? usuarioActual = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -110,6 +114,9 @@ namespace TheBuryProject.Services
 
                 // Generar número de venta
                 venta.Numero = await GenerarNumeroVentaAsync(viewModel.Estado);
+                
+                // ✅ NUEVO: Capturar usuario actual
+                venta.CreatedBy = string.IsNullOrWhiteSpace(usuarioActual) ? "Sistema" : usuarioActual;
 
                 // Calcular totales
                 CalcularTotales(venta);
@@ -164,7 +171,7 @@ namespace TheBuryProject.Services
         }
 
 
-        public async Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel)
+        public async Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel, string? usuarioActual = null)
         {
             var venta = await _context.Ventas
                 .Include(v => v.Detalles)
@@ -187,6 +194,7 @@ namespace TheBuryProject.Services
             venta.Observaciones = viewModel.Observaciones;
             venta.CreditoId = viewModel.CreditoId;
             venta.UpdatedAt = DateTime.Now;
+            venta.UpdatedBy = string.IsNullOrWhiteSpace(usuarioActual) ? "Sistema" : usuarioActual;  // ✅ NUEVO
 
             // Actualizar detalles
             _context.VentaDetalles.RemoveRange(venta.Detalles);
@@ -283,16 +291,19 @@ namespace TheBuryProject.Services
                 // Descontar stock y registrar movimientos
                 foreach (var detalle in venta.Detalles)
                 {
+                    var stockAnterior = detalle.Producto.StockActual;
                     detalle.Producto.StockActual -= detalle.Cantidad;
 
                     var movimiento = new MovimientoStock
                     {
                         ProductoId = detalle.ProductoId,
                         Tipo = TipoMovimiento.Salida,
-                        Cantidad = -detalle.Cantidad,
-                        StockAnterior = detalle.Producto.StockActual + detalle.Cantidad,
+                        Cantidad = detalle.Cantidad,  // ✅ POSITIVA
+                        StockAnterior = stockAnterior,
                         StockNuevo = detalle.Producto.StockActual,
-                        Referencia = $"Venta {venta.Numero}"
+                        Referencia = $"Venta {venta.Numero}",
+                        Motivo = $"Confirmación de venta - Cliente: {venta.Cliente.Nombre}",
+                        CreatedBy = venta.CreatedBy ?? "Sistema"
                     };
 
                     _context.MovimientosStock.Add(movimiento);
@@ -301,7 +312,13 @@ namespace TheBuryProject.Services
                 // Si es venta a crédito personal, generar las cuotas
                 if (venta.TipoPago == TipoPago.CreditoPersonal && venta.CreditoId.HasValue)
                 {
-                    await ProcesarCreditoPersonalVentaAsync(venta);
+                    await ProcesarCreditoPersonalVentaAsync(venta);  // ✅ CORREGIDO: Sin espacio
+                }
+
+                // ✅ NUEVO: Verificar y generar alertas de stock bajo
+                foreach (var detalle in venta.Detalles)
+                {
+                    await _alertaStockService.VerificarYGenerarAlertaAsync(detalle.ProductoId);
                 }
 
                 venta.Estado = EstadoVenta.Confirmada;
@@ -322,48 +339,90 @@ namespace TheBuryProject.Services
 
         public async Task<bool> CancelarVentaAsync(int id, string motivo)
         {
-            var venta = await _context.Ventas
-                .Include(v => v.Detalles)
-                    .ThenInclude(d => d.Producto)
-                .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            if (venta == null)
-                return false;
-
-            if (venta.Estado == EstadoVenta.Cancelada)
+            try
             {
-                throw new InvalidOperationException("La venta ya está cancelada");
-            }
+                var venta = await _context.Ventas
+                    .Include(v => v.Detalles)
+                        .ThenInclude(d => d.Producto)
+                    .Include(v => v.Credito)
+                    .Include(v => v.VentaCreditoCuotas)  // ✅ NUEVO
+                    .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
 
-            // Si la venta estaba confirmada, devolver stock
-            if (venta.Estado == EstadoVenta.Confirmada || venta.Estado == EstadoVenta.Facturada)
-            {
-                foreach (var detalle in venta.Detalles)
+                if (venta == null)
+                    return false;
+
+                if (venta.Estado == EstadoVenta.Cancelada)
                 {
-                    detalle.Producto.StockActual += detalle.Cantidad;
-
-                    var movimiento = new MovimientoStock
-                    {
-                        ProductoId = detalle.ProductoId,
-                        Tipo = TipoMovimiento.Entrada,  // CAMBIADO
-                        Cantidad = detalle.Cantidad,
-                        StockAnterior = detalle.Producto.StockActual - detalle.Cantidad,
-                        StockNuevo = detalle.Producto.StockActual,
-                        Referencia = $"Cancelación Venta {venta.Numero}",
-                        Motivo = motivo  // CAMBIADO: Observaciones por Motivo
-                    };
-                    _context.MovimientosStock.Add(movimiento);
+                    throw new InvalidOperationException("La venta ya está cancelada");
                 }
+
+                // Si la venta estaba confirmada, devolver stock
+                if (venta.Estado == EstadoVenta.Confirmada || venta.Estado == EstadoVenta.Facturada)
+                {
+                    foreach (var detalle in venta.Detalles)
+                    {
+                        var stockAnterior = detalle.Producto.StockActual;
+                        detalle.Producto.StockActual += detalle.Cantidad;
+
+                        var movimiento = new MovimientoStock
+                        {
+                            ProductoId = detalle.ProductoId,
+                            Tipo = TipoMovimiento.Entrada,
+                            Cantidad = detalle.Cantidad,  // ✅ POSITIVA
+                            StockAnterior = stockAnterior,
+                            StockNuevo = detalle.Producto.StockActual,
+                            Referencia = $"Cancelación Venta {venta.Numero}",
+                            Motivo = motivo,
+                            CreatedBy = "Sistema"
+                        };
+                        _context.MovimientosStock.Add(movimiento);
+                    }
+                }
+
+                // ✅ NUEVO: Restaurar crédito personal si aplica
+                if (venta.TipoPago == TipoPago.CreditoPersonal && 
+                    venta.CreditoId.HasValue && 
+                    venta.VentaCreditoCuotas.Any())
+                {
+                    var credito = venta.Credito;
+                    if (credito != null)
+                    {
+                        // Calcular monto financiado (suma de cuotas principales)
+                        var montoFinanciado = venta.VentaCreditoCuotas.First().Saldo;
+                        
+                        // Restaurar saldo
+                        credito.SaldoPendiente += montoFinanciado;
+                        _context.Creditos.Update(credito);
+
+                        _logger.LogInformation(
+                            "Crédito {CreditoId} restaurado por cancelación de venta {VentaId}. " +
+                            "Monto restaurado: ${Monto}", 
+                            credito.Id, venta.Id, montoFinanciado);
+                    }
+
+                    // Eliminar cuotas de esta venta
+                    _context.VentaCreditoCuotas.RemoveRange(venta.VentaCreditoCuotas);
+                }
+
+                venta.Estado = EstadoVenta.Cancelada;
+                venta.FechaCancelacion = DateTime.Now;
+                venta.MotivoCancelacion = motivo;
+                venta.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("Venta {VentaId} cancelada. Motivo: {Motivo}", id, motivo);
+                return true;
             }
-
-            venta.Estado = EstadoVenta.Cancelada;
-            venta.FechaCancelacion = DateTime.Now;
-            venta.MotivoCancelacion = motivo;
-            venta.UpdatedAt = DateTime.Now;
-
-            await _context.SaveChangesAsync();
-
-            return true;
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error al cancelar venta {VentaId}", id);
+                throw;
+            }
         }
 
         public async Task<bool> FacturarVentaAsync(int id, FacturaViewModel facturaViewModel)
@@ -662,28 +721,32 @@ namespace TheBuryProject.Services
             venta.Total = subtotalConDescuento + venta.IVA;
         }
 
+        // ✅ REEMPLAZAR EL MÉTODO:
         private async Task<string> GenerarNumeroVentaAsync(EstadoVenta estado)
         {
-            var prefijo = estado == EstadoVenta.Cotizacion ? "COT" : "VTA";
-            var fecha = DateTime.Now;
-            var periodo = fecha.ToString("yyyyMM");
-
-            var ultimaVenta = await _context.Ventas
-                .Where(v => v.Numero.StartsWith($"{prefijo}-{periodo}"))
-                .OrderByDescending(v => v.Numero)
-                .FirstOrDefaultAsync();
-
-            int siguiente = 1;
-            if (ultimaVenta != null)
+            lock (_lockNumeroVenta)  // ✅ NUEVO: Thread-safe
             {
-                var partes = ultimaVenta.Numero.Split('-');
-                if (partes.Length == 3 && int.TryParse(partes[2], out int ultimo))
-                {
-                    siguiente = ultimo + 1;
-                }
-            }
+                var prefijo = estado == EstadoVenta.Cotizacion ? "COT" : "VTA";
+                var fecha = DateTime.Now;
+                var periodo = fecha.ToString("yyyyMM");
 
-            return $"{prefijo}-{periodo}-{siguiente:D6}";
+                var ultimaVenta = _context.Ventas
+                    .Where(v => v.Numero.StartsWith($"{prefijo}-{periodo}") && !v.IsDeleted)
+                    .OrderByDescending(v => v.Numero)
+                    .FirstOrDefault();  // Sync dentro del lock
+
+                int siguiente = 1;
+                if (ultimaVenta != null)
+                {
+                    var partes = ultimaVenta.Numero.Split('-');
+                    if (partes.Length == 3 && int.TryParse(partes[2], out int ultimo))
+                    {
+                        siguiente = ultimo + 1;
+                    }
+                }
+
+                return $"{prefijo}-{periodo}-{siguiente:D6}";
+            }
         }
 
         private async Task<string> GenerarNumeroFacturaAsync(TipoFactura tipo)

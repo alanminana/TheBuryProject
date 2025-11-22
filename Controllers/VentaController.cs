@@ -182,7 +182,10 @@ namespace TheBuryProject.Controllers
                     }
                 }
 
-                var venta = await _ventaService.CreateAsync(viewModel);
+                // 🛠️ NUEVO: Capturar usuario actual
+                var usuarioActual = User?.Identity?.Name ?? "Sistema";
+                
+                var venta = await _ventaService.CreateAsync(viewModel, usuarioActual);  // ✅ PASAR USUARIO
 
                 if (venta.RequiereAutorizacion)
                 {
@@ -265,7 +268,11 @@ namespace TheBuryProject.Controllers
                     return View(viewModel);
                 }
 
-                var resultado = await _ventaService.UpdateAsync(id, viewModel);
+                // ✅ NUEVO: Capturar usuario actual
+                var usuarioActual = User?.Identity?.Name ?? "Sistema";
+                
+                var resultado = await _ventaService.UpdateAsync(id, viewModel, usuarioActual);  // ✅ PASAR USUARIO
+                
                 if (resultado == null)
                 {
                     TempData["Error"] = "Venta no encontrada";

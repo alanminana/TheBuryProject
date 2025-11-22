@@ -309,7 +309,9 @@ namespace TheBuryProject.Services
             var alertasIgnoradas = todasAlertas.Where(a => a.Estado == EstadoAlerta.Ignorada).ToList();
 
             var hace7Dias = DateTime.UtcNow.AddDays(-7);
-
+            var alertasVencidas = await _context.AlertasStock
+                .CountAsync(a => a.Estado == EstadoAlerta.Pendiente && a.FechaAlerta < hace7Dias);
+    
             // Calcular promedio de días para resolver
             var promedioResolucion = alertasResueltas.Any()
                 ? alertasResueltas

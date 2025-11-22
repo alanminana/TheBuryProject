@@ -91,7 +91,7 @@
             <h6 class="alert-heading">
                 <i class="bi bi-x-circle-fill me-2"></i>No Cumple Requisitos Mínimos
             </h6>
-            <p class="mb-0">El cliente no cumple con los requisitos mínimos para solicitar un crédito en este momento. Se recomienda completar la documentación y reducir el endeudamiento actual.</p>
+            <p class="mb-0">El cliente no cumple con los requisitos mínimos para solicitar un crédito en este momento. Se recomienda completar la documentación y reducir elendeudamiento actual.</p>
         </div>
     }
 }
@@ -202,7 +202,6 @@ else
                         <i class="bi bi-check-circle-fill me-2"></i>
                         Garante registrado: <strong>@Model.EvaluacionCredito.GaranteNombre</strong>
                     </div>
-                    <input type="hidden" name="GaranteId" value="@Model.Cliente.GaranteId" />
                 }
                 else
                 {
@@ -301,8 +300,6 @@ else
             const tasaMensual = parseFloat(document.getElementById('tasaInteres').value) / 100 || 0;
 
             if (monto > 0 && cuotas > 0) {
-                // Fórmula: M = P * (r * (1+r)^n) / ((1+r)^n - 1)
-                // donde M = cuota mensual, P = monto principal, r = tasa mensual, n = número de cuotas
                 let cuotaMensual;
                 if (tasaMensual > 0) {
                     const factor = Math.pow(1 + tasaMensual, cuotas);
@@ -323,8 +320,7 @@ else
                     currency: 'ARS'
                 });
 
-                // Validar contra capacidad de pago
-                const capacidadPago = @Model.EvaluacionCredito.CapacidadPagoMensual;
+                const capacidadPago = parseFloat('@Model.EvaluacionCredito.CapacidadPagoMensual.ToString("F2")');
                 const elementoCuota = document.getElementById('cuotaMensual');
 
                 if (cuotaMensual > capacidadPago) {
@@ -337,12 +333,10 @@ else
             }
         }
 
-        // Event listeners
         document.getElementById('montoSolicitado')?.addEventListener('input', calcularCuota);
         document.getElementById('cantidadCuotas')?.addEventListener('change', calcularCuota);
         document.getElementById('tasaInteres')?.addEventListener('input', calcularCuota);
 
-        // Calcular al cargar la página
         document.addEventListener('DOMContentLoaded', calcularCuota);
     </script>
 }

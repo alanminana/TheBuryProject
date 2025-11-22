@@ -185,26 +185,24 @@ namespace TheBuryProject.Controllers
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
             try
             {
                 var producto = await _productoService.GetByIdAsync(id.Value);
                 if (producto == null)
-                {
                     return NotFound();
-                }
 
+                // ✅ USAR AUTOMAPPER en lugar de mapeo manual
                 var viewModel = _mapper.Map<ProductoViewModel>(producto);
+                
                 await CargarDropdownsAsync(viewModel.CategoriaId, viewModel.MarcaId);
                 return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al cargar producto para editar {Id}", id);
-                TempData["Error"] = "Error al cargar el producto. Por favor, intente nuevamente.";
+                TempData["Error"] = "Error al cargar el producto";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -257,25 +255,22 @@ namespace TheBuryProject.Controllers
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
             try
             {
                 var producto = await _productoService.GetByIdAsync(id.Value);
                 if (producto == null)
-                {
                     return NotFound();
-                }
 
+                // ✅ USAR AUTOMAPPER
                 var viewModel = _mapper.Map<ProductoViewModel>(producto);
                 return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al cargar producto para eliminar {Id}", id);
-                TempData["Error"] = "Error al cargar el producto. Por favor, intente nuevamente.";
+                TempData["Error"] = "Error al cargar el producto";
                 return RedirectToAction(nameof(Index));
             }
         }

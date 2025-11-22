@@ -172,13 +172,15 @@ namespace TheBuryProject.Controllers
                     return View(viewModel);
                 }
 
+                var usuarioActual = User?.Identity?.Name ?? "Sistema";
                 // Registrar el ajuste en servicio de dominio
                 await _movimientoStockService.RegistrarAjusteAsync(
                     viewModel.ProductoId,
                     viewModel.Tipo,
                     viewModel.Cantidad,
                     viewModel.Referencia,
-                    viewModel.Motivo);
+                    viewModel.Motivo,
+                    usuarioActual);  // ← NUEVO PARÁMETRO
 
                 TempData["Success"] = "Ajuste de stock registrado exitosamente";
                 return RedirectToAction(nameof(Kardex), new { id = viewModel.ProductoId });

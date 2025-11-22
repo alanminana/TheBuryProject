@@ -50,7 +50,7 @@ builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();  // ← A
 builder.Services.AddScoped<IMovimientoStockService, MovimientoStockService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<ICreditoService, CreditoService>();
-builder.Services.AddScoped<IVentaService, REFACTORING_PLAN>();
+builder.Services.AddScoped<IVentaService, VentaService>();
 builder.Services.AddScoped<IConfiguracionPagoService, ConfiguracionPagoService>();
 builder.Services.AddScoped<IRolService, RolService>();
 // Servicios de precios
@@ -72,7 +72,7 @@ builder.Services.AddScoped<INotificacionService, NotificacionService>();
 // Servicios en background para procesamiento automático
 builder.Services.AddHostedService<MoraBackgroundService>();
 builder.Services.AddHostedService<AlertaStockBackgroundService>();
-
+builder.Services.AddHostedService<DocumentoVencidoBackgroundService>();  // ← AGREGAR ESTA LÍNEA
 // Agregar IHttpContextAccessor para acceder al usuario actual en DbContext
 builder.Services.AddHttpContextAccessor();
 

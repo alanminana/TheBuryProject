@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
+using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -11,7 +12,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "Admin,Gerente,Vendedor")]
+    [AllowAnonymous]
     public class ClienteController : Controller
     {
         private readonly IClienteService _clienteService;
@@ -55,25 +56,12 @@ namespace TheBuryProject.Controllers
                     orderDirection: filter.OrderDirection);
 
                 var viewModels = _mapper.Map<IEnumerable<ClienteViewModel>>(clientes);
-
-                // Calcular edad
-                foreach (var vm in viewModels)
-                {
-                    if (vm.FechaNacimiento.HasValue)
-                    {
-                        var hoy = DateTime.Today;
-                        var edad = hoy.Year - vm.FechaNacimiento.Value.Year;
-                        if (vm.FechaNacimiento.Value.Date > hoy.AddYears(-edad)) edad--;
-                        vm.Edad = edad;
-                    }
-                }
+                ClienteHelper.AplicarEdadAMultiples(viewModels);
 
                 filter.Clientes = viewModels;
                 filter.TotalResultados = viewModels.Count();
 
-                // Cargar tipos de documento
-                ViewBag.TiposDocumento = new SelectList(new[] { "DNI", "CUIL", "CUIT" });
-
+                CargarDropdowns();
                 return View(filter);
             }
             catch (Exception ex)
@@ -90,42 +78,10 @@ namespace TheBuryProject.Controllers
             try
             {
                 var cliente = await _clienteService.GetByIdAsync(id);
-                if (cliente == null)
-                {
-                    TempData["Error"] = "Cliente no encontrado";
+                if (!ClienteValidationHelper.ClienteExiste(cliente))
                     return RedirectToAction(nameof(Index));
-                }
 
-                // Crear ViewModel consolidado
-                var detalleViewModel = new ClienteDetalleViewModel
-                {
-                    TabActivo = tab ?? "informacion"
-                };
-
-                // Cargar datos del cliente
-                detalleViewModel.Cliente = _mapper.Map<ClienteViewModel>(cliente);
-
-                // Calcular edad
-                if (detalleViewModel.Cliente.FechaNacimiento.HasValue)
-                {
-                    var hoy = DateTime.Today;
-                    var edad = hoy.Year - detalleViewModel.Cliente.FechaNacimiento.Value.Year;
-                    if (detalleViewModel.Cliente.FechaNacimiento.Value.Date > hoy.AddYears(-edad)) edad--;
-                    detalleViewModel.Cliente.Edad = edad;
-                }
-
-                // Cargar documentos del cliente
-                detalleViewModel.Documentos = await _documentoService.GetByClienteIdAsync(id);
-
-                // Cargar créditos activos
-                var creditos = await _creditoService.GetByClienteIdAsync(id);
-                detalleViewModel.CreditosActivos = creditos
-                    .Where(c => c.Estado == Models.Enums.EstadoCredito.Activo)
-                    .ToList();
-
-                // Evaluar capacidad crediticia
-                detalleViewModel.EvaluacionCredito = await EvaluarCapacidadCrediticia(id, detalleViewModel);
-
+                var detalleViewModel = await ConstructDetalleViewModel(cliente!, tab);
                 return View(detalleViewModel);
             }
             catch (Exception ex)
@@ -134,152 +90,6 @@ namespace TheBuryProject.Controllers
                 TempData["Error"] = "Error al cargar el cliente";
                 return RedirectToAction(nameof(Index));
             }
-        }
-
-        /// <summary>
-        /// Evalúa la capacidad crediticia del cliente y genera recomendaciones
-        /// </summary>
-        private Task<EvaluacionCreditoResult> EvaluarCapacidadCrediticia(int clienteId, ClienteDetalleViewModel modelo)
-        {
-            var evaluacion = new EvaluacionCreditoResult();
-
-            try
-            {
-                // 1. Validar documentación
-                var documentosRequeridos = new[] { "DNI", "Recibo de Sueldo", "Servicio (Luz/Gas/Agua)", "Veraz" };
-                var tiposDocumentosVerificados = modelo.Documentos
-                    .Where(d => d.Estado == Models.Enums.EstadoDocumento.Verificado)
-                    .Select(d => d.TipoDocumentoNombre)
-                    .ToList();
-
-                evaluacion.TieneDocumentosCompletos = tiposDocumentosVerificados.Contains("DNI") &&
-                                                      tiposDocumentosVerificados.Contains("Recibo de Sueldo") &&
-                                                      tiposDocumentosVerificados.Contains("Veraz") &&
-                                                      (tiposDocumentosVerificados.Contains("Servicio de Luz") ||
-                                                       tiposDocumentosVerificados.Contains("Servicio de Gas") ||
-                                                       tiposDocumentosVerificados.Contains("Servicio de Agua"));
-
-                // Detectar documentos faltantes
-                if (!tiposDocumentosVerificados.Contains("DNI"))
-                    evaluacion.DocumentosFaltantes.Add("DNI");
-                if (!tiposDocumentosVerificados.Contains("Recibo de Sueldo"))
-                    evaluacion.DocumentosFaltantes.Add("Recibo de Sueldo");
-                if (!tiposDocumentosVerificados.Contains("Veraz"))
-                    evaluacion.DocumentosFaltantes.Add("Veraz");
-                if (!tiposDocumentosVerificados.Contains("Servicio de Luz") &&
-                    !tiposDocumentosVerificados.Contains("Servicio de Gas") &&
-                    !tiposDocumentosVerificados.Contains("Servicio de Agua"))
-                    evaluacion.DocumentosFaltantes.Add("Servicio (Luz/Gas/Agua)");
-
-                // 2. Calcular capacidad financiera
-                evaluacion.IngresosMensuales = modelo.Cliente.IngresoMensual ?? 0;
-                evaluacion.DeudaActual = modelo.CreditosActivos.Sum(c => c.SaldoPendiente);
-
-                // Capacidad de pago: 30% del ingreso mensual
-                evaluacion.CapacidadPagoMensual = evaluacion.IngresosMensuales * 0.30m;
-
-                // Porcentaje de endeudamiento actual
-                if (evaluacion.IngresosMensuales > 0)
-                {
-                    var cuotaMensualActual = modelo.CreditosActivos.Sum(c => c.MontoTotal / c.CantidadCuotas);
-                    evaluacion.PorcentajeEndeudamiento = (double)(cuotaMensualActual / evaluacion.IngresosMensuales * 100);
-                }
-
-                // Monto máximo disponible (asumiendo 12 cuotas)
-                evaluacion.MontoMaximoDisponible = evaluacion.CapacidadPagoMensual * 12;
-
-                // 3. Score crediticio (simplificado)
-                evaluacion.ScoreCrediticio = CalcularScoreCrediticio(modelo);
-
-                // 4. Nivel de riesgo
-                if (evaluacion.ScoreCrediticio >= 700)
-                    evaluacion.NivelRiesgo = "Bajo";
-                else if (evaluacion.ScoreCrediticio >= 500)
-                    evaluacion.NivelRiesgo = "Medio";
-                else
-                    evaluacion.NivelRiesgo = "Alto";
-
-                // 5. Verificar si requiere garante
-                evaluacion.RequiereGarante = evaluacion.PorcentajeEndeudamiento > 40 ||
-                                            evaluacion.ScoreCrediticio < 500 ||
-                                            !evaluacion.TieneDocumentosCompletos;
-
-                // Verificar si tiene garante
-                evaluacion.TieneGarante = modelo.Cliente.CreditosActivos > 0; // Simplificado, deberías verificar en la tabla Garantes
-
-                // 6. Determinar si cumple requisitos
-                evaluacion.CumpleRequisitos = evaluacion.TieneDocumentosCompletos &&
-                                             evaluacion.PorcentajeEndeudamiento < 50 &&
-                                             evaluacion.ScoreCrediticio >= 400 &&
-                                             (!evaluacion.RequiereGarante || evaluacion.TieneGarante);
-
-                // 7. Generar alertas y recomendaciones
-                if (!evaluacion.TieneDocumentosCompletos)
-                    evaluacion.AlertasYRecomendaciones.Add($"⚠️ Faltan documentos: {string.Join(", ", evaluacion.DocumentosFaltantes)}");
-
-                if (evaluacion.PorcentajeEndeudamiento > 40)
-                    evaluacion.AlertasYRecomendaciones.Add($"⚠️ Endeudamiento alto: {evaluacion.PorcentajeEndeudamiento:F1}%");
-
-                if (evaluacion.RequiereGarante && !evaluacion.TieneGarante)
-                    evaluacion.AlertasYRecomendaciones.Add("⚠️ Se requiere garante");
-
-                if (evaluacion.ScoreCrediticio < 500)
-                    evaluacion.AlertasYRecomendaciones.Add($"⚠️ Score crediticio bajo: {evaluacion.ScoreCrediticio}");
-
-                if (evaluacion.MontoMaximoDisponible <= 0)
-                    evaluacion.AlertasYRecomendaciones.Add("⚠️ Sin capacidad de pago disponible");
-
-                // 8. Determinar si puede aprobar con excepción
-                evaluacion.PuedeAprobarConExcepcion = !evaluacion.CumpleRequisitos &&
-                                                      evaluacion.IngresosMensuales > 0 &&
-                                                      evaluacion.PorcentajeEndeudamiento < 60;
-
-                if (evaluacion.CumpleRequisitos)
-                {
-                    evaluacion.AlertasYRecomendaciones.Add("✅ El cliente cumple con todos los requisitos");
-                }
-                else if (evaluacion.PuedeAprobarConExcepcion)
-                {
-                    evaluacion.AlertasYRecomendaciones.Add("⚠️ Puede aprobarse con excepción autorizada");
-                }
-
-                return Task.FromResult(evaluacion);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al evaluar capacidad crediticia del cliente {ClienteId}", clienteId);
-                evaluacion.AlertasYRecomendaciones.Add("❌ Error al evaluar capacidad crediticia");
-                return Task.FromResult(evaluacion);
-            }
-        }
-
-        /// <summary>
-        /// Calcula un score crediticio simplificado
-        /// </summary>
-        private int CalcularScoreCrediticio(ClienteDetalleViewModel modelo)
-        {
-            int score = 500; // Base
-
-            // Sumar puntos por documentación verificada
-            score += modelo.Documentos.Count(d => d.Estado == Models.Enums.EstadoDocumento.Verificado) * 50;
-
-            // Restar puntos por endeudamiento
-            var endeudamiento = modelo.CreditosActivos.Any() ?
-                modelo.CreditosActivos.Sum(c => c.MontoTotal / c.CantidadCuotas) / (modelo.Cliente.IngresoMensual ?? 1) * 100 : 0;
-            if (endeudamiento > 40)
-                score -= (int)((endeudamiento - 40) * 5);
-
-            // Sumar puntos por antigüedad laboral
-            if (!string.IsNullOrEmpty(modelo.Cliente.TiempoTrabajo))
-            {
-                if (modelo.Cliente.TiempoTrabajo.Contains("año"))
-                    score += 100;
-                else if (modelo.Cliente.TiempoTrabajo.Contains("mes"))
-                    score += 50;
-            }
-
-            // Limitar entre 300 y 850
-            return Math.Max(300, Math.Min(850, score));
         }
 
         // GET: Cliente/Create
@@ -329,13 +139,10 @@ namespace TheBuryProject.Controllers
             try
             {
                 var cliente = await _clienteService.GetByIdAsync(id);
-                if (cliente == null)
-                {
-                    TempData["Error"] = "Cliente no encontrado";
+                if (!ClienteValidationHelper.ClienteExiste(cliente))
                     return RedirectToAction(nameof(Index));
-                }
 
-                var viewModel = _mapper.Map<ClienteViewModel>(cliente);
+                var viewModel = _mapper.Map<ClienteViewModel>(cliente!);
                 CargarDropdowns();
                 return View(viewModel);
             }
@@ -353,9 +160,7 @@ namespace TheBuryProject.Controllers
         public async Task<IActionResult> Edit(int id, ClienteViewModel viewModel)
         {
             if (id != viewModel.Id)
-            {
                 return NotFound();
-            }
 
             try
             {
@@ -392,13 +197,10 @@ namespace TheBuryProject.Controllers
             try
             {
                 var cliente = await _clienteService.GetByIdAsync(id);
-                if (cliente == null)
-                {
-                    TempData["Error"] = "Cliente no encontrado";
+                if (!ClienteValidationHelper.ClienteExiste(cliente))
                     return RedirectToAction(nameof(Index));
-                }
 
-                var viewModel = _mapper.Map<ClienteViewModel>(cliente);
+                var viewModel = _mapper.Map<ClienteViewModel>(cliente!);
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -446,150 +248,52 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "credito" });
                 }
 
-                // Validar que el cliente exista
                 var cliente = await _context.Clientes.FindAsync(model.ClienteId);
-                if (cliente == null)
-                {
-                    TempData["Error"] = "Cliente no encontrado";
+                if (!ClienteValidationHelper.ClienteExiste(cliente))
                     return RedirectToAction(nameof(Index));
-                }
 
-                // Crear o vincular garante si es necesario
-                int? garanteId = model.GaranteId;
-                if (model.GaranteId == null && !string.IsNullOrEmpty(model.GaranteDocumento))
-                {
-                    // Crear nuevo garante
-                    var garante = new Garante
-                    {
-                        ClienteId = model.ClienteId,
-                        TipoDocumento = "DNI",
-                        NumeroDocumento = model.GaranteDocumento,
-                        Nombre = model.GaranteNombre,
-                        Telefono = model.GaranteTelefono,
-                        Relacion = "Garante",
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
-                        IsDeleted = false
-                    };
+                // Procesar garante
+                int? garanteId = await ProcesarGarante(model);
 
-                    _context.Garantes.Add(garante);
-                    await _context.SaveChangesAsync();
-                    garanteId = garante.Id;
-
-                    // Actualizar el cliente con el garante
-                    cliente.GaranteId = garanteId;
-                    _context.Clientes.Update(cliente);
-                }
-
-                // Calcular cuota mensual usando sistema francés
-                decimal tasaMensualDecimal = model.TasaInteres / 100;
-                decimal cuotaMensual;
-
-                if (tasaMensualDecimal > 0)
-                {
-                    // Fórmula del sistema francés: M = P * (r * (1+r)^n) / ((1+r)^n - 1)
-                    var factor = (decimal)Math.Pow((double)(1 + tasaMensualDecimal), model.CantidadCuotas);
-                    cuotaMensual = model.MontoSolicitado * (tasaMensualDecimal * factor) / (factor - 1);
-                }
-                else
-                {
-                    cuotaMensual = model.MontoSolicitado / model.CantidadCuotas;
-                }
-
-                decimal totalAPagar = cuotaMensual * model.CantidadCuotas;
-
-                // Calcular CFTEA (Costo Financiero Total Efectivo Anual)
-                // CFTEA = ((TotalAPagar / MontoSolicitado) ^ (12 / CantidadCuotas)) - 1
-                decimal cftea = 0;
-                if (model.CantidadCuotas > 0 && model.MontoSolicitado > 0)
-                {
-                    var base_cftea = (double)(totalAPagar / model.MontoSolicitado);
-                    var exp_cftea = 12.0 / model.CantidadCuotas;
-                    cftea = (decimal)(Math.Pow(base_cftea, exp_cftea) - 1) * 100;
-                }
+                // Calcular parámetros del crédito
+                var calculos = ClienteControllerHelper.CalcularParametrosCredito(
+                    model.MontoSolicitado, model.TasaInteres, model.CantidadCuotas);
 
                 // Generar número de crédito
-                var numeroCreditoBase = $"CRE-{DateTime.UtcNow:yyyyMMdd}-{cliente.NumeroDocumento}";
-                var creditosExistentes = await _context.Creditos
-                    .Where(c => c.Numero.StartsWith(numeroCreditoBase))
-                    .CountAsync();
-                var numeroCredito = $"{numeroCreditoBase}-{creditosExistentes + 1:D3}";
+                var numeroCredito = await GenerarNumeroCreditoAsync(cliente!.NumeroDocumento);
 
-                // Crear el crédito
-                var credito = new Credito
+                // ✅ USAR TRANSACCIÓN EXPLÍCITA
+                using (var transaction = await _context.Database.BeginTransactionAsync())
                 {
-                    ClienteId = model.ClienteId,
-                    Numero = numeroCredito,
-                    MontoSolicitado = model.MontoSolicitado,
-                    MontoAprobado = model.MontoSolicitado,
-                    TasaInteres = model.TasaInteres,
-                    CantidadCuotas = model.CantidadCuotas,
-                    MontoCuota = cuotaMensual,
-                    CFTEA = cftea,
-                    TotalAPagar = totalAPagar,
-                    SaldoPendiente = totalAPagar,
-                    Estado = model.AprobarConExcepcion ? EstadoCredito.Solicitado : EstadoCredito.Aprobado,
-                    FechaSolicitud = DateTime.UtcNow,
-                    FechaAprobacion = DateTime.UtcNow,
-                    FechaPrimeraCuota = DateTime.UtcNow.AddMonths(1),
-                    GaranteId = garanteId,
-                    RequiereGarante = garanteId.HasValue,
-                    AprobadoPor = model.AprobarConExcepcion ? model.AutorizadoPor : "Sistema",
-                    Observaciones = model.AprobarConExcepcion
-                        ? $"APROBADO CON EXCEPCIÓN: {model.MotivoExcepcion}\n{model.Observaciones}"
-                        : model.Observaciones,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    IsDeleted = false
-                };
-
-                _context.Creditos.Add(credito);
-                await _context.SaveChangesAsync();
-
-                // Generar cuotas
-                var fechaVencimiento = credito.FechaPrimeraCuota ?? DateTime.UtcNow.AddMonths(1);
-                var cuotas = new List<Cuota>();
-
-                for (int i = 1; i <= model.CantidadCuotas; i++)
-                {
-                    // Calcular interés y capital de esta cuota
-                    decimal saldoPendienteAnterior = i == 1
-                        ? model.MontoSolicitado
-                        : model.MontoSolicitado - cuotas.Take(i - 1).Sum(c => c.MontoCapital);
-
-                    decimal montoInteres = saldoPendienteAnterior * tasaMensualDecimal;
-                    decimal montoCapital = cuotaMensual - montoInteres;
-
-                    var cuota = new Cuota
+                    try
                     {
-                        CreditoId = credito.Id,
-                        NumeroCuota = i,
-                        MontoCapital = montoCapital,
-                        MontoInteres = montoInteres,
-                        MontoTotal = cuotaMensual,
-                        FechaVencimiento = fechaVencimiento,
-                        Estado = EstadoCuota.Pendiente,
-                        MontoPagado = 0,
-                        MontoPunitorio = 0,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
-                        IsDeleted = false
-                    };
+                        // Crear crédito
+                        var credito = CrearCredito(model, cliente!, garanteId, calculos, numeroCredito);
+                        _context.Creditos.Add(credito);
+                        await _context.SaveChangesAsync();
 
-                    cuotas.Add(cuota);
-                    fechaVencimiento = fechaVencimiento.AddMonths(1);
+                        // Generar cuotas
+                        await GenerarCuotasAsync(credito, model, calculos.TasaMensualDecimal);
+
+                        // Confirmar transacción
+                        await transaction.CommitAsync();
+
+                        _logger.LogInformation(
+                            "Crédito {Numero} creado exitosamente para cliente {ClienteId}. Monto: {Monto}, Cuotas: {Cuotas}",
+                            numeroCredito, model.ClienteId, model.MontoSolicitado, model.CantidadCuotas);
+
+                        TempData["Success"] = $"Crédito {numeroCredito} solicitado exitosamente. " +
+                            $"Monto: {model.MontoSolicitado:C}, {model.CantidadCuotas} cuotas de {calculos.CuotaMensual:C}";
+                        return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "informacion" });
+                    }
+                    catch (Exception ex)
+                    {
+                        // Si algo falla, rollback automático
+                        await transaction.RollbackAsync();
+                        _logger.LogError(ex, "Error durante transacción de crédito para cliente {ClienteId}", model.ClienteId);
+                        throw;
+                    }
                 }
-
-                _context.Cuotas.AddRange(cuotas);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation(
-                    "Crédito {NumeroCredito} creado exitosamente para cliente {ClienteId}. Monto: {Monto}, Cuotas: {Cuotas}",
-                    numeroCredito, model.ClienteId, model.MontoSolicitado, model.CantidadCuotas
-                );
-
-                TempData["Success"] = $"Crédito {numeroCredito} solicitado exitosamente. Monto: {model.MontoSolicitado:C}, {model.CantidadCuotas} cuotas de {cuotaMensual:C}";
-                return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "informacion" });
             }
             catch (Exception ex)
             {
@@ -599,22 +303,217 @@ namespace TheBuryProject.Controllers
             }
         }
 
+        #region Métodos Privados
+
+        /// <summary>
+        /// Construye el ViewModel de detalle con toda la información del cliente
+        /// </summary>
+        private async Task<ClienteDetalleViewModel> ConstructDetalleViewModel(Cliente cliente, string? tab)
+        {
+            var detalleViewModel = new ClienteDetalleViewModel
+            {
+                TabActivo = tab ?? "informacion",
+                Cliente = _mapper.Map<ClienteViewModel>(cliente)
+            };
+
+            detalleViewModel.Cliente.Edad = ClienteHelper.CalcularEdad(detalleViewModel.Cliente.FechaNacimiento);
+            detalleViewModel.Documentos = await _documentoService.GetByClienteIdAsync(cliente.Id);
+
+            var creditos = await _creditoService.GetByClienteIdAsync(cliente.Id);
+            detalleViewModel.CreditosActivos = creditos
+                .Where(c => c.Estado == EstadoCredito.Activo)
+                .ToList();
+
+            detalleViewModel.EvaluacionCredito = await EvaluarCapacidadCrediticia(cliente.Id, detalleViewModel);
+
+            return detalleViewModel;
+        }
+
+        /// <summary>
+        /// Procesa la información del garante (crea o vincula)
+        /// </summary>
+        private async Task<int?> ProcesarGarante(SolicitudCreditoViewModel model)
+        {
+            int? garanteId = model.GaranteId;
+
+            if (model.GaranteId == null && !string.IsNullOrEmpty(model.GaranteDocumento))
+            {
+                var garante = new Garante
+                {
+                    ClienteId = model.ClienteId,
+                    TipoDocumento = "DNI",
+                    NumeroDocumento = model.GaranteDocumento,
+                    Nombre = model.GaranteNombre,
+                    Telefono = model.GaranteTelefono,
+                    Relacion = "Garante",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsDeleted = false
+                };
+
+                _context.Garantes.Add(garante);
+                await _context.SaveChangesAsync();
+                garanteId = garante.Id;
+
+                var cliente = await _context.Clientes.FindAsync(model.ClienteId);
+                if (cliente != null)
+                {
+                    cliente.GaranteId = garanteId;
+                    _context.Clientes.Update(cliente);
+                }
+            }
+
+            return garanteId;
+        }
+
+        /// <summary>
+        /// Genera un número único para el crédito
+        /// </summary>
+        private async Task<string> GenerarNumeroCreditoAsync(string numeroDocumento)
+        {
+            var numeroCreditoBase = $"CRE-{DateTime.UtcNow:yyyyMMdd}-{numeroDocumento}";
+            var creditosExistentes = await _context.Creditos
+                .Where(c => c.Numero.StartsWith(numeroCreditoBase))
+                .CountAsync();
+            return $"{numeroCreditoBase}-{creditosExistentes + 1:D3}";
+        }
+
+        /// <summary>
+        /// Crea una instancia de Credito con todos los parámetros calculados
+        /// </summary>
+        private Credito CrearCredito(
+            SolicitudCreditoViewModel model,
+            Cliente cliente,
+            int? garanteId,
+            ClienteControllerHelper.CreditoCalculos calculos,
+            string numeroCredito)
+        {
+            return new Credito
+            {
+                ClienteId = model.ClienteId,
+                Numero = numeroCredito,
+                MontoSolicitado = model.MontoSolicitado,
+                MontoAprobado = model.MontoSolicitado,
+                TasaInteres = model.TasaInteres,
+                CantidadCuotas = model.CantidadCuotas,
+                MontoCuota = calculos.CuotaMensual,
+                CFTEA = calculos.CFTEA,
+                TotalAPagar = calculos.TotalAPagar,
+                SaldoPendiente = calculos.TotalAPagar,
+                Estado = model.AprobarConExcepcion ? EstadoCredito.Solicitado : EstadoCredito.Aprobado,
+                FechaSolicitud = DateTime.UtcNow,
+                FechaAprobacion = DateTime.UtcNow,
+                FechaPrimeraCuota = DateTime.UtcNow.AddMonths(1),
+                GaranteId = garanteId,
+                RequiereGarante = garanteId.HasValue,
+                AprobadoPor = model.AprobarConExcepcion ? model.AutorizadoPor : "Sistema",
+                Observaciones = model.AprobarConExcepcion
+                    ? $"APROBADO CON EXCEPCIÓN: {model.MotivoExcepcion}\n{model.Observaciones}"
+                    : model.Observaciones,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                IsDeleted = false
+            };
+        }
+
+        /// <summary>
+        /// Genera las cuotas para un crédito
+        /// </summary>
+        private async Task GenerarCuotasAsync(Credito credito, SolicitudCreditoViewModel model, decimal tasaMensualDecimal)
+        {
+            var fechaVencimiento = credito.FechaPrimeraCuota ?? DateTime.UtcNow.AddMonths(1);
+            var cuotas = new List<Cuota>();
+
+            for (int i = 1; i <= model.CantidadCuotas; i++)
+            {
+                decimal saldoPendienteAnterior = i == 1
+                    ? model.MontoSolicitado
+                    : model.MontoSolicitado - cuotas.Take(i - 1).Sum(c => c.MontoCapital);
+
+                decimal montoInteres = saldoPendienteAnterior * tasaMensualDecimal;
+                decimal montoCapital = credito.MontoCuota - montoInteres;
+
+                var cuota = new Cuota
+                {
+                    CreditoId = credito.Id,
+                    NumeroCuota = i,
+                    MontoCapital = montoCapital,
+                    MontoInteres = montoInteres,
+                    MontoTotal = credito.MontoCuota,
+                    FechaVencimiento = fechaVencimiento,
+                    Estado = EstadoCuota.Pendiente,
+                    MontoPagado = 0,
+                    MontoPunitorio = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsDeleted = false
+                };
+
+                cuotas.Add(cuota);
+                fechaVencimiento = fechaVencimiento.AddMonths(1);
+            }
+
+            _context.Cuotas.AddRange(cuotas);
+            await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Carga los dropdowns comunes en ViewBag
+        /// </summary>
         private void CargarDropdowns()
         {
-            ViewBag.TiposDocumento = new SelectList(new[] { "DNI", "CUIL", "CUIT" });
-            ViewBag.EstadosCiviles = new SelectList(new[] {
-                "Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a", "Unión de hecho"
-            });
-            ViewBag.TiposEmpleo = new SelectList(new[] {
-                "Relación de dependencia", "Autónomo", "Monotributista", "Informal"
-            });
-            ViewBag.Provincias = new SelectList(new[] {
-                "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
-                "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
-                "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan",
-                "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero",
-                "Tierra del Fuego", "Tucumán"
-            });
+            ViewBag.TiposDocumento = new SelectList(DropdownConstants.TiposDocumento);
+            ViewBag.EstadosCiviles = new SelectList(DropdownConstants.EstadosCiviles);
+            ViewBag.TiposEmpleo = new SelectList(DropdownConstants.TiposEmpleo);
+            ViewBag.Provincias = new SelectList(DropdownConstants.Provincias);
         }
+
+        /// <summary>
+        /// Evalúa la capacidad crediticia del cliente
+        /// </summary>
+        private Task<EvaluacionCreditoResult> EvaluarCapacidadCrediticia(int clienteId, ClienteDetalleViewModel modelo)
+        {
+            var evaluacion = new EvaluacionCreditoResult();
+
+            try
+            {
+                // 1. Validar documentación
+                var tiposDocumentosVerificados = modelo.Documentos
+                    .Where(d => d.Estado == EstadoDocumento.Verificado)
+                    .Select(d => d.TipoDocumentoNombre)
+                    .ToList();
+
+                // ✅ USAR HELPER - NO REPETIR LÓGICA
+                evaluacion.TieneDocumentosCompletos = ClienteControllerHelper.VerificaDocumentosRequeridos(tiposDocumentosVerificados);
+                evaluacion.DocumentosFaltantes = ClienteControllerHelper.ObtenerDocumentosFaltantes(tiposDocumentosVerificados);
+
+                // 2. Calcular capacidad financiera
+                EvaluacionCrediticiaHelper.CalcularCapacidadFinanciera(evaluacion, modelo);
+
+                // 3. Score crediticio
+                // ✅ USAR HELPER - NO REPETIR
+                evaluacion.ScoreCrediticio = CreditoScoringHelper.CalcularScoreCrediticio(modelo);
+                evaluacion.NivelRiesgo = ClienteControllerHelper.DeterminarNivelRiesgo(evaluacion.ScoreCrediticio);
+
+                // 4-6. Requisitos y garante
+                evaluacion.RequiereGarante = EvaluacionCrediticiaHelper.DeterminarRequiereGarante(evaluacion);
+                evaluacion.TieneGarante = modelo.Cliente.CreditosActivos > 0;
+                evaluacion.CumpleRequisitos = EvaluacionCrediticiaHelper.VerificaCumplimientoRequisitos(evaluacion);
+
+                // 7-8. Alertas y excepciones
+                evaluacion.PuedeAprobarConExcepcion = EvaluacionCrediticiaHelper.DeterminarPuedeAprobarConExcepcion(evaluacion);
+                ClienteControllerHelper.GenerarAlertasYRecomendaciones(evaluacion);
+
+                return Task.FromResult(evaluacion);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al evaluar capacidad crediticia del cliente {ClienteId}", clienteId);
+                evaluacion.AlertasYRecomendaciones.Add("❌ Error al evaluar capacidad crediticia");
+                return Task.FromResult(evaluacion);
+            }
+        }
+
+        #endregion
     }
 }

@@ -34,7 +34,9 @@ namespace TheBuryProject.Controllers
                 if (filtro == null)
                     filtro = new DocumentoClienteFilterViewModel();
 
-                filtro.Documentos = await _documentoService.BuscarAsync(filtro);
+                var (documentos, total) = await _documentoService.BuscarAsync(filtro);
+                filtro.Documentos = documentos;
+                filtro.TotalResultados = total;
 
                 await CargarViewBags(filtro.ClienteId);
 
@@ -144,7 +146,9 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                var resultado = await _documentoService.VerificarAsync(id, "System", observaciones);
+                // CAMBIO: Capturar usuario actual en lugar de hardcodear "System"
+                var usuario = User.Identity?.Name ?? "Sistema";
+                var resultado = await _documentoService.VerificarAsync(id, usuario, observaciones);
 
                 if (resultado)
                     TempData["Success"] = "Documento verificado exitosamente";
@@ -174,7 +178,9 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
-                var resultado = await _documentoService.RechazarAsync(id, motivo, "System");
+                // CAMBIO: Capturar usuario actual en lugar de hardcodear "System"
+                var usuario = User.Identity?.Name ?? "Sistema";
+                var resultado = await _documentoService.RechazarAsync(id, motivo, usuario);
 
                 if (resultado)
                     TempData["Success"] = "Documento rechazado";
@@ -270,6 +276,7 @@ namespace TheBuryProject.Controllers
                 .Cast<EstadoDocumento>()
                 .Select(e => new { Value = (int)e, Text = e.ToString() }), "Value", "Text");
         }
+
         // GET: API endpoint para obtener documentos por cliente
         [HttpGet]
         public async Task<IActionResult> GetDocumentosByCliente(int clienteId)
@@ -285,6 +292,7 @@ namespace TheBuryProject.Controllers
                 return StatusCode(500, new { error = "Error al obtener documentos" });
             }
         }
+
         private string GetTipoDocumentoNombre(TipoDocumentoCliente tipo)
         {
             return tipo switch

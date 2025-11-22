@@ -2,156 +2,116 @@
 
 namespace TheBuryProject.ViewModels
 {
+    /// <summary>
+    /// ViewModel para crear y editar clientes
+    /// NOTA: Los checkboxes de documentación fueron eliminados
+    /// La documentación se sube a través de la sección de Documentación
+    /// </summary>
     public class ClienteViewModel
     {
         public int Id { get; set; }
 
-        // Datos Personales
         [Required(ErrorMessage = "El tipo de documento es requerido")]
-        [Display(Name = "Tipo de Documento")]
         public string TipoDocumento { get; set; } = "DNI";
 
         [Required(ErrorMessage = "El número de documento es requerido")]
-        [Display(Name = "Número de Documento")]
         [StringLength(20)]
         public string NumeroDocumento { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "El apellido es requerido")]
-        [Display(Name = "Apellido")]
         [StringLength(100)]
         public string Apellido { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "El nombre es requerido")]
-        [Display(Name = "Nombre")]
         [StringLength(100)]
         public string Nombre { get; set; } = string.Empty;
 
-        [Display(Name = "Nombre Completo")]
         public string? NombreCompleto { get; set; }
+        public int? Edad { get; set; }
 
-        [Display(Name = "Fecha de Nacimiento")]
         [DataType(DataType.Date)]
         public DateTime? FechaNacimiento { get; set; }
 
-        [Display(Name = "Edad")]
-        public int? Edad { get; set; }
-
-        [Display(Name = "Estado Civil")]
         public string? EstadoCivil { get; set; }
 
-        // Datos de Contacto
         [Required(ErrorMessage = "El teléfono es requerido")]
-        [Display(Name = "Teléfono")]
-        [Phone]
+        [StringLength(20)]
         public string Telefono { get; set; } = string.Empty;
 
-        [Display(Name = "Teléfono Alternativo")]
-        [Phone]
+        [StringLength(20)]
         public string? TelefonoAlternativo { get; set; }
 
-        [Display(Name = "Email")]
-        [EmailAddress]
+        [EmailAddress(ErrorMessage = "Email inválido")]
+        [StringLength(100)]
         public string? Email { get; set; }
 
-        // Domicilio
         [Required(ErrorMessage = "El domicilio es requerido")]
-        [Display(Name = "Domicilio")]
         [StringLength(200)]
         public string Domicilio { get; set; } = string.Empty;
 
-        // Alias para compatibilidad con vistas
-        public string? Direccion => Domicilio;
-
-        [Display(Name = "Localidad")]
+        [StringLength(100)]
         public string? Localidad { get; set; }
 
-        [Display(Name = "Provincia")]
+        [StringLength(100)]
         public string? Provincia { get; set; }
 
-        [Display(Name = "Código Postal")]
+        [StringLength(10)]
         public string? CodigoPostal { get; set; }
 
-        // Datos Laborales
-        [Display(Name = "Empleador")]
+        // ✅ DATOS LABORALES - PROPIEDADES REALES
+        [StringLength(200)]
         public string? Empleador { get; set; }
 
-        // Alias para compatibilidad con vistas
-        public string? LugarTrabajo => Empleador;
-
-        [Display(Name = "Tipo de Empleo")]
+        [StringLength(100)]
         public string? TipoEmpleo { get; set; }
 
-        [Display(Name = "Sueldo")]
-        [DataType(DataType.Currency)]
+        [Range(0, 999999999.99)]
         public decimal? Sueldo { get; set; }
 
-        // Alias para compatibilidad con vistas
-        public decimal? IngresoMensual => Sueldo;
-
-        [Display(Name = "Tiempo en el Trabajo")]
-        public string? TiempoTrabajo { get; set; }
-
-        [Display(Name = "Teléfono Laboral")]
-        [Phone]
+        [StringLength(20)]
         public string? TelefonoLaboral { get; set; }
 
-        // Alias para compatibilidad con vistas
-        public string? TelefonoTrabajo => TelefonoLaboral;
+        [StringLength(50)]
+        public string? TiempoTrabajo { get; set; }
 
-        // Documentación
-        [Display(Name = "Tiene Recibo de Sueldo")]
-        public bool TieneReciboSueldo { get; set; }
-
-        [Display(Name = "Tiene Veraz")]
-        public bool TieneVeraz { get; set; }
-
-        [Display(Name = "Tiene Impuesto")]
-        public bool TieneImpuesto { get; set; }
-
-        [Display(Name = "Tiene Servicio de Luz")]
-        public bool TieneServicioLuz { get; set; }
-
-        [Display(Name = "Tiene Servicio de Gas")]
-        public bool TieneServicioGas { get; set; }
-
-        [Display(Name = "Tiene Servicio de Agua")]
-        public bool TieneServicioAgua { get; set; }
-
-        // Control
-        [Display(Name = "Puntaje de Riesgo")]
+        // ✅ PROPIEDADES DE CONTROL
         public decimal PuntajeRiesgo { get; set; } = 5.0m;
 
-        [Display(Name = "Activo")]
         public bool Activo { get; set; } = true;
 
-        [Display(Name = "Observaciones")]
-        [DataType(DataType.MultilineText)]
+        [StringLength(500)]
         public string? Observaciones { get; set; }
 
-        // Info adicional - Historial Crediticio
-        [Display(Name = "Créditos Activos")]
-        public int CreditosActivos { get; set; }
-
-        [Display(Name = "Créditos Totales")]
-        public int CreditosTotales { get; set; }
-
-        [Display(Name = "Cuotas Impagas")]
-        public int CuotasImpagas { get; set; }
-
-        [Display(Name = "Total Adeudado")]
-        [DataType(DataType.Currency)]
-        public decimal TotalAdeudado { get; set; }
-
-        // Alias para compatibilidad con vistas
-        public decimal? MontoAdeudado => TotalAdeudado;
-
-        // Garante
+        // ✅ GARANTE
         public int? GaranteId { get; set; }
 
-        // Auditoría
-        public DateTime CreatedAt { get; set; }
-        public string? CreatedBy { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public string? UpdatedBy { get; set; }
+        // ✅ HISTORIAL CREDITICIO (SOLO LECTURA)
+        public int CreditosTotales { get; set; }
+        public int CreditosActivos { get; set; }
+        public int CuotasImpagas { get; set; }
+        public decimal? MontoAdeudado { get; set; }
+
+        // ALIASES PARA COMPATIBILIDAD CON CREATE.CSHTML
+        // (que usa LugarTrabajo, IngresoMensual, TelefonoTrabajo)
+        public string? LugarTrabajo 
+        { 
+            get => Empleador; 
+            set => Empleador = value; 
+        }
+
+        public decimal? IngresoMensual 
+        { 
+            get => Sueldo; 
+            set => Sueldo = value; 
+        }
+
+        public string? TelefonoTrabajo 
+        { 
+            get => TelefonoLaboral; 
+            set => TelefonoLaboral = value; 
+        }
+
+        // Alias para Domicilio
+        public string? Direccion => Domicilio;
     }
 }

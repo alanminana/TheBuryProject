@@ -12,7 +12,13 @@ namespace TheBuryProject.Services.Interfaces
         Task<bool> RechazarAsync(int id, string motivo, string rechazadoPor);
         Task<bool> DeleteAsync(int id);
         Task<byte[]> DescargarArchivoAsync(int id);
-        Task<List<DocumentoClienteViewModel>> BuscarAsync(DocumentoClienteFilterViewModel filtro);
-        Task MarcarVencidosAsync(); // Job diario
+        /// <summary>
+        /// Busca documentos con filtros y paginación
+        /// </summary>
+        Task<(List<DocumentoClienteViewModel> Documentos, int Total)> BuscarAsync(DocumentoClienteFilterViewModel filtro);
+        /// <summary>
+        /// Marca documentos vencidos automáticamente (ejecutado por BackgroundService)
+        /// </summary>
+        Task MarcarVencidosAsync();
     }
 }

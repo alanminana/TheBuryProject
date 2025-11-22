@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -17,15 +18,18 @@ public class CajaController : Controller
     private readonly ICajaService _cajaService;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly ILogger<CajaController> _logger;
+    private readonly IMapper _mapper; // INYECCIÓN: Agregar IMapper
 
     public CajaController(
         ICajaService cajaService,
         UserManager<IdentityUser> userManager,
-        ILogger<CajaController> logger)
+        ILogger<CajaController> logger,
+        IMapper mapper) // INYECCIÓN: Agregar IMapper
     {
         _cajaService = cajaService;
         _userManager = userManager;
         _logger = logger;
+        _mapper = mapper; // INICIALIZACIÓN: Asignar IMapper
     }
 
     #region CRUD de Cajas
@@ -86,17 +90,8 @@ public class CajaController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        var model = new CajaViewModel
-        {
-            Id = caja.Id,
-            Codigo = caja.Codigo,
-            Nombre = caja.Nombre,
-            Descripcion = caja.Descripcion,
-            Sucursal = caja.Sucursal,
-            Ubicacion = caja.Ubicacion,
-            Activa = caja.Activa,
-            Estado = caja.Estado
-        };
+        // ✅ CAMBIO: Usar AutoMapper en lugar de mapeo manual
+        var model = _mapper.Map<CajaViewModel>(caja);
 
         return View(model);
     }

@@ -65,7 +65,7 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
 
             logger?.LogWarning(
                 "Acceso denegado: Usuario {Username} intentó acceder a {Path} sin permiso {Permission}",
-                user.Identity.Name,
+                user.Identity?.Name ?? "Desconocido",
                 context.HttpContext.Request.Path,
                 claimValue
             );

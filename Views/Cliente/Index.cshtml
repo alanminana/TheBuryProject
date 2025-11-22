@@ -49,8 +49,21 @@
                                 <label class="form-label fw-semibold">Estado</label>
                                 <select name="SoloActivos" class="form-select bg-body-secondary text-light border-0">
                                     <option value="">Todos</option>
-                                    <option value="true" selected="@(Model.SoloActivos == true)">Solo Activos</option>
-                                    <option value="false" selected="@(Model.SoloActivos == false)">Solo Inactivos</option>
+                                    @if (Model.SoloActivos == true)
+                                    {
+                                        <option value="true" selected>Solo Activos</option>
+                                        <option value="false">Solo Inactivos</option>
+                                    }
+                                    else if (Model.SoloActivos == false)
+                                    {
+                                        <option value="true">Solo Activos</option>
+                                        <option value="false" selected>Solo Inactivos</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="true">Solo Activos</option>
+                                        <option value="false">Solo Inactivos</option>
+                                    }
                                 </select>
                             </div>
 

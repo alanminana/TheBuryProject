@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
+using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -522,21 +523,12 @@ namespace TheBuryProject.Services
 
         public decimal CalcularMontoCuotaSistemaFrances(decimal monto, decimal tasaMensual, int cantidadCuotas)
         {
-            if (tasaMensual == 0)
-                return monto / cantidadCuotas;
-
-            // Fórmula del Sistema Francés: C = P * [i * (1 + i)^n] / [(1 + i)^n - 1]
-            var factor = Math.Pow((double)(1 + tasaMensual), cantidadCuotas);
-            var cuota = monto * (tasaMensual * (decimal)factor) / ((decimal)factor - 1);
-
-            return Math.Round(cuota, 2);
+            return CreditoHelper.CalcularMontoCuotaSistemaFrances(monto, tasaMensual, cantidadCuotas);
         }
 
         public decimal CalcularCFTEA(decimal tasaMensual)
         {
-            // CFTEA = (1 + tasa_mensual)^12 - 1
-            var cftea = (decimal)Math.Pow((double)(1 + tasaMensual), 12) - 1;
-            return Math.Round(cftea * 100, 2); // Retornar como porcentaje
+            return CreditoHelper.CalcularCFTEA(tasaMensual);
         }
 
         public async Task<bool> RecalcularSaldoCreditoAsync(int creditoId)
@@ -588,36 +580,6 @@ namespace TheBuryProject.Services
 
             var numero = ultimoCredito != null ? ultimoCredito.Id + 1 : 1;
             return $"CRE-{DateTime.Now:yyyyMM}-{numero:D6}";
-        }
-
-        private Task GenerarCuotasAsync(Credito credito)
-        {
-            var tasaDecimal = credito.TasaInteres / 100;
-            var fechaCuota = credito.FechaPrimeraCuota ?? DateTime.Now.AddMonths(1);
-            var saldoCapital = credito.MontoAprobado;
-
-            for (int i = 1; i <= credito.CantidadCuotas; i++)
-            {
-                var interes = saldoCapital * tasaDecimal;
-                var capital = credito.MontoCuota - interes;
-                saldoCapital -= capital;
-
-                var cuota = new Cuota
-                {
-                    CreditoId = credito.Id,
-                    NumeroCuota = i,
-                    MontoCapital = Math.Round(capital, 2),
-                    MontoInteres = Math.Round(interes, 2),
-                    MontoTotal = Math.Round(credito.MontoCuota, 2),
-                    FechaVencimiento = fechaCuota,
-                    Estado = EstadoCuota.Pendiente
-                };
-
-                _context.Cuotas.Add(cuota);
-                fechaCuota = fechaCuota.AddMonths(1);
-            }
-            return Task.CompletedTask;
-
         }
 
         #endregion

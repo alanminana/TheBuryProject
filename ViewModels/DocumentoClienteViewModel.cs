@@ -98,15 +98,5 @@ namespace TheBuryProject.ViewModels
         public bool? SoloVencidos { get; set; }
     }
 
-    public class DocumentoClienteFilterViewModel
-    {
-        public int? ClienteId { get; set; }
-        public string? Cliente { get; set; }
-        public TipoDocumentoCliente? TipoDocumento { get; set; }
-        public EstadoDocumento? Estado { get; set; }
-        public bool SoloPendientes { get; set; }
-        public bool SoloVencidos { get; set; }
-        public int TotalResultados { get; set; }
-        public List<DocumentoClienteViewModel> Documentos { get; set; } = new();
-    }
+    
 }

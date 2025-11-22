@@ -2,8 +2,12 @@
 
 namespace TheBuryProject.Services.Interfaces
 {
+    /// <summary>
+    /// ✅ Servicio centralizado para gestión de productos
+    /// </summary>
     public interface IProductoService
     {
+        // CRUD básico
         Task<IEnumerable<Producto>> GetAllAsync();
         Task<Producto?> GetByIdAsync(int id);
         Task<IEnumerable<Producto>> GetByCategoriaAsync(int categoriaId);
@@ -12,11 +16,8 @@ namespace TheBuryProject.Services.Interfaces
         Task<Producto> CreateAsync(Producto producto);
         Task<Producto> UpdateAsync(Producto producto);
         Task<bool> DeleteAsync(int id);
-        Task<bool> ExistsCodigoAsync(string codigo, int? excludeId = null);
-        Task<Producto> ActualizarStockAsync(int id, decimal cantidad);
-        /// <summary>
-        /// Busca y filtra productos según los criterios especificados
-        /// </summary>
+        
+        // Búsqueda y filtrado
         Task<IEnumerable<Producto>> SearchAsync(
             string? searchTerm = null,
             int? categoriaId = null,
@@ -25,5 +26,11 @@ namespace TheBuryProject.Services.Interfaces
             bool soloActivos = false,
             string? orderBy = null,
             string? orderDirection = "asc");
+
+        // Stock
+        Task<Producto> ActualizarStockAsync(int id, decimal cantidad);
+
+        // Validaciones
+        Task<bool> ExistsCodigoAsync(string codigo, int? excludeId = null);
     }
 }

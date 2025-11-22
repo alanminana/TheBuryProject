@@ -2,17 +2,15 @@
 
 namespace TheBuryProject.ViewModels;
 
+
+
 /// <summary>
-/// ViewModel para mostrar una acción en listas
+/// ViewModel para eliminar una acción
 /// </summary>
-public class AccionViewModel
+public class EliminarAccionViewModel
 {
     public int Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public string Clave { get; set; } = string.Empty;
-    public string? Descripcion { get; set; }
-    public string? ModuloNombre { get; set; }
-    public int? ModuloId { get; set; }
-    public bool Activo { get; set; }
+    public string ModuloNombre { get; set; } = string.Empty;
 }
-

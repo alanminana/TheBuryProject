@@ -3,12 +3,16 @@
 namespace TheBuryProject.Services
 {
     /// <summary>
-    /// Servicio en background para ejecutar el procesamiento de mora automáticamente
+    /// ✅ MEJORADO: Servicio en background para ejecutar el procesamiento de mora automáticamente
+    /// - Lógica de ventana de tiempo mejorada
+    /// - Mejor manejo de errores
+    /// - Logging detallado
     /// </summary>
     public class MoraBackgroundService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<MoraBackgroundService> _logger;
+        private DateTime _ultimaEjecucion = DateTime.MinValue;
 
         public MoraBackgroundService(
             IServiceProvider serviceProvider,
@@ -31,36 +35,54 @@ namespace TheBuryProject.Services
                         var moraService = scope.ServiceProvider.GetRequiredService<IMoraService>();
                         var configuracion = await moraService.GetConfiguracionAsync();
 
-                        if (configuracion.JobActivo)
+                        if (!configuracion.JobActivo)
                         {
-                            var ahora = DateTime.Now.TimeOfDay;
-                            var horaEjecucion = configuracion.HoraEjecucion;
-                            var diferencia = (horaEjecucion - ahora).TotalMinutes;
+                            _logger.LogDebug("Job de mora desactivado, esperando...");
+                            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                            continue;
+                        }
 
-                            // Verificar si estamos en la ventana de ejecución (±5 minutos)
-                            if (diferencia >= -5 && diferencia <= 5)
+                        // ✅ MEJORADO: Comparar solo horas y minutos
+                        var ahora = DateTime.Now;
+                        var horaEjecucion = configuracion.HoraEjecucion;
+                        var horaActual = new TimeSpan(ahora.Hour, ahora.Minute, 0);
+                        var diferencia = (horaEjecucion - horaActual).TotalMinutes;
+
+                        // Ventana de ejecución: ±10 minutos (más tolerante que antes)
+                        if (Math.Abs(diferencia) <= 10)
+                        {
+                            // Verificar si ya se ejecutó hoy
+                            if (_ultimaEjecucion.Date < DateTime.Today)
                             {
-                                // Verificar si ya se ejecutó hoy
-                                var yaEjecutadoHoy = configuracion.UltimaEjecucion.HasValue &&
-                                                    configuracion.UltimaEjecucion.Value.Date == DateTime.Today;
-
-                                if (!yaEjecutadoHoy)
+                                _logger.LogInformation("Ejecutando procesamiento automático de mora a las {Hora}", ahora.ToString("HH:mm"));
+                                
+                                try
                                 {
-                                    _logger.LogInformation("Iniciando procesamiento automático de mora...");
                                     await moraService.ProcesarMoraAsync();
-                                    _logger.LogInformation("Procesamiento de mora completado");
+                                    _ultimaEjecucion = DateTime.Now;
+                                    
+                                    _logger.LogInformation("Procesamiento de mora completado exitosamente");
                                 }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogError(ex, "Error durante la ejecución automática de mora");
+                                    // Continuar el servicio incluso si hay error
+                                }
+                            }
+                            else
+                            {
+                                _logger.LogDebug("Procesamiento de mora ya ejecutado hoy");
                             }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error en MoraBackgroundService");
+                    _logger.LogError(ex, "Error crítico en MoraBackgroundService");
                 }
 
-                // Esperar 1 hora antes de la próxima verificación
-                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                // Esperar 10 minutos antes de la próxima verificación
+                await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken);
             }
 
             _logger.LogInformation("MoraBackgroundService detenido");

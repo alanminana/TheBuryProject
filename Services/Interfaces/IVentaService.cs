@@ -7,8 +7,8 @@ namespace TheBuryProject.Services.Interfaces
     {
         Task<List<VentaViewModel>> GetAllAsync(VentaFilterViewModel? filter = null);
         Task<VentaViewModel?> GetByIdAsync(int id);
-        Task<VentaViewModel> CreateAsync(VentaViewModel viewModel);
-        Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel);
+        Task<VentaViewModel> CreateAsync(VentaViewModel viewModel, string? usuarioActual = null);
+        Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel, string? usuarioActual = null);
         Task<bool> DeleteAsync(int id);
         Task<bool> ConfirmarVentaAsync(int id);
         Task<bool> CancelarVentaAsync(int id, string motivo);

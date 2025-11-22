@@ -3,9 +3,13 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Services.Interfaces
 {
+    /// <summary>
+    /// Servicio centralizado para gestión de cajas, aperturas, movimientos y cierres
+    /// </summary>
     public interface ICajaService
     {
-        // CRUD de Cajas
+        #region CRUD de Cajas
+
         Task<List<Caja>> ObtenerTodasCajasAsync();
         Task<Caja?> ObtenerCajaPorIdAsync(int id);
         Task<Caja> CrearCajaAsync(CajaViewModel model);
@@ -13,26 +17,48 @@ namespace TheBuryProject.Services.Interfaces
         Task EliminarCajaAsync(int id);
         Task<bool> ExisteCodigoCajaAsync(string codigo, int? cajaIdExcluir = null);
 
-        // Apertura de Caja
+        #endregion
+
+        #region Apertura de Caja
+
         Task<AperturaCaja> AbrirCajaAsync(AbrirCajaViewModel model, string usuario);
         Task<AperturaCaja?> ObtenerAperturaActivaAsync(int cajaId);
         Task<AperturaCaja?> ObtenerAperturaPorIdAsync(int id);
         Task<List<AperturaCaja>> ObtenerAperturasAbiertasAsync();
         Task<bool> TieneCajaAbiertaAsync(int cajaId);
 
-        // Movimientos de Caja
+        #endregion
+
+        #region Movimientos de Caja
+
         Task<MovimientoCaja> RegistrarMovimientoAsync(MovimientoCajaViewModel model, string usuario);
         Task<List<MovimientoCaja>> ObtenerMovimientosDeAperturaAsync(int aperturaId);
         Task<decimal> CalcularSaldoActualAsync(int aperturaId);
 
-        // Cierre de Caja
+        #endregion
+
+        #region Cierre de Caja
+
         Task<CierreCaja> CerrarCajaAsync(CerrarCajaViewModel model, string usuario);
         Task<CierreCaja?> ObtenerCierrePorIdAsync(int id);
-        Task<List<CierreCaja>> ObtenerHistorialCierresAsync(int? cajaId = null, DateTime? fechaDesde = null, DateTime? fechaHasta = null);
+        Task<List<CierreCaja>> ObtenerHistorialCierresAsync(
+            int? cajaId = null,
+            DateTime? fechaDesde = null,
+            DateTime? fechaHasta = null);
 
-        // Reportes y Estadísticas
+        #endregion
+
+        #region Reportes y Estadísticas
+
         Task<DetallesAperturaViewModel> ObtenerDetallesAperturaAsync(int aperturaId);
-        Task<ReporteCajaViewModel> GenerarReporteCajaAsync(DateTime fechaDesde, DateTime fechaHasta, int? cajaId = null);
-        Task<HistorialCierresViewModel> ObtenerEstadisticasCierresAsync(DateTime? fechaDesde = null, DateTime? fechaHasta = null);
+        Task<ReporteCajaViewModel> GenerarReporteCajaAsync(
+            DateTime fechaDesde,
+            DateTime fechaHasta,
+            int? cajaId = null);
+        Task<HistorialCierresViewModel> ObtenerEstadisticasCierresAsync(
+            DateTime? fechaDesde = null,
+            DateTime? fechaHasta = null);
+
+        #endregion
     }
 }
