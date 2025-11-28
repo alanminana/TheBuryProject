@@ -71,18 +71,7 @@ namespace TheBuryProject.Services
                     .OrderByDescending(c => c.CreatedAt)
                     .ToListAsync();
 
-                var viewModels = _mapper.Map<List<CreditoViewModel>>(creditos);
-
-                // Mapear nombres manualmente
-                foreach (var vm in viewModels)
-                {
-                    var credito = creditos.First(c => c.Id == vm.Id);
-                    vm.ClienteNombre = $"{credito.Cliente.Apellido}, {credito.Cliente.Nombre}";
-                    if (credito.Garante != null)
-                        vm.GaranteNombre = $"{credito.Garante.Apellido}, {credito.Garante.Nombre}";
-                }
-
-                return viewModels;
+                return _mapper.Map<List<CreditoViewModel>>(creditos);
             }
             catch (Exception ex)
             {
@@ -104,12 +93,7 @@ namespace TheBuryProject.Services
                 if (credito == null)
                     return null;
 
-                var viewModel = _mapper.Map<CreditoViewModel>(credito);
-                viewModel.ClienteNombre = $"{credito.Cliente.Apellido}, {credito.Cliente.Nombre}";
-                if (credito.Garante != null)
-                    viewModel.GaranteNombre = $"{credito.Garante.Apellido}, {credito.Garante.Nombre}";
-
-                return viewModel;
+                return _mapper.Map<CreditoViewModel>(credito);
             }
             catch (Exception ex)
             {
@@ -133,12 +117,7 @@ namespace TheBuryProject.Services
                 var viewModels = new List<CreditoViewModel>();
                 foreach (var credito in creditos)
                 {
-                    var viewModel = _mapper.Map<CreditoViewModel>(credito);
-                    viewModel.ClienteNombre = $"{credito.Cliente.Apellido}, {credito.Cliente.Nombre}";
-                    if (credito.Garante != null)
-                        viewModel.GaranteNombre = $"{credito.Garante.Apellido}, {credito.Garante.Nombre}";
-
-                    viewModels.Add(viewModel);
+                    viewModels.Add(_mapper.Map<CreditoViewModel>(credito));
                 }
 
                 return viewModels;

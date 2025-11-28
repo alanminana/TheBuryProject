@@ -1,6 +1,16 @@
-﻿@model TheBuryProject.ViewModels.CreditoViewModel
+@model TheBuryProject.ViewModels.CreditoViewModel
 @{
+    Layout = "_ModuleLayout";
     ViewData["Title"] = "Nueva Línea de Crédito";
+    ViewData["PageTitle"] = "Nueva Línea de Crédito";
+    ViewData["PageSubtitle"] = "Asigna un monto disponible al cliente";
+    ViewData["MostrarEvaluacion"] = true;
+}
+
+@section PageActions {
+    <a asp-action="Index" class="btn btn-outline-light">
+        <i class="bi bi-arrow-left me-2"></i>Volver
+    </a>
 }
 
 <section class="container-fluid py-4 text-light">
@@ -8,9 +18,6 @@
         <h2 class="fw-bold mb-0">
             <i class="bi bi-credit-card text-success me-2"></i>Nueva Línea de Crédito
         </h2>
-        <a asp-action="Index" class="btn btn-outline-light">
-            <i class="bi bi-arrow-left me-2"></i>Volver
-        </a>
     </div>
 
     <div class="alert alert-info bg-opacity-25 border-info text-light shadow-sm">
@@ -20,12 +27,17 @@
 
     <div class="card bg-dark border-0 shadow-sm shared-panel">
         <div class="card-header bg-success text-dark py-3 shared-panel-header">
-            <h5 class="fw-bold mb-0"><i class="bi bi-wallet2 me-2"></i>Datos de la Línea de Crédito</h5>
+            <h5 class="fw-bold mb-0">
+                <i class="bi bi-wallet2 me-2"></i>Datos de la Línea de Crédito
+            </h5>
         </div>
 
         <div class="card-body p-4">
             <form asp-action="Create" method="post">
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center" role="alert">
+
+                <div asp-validation-summary="ModelOnly"
+                     class="alert alert-danger d-flex align-items-center"
+                     role="alert">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                     <div>Por favor, corregí los errores antes de continuar</div>
                 </div>
@@ -91,20 +103,6 @@
                     </div>
                 </div>
 
-
-                <div class="row g-3 mt-2">
-                    <div class="col-md-12">
-                        <label asp-for="Observaciones" class="form-label">Observaciones</label>
-                        <textarea asp-for="Observaciones" class="form-control bg-body-secondary text-light border-0" rows="3"></textarea>
-                        <span asp-validation-for="Observaciones" class="text-danger small"></span>
-                    </div>
-                </div>
-
-                <div class="alert alert-warning bg-opacity-25 border-warning text-light mt-4 shadow-sm">
-                    <i class="bi bi-exclamation-circle me-2"></i>
-                    <strong>Nota:</strong> Las cuotas y fechas se definirán al usar esta línea en una compra.
-                </div>
-
                 <div class="d-flex justify-content-end gap-2 mt-4">
                     <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
                         <i class="bi bi-x-circle me-2"></i>Cancelar
@@ -113,23 +111,21 @@
                         <i class="bi bi-save me-2"></i>Crear Línea de Crédito
                     </button>
                 </div>
+
             </form>
         </div>
     </div>
 </section>
-
 @section Scripts {
     <script>
         $(document).ready(function () {
             let evaluacionTimeout;
 
-            // Evaluar cuando cambien los campos relevantes
             $('#ClienteId, #MontoSolicitado, #GaranteId').on('change', function () {
                 clearTimeout(evaluacionTimeout);
-                evaluacionTimeout = setTimeout(evaluarCredito, 500); // Esperar 500ms después del último cambio
+                evaluacionTimeout = setTimeout(evaluarCredito, 500);
             });
 
-            // Checkbox de garante
             $('#chkRequiereGarante').on('change', function () {
                 if (!$(this).is(':checked')) {
                     $('#GaranteId').val('');
@@ -205,56 +201,35 @@
                         </div>
                     </div>
 
-                    <h6 class="text-muted mb-2">Criterios Evaluados</h6>
-                    <table class="table table-sm table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Criterio</th>
-                                <th>Detalle</th>
-                                <th class="text-center">Estado</th>
-                                <th class="text-end">Puntos</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-
-                eval.reglas.forEach(regla => {
-                    const rowClass = regla.cumple ? '' : 'table-warning';
-                    const iconoRegla = regla.cumple ? 'check-circle text-success' : 'x-circle text-danger';
-                    const badge = regla.cumple ? 'success' : 'danger';
-                    const pesoClass = regla.peso >= 0 ? 'primary' : 'danger';
-                    const pesoSigno = regla.peso >= 0 ? '+' : '';
-
-                    html += `
-                        <tr class="${rowClass}">
-                            <td>
-                                <i class="bi bi-${iconoRegla} me-1"></i>
-                                ${regla.nombre}
-                            </td>
-                            <td class="text-muted small">${regla.detalle || '-'}</td>
-                            <td class="text-center">
-                                <span class="badge bg-${badge}">${regla.cumple ? 'Cumple' : 'No Cumple'}</span>
-                            </td>
-                            <td class="text-end">
-                                <span class="badge bg-${pesoClass}">${pesoSigno}${regla.peso}</span>
-                            </td>
-                        </tr>
-                    `;
-                });
-
-                html += `
-                        </tbody>
-                    </table>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="card bg-dark border-0 shadow-sm">
+                                <div class="card-body">
+                                    <small class="text-secondary d-block">Ingresos estimados</small>
+                                    <h5 class="text-light mb-0">${eval.ingresosEstimados?.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }) ?? 'N/D'}</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-dark border-0 shadow-sm">
+                                <div class="card-body">
+                                    <small class="text-secondary d-block">Relación cuota/ingreso</small>
+                                    <h5 class="text-light mb-0">${eval.relacionCuotaIngreso?.toFixed(2) ?? 'N/D'}%</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-dark border-0 shadow-sm">
+                                <div class="card-body">
+                                    <small class="text-secondary d-block">Documentación</small>
+                                    <h5 class="text-light mb-0">${eval.documentacionCompleta ? 'Completa' : 'Incompleta'}</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 `;
 
                 $('#resultadoEvaluacion').html(html);
-
-                // Actualizar color del card según resultado
-                $('#panelEvaluacion .card').removeClass('border-info border-success border-warning border-danger')
-                    .addClass('border-' + colorClass);
-                $('#panelEvaluacion .card-header').removeClass('bg-info bg-success bg-warning bg-danger text-dark text-white')
-                    .addClass('bg-' + colorClass)
-                    .addClass(colorClass === 'warning' ? 'text-dark' : 'text-white');
             }
         });
     </script>

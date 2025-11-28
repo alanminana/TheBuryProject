@@ -68,9 +68,13 @@ namespace TheBuryProject.Controllers
                 }
 
                 var evaluacion = await _evaluacionService.GetEvaluacionByCreditoIdAsync(id);
-                ViewBag.Evaluacion = evaluacion;
+                var detalle = new CreditoDetalleViewModel
+                {
+                    Credito = credito,
+                    Evaluacion = evaluacion
+                };
 
-                return View(credito);
+                return View(detalle);
             }
             catch (Exception ex)
             {

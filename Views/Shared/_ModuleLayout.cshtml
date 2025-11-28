@@ -1,0 +1,39 @@
+@{
+    Layout = "_Layout";
+    var pageTitle = ViewData["PageTitle"]?.ToString() ?? ViewData["Title"]?.ToString();
+    var pageSubtitle = ViewData["PageSubtitle"]?.ToString();
+}
+
+<section class="container-fluid py-4 text-light">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h2 class="fw-bold mb-1">@pageTitle</h2>
+            @if (!string.IsNullOrWhiteSpace(pageSubtitle))
+            {
+                <p class="text-secondary mb-0">@pageSubtitle</p>
+            }
+        </div>
+        @if (IsSectionDefined("PageActions"))
+        {
+            <div class="d-flex gap-2 flex-wrap justify-content-end">
+                @RenderSection("PageActions")
+            </div>
+        }
+    </div>
+
+    @if (IsSectionDefined("PageFilters"))
+    {
+        <div class="mb-4">
+            @RenderSection("PageFilters")
+        </div>
+    }
+
+    @if (IsSectionDefined("PageTabs"))
+    {
+        <div class="mb-3">
+            @RenderSection("PageTabs")
+        </div>
+    }
+
+    @RenderBody()
+</section>
