@@ -13,8 +13,9 @@
 }
 
 @section PageFilters {
-    <div class="card bg-dark border-0 shadow-sm mb-4">
-        <div class="card-header bg-secondary text-light border-0">
+    <!-- Filtros -->
+    <div class="card bg-dark border-0 shadow-sm shared-panel mb-4">
+        <div class="card-header bg-secondary text-light border-0 shared-panel-header">
             <button class="btn btn-link text-decoration-none text-light w-100 text-start p-0"
                     type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
                 <div class="d-flex justify-content-between align-items-center">
@@ -23,10 +24,12 @@
                 </div>
             </button>
         </div>
+
         <div class="collapse show" id="filtrosCollapse">
             <div class="card-body">
                 <form asp-action="Index" method="get">
                     <div class="row g-3">
+
                         <div class="col-md-3">
                             <label class="form-label text-light fw-semibold">Cliente</label>
                             <select name="clienteId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Clientes">
@@ -77,6 +80,7 @@
                                 </a>
                             </div>
                         </div>
+
                     </div>
                 </form>
             </div>
@@ -91,6 +95,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
+
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -107,7 +112,8 @@
     </div>
 }
 
-<div class="card bg-dark border-0 shadow-sm">
+<!-- Tabla -->
+<div class="card bg-dark border-0 shadow-sm shared-panel">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover table-dark align-middle mb-0">
@@ -123,6 +129,7 @@
                         <th class="text-center px-4">Acciones</th>
                     </tr>
                 </thead>
+
                 <tbody>
                     @if (Model.Documentos.Any())
                     {
@@ -134,13 +141,8 @@
                                         @doc.ClienteNombre
                                     </a>
                                 </td>
-                                <td>
-                                    <span class="badge bg-secondary">@doc.TipoDocumentoNombre</span>
-                                </td>
-                                <td>
-                                    <i class="bi bi-file-earmark me-1"></i>
-                                    @doc.NombreArchivo
-                                </td>
+                                <td><span class="badge bg-secondary">@doc.TipoDocumentoNombre</span></td>
+                                <td><i class="bi bi-file-earmark me-1"></i>@doc.NombreArchivo</td>
                                 <td class="text-secondary">@doc.TamanoFormateado</td>
                                 <td class="text-center">
                                     <span class="badge bg-@doc.EstadoColor">
@@ -160,18 +162,19 @@
                                 </td>
                                 <td class="text-center px-4">
                                     <div class="btn-group btn-group-sm">
-                                        <a asp-action="Details" asp-route-id="@doc.Id" class="btn btn-outline-info" title="Ver detalles">
+                                        <a asp-action="Details" asp-route-id="@doc.Id" class="btn btn-outline-info">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a asp-action="Descargar" asp-route-id="@doc.Id" class="btn btn-outline-success" title="Descargar">
+                                        <a asp-action="Descargar" asp-route-id="@doc.Id" class="btn btn-outline-success">
                                             <i class="bi bi-download"></i>
                                         </a>
+
                                         @if (doc.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
                                         {
-                                            <form asp-action="Delete" asp-route-id="@doc.Id" method="post" class="d-inline"
+                                            <form asp-action="Delete" asp-route-id="@doc.Id" method="post"
                                                   onsubmit="return confirm('¿Está seguro de eliminar este documento?')">
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                <button type="submit" class="btn btn-outline-danger">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>
@@ -196,3 +199,53 @@
         </div>
     </div>
 </div>
+
+<!-- Estadísticas -->
+@if (Model.Documentos.Any())
+{
+    <div class="row mt-4">
+
+        <div class="col-md-3">
+            <div class="card bg-dark border-0 shadow-sm shared-stat-card">
+                <div class="card-body">
+                    <h6 class="text-secondary mb-2">Total Documentos</h6>
+                    <h3 class="fw-bold text-light mb-0">@Model.TotalResultados</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-dark border-0 shadow-sm shared-stat-card">
+                <div class="card-body">
+                    <h6 class="text-secondary mb-2">Pendientes</h6>
+                    <h3 class="fw-bold text-warning mb-0">
+                        @Model.Documentos.Count(d => d.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-dark border-0 shadow-sm shared-stat-card">
+                <div class="card-body">
+                    <h6 class="text-secondary mb-2">Verificados</h6>
+                    <h3 class="fw-bold text-success mb-0">
+                        @Model.Documentos.Count(d => d.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Verificado)
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-dark border-0 shadow-sm shared-stat-card">
+                <div class="card-body">
+                    <h6 class="text-secondary mb-2">Rechazados</h6>
+                    <h3 class="fw-bold text-danger mb-0">
+                        @Model.Documentos.Count(d => d.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Rechazado)
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+    </div>
+}
