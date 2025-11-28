@@ -4380,7 +4380,7 @@ namespace TheBuryProject.Migrations
             modelBuilder.Entity("TheBuryProject.Models.Entities.DocumentoCliente", b =>
                 {
                     b.HasOne("TheBuryProject.Models.Entities.Cliente", "Cliente")
-                        .WithMany()
+                        .WithMany("Documentos")
                         .HasForeignKey("ClienteId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -4801,6 +4801,8 @@ namespace TheBuryProject.Migrations
                     b.Navigation("ComoGarante");
 
                     b.Navigation("Creditos");
+
+                    b.Navigation("Documentos");
                 });
 
             modelBuilder.Entity("TheBuryProject.Models.Entities.ConfiguracionPago", b =>
