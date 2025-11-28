@@ -245,7 +245,7 @@ namespace TheBuryProject.Controllers
                 if (!ModelState.IsValid)
                 {
                     TempData["Error"] = "Por favor complete todos los campos requeridos";
-                    return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "credito" });
+                    return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
                 }
 
                 var cliente = await _context.Clientes.FindAsync(model.ClienteId);
@@ -284,7 +284,7 @@ namespace TheBuryProject.Controllers
 
                         TempData["Success"] = $"Crédito {numeroCredito} solicitado exitosamente. " +
                             $"Monto: {model.MontoSolicitado:C}, {model.CantidadCuotas} cuotas de {calculos.CuotaMensual:C}";
-                        return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "informacion" });
+                        return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "creditos" });
                     }
                     catch (Exception ex)
                     {
@@ -299,7 +299,7 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al solicitar crédito para cliente {ClienteId}", model.ClienteId);
                 TempData["Error"] = $"Error al solicitar el crédito: {ex.Message}";
-                return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "credito" });
+                return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
             }
         }
 
