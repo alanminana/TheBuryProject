@@ -498,7 +498,7 @@ namespace TheBuryProject.Data
             modelBuilder.Entity<DocumentoCliente>(entity =>
             {
                 entity.HasOne(e => e.Cliente)
-                    .WithMany()
+                    .WithMany(c => c.Documentos)
                     .HasForeignKey(e => e.ClienteId)
                     .OnDelete(DeleteBehavior.Restrict);
 

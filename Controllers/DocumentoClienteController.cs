@@ -80,7 +80,7 @@ namespace TheBuryProject.Controllers
                     if (returnToDetails)
                     {
                         TempData["Error"] = "Por favor corrija los errores en el formulario";
-                        return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentacion" });
+                        return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentos" });
                     }
 
                     return View(viewModel);
@@ -90,10 +90,10 @@ namespace TheBuryProject.Controllers
 
                 TempData["Success"] = $"Documento '{resultado.TipoDocumentoNombre}' subido exitosamente";
 
-                // Si viene del upload inline, redirigir a Cliente/Details con tab documentacion
+                // Si viene del upload inline, redirigir a Cliente/Details con tab documentos
                 if (returnToDetails)
                 {
-                    return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentacion" });
+                    return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentos" });
                 }
 
                 // Redirigir al índice de documentos filtrado por el cliente
@@ -105,10 +105,10 @@ namespace TheBuryProject.Controllers
 
                 TempData["Error"] = "Error al subir documento: " + ex.Message;
 
-                // Si viene del inline upload, redirigir al tab documentacion
+                // Si viene del inline upload, redirigir al tab documentos
                 if (returnToDetails)
                 {
-                    return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentacion" });
+                    return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentos" });
                 }
 
                 ModelState.AddModelError("", "Error al subir documento: " + ex.Message);

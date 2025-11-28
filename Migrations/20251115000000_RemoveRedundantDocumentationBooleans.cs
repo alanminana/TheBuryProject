@@ -1,7 +1,12 @@
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace TheBuryProject.Data.Migrations
+#nullable disable
+
+namespace TheBuryProject.Migrations
 {
+    /// <summary>
+    /// Removes legacy boolean flags that were replaced by DocumentoCliente records.
+    /// </summary>
     public partial class RemoveRedundantDocumentationBooleans : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
