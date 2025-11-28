@@ -27,8 +27,8 @@ else
 }
 
 <!-- Formulario de carga inline -->
-<div class="card bg-dark border-0 shadow-sm mb-3">
-    <div class="card-header bg-secondary">
+<div class="card bg-dark border-0 shadow-sm shared-panel mb-3">
+    <div class="card-header bg-secondary shared-panel-header">
         <h5 class="mb-0 text-light"><i class="bi bi-upload"></i> Subir Nuevo Documento</h5>
     </div>
     <div class="card-body">
@@ -80,8 +80,8 @@ else
 </div>
 
 <!-- Lista de documentos existentes -->
-<div class="card bg-dark border-0 shadow-sm">
-    <div class="card-header bg-secondary">
+<div class="card bg-dark border-0 shadow-sm shared-panel">
+    <div class="card-header bg-secondary shared-panel-header">
         <h5 class="mb-0 text-light">
             <i class="bi bi-file-earmark-text"></i> Documentos del Cliente
             <span class="badge bg-info text-dark ms-2">@Model.Documentos.Count</span>
@@ -193,7 +193,7 @@ else
 {
     <div class="row mt-3">
         <div class="col-md-3">
-            <div class="card bg-dark border-0 shadow-sm">
+            <div class="card bg-dark border-0 shadow-sm shared-stat-card">
                 <div class="card-body">
                     <h6 class="text-secondary mb-2">Total</h6>
                     <h3 class="fw-bold text-light mb-0">@Model.Documentos.Count</h3>
@@ -201,7 +201,7 @@ else
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-dark border-0 shadow-sm">
+            <div class="card bg-dark border-0 shadow-sm shared-stat-card">
                 <div class="card-body">
                     <h6 class="text-secondary mb-2">Verificados</h6>
                     <h3 class="fw-bold text-success mb-0">
@@ -211,7 +211,7 @@ else
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-dark border-0 shadow-sm">
+            <div class="card bg-dark border-0 shadow-sm shared-stat-card">
                 <div class="card-body">
                     <h6 class="text-secondary mb-2">Pendientes</h6>
                     <h3 class="fw-bold text-warning mb-0">
