@@ -121,6 +121,32 @@ namespace TheBuryProject.Helpers
             // =======================
             // Cliente
             // =======================
+            CreateMap<Cliente, ClienteResumenViewModel>()
+                .ForMember(d => d.NombreCompleto, o => o.MapFrom(s =>
+                    !string.IsNullOrWhiteSpace(s.NombreCompleto)
+                        ? s.NombreCompleto
+                        : $"{s.Apellido}, {s.Nombre}"));
+
+            CreateMap<Garante, ClienteResumenViewModel>()
+                .ForMember(d => d.Id, o => o.MapFrom(s => s.GaranteClienteId ?? 0))
+                .ForMember(d => d.NombreCompleto, o => o.MapFrom(s =>
+                    s.GaranteCliente != null
+                        ? (!string.IsNullOrWhiteSpace(s.GaranteCliente.NombreCompleto)
+                            ? s.GaranteCliente.NombreCompleto
+                            : $"{s.GaranteCliente.Apellido}, {s.GaranteCliente.Nombre}")
+                        : $"{s.Apellido}, {s.Nombre}"))
+                .ForMember(d => d.NumeroDocumento, o => o.MapFrom(s =>
+                    s.GaranteCliente != null ? s.GaranteCliente.NumeroDocumento : s.NumeroDocumento ?? string.Empty))
+                .ForMember(d => d.Telefono, o => o.MapFrom(s =>
+                    s.GaranteCliente != null ? s.GaranteCliente.Telefono : s.Telefono ?? string.Empty))
+                .ForMember(d => d.Email, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Email : null))
+                .ForMember(d => d.Domicilio, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Domicilio : s.Domi
+cilio))
+                .ForMember(d => d.PuntajeRiesgo, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.PuntajeRiesgo :
+ 0))
+                .ForMember(d => d.Sueldo, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Sueldo : (decimal?)nul
+l));
+
             CreateMap<Cliente, ClienteViewModel>()
                 .ForMember(d => d.Edad, o => o.MapFrom(s =>
                     s.FechaNacimiento.HasValue
@@ -128,7 +154,7 @@ namespace TheBuryProject.Helpers
                         : (int?)null))
                 .ForMember(d => d.CreditosActivos, o => o.MapFrom(s => s.Creditos.Count(c =>
                     c.Estado == EstadoCredito.Activo)))
-                .ForMember(d => d.MontoAdeudado, o => o.MapFrom(s => s.Creditos 
+                .ForMember(d => d.MontoAdeudado, o => o.MapFrom(s => s.Creditos
                     .Where(c => c.Estado == EstadoCredito.Activo)
                     .Sum(c => c.SaldoPendiente)));
 
@@ -140,10 +166,8 @@ namespace TheBuryProject.Helpers
             // Credito
             // =======================
             CreateMap<Credito, CreditoViewModel>()
-                .ForMember(d => d.ClienteNombre, o => o.MapFrom(s =>
-                    s.Cliente != null ? $"{s.Cliente.Apellido}, {s.Cliente.Nombre}" : null))
-                .ForMember(d => d.GaranteNombre, o => o.MapFrom(s =>
-                    s.Garante != null ? $"{s.Garante.Apellido}, {s.Garante.Nombre}" : null))
+                .ForMember(d => d.Cliente, o => o.MapFrom(s => s.Cliente))
+                .ForMember(d => d.Garante, o => o.MapFrom(s => s.Garante))
                 .ForMember(d => d.Cuotas, o => o.MapFrom(s => s.Cuotas));
 
             CreateMap<CreditoViewModel, Credito>()
@@ -248,8 +272,7 @@ namespace TheBuryProject.Helpers
             // DocumentoCliente
             // =======================
             CreateMap<DocumentoCliente, DocumentoClienteViewModel>()
-                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
-                    src.Cliente != null ? $"{src.Cliente.Apellido}, {src.Cliente.Nombre}" : null))
+                .ForMember(dest => dest.Cliente, opt => opt.MapFrom(src => src.Cliente))
                 .ForMember(dest => dest.Archivo, opt => opt.Ignore());
 
             CreateMap<DocumentoClienteViewModel, DocumentoCliente>()

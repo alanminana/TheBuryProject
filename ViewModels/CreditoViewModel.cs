@@ -7,9 +7,17 @@ namespace TheBuryProject.ViewModels
     {
         public int Id { get; set; }
 
+        public ClienteResumenViewModel Cliente { get; set; } = new();
+
+        public ClienteResumenViewModel? Garante { get; set; }
+
         [Display(Name = "Cliente")]
         [Required(ErrorMessage = "Debe seleccionar un cliente")]
-        public int ClienteId { get; set; }
+        public int ClienteId
+        {
+            get => Cliente.Id;
+            set => Cliente.Id = value;
+        }
 
         [Display(Name = "Número de Crédito")]
         public string? Numero { get; set; }
@@ -70,7 +78,22 @@ namespace TheBuryProject.ViewModels
         public decimal PuntajeRiesgoInicial { get; set; }
 
         [Display(Name = "Garante")]
-        public int? GaranteId { get; set; }
+        public int? GaranteId
+        {
+            get => Garante?.Id;
+            set
+            {
+                if (value.HasValue)
+                {
+                    Garante ??= new ClienteResumenViewModel();
+                    Garante.Id = value.Value;
+                }
+                else
+                {
+                    Garante = null;
+                }
+            }
+        }
 
         [Display(Name = "Requiere Garante")]
         public bool RequiereGarante { get; set; }
@@ -83,8 +106,23 @@ namespace TheBuryProject.ViewModels
         public string? Observaciones { get; set; }
 
         // Propiedades de navegación para las vistas
-        public string? ClienteNombre { get; set; }
-        public string? GaranteNombre { get; set; }
+        public string? ClienteNombre
+        {
+            get => Cliente.NombreCompleto;
+            set => Cliente.NombreCompleto = value ?? string.Empty;
+        }
+        public string? GaranteNombre
+        {
+            get => Garante?.NombreCompleto;
+            set
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    Garante ??= new ClienteResumenViewModel();
+                    Garante.NombreCompleto = value;
+                }
+            }
+        }
 
         // Lista de cuotas
         public List<CuotaViewModel>? Cuotas { get; set; }
