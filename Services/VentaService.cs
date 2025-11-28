@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+ï»¿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Constants;
@@ -95,7 +95,7 @@ namespace TheBuryProject.Services
 
         #region Crear y Actualizar
 
-        public async Task<VentaViewModel> CreateAsync(VentaViewModel viewModel, string? usuarioActual = null)
+        public async Task<VentaViewModel> CreateAsync(VentaViewModel viewModel)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -127,7 +127,7 @@ namespace TheBuryProject.Services
             }
         }
 
-        public async Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel, string? usuarioActual = null)
+        public async Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel)
         {
             var venta = await _context.Ventas
                 .Include(v => v.Detalles)
@@ -298,7 +298,7 @@ namespace TheBuryProject.Services
 
         #endregion
 
-        #region Autorización
+        #region AutorizaciÃ³n
 
         public async Task<bool> SolicitarAutorizacionAsync(int id, string usuarioSolicita, string motivo)
         {
@@ -314,7 +314,7 @@ namespace TheBuryProject.Services
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Solicitud de autorización creada para venta {Id} por {Usuario}", id, usuarioSolicita);
+            _logger.LogInformation("Solicitud de autorizaciÃ³n creada para venta {Id} por {Usuario}", id, usuarioSolicita);
             return true;
         }
 
@@ -373,13 +373,13 @@ namespace TheBuryProject.Services
 
         #endregion
 
-        #region Métodos de Cálculo - Tarjetas
+        #region MÃ©todos de CÃ¡lculo - Tarjetas
 
         public async Task<DatosTarjetaViewModel> CalcularCuotasTarjetaAsync(int tarjetaId, decimal monto, int cuotas)
         {
             var configuracion = await _context.ConfiguracionesTarjeta.FindAsync(tarjetaId);
             if (configuracion == null)
-                throw new InvalidOperationException("Configuración de tarjeta no encontrada");
+                throw new InvalidOperationException("ConfiguraciÃ³n de tarjeta no encontrada");
 
             var resultado = new DatosTarjetaViewModel
             {
@@ -447,7 +447,7 @@ namespace TheBuryProject.Services
 
         #endregion
 
-        #region Métodos de Cálculo - Crédito Personal
+        #region MÃ©todos de CÃ¡lculo - CrÃ©dito Personal
 
         public async Task<DatosCreditoPersonalViewModel> CalcularCreditoPersonalAsync(
             int creditoId,
@@ -463,7 +463,7 @@ namespace TheBuryProject.Services
                 throw new InvalidOperationException(VentaConstants.ErrorMessages.CREDITO_NO_ENCONTRADO);
 
             if (credito.Estado != EstadoCredito.Activo && credito.Estado != EstadoCredito.Aprobado)
-                throw new InvalidOperationException("El crédito debe estar en estado Activo o Aprobado");
+                throw new InvalidOperationException("El crÃ©dito debe estar en estado Activo o Aprobado");
 
             var creditoDisponible = credito.SaldoPendiente;
 
@@ -539,7 +539,7 @@ namespace TheBuryProject.Services
 
         #endregion
 
-        #region Métodos Auxiliares - Cheques
+        #region MÃ©todos Auxiliares - Cheques
 
         public async Task<bool> GuardarDatosChequeAsync(int ventaId, DatosChequeViewModel datosCheque)
         {
@@ -558,7 +558,7 @@ namespace TheBuryProject.Services
 
         #endregion
 
-        #region Métodos Privados - Helpers
+        #region MÃ©todos Privados - Helpers
 
         private IQueryable<Venta> AplicarFiltros(IQueryable<Venta> query, VentaFilterViewModel? filter)
         {
@@ -645,7 +645,7 @@ namespace TheBuryProject.Services
                     StockAnterior = stockAnterior,
                     StockNuevo = detalle.Producto.StockActual,
                     Referencia = $"Venta {venta.Numero}",
-                    Motivo = $"Confirmación de venta - Cliente: {venta.Cliente.Nombre}"
+                    Motivo = $"ConfirmaciÃ³n de venta - Cliente: {venta.Cliente.Nombre}"
                 };
 
                 _context.MovimientosStock.Add(movimiento);
@@ -666,7 +666,7 @@ namespace TheBuryProject.Services
                     Cantidad = detalle.Cantidad,
                     StockAnterior = stockAnterior,
                     StockNuevo = detalle.Producto.StockActual,
-                    Referencia = $"Cancelación Venta {venta.Numero}",
+                    Referencia = $"CancelaciÃ³n Venta {venta.Numero}",
                     Motivo = motivo
                 };
 
@@ -690,7 +690,7 @@ namespace TheBuryProject.Services
             _context.VentaCreditoCuotas.RemoveRange(venta.VentaCreditoCuotas);
 
             _logger.LogInformation(
-                "Crédito {CreditoId} restaurado por cancelación de venta {VentaId}. Monto: ${Monto}",
+                "CrÃ©dito {CreditoId} restaurado por cancelaciÃ³n de venta {VentaId}. Monto: ${Monto}",
                 credito.Id, venta.Id, montoFinanciado);
         }
 
@@ -754,7 +754,7 @@ namespace TheBuryProject.Services
                 throw new InvalidOperationException(VentaConstants.ErrorMessages.CREDITO_NO_ENCONTRADO);
 
             if (credito.SaldoPendiente < datos.MontoAFinanciar)
-                throw new InvalidOperationException("Saldo de crédito insuficiente");
+                throw new InvalidOperationException("Saldo de crÃ©dito insuficiente");
 
             foreach (var cuotaVM in datos.Cuotas)
             {
@@ -790,11 +790,11 @@ namespace TheBuryProject.Services
                 : null;
 
             if (datosCredito == null || !datosCredito.Cuotas.Any())
-                throw new InvalidOperationException("No se encontraron datos de crédito personal para esta venta");
+                throw new InvalidOperationException("No se encontraron datos de crÃ©dito personal para esta venta");
 
             if (datosCredito.MontoAFinanciar > venta.Credito.SaldoPendiente)
                 throw new InvalidOperationException(
-                    $"Saldo insuficiente en el crédito. Disponible: ${venta.Credito.SaldoPendiente:N2}");
+                    $"Saldo insuficiente en el crÃ©dito. Disponible: ${venta.Credito.SaldoPendiente:N2}");
 
             venta.Credito.SaldoPendiente -= datosCredito.MontoAFinanciar;
             _context.Creditos.Update(venta.Credito);
