@@ -6,12 +6,24 @@ namespace TheBuryProject.ViewModels
     public class CreditoSolicitudViewModel
     {
         // Cliente
+        public ClienteResumenViewModel Cliente { get; set; } = new();
+
+        public ClienteResumenViewModel? Garante { get; set; }
+
         [Required(ErrorMessage = "Debe seleccionar un cliente")]
         [Display(Name = "Cliente")]
-        public int ClienteId { get; set; }
+        public int ClienteId
+        {
+            get => Cliente.Id;
+            set => Cliente.Id = value;
+        }
 
         [Display(Name = "Cliente")]
-        public string? ClienteNombre { get; set; }
+        public string? ClienteNombre
+        {
+            get => Cliente.NombreCompleto;
+            set => Cliente.NombreCompleto = value ?? string.Empty;
+        }
 
         [Display(Name = "Sueldo del Cliente")]
         [DisplayFormat(DataFormatString = "{0:C}")]
@@ -45,10 +57,36 @@ namespace TheBuryProject.ViewModels
         public bool RequiereGarante { get; set; }
 
         [Display(Name = "Garante")]
-        public int? GaranteId { get; set; }
+        public int? GaranteId
+        {
+            get => Garante?.Id;
+            set
+            {
+                if (value.HasValue)
+                {
+                    Garante ??= new ClienteResumenViewModel();
+                    Garante.Id = value.Value;
+                }
+                else
+                {
+                    Garante = null;
+                }
+            }
+        }
 
         [Display(Name = "Garante")]
-        public string? GaranteNombre { get; set; }
+        public string? GaranteNombre
+        {
+            get => Garante?.NombreCompleto;
+            set
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    Garante ??= new ClienteResumenViewModel();
+                    Garante.NombreCompleto = value;
+                }
+            }
+        }
 
         // Observaciones
         [StringLength(1000, ErrorMessage = "Las observaciones no pueden exceder los 1000 caracteres")]

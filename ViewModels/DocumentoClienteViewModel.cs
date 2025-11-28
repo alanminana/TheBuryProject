@@ -8,10 +8,20 @@ namespace TheBuryProject.ViewModels
     {
         public int Id { get; set; }
 
+        public ClienteResumenViewModel Cliente { get; set; } = new();
+
         [Display(Name = "Cliente")]
         [Required(ErrorMessage = "Debe seleccionar un cliente")]
-        public int ClienteId { get; set; }
-        public string? ClienteNombre { get; set; }
+        public int ClienteId
+        {
+            get => Cliente.Id;
+            set => Cliente.Id = value;
+        }
+        public string? ClienteNombre
+        {
+            get => Cliente.NombreCompleto;
+            set => Cliente.NombreCompleto = value ?? string.Empty;
+        }
 
         [Display(Name = "Tipo de Documento")]
         [Required(ErrorMessage = "Debe seleccionar el tipo de documento")]
@@ -25,7 +35,7 @@ namespace TheBuryProject.ViewModels
             TipoDocumentoCliente.ServicioGas => "Servicio de Gas",
             TipoDocumentoCliente.ServicioAgua => "Servicio de Agua",
             TipoDocumentoCliente.ConstanciaCUIL => "Constancia CUIL",
-            TipoDocumentoCliente.DeclaracionJurada => "Declaración Jurada",
+            TipoDocumentoCliente.DeclaracionJurada => "Declaraciï¿½n Jurada",
             TipoDocumentoCliente.Veraz => "Veraz",
             TipoDocumentoCliente.Otro => "Otro",
             _ => "Desconocido"
@@ -79,7 +89,7 @@ namespace TheBuryProject.ViewModels
         [DataType(DataType.Date)]
         public DateTime? FechaVencimiento { get; set; }
 
-        [Display(Name = "Fecha de Verificación")]
+        [Display(Name = "Fecha de Verificaciï¿½n")]
         public DateTime? FechaVerificacion { get; set; }
 
         [Display(Name = "Verificado Por")]
