@@ -1,0 +1,157 @@
+@model TheBuryProject.ViewModels.ClienteDetalleViewModel
+
+@{
+    var cliente = Model.Cliente;
+}
+
+<!-- Alertas de evaluación si aplica -->
+@if (Model.EvaluacionCredito.AlertasYRecomendaciones.Any())
+{
+    <div class="alert alert-warning border-0 mb-4">
+        <h6 class="alert-heading mb-2">
+            <i class="bi bi-lightbulb me-2"></i>Recomendaciones
+        </h6>
+        <ul class="mb-0 ps-3">
+            @foreach (var alerta in Model.EvaluacionCredito.AlertasYRecomendaciones.Take(3))
+            {
+                <li>@alerta</li>
+            }
+        </ul>
+    </div>
+}
+
+<div class="row g-4">
+    <!-- Columna izquierda: Información Personal y Domicilio -->
+    <div class="col-lg-6">
+        <!-- Información Personal -->
+        <div class="mb-4">
+            <h6 class="text-secondary fw-semibold mb-3">
+                <i class="bi bi-person me-2"></i>Información Personal
+            </h6>
+            <div class="row g-3">
+                <div class="col-6">
+                    <label class="form-label text-secondary small mb-0">Nombre Completo</label>
+                    <p class="mb-0 fw-medium">@cliente.NombreCompleto</p>
+                </div>
+                <div class="col-6">
+                    <label class="form-label text-secondary small mb-0">Documento</label>
+                    <p class="mb-0 fw-medium">@cliente.TipoDocumento: @cliente.NumeroDocumento</p>
+                </div>
+                <div class="col-4">
+                    <label class="form-label text-secondary small mb-0">Edad</label>
+                    <p class="mb-0">@(cliente.Edad ?? 0) años</p>
+                </div>
+                <div class="col-4">
+                    <label class="form-label text-secondary small mb-0">Estado Civil</label>
+                    <p class="mb-0">@(cliente.EstadoCivil ?? "-")</p>
+                </div>
+                <div class="col-4">
+                    <label class="form-label text-secondary small mb-0">Email</label>
+                    <p class="mb-0 text-truncate" title="@cliente.Email">@(cliente.Email ?? "-")</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Domicilio -->
+        <div class="mb-4">
+            <h6 class="text-secondary fw-semibold mb-3">
+                <i class="bi bi-geo-alt me-2"></i>Domicilio
+            </h6>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label text-secondary small mb-0">Dirección</label>
+                    <p class="mb-0 fw-medium">@(cliente.Direccion ?? "-")</p>
+                </div>
+                <div class="col-6">
+                    <label class="form-label text-secondary small mb-0">Localidad</label>
+                    <p class="mb-0">@(cliente.Localidad ?? "-")</p>
+                </div>
+                <div class="col-6">
+                    <label class="form-label text-secondary small mb-0">Provincia</label>
+                    <p class="mb-0">@(cliente.Provincia ?? "-")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna derecha: Información Laboral e Historial -->
+    <div class="col-lg-6">
+        <!-- Información Laboral -->
+        <div class="mb-4">
+            <h6 class="text-secondary fw-semibold mb-3">
+                <i class="bi bi-briefcase me-2"></i>Información Laboral
+            </h6>
+            <div class="row g-3">
+                <div class="col-8">
+                    <label class="form-label text-secondary small mb-0">Empleador</label>
+                    <p class="mb-0 fw-medium">@(cliente.LugarTrabajo ?? "-")</p>
+                </div>
+                <div class="col-4">
+                    <label class="form-label text-secondary small mb-0">Tipo</label>
+                    <p class="mb-0">@(cliente.TipoEmpleo ?? "-")</p>
+                </div>
+                <div class="col-6">
+                    <label class="form-label text-secondary small mb-0">Ingresos Mensuales</label>
+                    <p class="mb-0 fw-semibold text-success">@(cliente.IngresoMensual?.ToString("C0") ?? "-")</p>
+                </div>
+                <div class="col-6">
+                    <label class="form-label text-secondary small mb-0">Antigüedad</label>
+                    <p class="mb-0">@(cliente.TiempoTrabajo ?? "-")</p>
+                </div>
+                @if (!string.IsNullOrEmpty(cliente.TelefonoTrabajo))
+                {
+                    <div class="col-12">
+                        <label class="form-label text-secondary small mb-0">Teléfono Laboral</label>
+                        <p class="mb-0">@cliente.TelefonoTrabajo</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Historial Crediticio Resumido -->
+        <div class="mb-4">
+            <h6 class="text-secondary fw-semibold mb-3">
+                <i class="bi bi-graph-up me-2"></i>Historial Crediticio
+            </h6>
+            <div class="row g-2">
+                <div class="col-6">
+                    <div class="bg-body-secondary rounded p-3 text-center">
+                        <span class="d-block text-secondary small">Créditos Totales</span>
+                        <span class="fs-4 fw-bold">@cliente.CreditosTotales</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="bg-body-secondary rounded p-3 text-center">
+                        <span class="d-block text-secondary small">Activos</span>
+                        <span class="fs-4 fw-bold text-info">@cliente.CreditosActivos</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="bg-body-secondary rounded p-3 text-center">
+                        <span class="d-block text-secondary small">Cuotas Impagas</span>
+                        <span class="fs-4 fw-bold @(cliente.CuotasImpagas > 0 ? "text-danger" : "")">@cliente.CuotasImpagas</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="bg-body-secondary rounded p-3 text-center">
+                        <span class="d-block text-secondary small">Monto Adeudado</span>
+                        <span class="fs-5 fw-bold @(cliente.MontoAdeudado > 0 ? "text-danger" : "")">
+                            @(cliente.MontoAdeudado?.ToString("C0") ?? "$0")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Observaciones -->
+@if (!string.IsNullOrEmpty(cliente.Observaciones))
+{
+    <div class="mt-4 pt-4 border-top border-secondary">
+        <h6 class="text-secondary fw-semibold mb-2">
+            <i class="bi bi-chat-square-text me-2"></i>Observaciones
+        </h6>
+        <p class="mb-0 text-light">@cliente.Observaciones</p>
+    </div>
+}
