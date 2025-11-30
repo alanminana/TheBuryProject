@@ -1,11 +1,49 @@
 @model TheBuryProject.ViewModels.ConfiguracionCreditoVentaViewModel
 @using System.Globalization
-@{
+@{ 
     Layout = "_ModuleLayout";
     ViewData["Title"] = "Configurar Crédito de Venta";
     ViewData["PageTitle"] = "Crédito Personal";
     ViewData["PageSubtitle"] = "Completa los datos del plan para avanzar";
 }
+
+<style>
+    .panel-soft {
+        background-color: #F5F5F5;
+        color: #333333;
+        border: 1px solid #E0E0E0;
+    }
+
+    .panel-soft .card-header {
+        background-color: #EDEDED;
+        color: #000000;
+    }
+
+    .info-block {
+        background-color: #FFF6D1;
+        color: #000000;
+    }
+
+    .error-block {
+        background-color: #FDECEC;
+        color: #B30000;
+    }
+
+    .state-yellow {
+        background-color: #C29D00;
+        color: #000000;
+    }
+
+    .state-green {
+        background-color: #008A00;
+        color: #FFFFFF;
+    }
+
+    .state-red {
+        background-color: #C30000;
+        color: #FFFFFF;
+    }
+</style>
 
 @section PageActions {
     <a asp-controller="Venta" asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-outline-secondary">
@@ -22,8 +60,8 @@
 
     <div class="row g-3">
         <div class="col-lg-4">
-            <div class="card shadow-sm h-100 border-0" style="background-color: #F5F5F5; color: #333333;">
-                <div class="card-header border-0" style="background-color: #E6E6E6; color: #000000;">
+            <div class="card shadow-sm h-100 panel-soft border-0">
+                <div class="card-header border-0">
                     <h5 class="mb-0">Datos de la venta</h5>
                 </div>
                 <div class="card-body">
@@ -52,7 +90,7 @@
                         <span asp-validation-for="Anticipo" class="text-danger"></span>
                         <small class="text-muted">Opcional. Se descontará del monto a financiar.</small>
                     </div>
-                    <div class="p-3 mt-2 rounded" style="background-color: #FFF6D1; color: #000000;">
+                    <div class="p-3 mt-2 rounded info-block">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <p class="mb-1 fw-semibold">Monto financiado</p>
@@ -67,8 +105,8 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card shadow-sm h-100 border-0" style="background-color: #F5F5F5; color: #333333;">
-                <div class="card-header border-0" style="background-color: #E6E6E6; color: #000000;">
+            <div class="card shadow-sm h-100 panel-soft border-0">
+                <div class="card-header border-0">
                     <h5 class="mb-0">Condiciones del crédito</h5>
                 </div>
                 <div class="card-body">
@@ -98,7 +136,7 @@
                         <input asp-for="FechaPrimeraCuota" class="form-control" type="date" id="fechaPrimeraCuota" />
                         <span asp-validation-for="FechaPrimeraCuota" class="text-danger"></span>
                     </div>
-                    <div class="p-3 rounded" style="background-color: #FFF6D1; color: #000000;">
+                    <div class="p-3 rounded info-block">
                         <p class="mb-1 fw-semibold">Cuota estimada</p>
                         <h5 class="mb-0" id="cuotaEstimadaLabel">$0,00</h5>
                         <div class="small mt-2">
@@ -112,16 +150,16 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card shadow-sm h-100 border-0" style="background-color: #F5F5F5; color: #333333;">
-                <div class="card-header border-0" style="background-color: #E6E6E6; color: #000000;">
+            <div class="card shadow-sm h-100 panel-soft border-0">
+                <div class="card-header border-0">
                     <h5 class="mb-0">Evaluación preliminar</h5>
                 </div>
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-2 mb-3">
-                        <span class="badge" id="estadoSemaforo" style="background-color: #C29D00; color: #000000;">Sin datos</span>
+                        <span class="badge state-yellow" id="estadoSemaforo">Sin datos</span>
                         <span class="small" id="mensajeSemaforo">Completa los datos para precalificar.</span>
                     </div>
-                    <div class="p-3 rounded" style="background-color: #FFF6D1; color: #000000;" id="alertaDatos">
+                    <div class="p-3 rounded info-block" id="alertaDatos">
                         <strong class="d-block">Mensajes:</strong>
                         <ul class="mb-0" id="listaMensajes" class="small">
                             <li>Completa los datos para precalificar.</li>
@@ -129,7 +167,7 @@
                             <li id="msgAntiguedad" class="d-none">Falta antigüedad</li>
                         </ul>
                     </div>
-                    <div class="p-3 mt-3 rounded" style="background-color: #FDECEC; color: #B30000; display:none;" id="errorCalculadora">
+                    <div class="p-3 mt-3 rounded error-block" style="display:none;" id="errorCalculadora">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>Ingresa anticipo, cuotas, tasa y fecha de primera cuota para ver los cálculos.
                     </div>
                 </div>
@@ -208,8 +246,7 @@
                 totalAPagarLabel.innerText = '$0,00';
                 tasaAplicadaLabel.innerText = '0%';
                 alertaError.style.display = 'block';
-                badgeSemaforo.style.backgroundColor = '#C29D00';
-                badgeSemaforo.style.color = '#000000';
+                badgeSemaforo.className = 'badge state-yellow';
                 badgeSemaforo.innerText = 'Sin datos';
                 mensajeSemaforo.innerText = 'Completa los datos para precalificar.';
                 msgIngreso.classList.add('d-none');
@@ -237,22 +274,19 @@
 
             const ratio = cuota / (montoFinanciado || 1);
             if (ratio <= 0.08) {
-                badgeSemaforo.style.backgroundColor = '#008A00';
-                badgeSemaforo.style.color = '#FFFFFF';
+                badgeSemaforo.className = 'badge state-green';
                 badgeSemaforo.innerText = 'Verde';
                 mensajeSemaforo.innerText = 'Condiciones preliminares saludables.';
                 msgIngreso.classList.add('d-none');
                 msgAntiguedad.classList.add('d-none');
             } else if (ratio <= 0.15) {
-                badgeSemaforo.style.backgroundColor = '#C29D00';
-                badgeSemaforo.style.color = '#000000';
+                badgeSemaforo.className = 'badge state-yellow';
                 badgeSemaforo.innerText = 'Amarillo';
                 mensajeSemaforo.innerText = 'Revisar ingresos declarados.';
                 msgIngreso.classList.remove('d-none');
                 msgAntiguedad.classList.add('d-none');
             } else {
-                badgeSemaforo.style.backgroundColor = '#C30000';
-                badgeSemaforo.style.color = '#FFFFFF';
+                badgeSemaforo.className = 'badge state-red';
                 badgeSemaforo.innerText = 'Rojo';
                 mensajeSemaforo.innerText = 'Las condiciones requieren ajustes.';
                 msgIngreso.classList.remove('d-none');

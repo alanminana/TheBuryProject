@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
@@ -97,6 +98,11 @@ namespace TheBuryProject.Controllers
 
             decimal montoVenta = credito.MontoAprobado;
 
+            if (montoVenta <= 0)
+            {
+                montoVenta = credito.MontoSolicitado;
+            }
+
             if (ventaId.HasValue)
             {
                 var venta = await _context.Ventas
@@ -110,7 +116,14 @@ namespace TheBuryProject.Controllers
 
                     if (montoVenta <= 0 && venta.Detalles != null && venta.Detalles.Any())
                     {
-                        montoVenta = venta.Detalles.Sum(d => d.Subtotal);
+                        var subtotal = venta.Detalles.Sum(d =>
+                            d.Subtotal > 0
+                                ? d.Subtotal
+                                : Math.Max(0, (d.Cantidad * d.PrecioUnitario) - d.Descuento));
+
+                        var subtotalConDescuento = subtotal - venta.Descuento;
+                        var iva = subtotalConDescuento * VentaConstants.IVA_RATE;
+                        montoVenta = subtotalConDescuento + iva;
                     }
                 }
             }
