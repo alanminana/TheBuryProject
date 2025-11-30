@@ -27,12 +27,8 @@ namespace TheBuryProject.Helpers
             // =======================
             CreateMap<Producto, ProductoViewModel>()
                 .ForMember(d => d.CategoriaNombre, o => o.MapFrom(s => s.Categoria != null ? s.Categoria.Nombre : null))
-                .ForMember(d => d.MarcaNombre, o => o.MapFrom(s => s.Marca != null ? s.Marca.Nombre : null));
-            CreateMap<Producto, ProductoViewModel>()
-    .ForMember(dest => dest.CategoriaNombre, opt => opt.MapFrom(src => src.Categoria.Nombre))
-    .ForMember(dest => dest.MarcaNombre, opt => opt.MapFrom(src => src.Marca.Nombre))
-    .ReverseMap();
-            CreateMap<ProductoViewModel, Producto>();
+                .ForMember(d => d.MarcaNombre, o => o.MapFrom(s => s.Marca != null ? s.Marca.Nombre : null))
+                .ReverseMap();
 
             // =======================
             // Proveedor
