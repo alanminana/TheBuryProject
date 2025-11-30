@@ -1,4 +1,6 @@
-﻿namespace TheBuryProject.Services
+﻿using TheBuryProject.Services.Interfaces;
+
+namespace TheBuryProject.Services
 {
 
     public class FinancialCalculationService : IFinancialCalculationService
