@@ -9,61 +9,6 @@ namespace TheBuryProject.Helpers
     public static class ClienteControllerHelper
     {
         /// <summary>
-        /// Estructura para retornar cálculos de crédito
-        /// </summary>
-        public class CreditoCalculos
-        {
-            public decimal TasaMensualDecimal { get; set; }
-            public decimal CuotaMensual { get; set; }
-            public decimal TotalAPagar { get; set; }
-            public decimal CFTEA { get; set; }
-        }
-
-        /// <summary>
-        /// Calcula los parámetros financieros del crédito
-        /// </summary>
-        public static CreditoCalculos CalcularParametrosCredito(decimal montoSolicitado, decimal tasaInteres, int cantidadCuotas)
-        {
-            decimal tasaMensualDecimal = tasaInteres / 100;
-            decimal cuotaMensual = tasaMensualDecimal > 0
-                ? CalcularCuotaSistemaFrances(montoSolicitado, tasaMensualDecimal, cantidadCuotas)
-                : montoSolicitado / cantidadCuotas;
-
-            decimal totalAPagar = cuotaMensual * cantidadCuotas;
-            decimal cftea = CalcularCFTEA(totalAPagar, montoSolicitado, cantidadCuotas);
-
-            return new CreditoCalculos
-            {
-                TasaMensualDecimal = tasaMensualDecimal,
-                CuotaMensual = cuotaMensual,
-                TotalAPagar = totalAPagar,
-                CFTEA = cftea
-            };
-        }
-
-        /// <summary>
-        /// Calcula la cuota usando el sistema francés
-        /// </summary>
-        public static decimal CalcularCuotaSistemaFrances(decimal monto, decimal tasaMensual, int cuotas)
-        {
-            var factor = (decimal)Math.Pow((double)(1 + tasaMensual), cuotas);
-            return monto * (tasaMensual * factor) / (factor - 1);
-        }
-
-        /// <summary>
-        /// Calcula el CFTEA (Costo Financiero Total Efectivo Anual)
-        /// </summary>
-        public static decimal CalcularCFTEA(decimal totalAPagar, decimal montoSolicitado, int cantidadCuotas)
-        {
-            if (cantidadCuotas <= 0 || montoSolicitado <= 0)
-                return 0;
-
-            var baseCFTEA = (double)(totalAPagar / montoSolicitado);
-            var expCFTEA = 12.0 / cantidadCuotas;
-            return (decimal)(Math.Pow(baseCFTEA, expCFTEA) - 1) * 100;
-        }
-
-        /// <summary>
         /// Verifica si se tienen todos los documentos requeridos
         /// </summary>
         public static bool VerificaDocumentosRequeridos(List<string> tiposDocumentosVerificados)
