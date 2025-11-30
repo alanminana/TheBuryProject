@@ -1,0 +1,271 @@
+@model TheBuryProject.ViewModels.ConfiguracionCreditoVentaViewModel
+@using System.Globalization
+@{
+    Layout = "_ModuleLayout";
+    ViewData["Title"] = "Configurar Crédito de Venta";
+    ViewData["PageTitle"] = "Crédito Personal";
+    ViewData["PageSubtitle"] = "Completa los datos del plan para avanzar";
+}
+
+@section PageActions {
+    <a asp-controller="Venta" asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a la venta
+    </a>
+}
+
+<form asp-action="ConfigurarVenta" method="post" class="needs-validation" novalidate>
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CreditoId" />
+    <input type="hidden" asp-for="VentaId" />
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100 border-0" style="background-color: #F5F5F5; color: #333333;">
+                <div class="card-header border-0" style="background-color: #E6E6E6; color: #000000;">
+                    <h5 class="mb-0">Datos de la venta</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Cliente</label>
+                        <div class="form-control-plaintext fw-semibold">@Model.ClienteNombre</div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="NumeroCredito" class="form-label"></label>
+                        <input asp-for="NumeroCredito" class="form-control" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto total de venta</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input class="form-control" value="@Model.Monto.ToString("N2")" readonly />
+                        </div>
+                        <small class="text-muted">Importe total de la venta antes de anticipo.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Anticipo" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input asp-for="Anticipo" class="form-control" type="number" step="0.01" min="0" id="anticipoInput" />
+                        </div>
+                        <span asp-validation-for="Anticipo" class="text-danger"></span>
+                        <small class="text-muted">Opcional. Se descontará del monto a financiar.</small>
+                    </div>
+                    <div class="p-3 mt-2 rounded" style="background-color: #FFF6D1; color: #000000;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1 fw-semibold">Monto financiado</p>
+                                <h5 class="mb-0" id="montoFinanciadoLabel">$@Model.MontoFinanciado.ToString("N2")</h5>
+                            </div>
+                            <i class="bi bi-calculator fs-4"></i>
+                        </div>
+                        <input type="hidden" asp-for="MontoFinanciado" id="MontoFinanciado" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100 border-0" style="background-color: #F5F5F5; color: #333333;">
+                <div class="card-header border-0" style="background-color: #E6E6E6; color: #000000;">
+                    <h5 class="mb-0">Condiciones del crédito</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="CantidadCuotas" class="form-label"></label>
+                        <input asp-for="CantidadCuotas" class="form-control" type="number" min="1" max="120" id="cuotasInput" />
+                        <span asp-validation-for="CantidadCuotas" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="TasaMensual" class="form-label"></label>
+                        <div class="input-group">
+                            <input asp-for="TasaMensual" class="form-control" type="number" step="0.01" min="0.01" max="100" id="tasaMensualInput" />
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <span asp-validation-for="TasaMensual" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="GastosAdministrativos" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input asp-for="GastosAdministrativos" class="form-control" type="number" step="0.01" min="0" />
+                        </div>
+                        <small class="text-muted">Opcional. Si no aplica, déjalo en 0.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="FechaPrimeraCuota" class="form-label"></label>
+                        <input asp-for="FechaPrimeraCuota" class="form-control" type="date" id="fechaPrimeraCuota" />
+                        <span asp-validation-for="FechaPrimeraCuota" class="text-danger"></span>
+                    </div>
+                    <div class="p-3 rounded" style="background-color: #FFF6D1; color: #000000;">
+                        <p class="mb-1 fw-semibold">Cuota estimada</p>
+                        <h5 class="mb-0" id="cuotaEstimadaLabel">$0,00</h5>
+                        <div class="small mt-2">
+                            <div><strong>Tasa aplicada:</strong> <span id="tasaAplicadaLabel">0%</span></div>
+                            <div><strong>Interés total:</strong> <span id="interesTotalLabel">$0,00</span></div>
+                            <div><strong>Total a pagar:</strong> <span id="totalAPagarLabel">$0,00</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100 border-0" style="background-color: #F5F5F5; color: #333333;">
+                <div class="card-header border-0" style="background-color: #E6E6E6; color: #000000;">
+                    <h5 class="mb-0">Evaluación preliminar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge" id="estadoSemaforo" style="background-color: #C29D00; color: #000000;">Sin datos</span>
+                        <span class="small" id="mensajeSemaforo">Completa los datos para precalificar.</span>
+                    </div>
+                    <div class="p-3 rounded" style="background-color: #FFF6D1; color: #000000;" id="alertaDatos">
+                        <strong class="d-block">Mensajes:</strong>
+                        <ul class="mb-0" id="listaMensajes" class="small">
+                            <li>Completa los datos para precalificar.</li>
+                            <li id="msgIngreso" class="d-none">Falta ingreso</li>
+                            <li id="msgAntiguedad" class="d-none">Falta antigüedad</li>
+                        </ul>
+                    </div>
+                    <div class="p-3 mt-3 rounded" style="background-color: #FDECEC; color: #B30000; display:none;" id="errorCalculadora">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Ingresa anticipo, cuotas, tasa y fecha de primera cuota para ver los cálculos.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <a asp-controller="Venta" asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle"></i> Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> Confirmar Crédito
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const totalVenta = parseFloat('@Model.Monto.ToString(CultureInfo.InvariantCulture)');
+        const camposCompletados = {
+            anticipo: false,
+            cuotas: false,
+            tasa: false,
+            fecha: false
+        };
+        const anticipoInput = document.getElementById('anticipoInput');
+        const cuotasInput = document.getElementById('cuotasInput');
+        const tasaInput = document.getElementById('tasaMensualInput');
+        const fechaInput = document.getElementById('fechaPrimeraCuota');
+
+        function formatear(valor) {
+            return valor.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function normalizarCamposIniciales() {
+            if (anticipoInput.value === '0') anticipoInput.value = '';
+            if (cuotasInput.value === '0') cuotasInput.value = '';
+            if (tasaInput.value === '0') tasaInput.value = '';
+        }
+
+        function registrarCambio(campo, tieneValor) {
+            camposCompletados[campo] = tieneValor;
+            actualizarCalculos();
+        }
+
+        function actualizarCalculos() {
+            const anticipo = parseFloat(anticipoInput.value) || 0;
+            const cuotas = parseInt(cuotasInput.value) || 0;
+            const tasa = parseFloat(tasaInput.value) || 0;
+
+            const montoFinanciado = Math.max(0, totalVenta - anticipo);
+            document.getElementById('MontoFinanciado').value = montoFinanciado;
+            document.getElementById('montoFinanciadoLabel').innerText = `$${formatear(montoFinanciado)}`;
+
+            const tieneAnticipo = true;
+            const tieneCuotas = cuotas > 0;
+            const tieneTasa = tasa > 0;
+            const tieneFecha = !!fechaInput.value;
+
+            const alertaError = document.getElementById('errorCalculadora');
+            const mensajeSemaforo = document.getElementById('mensajeSemaforo');
+            const badgeSemaforo = document.getElementById('estadoSemaforo');
+            const msgIngreso = document.getElementById('msgIngreso');
+            const msgAntiguedad = document.getElementById('msgAntiguedad');
+            const interesTotalLabel = document.getElementById('interesTotalLabel');
+            const totalAPagarLabel = document.getElementById('totalAPagarLabel');
+            const tasaAplicadaLabel = document.getElementById('tasaAplicadaLabel');
+
+            const datosCompletos = tieneAnticipo && tieneCuotas && tieneTasa && tieneFecha && montoFinanciado > 0;
+
+            if (!datosCompletos) {
+                document.getElementById('cuotaEstimadaLabel').innerText = '$0,00';
+                interesTotalLabel.innerText = '$0,00';
+                totalAPagarLabel.innerText = '$0,00';
+                tasaAplicadaLabel.innerText = '0%';
+                alertaError.style.display = 'block';
+                badgeSemaforo.style.backgroundColor = '#C29D00';
+                badgeSemaforo.style.color = '#000000';
+                badgeSemaforo.innerText = 'Sin datos';
+                mensajeSemaforo.innerText = 'Completa los datos para precalificar.';
+                msgIngreso.classList.add('d-none');
+                msgAntiguedad.classList.add('d-none');
+                return;
+            }
+
+            camposCompletados.anticipo = tieneAnticipo;
+            camposCompletados.cuotas = tieneCuotas;
+            camposCompletados.tasa = tieneTasa;
+            camposCompletados.fecha = tieneFecha;
+            alertaError.style.display = 'none';
+
+            const tasaDecimal = tasa / 100;
+            const cuota = tasaDecimal === 0
+                ? montoFinanciado / cuotas
+                : (montoFinanciado * tasaDecimal) / (1 - Math.pow(1 + tasaDecimal, -cuotas));
+
+            document.getElementById('cuotaEstimadaLabel').innerText = `$${formatear(cuota)}`;
+            tasaAplicadaLabel.innerText = `${tasa.toFixed(2)}%`;
+            const totalAPagar = cuota * cuotas;
+            const interesTotal = Math.max(0, totalAPagar - montoFinanciado);
+            interesTotalLabel.innerText = `$${formatear(interesTotal)}`;
+            totalAPagarLabel.innerText = `$${formatear(totalAPagar)}`;
+
+            const ratio = cuota / (montoFinanciado || 1);
+            if (ratio <= 0.08) {
+                badgeSemaforo.style.backgroundColor = '#008A00';
+                badgeSemaforo.style.color = '#FFFFFF';
+                badgeSemaforo.innerText = 'Verde';
+                mensajeSemaforo.innerText = 'Condiciones preliminares saludables.';
+                msgIngreso.classList.add('d-none');
+                msgAntiguedad.classList.add('d-none');
+            } else if (ratio <= 0.15) {
+                badgeSemaforo.style.backgroundColor = '#C29D00';
+                badgeSemaforo.style.color = '#000000';
+                badgeSemaforo.innerText = 'Amarillo';
+                mensajeSemaforo.innerText = 'Revisar ingresos declarados.';
+                msgIngreso.classList.remove('d-none');
+                msgAntiguedad.classList.add('d-none');
+            } else {
+                badgeSemaforo.style.backgroundColor = '#C30000';
+                badgeSemaforo.style.color = '#FFFFFF';
+                badgeSemaforo.innerText = 'Rojo';
+                mensajeSemaforo.innerText = 'Las condiciones requieren ajustes.';
+                msgIngreso.classList.remove('d-none');
+                msgAntiguedad.classList.remove('d-none');
+            }
+        }
+
+        normalizarCamposIniciales();
+        anticipoInput.addEventListener('input', () => registrarCambio('anticipo', true));
+        cuotasInput.addEventListener('input', () => registrarCambio('cuotas', true));
+        tasaInput.addEventListener('input', () => registrarCambio('tasa', true));
+        fechaInput.addEventListener('change', () => registrarCambio('fecha', true));
+
+        actualizarCalculos();
+    </script>
+}
