@@ -1,4 +1,5 @@
 @model TheBuryProject.ViewModels.DocumentoClienteFilterViewModel
+@using TheBuryProject.ViewModels
 @{
     Layout = "_ModuleLayout";
     ViewData["Title"] = "Documentos de Clientes";
@@ -114,6 +115,13 @@
         <div>
             <i class="bi bi-exclamation-triangle me-2"></i>
             Falta documentación obligatoria para continuar con el crédito de la venta @Model.ReturnToVentaId.
+            @if (ViewBag.DocumentacionPendiente is DocumentacionClienteEstadoViewModel estadoDocs && !estadoDocs.Completa)
+            {
+                <div class="mt-1 small">
+                    <strong>Documentos faltantes:</strong>
+                    <span class="badge bg-light text-dark">@string.Join(", ", estadoDocs.Faltantes)</span>
+                </div>
+            }
         </div>
         <div class="d-flex gap-2">
             <a class="btn btn-light" asp-controller="Venta" asp-action="ValidarDocumentacionCredito" asp-route-ventaId="@Model.ReturnToVentaId">

@@ -23,6 +23,7 @@ namespace TheBuryProject.Controllers
         private readonly IPrequalificationService _prequalificationService;
         private readonly IDocumentoClienteService _documentoClienteService;
         private readonly ICreditoService _creditoService;
+        private readonly IDocumentacionService _documentacionService;
 
         public VentaController(
             IVentaService ventaService,
@@ -33,7 +34,8 @@ namespace TheBuryProject.Controllers
             IFinancialCalculationService financialCalculationService,
             IPrequalificationService prequalificationService,
             IDocumentoClienteService documentoClienteService,
-            ICreditoService creditoService)
+            ICreditoService creditoService,
+            IDocumentacionService documentacionService)
         {
             _ventaService = ventaService;
             _configuracionPagoService = configuracionPagoService;
@@ -44,6 +46,7 @@ namespace TheBuryProject.Controllers
             _prequalificationService = prequalificationService;
             _documentoClienteService = documentoClienteService;
             _creditoService = creditoService;
+            _documentacionService = documentacionService;
         }
 
         // GET: Venta
@@ -140,12 +143,12 @@ namespace TheBuryProject.Controllers
 
                 if (venta.TipoPago == TipoPago.CreditoPersonal)
                 {
-                    var documentacion = await _documentoClienteService.ValidarDocumentacionObligatoriaAsync(venta.ClienteId);
+                    var documentacion = await _documentacionService.ProcesarDocumentacionVentaAsync(venta.Id);
 
-                    if (!documentacion.Completa)
+                    if (!documentacion.DocumentacionCompleta)
                     {
                         TempData["Warning"] =
-                            $"Falta documentación obligatoria para otorgar crédito: {documentacion.DescripcionFaltantes}";
+                            $"Falta documentación obligatoria para otorgar crédito: {documentacion.MensajeFaltantes}";
                         TempData["Info"] = mensajeCreacion;
 
                         return RedirectToAction(
@@ -154,17 +157,15 @@ namespace TheBuryProject.Controllers
                             new { clienteId = venta.ClienteId, returnToVentaId = venta.Id });
                     }
 
-                    if (!venta.CreditoId.HasValue)
-                    {
-                        var credito = await _creditoService.CreatePendienteConfiguracionAsync(venta.ClienteId, venta.Total);
-                        await _ventaService.AsociarCreditoAVentaAsync(venta.Id, credito.Id);
+                    TempData["Success"] = mensajeCreacion;
+                    TempData["Info"] = documentacion.CreditoCreado
+                        ? "Documentación completa. Crédito generado y listo para configurar."
+                        : "Documentación completa. Crédito listo para configurar.";
 
-                        TempData["Success"] = mensajeCreacion;
-                        TempData["Info"] =
-                            $"Documentación completa. Crédito {credito.Numero} creado y pendiente de configuración.";
-
-                        return RedirectToAction("Details", "Credito", new { id = credito.Id });
-                    }
+                    return RedirectToAction(
+                        "ConfigurarVenta",
+                        "Credito",
+                        new { id = documentacion.CreditoId, ventaId = venta.Id });
                 }
 
                 TempData[venta.RequiereAutorizacion ? "Warning" : "Success"] = mensajeCreacion;
@@ -296,32 +297,24 @@ namespace TheBuryProject.Controllers
                 return RedirectToAction(nameof(Details), new { id = ventaId });
             }
 
-            var documentacion = await _documentoClienteService.ValidarDocumentacionObligatoriaAsync(venta.ClienteId);
+            var resultado = await _documentacionService.ProcesarDocumentacionVentaAsync(ventaId);
 
-            if (!documentacion.Completa)
+            if (!resultado.DocumentacionCompleta)
             {
                 TempData["Warning"] =
-                    $"Falta documentación obligatoria para otorgar crédito: {documentacion.DescripcionFaltantes}";
+                    $"Falta documentación obligatoria para otorgar crédito: {resultado.MensajeFaltantes}";
 
                 return RedirectToAction(
                     "Index",
                     "DocumentoCliente",
-                    new { clienteId = venta.ClienteId, returnToVentaId = venta.Id });
+                    new { clienteId = resultado.ClienteId, returnToVentaId = resultado.VentaId });
             }
 
-            if (venta.CreditoId.HasValue)
-            {
-                TempData["Success"] = "Documentación validada. Crédito listo para configurar.";
-                return RedirectToAction("Details", "Credito", new { id = venta.CreditoId.Value });
-            }
+            TempData["Success"] = resultado.CreditoCreado
+                ? "Documentación validada. Crédito creado y pendiente de configuración."
+                : "Documentación validada. Crédito listo para configurar.";
 
-            var credito = await _creditoService.CreatePendienteConfiguracionAsync(venta.ClienteId, venta.Total);
-            await _ventaService.AsociarCreditoAVentaAsync(venta.Id, credito.Id);
-
-            TempData["Success"] =
-                $"Documentación validada. Crédito {credito.Numero} creado y pendiente de configuración.";
-
-            return RedirectToAction("Details", "Credito", new { id = credito.Id });
+            return RedirectToAction("ConfigurarVenta", "Credito", new { id = resultado.CreditoId, ventaId });
         }
 
         // GET: Venta/Delete/5
