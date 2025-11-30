@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
 using TheBuryProject.Data;
 using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
@@ -136,6 +138,42 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al subir documento");
                 throw;
             }
+        }
+
+        public async Task<DocumentacionClienteEstadoViewModel> ValidarDocumentacionObligatoriaAsync(
+            int clienteId,
+            IEnumerable<TipoDocumentoCliente>? requeridos = null)
+        {
+            var tiposRequeridos = requeridos?.ToList() ?? new List<TipoDocumentoCliente>
+            {
+                TipoDocumentoCliente.DNI,
+                TipoDocumentoCliente.ReciboSueldo,
+                TipoDocumentoCliente.ServicioLuz
+            };
+
+            var documentosCliente = await _context.Set<DocumentoCliente>()
+                .Where(d => d.ClienteId == clienteId && !d.IsDeleted)
+                .ToListAsync();
+
+            var faltantes = new List<TipoDocumentoCliente>();
+
+            foreach (var tipo in tiposRequeridos)
+            {
+                var tieneDocumento = documentosCliente.Any(d =>
+                    d.TipoDocumento == tipo &&
+                    d.Estado == EstadoDocumento.Verificado);
+
+                if (!tieneDocumento)
+                {
+                    faltantes.Add(tipo);
+                }
+            }
+
+            return new DocumentacionClienteEstadoViewModel
+            {
+                Completa = !faltantes.Any(),
+                Faltantes = faltantes
+            };
         }
 
         public async Task<bool> VerificarAsync(int id, string verificadoPor, string? observaciones = null)

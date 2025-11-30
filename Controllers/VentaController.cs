@@ -21,6 +21,8 @@ namespace TheBuryProject.Controllers
         private readonly ILogger<VentaController> _logger;
         private readonly IFinancialCalculationService _financialCalculationService;
         private readonly IPrequalificationService _prequalificationService;
+        private readonly IDocumentoClienteService _documentoClienteService;
+        private readonly ICreditoService _creditoService;
 
         public VentaController(
             IVentaService ventaService,
@@ -29,7 +31,9 @@ namespace TheBuryProject.Controllers
             IMapper mapper,
             ILogger<VentaController> logger,
             IFinancialCalculationService financialCalculationService,
-            IPrequalificationService prequalificationService)
+            IPrequalificationService prequalificationService,
+            IDocumentoClienteService documentoClienteService,
+            ICreditoService creditoService)
         {
             _ventaService = ventaService;
             _configuracionPagoService = configuracionPagoService;
@@ -38,6 +42,8 @@ namespace TheBuryProject.Controllers
             _logger = logger;
             _financialCalculationService = financialCalculationService;
             _prequalificationService = prequalificationService;
+            _documentoClienteService = documentoClienteService;
+            _creditoService = creditoService;
         }
 
         // GET: Venta
@@ -128,15 +134,40 @@ namespace TheBuryProject.Controllers
 
                 var venta = await _ventaService.CreateAsync(viewModel);
 
-                if (venta.RequiereAutorizacion)
+                var mensajeCreacion = venta.RequiereAutorizacion
+                    ? $"Venta {venta.Numero} creada. Requiere autorización antes de confirmar."
+                    : $"Venta {venta.Numero} creada exitosamente";
+
+                if (venta.TipoPago == TipoPago.CreditoPersonal)
                 {
-                    TempData["Warning"] = $"Venta {venta.Numero} creada. Requiere autorización antes de confirmar.";
-                }
-                else
-                {
-                    TempData["Success"] = $"Venta {venta.Numero} creada exitosamente";
+                    var documentacion = await _documentoClienteService.ValidarDocumentacionObligatoriaAsync(venta.ClienteId);
+
+                    if (!documentacion.Completa)
+                    {
+                        TempData["Warning"] =
+                            $"Falta documentación obligatoria para otorgar crédito: {documentacion.DescripcionFaltantes}";
+                        TempData["Info"] = mensajeCreacion;
+
+                        return RedirectToAction(
+                            "Index",
+                            "DocumentoCliente",
+                            new { clienteId = venta.ClienteId, returnToVentaId = venta.Id });
+                    }
+
+                    if (!venta.CreditoId.HasValue)
+                    {
+                        var credito = await _creditoService.CreatePendienteConfiguracionAsync(venta.ClienteId, venta.Total);
+                        await _ventaService.AsociarCreditoAVentaAsync(venta.Id, credito.Id);
+
+                        TempData["Success"] = mensajeCreacion;
+                        TempData["Info"] =
+                            $"Documentación completa. Crédito {credito.Numero} creado y pendiente de configuración.";
+
+                        return RedirectToAction("Details", "Credito", new { id = credito.Id });
+                    }
                 }
 
+                TempData[venta.RequiereAutorizacion ? "Warning" : "Success"] = mensajeCreacion;
                 return RedirectToAction(nameof(Details), new { id = venta.Id });
             }
             catch (Exception ex)
@@ -247,6 +278,50 @@ namespace TheBuryProject.Controllers
             {
                 return BadRequest(new { error = ex.Message });
             }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ValidarDocumentacionCredito(int ventaId)
+        {
+            var venta = await _ventaService.GetByIdAsync(ventaId);
+            if (venta == null)
+            {
+                TempData["Error"] = "Venta no encontrada";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (venta.TipoPago != TipoPago.CreditoPersonal)
+            {
+                TempData["Error"] = "La venta no utiliza crédito personal";
+                return RedirectToAction(nameof(Details), new { id = ventaId });
+            }
+
+            var documentacion = await _documentoClienteService.ValidarDocumentacionObligatoriaAsync(venta.ClienteId);
+
+            if (!documentacion.Completa)
+            {
+                TempData["Warning"] =
+                    $"Falta documentación obligatoria para otorgar crédito: {documentacion.DescripcionFaltantes}";
+
+                return RedirectToAction(
+                    "Index",
+                    "DocumentoCliente",
+                    new { clienteId = venta.ClienteId, returnToVentaId = venta.Id });
+            }
+
+            if (venta.CreditoId.HasValue)
+            {
+                TempData["Success"] = "Documentación validada. Crédito listo para configurar.";
+                return RedirectToAction("Details", "Credito", new { id = venta.CreditoId.Value });
+            }
+
+            var credito = await _creditoService.CreatePendienteConfiguracionAsync(venta.ClienteId, venta.Total);
+            await _ventaService.AsociarCreditoAVentaAsync(venta.Id, credito.Id);
+
+            TempData["Success"] =
+                $"Documentación validada. Crédito {credito.Numero} creado y pendiente de configuración.";
+
+            return RedirectToAction("Details", "Credito", new { id = credito.Id });
         }
 
         // GET: Venta/Delete/5

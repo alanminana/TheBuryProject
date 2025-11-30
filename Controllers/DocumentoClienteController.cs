@@ -27,12 +27,15 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: DocumentoCliente
-        public async Task<IActionResult> Index(DocumentoClienteFilterViewModel? filtro)
+        public async Task<IActionResult> Index(DocumentoClienteFilterViewModel? filtro, int? returnToVentaId)
         {
             try
             {
                 if (filtro == null)
                     filtro = new DocumentoClienteFilterViewModel();
+
+                if (returnToVentaId.HasValue)
+                    filtro.ReturnToVentaId = returnToVentaId;
 
                 var (documentos, total) = await _documentoService.BuscarAsync(filtro);
                 filtro.Documentos = documentos;
