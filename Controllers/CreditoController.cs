@@ -104,10 +104,10 @@ namespace TheBuryProject.Controllers
                 Monto = credito.MontoAprobado,
                 Anticipo = 0,
                 MontoFinanciado = credito.MontoAprobado,
-                CantidadCuotas = credito.CantidadCuotas > 0 ? credito.CantidadCuotas : 12,
-                TasaMensual = credito.TasaInteres > 0 ? credito.TasaInteres : 5,
+                CantidadCuotas = credito.CantidadCuotas > 0 ? credito.CantidadCuotas : 0,
+                TasaMensual = credito.TasaInteres > 0 ? credito.TasaInteres : 0,
                 GastosAdministrativos = 0,
-                FechaPrimeraCuota = credito.FechaPrimeraCuota ?? DateTime.Today.AddMonths(1)
+                FechaPrimeraCuota = credito.FechaPrimeraCuota
             };
 
             return View(modelo);

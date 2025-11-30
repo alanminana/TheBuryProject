@@ -271,6 +271,30 @@ namespace TheBuryProject.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetPrecioProducto(int id)
+        {
+            try
+            {
+                var producto = await _context.Productos
+                    .Where(p => p.Id == id && p.Activo)
+                    .Select(p => new { p.PrecioVenta, p.StockActual })
+                    .FirstOrDefaultAsync();
+
+                if (producto == null)
+                {
+                    return NotFound(new { error = "Producto no encontrado" });
+                }
+
+                return Json(producto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener precio del producto {Id}", id);
+                return StatusCode(500, new { error = "No se pudo obtener el precio del producto" });
+            }
+        }
+
+        [HttpGet]
         public async Task<IActionResult> ValidarDocumentacionCredito(int ventaId)
         {
             var venta = await _ventaService.GetByIdAsync(ventaId);

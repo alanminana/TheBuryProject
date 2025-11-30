@@ -362,8 +362,17 @@
             }
 
             $.get('@Url.Action("GetPrecioProducto", "Venta")', { id: productoId })
-                .done(function (precio) {
-                    $('#precioInput').val(precio.toFixed(2));
+                .done(function (respuesta) {
+                    if (respuesta && typeof respuesta.precioVenta !== 'undefined') {
+                        $('#precioInput').val(parseFloat(respuesta.precioVenta).toFixed(2));
+                        stockDisponible[productoId] = respuesta.stockActual ?? stockDisponible[productoId];
+                    } else if (typeof respuesta === 'number') {
+                        $('#precioInput').val(parseFloat(respuesta).toFixed(2));
+                    }
+                })
+                .fail(function () {
+                    alert('No se pudo obtener el precio del producto seleccionado.');
+                    $('#precioInput').val('');
                 });
         }
 

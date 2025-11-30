@@ -29,7 +29,7 @@ namespace TheBuryProject.ViewModels
         public int CantidadCuotas { get; set; }
 
         [Display(Name = "Tasa mensual (%)")]
-        [Range(0, 100, ErrorMessage = "La tasa debe estar entre 0% y 100%")]
+        [Range(0.01, 100, ErrorMessage = "La tasa debe ser mayor a 0 y no superar el 100%")]
         public decimal TasaMensual { get; set; }
 
         [Display(Name = "Gastos administrativos")]
