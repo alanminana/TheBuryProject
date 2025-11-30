@@ -79,6 +79,7 @@ builder.Services.AddScoped<IAutorizacionService, AutorizacionService>();
 builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 builder.Services.AddScoped<ICajaService, CajaService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
+builder.Services.AddScoped<IDocumentacionService, DocumentacionService>();
 
 // 4.6 Servicios en background
 builder.Services.AddHostedService<MoraBackgroundService>();

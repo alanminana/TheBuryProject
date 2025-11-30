@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using TheBuryProject.Data;
 using TheBuryProject.Helpers;
@@ -79,6 +80,20 @@ namespace TheBuryProject.Services
                     throw new Exception(errorMessage);
                 }
 
+                DocumentoCliente? documentoAnterior = null;
+                if (viewModel.ReemplazarExistente && viewModel.DocumentoAReemplazarId.HasValue)
+                {
+                    documentoAnterior = await _context.Set<DocumentoCliente>()
+                        .FirstOrDefaultAsync(d => d.Id == viewModel.DocumentoAReemplazarId.Value
+                            && d.ClienteId == viewModel.ClienteId
+                            && !d.IsDeleted);
+
+                    if (documentoAnterior == null)
+                    {
+                        throw new Exception("El documento a reemplazar no existe o pertenece a otro cliente");
+                    }
+                }
+
                 // Crear carpeta si no existe
                 var uploadPath = Path.Combine(_environment.WebRootPath, UPLOAD_FOLDER);
                 if (!Directory.Exists(uploadPath))
@@ -120,7 +135,23 @@ namespace TheBuryProject.Services
                 };
 
                 _context.Set<DocumentoCliente>().Add(documento);
+
+                if (documentoAnterior != null)
+                {
+                    documentoAnterior.IsDeleted = true;
+                }
+
                 await _context.SaveChangesAsync();
+
+                if (documentoAnterior != null && !string.IsNullOrWhiteSpace(documentoAnterior.RutaArchivo))
+                {
+                    var rutaAnteriorCompleta = Path.Combine(_environment.WebRootPath, documentoAnterior.RutaArchivo);
+                    if (File.Exists(rutaAnteriorCompleta))
+                    {
+                        File.Delete(rutaAnteriorCompleta);
+                        _logger.LogInformation("Archivo anterior eliminado: {Ruta}", rutaAnteriorCompleta);
+                    }
+                }
 
                 viewModel.Id = documento.Id;
                 viewModel.NombreArchivo = documento.NombreArchivo;
