@@ -12,21 +12,18 @@ namespace TheBuryProject.Controllers
     public class ProductoController : Controller
     {
         private readonly IProductoService _productoService;
-        private readonly ICategoriaService _categoriaService;
-        private readonly IMarcaService _marcaService;
+        private readonly ICatalogLookupService _catalogLookupService;
         private readonly ILogger<ProductoController> _logger;
         private readonly IMapper _mapper;
 
         public ProductoController(
             IProductoService productoService,
-            ICategoriaService categoriaService,
-            IMarcaService marcaService,
+            ICatalogLookupService catalogLookupService,
             ILogger<ProductoController> logger,
             IMapper mapper)
         {
             _productoService = productoService;
-            _categoriaService = categoriaService;
-            _marcaService = marcaService;
+            _catalogLookupService = catalogLookupService;
             _logger = logger;
             _mapper = mapper;
         }
@@ -118,8 +115,7 @@ namespace TheBuryProject.Controllers
         /// </summary>
         private async Task CargarDropdownsAsync(int? categoriaSeleccionada = null, int? marcaSeleccionada = null)
         {
-            var categorias = await _categoriaService.GetAllAsync();
-            var marcas = await _marcaService.GetAllAsync();
+            var (categorias, marcas) = await _catalogLookupService.GetCategoriasYMarcasAsync();
 
             ViewBag.Categorias = new SelectList(
                 categorias.OrderBy(c => c.Nombre),
@@ -314,8 +310,7 @@ namespace TheBuryProject.Controllers
         /// </summary>
         private async Task CargarDropdownsFiltrosAsync(int? categoriaSeleccionada = null, int? marcaSeleccionada = null)
         {
-            var categorias = await _categoriaService.GetAllAsync();
-            var marcas = await _marcaService.GetAllAsync();
+            var (categorias, marcas) = await _catalogLookupService.GetCategoriasYMarcasAsync();
 
             ViewBag.CategoriasFiltro = new SelectList(
                 categorias.OrderBy(c => c.Nombre),
@@ -331,5 +326,6 @@ namespace TheBuryProject.Controllers
                 marcaSeleccionada
             );
         }
+
     }
 }

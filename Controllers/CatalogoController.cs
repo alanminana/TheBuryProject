@@ -9,19 +9,16 @@ namespace TheBuryProject.Controllers
     [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
     public class CatalogoController : Controller
     {
-        private readonly ICategoriaService _categoriaService;
-        private readonly IMarcaService _marcaService;
+        private readonly ICatalogLookupService _catalogLookupService;
         private readonly ILogger<CatalogoController> _logger;
         private readonly IMapper _mapper;
 
         public CatalogoController(
-            ICategoriaService categoriaService,
-            IMarcaService marcaService,
+            ICatalogLookupService catalogLookupService,
             ILogger<CatalogoController> logger,
             IMapper mapper)
         {
-            _categoriaService = categoriaService;
-            _marcaService = marcaService;
+            _catalogLookupService = catalogLookupService;
             _logger = logger;
             _mapper = mapper;
         }
@@ -31,8 +28,7 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                var categorias = await _categoriaService.GetAllAsync();
-                var marcas = await _marcaService.GetAllAsync();
+                var (categorias, marcas) = await _catalogLookupService.GetCategoriasYMarcasAsync();
 
                 var viewModel = new CatalogoViewModel
                 {
