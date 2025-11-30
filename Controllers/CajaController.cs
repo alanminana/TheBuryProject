@@ -146,8 +146,7 @@ public class CajaController : Controller
     [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
     public async Task<IActionResult> Abrir(int? cajaId)
     {
-        var cajas = await _cajaService.ObtenerTodasCajasAsync();
-        ViewBag.Cajas = new SelectList(cajas.Where(c => c.Activa), "Id", "Nombre", cajaId);
+        var cajas = await SetCajasActivasSelectListAsync(cajaId);
 
         var model = new AbrirCajaViewModel();
         if (cajaId.HasValue)
@@ -171,8 +170,7 @@ public class CajaController : Controller
     {
         if (!ModelState.IsValid)
         {
-            var cajas = await _cajaService.ObtenerTodasCajasAsync();
-            ViewBag.Cajas = new SelectList(cajas.Where(c => c.Activa), "Id", "Nombre", model.CajaId);
+            _ = await SetCajasActivasSelectListAsync(model.CajaId);
             return View(model);
         }
 
@@ -186,8 +184,7 @@ public class CajaController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al abrir caja");
-            var cajas = await _cajaService.ObtenerTodasCajasAsync();
-            ViewBag.Cajas = new SelectList(cajas.Where(c => c.Activa), "Id", "Nombre", model.CajaId);
+            _ = await SetCajasActivasSelectListAsync(model.CajaId);
             TempData["Error"] = ex.Message;
             return View(model);
         }
@@ -226,12 +223,7 @@ public class CajaController : Controller
     {
         if (!ModelState.IsValid)
         {
-            var apertura = await _cajaService.ObtenerAperturaPorIdAsync(model.AperturaCajaId);
-            if (apertura != null)
-            {
-                model.CajaNombre = apertura.Caja.Nombre;
-                model.SaldoActual = await _cajaService.CalcularSaldoActualAsync(model.AperturaCajaId);
-            }
+            await TryPopulateMovimientoContextAsync(model);
             return View(model);
         }
 
@@ -245,12 +237,7 @@ public class CajaController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al registrar movimiento");
-            var apertura = await _cajaService.ObtenerAperturaPorIdAsync(model.AperturaCajaId);
-            if (apertura != null)
-            {
-                model.CajaNombre = apertura.Caja.Nombre;
-                model.SaldoActual = await _cajaService.CalcularSaldoActualAsync(model.AperturaCajaId);
-            }
+            await TryPopulateMovimientoContextAsync(model);
             TempData["Error"] = ex.Message;
             return View(model);
         }
@@ -297,11 +284,7 @@ public class CajaController : Controller
     {
         if (!ModelState.IsValid)
         {
-            var detalles = await _cajaService.ObtenerDetallesAperturaAsync(model.AperturaCajaId);
-            model.CajaNombre = detalles.Apertura.Caja.Nombre;
-            model.FechaApertura = detalles.Apertura.FechaApertura;
-            model.UsuarioApertura = detalles.Apertura.UsuarioApertura;
-            model.Movimientos = detalles.Movimientos;
+            await TryPopulateCerrarModelAsync(model);
             return View(model);
         }
 
@@ -324,11 +307,7 @@ public class CajaController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al cerrar caja");
-            var detalles = await _cajaService.ObtenerDetallesAperturaAsync(model.AperturaCajaId);
-            model.CajaNombre = detalles.Apertura.Caja.Nombre;
-            model.FechaApertura = detalles.Apertura.FechaApertura;
-            model.UsuarioApertura = detalles.Apertura.UsuarioApertura;
-            model.Movimientos = detalles.Movimientos;
+            await TryPopulateCerrarModelAsync(model);
             TempData["Error"] = ex.Message;
             return View(model);
         }
@@ -395,6 +374,36 @@ public class CajaController : Controller
         ViewBag.FechaHasta = fechaHasta;
 
         return View(viewModel);
+    }
+
+    #endregion
+
+    #region Helpers
+
+    private async Task<List<Caja>> SetCajasActivasSelectListAsync(int? selectedId)
+    {
+        var cajas = await _cajaService.ObtenerTodasCajasAsync();
+        ViewBag.Cajas = new SelectList(cajas.Where(c => c.Activa), "Id", "Nombre", selectedId);
+        return cajas;
+    }
+
+    private async Task TryPopulateMovimientoContextAsync(MovimientoCajaViewModel model)
+    {
+        var apertura = await _cajaService.ObtenerAperturaPorIdAsync(model.AperturaCajaId);
+        if (apertura != null)
+        {
+            model.CajaNombre = apertura.Caja.Nombre;
+            model.SaldoActual = await _cajaService.CalcularSaldoActualAsync(model.AperturaCajaId);
+        }
+    }
+
+    private async Task TryPopulateCerrarModelAsync(CerrarCajaViewModel model)
+    {
+        var detalles = await _cajaService.ObtenerDetallesAperturaAsync(model.AperturaCajaId);
+        model.CajaNombre = detalles.Apertura.Caja.Nombre;
+        model.FechaApertura = detalles.Apertura.FechaApertura;
+        model.UsuarioApertura = detalles.Apertura.UsuarioApertura;
+        model.Movimientos = detalles.Movimientos;
     }
 
     #endregion
