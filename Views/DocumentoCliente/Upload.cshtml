@@ -7,9 +7,21 @@
 }
 
 @section PageActions {
-    <a asp-action="Index" class="btn btn-outline-light me-2">
-        <i class="bi bi-arrow-left"></i> Volver
-    </a>
+    @if (Model.ReturnToVentaId.HasValue)
+    {
+        <a asp-action="Index"
+           asp-route-returnToVentaId="@Model.ReturnToVentaId"
+           asp-route-clienteId="@Model.ClienteId"
+           class="btn btn-outline-light me-2">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    }
+    else
+    {
+        <a asp-action="Index" class="btn btn-outline-light me-2">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    }
 }
 
 <div class="alert alert-info border-0 shadow-sm">
@@ -37,9 +49,21 @@
                 <button type="submit" class="btn btn-info text-dark fw-semibold">
                     <i class="bi bi-upload me-2"></i>Subir Documento
                 </button>
-                <a asp-action="Index" class="btn btn-outline-light">
-                    Cancelar
-                </a>
+                @if (Model.ReturnToVentaId.HasValue)
+                {
+                    <a asp-action="Index"
+                       asp-route-returnToVentaId="@Model.ReturnToVentaId"
+                       asp-route-clienteId="@Model.ClienteId"
+                       class="btn btn-outline-light">
+                        Cancelar
+                    </a>
+                }
+                else
+                {
+                    <a asp-action="Index" class="btn btn-outline-light">
+                        Cancelar
+                    </a>
+                }
             </div>
         </form>
     </div>

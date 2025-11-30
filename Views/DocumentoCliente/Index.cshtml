@@ -8,9 +8,21 @@
 }
 
 @section PageActions {
-    <a asp-action="Upload" class="btn btn-info text-dark fw-semibold shadow-sm">
-        <i class="bi bi-upload me-2"></i>Subir Documento
-    </a>
+    @if (Model.ReturnToVentaId.HasValue)
+    {
+        <a asp-action="Upload"
+           asp-route-returnToVentaId="@Model.ReturnToVentaId"
+           asp-route-clienteId="@Model.ClienteId"
+           class="btn btn-info text-dark fw-semibold shadow-sm">
+            <i class="bi bi-upload me-2"></i>Subir Documento
+        </a>
+    }
+    else
+    {
+        <a asp-action="Upload" class="btn btn-info text-dark fw-semibold shadow-sm">
+            <i class="bi bi-upload me-2"></i>Subir Documento
+        </a>
+    }
 }
 
 @section PageFilters {
@@ -198,7 +210,11 @@
                                         <a asp-action="Descargar" asp-route-id="@doc.Id" class="btn btn-outline-success">
                                             <i class="bi bi-download"></i>
                                         </a>
-                                        <a asp-action="Upload" asp-route-clienteId="@doc.ClienteId" asp-route-replaceId="@doc.Id" class="btn btn-outline-warning text-dark">
+                                        <a asp-action="Upload"
+                                           asp-route-clienteId="@doc.ClienteId"
+                                           asp-route-replaceId="@doc.Id"
+                                           asp-route-returnToVentaId="@Model.ReturnToVentaId"
+                                           class="btn btn-outline-warning text-dark">
                                             <i class="bi bi-arrow-repeat"></i>
                                         </a>
                                         <form asp-action="Delete" asp-route-id="@doc.Id" method="post"
@@ -219,7 +235,17 @@
                             <td colspan="8" class="text-center py-5">
                                 <i class="bi bi-inbox display-5 text-secondary d-block mb-3"></i>
                                 <p class="text-secondary mb-2">No hay documentos disponibles</p>
-                                <a asp-action="Upload" class="btn btn-info text-dark">Subir Documento</a>
+                                @if (Model.ReturnToVentaId.HasValue)
+                                {
+                                    <a asp-action="Upload"
+                                       asp-route-returnToVentaId="@Model.ReturnToVentaId"
+                                       asp-route-clienteId="@Model.ClienteId"
+                                       class="btn btn-info text-dark">Subir Documento</a>
+                                }
+                                else
+                                {
+                                    <a asp-action="Upload" class="btn btn-info text-dark">Subir Documento</a>
+                                }
                             </td>
                         </tr>
                     }
