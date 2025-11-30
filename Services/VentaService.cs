@@ -105,6 +105,8 @@ namespace TheBuryProject.Services
 
                 venta.Numero = await _numberGenerator.GenerarNumeroAsync(viewModel.Estado);
 
+                AgregarDetalles(venta, viewModel.Detalles);
+
                 CalcularTotales(venta);
 
                 await VerificarAutorizacionSiCorrespondeAsync(venta, viewModel);
@@ -636,6 +638,16 @@ namespace TheBuryProject.Services
             {
                 var detalle = _mapper.Map<VentaDetalle>(detalleVM);
                 detalle.VentaId = venta.Id;
+                venta.Detalles.Add(detalle);
+            }
+        }
+
+        private void AgregarDetalles(Venta venta, List<VentaDetalleViewModel> detallesVM)
+        {
+            foreach (var detalleVM in detallesVM)
+            {
+                var detalle = _mapper.Map<VentaDetalle>(detalleVM);
+                detalle.Venta = venta;
                 venta.Detalles.Add(detalle);
             }
         }
