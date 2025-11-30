@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
+using TheBuryProject.Models.Constants;
+using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
@@ -82,6 +84,103 @@ namespace TheBuryProject.Controllers
                 TempData["Error"] = "Error al cargar el cr�dito";
                 return RedirectToAction(nameof(Index));
             }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ConfigurarVenta(int id, int? ventaId)
+        {
+            var credito = await _creditoService.GetByIdAsync(id);
+            if (credito == null)
+            {
+                TempData["Error"] = "Crédito no encontrado";
+                return RedirectToAction(nameof(Index));
+            }
+
+            decimal montoVenta = credito.MontoAprobado;
+
+            if (montoVenta <= 0)
+            {
+                montoVenta = credito.MontoSolicitado;
+            }
+
+            if (ventaId.HasValue)
+            {
+                var venta = await _context.Ventas
+                    .Include(v => v.Detalles)
+                    .FirstOrDefaultAsync(v => v.Id == ventaId.Value);
+
+                if (venta != null)
+                {
+                    // Prioriza el total guardado; si no existe, recalcula desde el detalle
+                    montoVenta = venta.Total;
+
+                    if (montoVenta <= 0 && venta.Detalles != null && venta.Detalles.Any())
+                    {
+                        var subtotal = venta.Detalles.Sum(d =>
+                            d.Subtotal > 0
+                                ? d.Subtotal
+                                : Math.Max(0, (d.Cantidad * d.PrecioUnitario) - d.Descuento));
+
+                        var subtotalConDescuento = subtotal - venta.Descuento;
+                        var iva = subtotalConDescuento * VentaConstants.IVA_RATE;
+                        montoVenta = subtotalConDescuento + iva;
+                    }
+                }
+            }
+
+            var modelo = new ConfiguracionCreditoVentaViewModel
+            {
+                CreditoId = credito.Id,
+                VentaId = ventaId,
+                ClienteNombre = credito.ClienteNombre ?? string.Empty,
+                NumeroCredito = credito.Numero,
+                Monto = montoVenta,
+                Anticipo = 0,
+                MontoFinanciado = montoVenta,
+                CantidadCuotas = credito.CantidadCuotas > 0 ? credito.CantidadCuotas : 0,
+                TasaMensual = credito.TasaInteres > 0 ? credito.TasaInteres : 0,
+                GastosAdministrativos = 0,
+                FechaPrimeraCuota = credito.FechaPrimeraCuota
+            };
+
+            return View(modelo);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfigurarVenta(ConfiguracionCreditoVentaViewModel modelo)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(modelo);
+            }
+
+            var credito = await _creditoService.GetByIdAsync(modelo.CreditoId);
+            if (credito == null)
+            {
+                TempData["Error"] = "Crédito no encontrado";
+                return RedirectToAction(nameof(Index));
+            }
+
+            credito.CantidadCuotas = modelo.CantidadCuotas;
+            credito.TasaInteres = modelo.TasaMensual;
+            credito.FechaPrimeraCuota = modelo.FechaPrimeraCuota;
+            credito.MontoAprobado = Math.Max(0, modelo.Monto - modelo.Anticipo);
+            credito.MontoSolicitado = credito.MontoAprobado;
+            credito.SaldoPendiente = credito.MontoAprobado;
+            credito.Estado = EstadoCredito.Solicitado;
+
+            if (modelo.GastosAdministrativos > 0)
+            {
+                credito.Observaciones = string.IsNullOrWhiteSpace(credito.Observaciones)
+                    ? $"Gastos administrativos declarados: ${modelo.GastosAdministrativos:N2}"
+                    : $"{credito.Observaciones} | Gastos administrativos: ${modelo.GastosAdministrativos:N2}";
+            }
+
+            await _creditoService.UpdateAsync(credito);
+
+            TempData["Success"] = "Crédito configurado y listo para aprobación.";
+            return RedirectToAction(nameof(Details), new { id = credito.Id });
         }
 
         // GET: Credito/Create

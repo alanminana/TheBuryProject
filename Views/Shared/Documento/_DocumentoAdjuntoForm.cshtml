@@ -6,9 +6,19 @@
     <label asp-for="ClienteId" class="form-label text-light fw-semibold">
         <i class="bi bi-person me-1"></i>Cliente *
     </label>
-    <select asp-for="ClienteId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Clientes" required>
-        <option value="">Seleccione un cliente...</option>
-    </select>
+
+    @if (ViewBag.ClienteBloqueado == true)
+    {
+        <input type="hidden" asp-for="ClienteId" />
+        <input type="text" value="@Model.ClienteNombre" class="form-control bg-body-secondary text-light border-0" readonly />
+        <small class="form-text text-muted">Cliente asociado a la venta en proceso. No se puede modificar.</small>
+    }
+    else
+    {
+        <select asp-for="ClienteId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Clientes" required>
+            <option value="">Seleccione un cliente...</option>
+        </select>
+    }
     <span asp-validation-for="ClienteId" class="text-danger"></span>
 </div>
 
@@ -20,6 +30,28 @@
         <option value="">Seleccione el tipo...</option>
     </select>
     <span asp-validation-for="TipoDocumento" class="text-danger"></span>
+</div>
+
+<div class="form-check form-switch form-switch-lg mb-3">
+    <input asp-for="ReemplazarExistente" class="form-check-input" type="checkbox" id="toggleReemplazo" />
+    <label class="form-check-label text-light fw-semibold" for="toggleReemplazo">
+        <i class="bi bi-arrow-repeat me-1"></i>Reemplazar documento existente
+    </label>
+</div>
+
+<div class="mb-3 d-none" id="reemplazoContainer">
+    <label asp-for="DocumentoAReemplazarId" class="form-label text-light fw-semibold">
+        <i class="bi bi-archive me-1"></i>Documento a reemplazar
+    </label>
+    <select asp-for="DocumentoAReemplazarId" class="form-select bg-body-secondary text-light border-0">
+        <option value="">Seleccione un documento...</option>
+        @if (Model.DocumentoAReemplazarId.HasValue && !string.IsNullOrWhiteSpace(Model.DocumentoAReemplazarNombre))
+        {
+            <option selected value="@Model.DocumentoAReemplazarId">@Model.DocumentoAReemplazarNombre</option>
+        }
+    </select>
+    <span asp-validation-for="DocumentoAReemplazarId" class="text-danger"></span>
+    <small class="form-text text-muted">El nuevo archivo reemplazará al seleccionado y se eliminará el anterior.</small>
 </div>
 
 <div class="mb-3">
