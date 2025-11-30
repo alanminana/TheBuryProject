@@ -9,39 +9,78 @@
 
 <style>
     .panel-soft {
-        background-color: #F5F5F5;
-        color: #333333;
-        border: 1px solid #E0E0E0;
+        background: linear-gradient(135deg, var(--tb-bg-elevated), var(--tb-bg-surface));
+        border: 1px solid var(--tb-border-soft);
+        color: var(--tb-text-main);
     }
 
     .panel-soft .card-header {
-        background-color: #EDEDED;
-        color: #000000;
+        background: linear-gradient(120deg, rgba(88, 101, 242, 0.15), rgba(88, 101, 242, 0.05));
+        color: var(--tb-text-main);
+        border-bottom: 1px solid var(--tb-border-soft);
     }
 
     .info-block {
-        background-color: #FFF6D1;
-        color: #000000;
+        background: rgba(88, 101, 242, 0.08);
+        color: var(--tb-text-main);
+        border: 1px solid rgba(88, 101, 242, 0.35);
     }
 
     .error-block {
-        background-color: #FDECEC;
-        color: #B30000;
+        background: rgba(220, 53, 69, 0.1);
+        color: #f8d7da;
+        border: 1px solid rgba(220, 53, 69, 0.45);
     }
 
     .state-yellow {
-        background-color: #C29D00;
-        color: #000000;
+        background-color: #e0a800;
+        color: #0c0c0c;
     }
 
     .state-green {
-        background-color: #008A00;
-        color: #FFFFFF;
+        background-color: #2d8748;
+        color: #e8f7ef;
     }
 
     .state-red {
-        background-color: #C30000;
-        color: #FFFFFF;
+        background-color: #c30000;
+        color: #ffeaea;
+    }
+
+    .summary-grid {
+        background: var(--tb-bg-surface-soft);
+        border: 1px solid var(--tb-border-soft);
+        border-radius: var(--tb-radius);
+    }
+
+    .summary-grid .summary-item {
+        padding: 0.75rem;
+        border-right: 1px solid var(--tb-border-soft);
+    }
+
+    .summary-grid .summary-item:last-child {
+        border-right: none;
+    }
+
+    .summary-item small {
+        color: var(--tb-text-muted);
+        letter-spacing: 0.5px;
+    }
+
+    .summary-item .value {
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+
+    @media (max-width: 991.98px) {
+        .summary-grid .summary-item {
+            border-right: none;
+            border-bottom: 1px solid var(--tb-border-soft);
+        }
+
+        .summary-grid .summary-item:last-child {
+            border-bottom: none;
+        }
     }
 </style>
 
@@ -145,6 +184,24 @@
                             <div><strong>Total a pagar:</strong> <span id="totalAPagarLabel">$0,00</span></div>
                         </div>
                     </div>
+                    <div class="summary-grid d-flex flex-column flex-lg-row mt-3">
+                        <div class="summary-item flex-fill">
+                            <small>Capital financiado</small>
+                            <div class="value" id="capitalFinanciadoLabel">$0,00</div>
+                        </div>
+                        <div class="summary-item flex-fill">
+                            <small>Gastos adm.</small>
+                            <div class="value" id="gastosAdministrativosLabel">$0,00</div>
+                        </div>
+                        <div class="summary-item flex-fill">
+                            <small>Total plan</small>
+                            <div class="value" id="planTotalLabel">$0,00</div>
+                        </div>
+                        <div class="summary-item flex-fill">
+                            <small>Primer vencimiento</small>
+                            <div class="value" id="fechaPrimerPagoLabel">--</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -168,7 +225,7 @@
                         </ul>
                     </div>
                     <div class="p-3 mt-3 rounded error-block" style="display:none;" id="errorCalculadora">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Ingresa anticipo, cuotas, tasa y fecha de primera cuota para ver los cálculos.
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Ingresa anticipo, cuotas y tasa para ver los cálculos. La fecha ayuda a definir el primer vencimiento.
                     </div>
                 </div>
             </div>
@@ -198,6 +255,7 @@
         const anticipoInput = document.getElementById('anticipoInput');
         const cuotasInput = document.getElementById('cuotasInput');
         const tasaInput = document.getElementById('tasaMensualInput');
+        const gastosInput = document.getElementById('GastosAdministrativos');
         const fechaInput = document.getElementById('fechaPrimeraCuota');
 
         function formatear(valor) {
@@ -208,6 +266,7 @@
             if (anticipoInput.value === '0') anticipoInput.value = '';
             if (cuotasInput.value === '0') cuotasInput.value = '';
             if (tasaInput.value === '0') tasaInput.value = '';
+            if (gastosInput.value === '0') gastosInput.value = '';
         }
 
         function registrarCambio(campo, tieneValor) {
@@ -219,6 +278,7 @@
             const anticipo = parseFloat(anticipoInput.value) || 0;
             const cuotas = parseInt(cuotasInput.value) || 0;
             const tasa = parseFloat(tasaInput.value) || 0;
+            const gastos = parseFloat(gastosInput.value) || 0;
 
             const montoFinanciado = Math.max(0, totalVenta - anticipo);
             document.getElementById('MontoFinanciado').value = montoFinanciado;
@@ -237,8 +297,12 @@
             const interesTotalLabel = document.getElementById('interesTotalLabel');
             const totalAPagarLabel = document.getElementById('totalAPagarLabel');
             const tasaAplicadaLabel = document.getElementById('tasaAplicadaLabel');
+            const capitalFinanciadoLabel = document.getElementById('capitalFinanciadoLabel');
+            const gastosAdministrativosLabel = document.getElementById('gastosAdministrativosLabel');
+            const planTotalLabel = document.getElementById('planTotalLabel');
+            const fechaPrimerPagoLabel = document.getElementById('fechaPrimerPagoLabel');
 
-            const datosCompletos = tieneAnticipo && tieneCuotas && tieneTasa && tieneFecha && montoFinanciado > 0;
+            const datosCompletos = tieneAnticipo && tieneCuotas && tieneTasa && montoFinanciado > 0;
 
             if (!datosCompletos) {
                 document.getElementById('cuotaEstimadaLabel').innerText = '$0,00';
@@ -251,6 +315,10 @@
                 mensajeSemaforo.innerText = 'Completa los datos para precalificar.';
                 msgIngreso.classList.add('d-none');
                 msgAntiguedad.classList.add('d-none');
+                capitalFinanciadoLabel.innerText = '$0,00';
+                gastosAdministrativosLabel.innerText = '$0,00';
+                planTotalLabel.innerText = '$0,00';
+                fechaPrimerPagoLabel.innerText = '--';
                 return;
             }
 
@@ -267,10 +335,20 @@
 
             document.getElementById('cuotaEstimadaLabel').innerText = `$${formatear(cuota)}`;
             tasaAplicadaLabel.innerText = `${tasa.toFixed(2)}%`;
-            const totalAPagar = cuota * cuotas;
-            const interesTotal = Math.max(0, totalAPagar - montoFinanciado);
+            const totalCuotas = cuota * cuotas;
+            const interesTotal = Math.max(0, totalCuotas - montoFinanciado);
+            const totalAPagar = totalCuotas + gastos;
             interesTotalLabel.innerText = `$${formatear(interesTotal)}`;
             totalAPagarLabel.innerText = `$${formatear(totalAPagar)}`;
+            capitalFinanciadoLabel.innerText = `$${formatear(montoFinanciado)}`;
+            gastosAdministrativosLabel.innerText = `$${formatear(gastos)}`;
+            planTotalLabel.innerText = `$${formatear(totalAPagar)}`;
+            if (fechaInput.value) {
+                const fecha = new Date(fechaInput.value);
+                fechaPrimerPagoLabel.innerText = fecha.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
+            } else {
+                fechaPrimerPagoLabel.innerText = '--';
+            }
 
             const ratio = cuota / (montoFinanciado || 1);
             if (ratio <= 0.08) {
@@ -298,6 +376,7 @@
         anticipoInput.addEventListener('input', () => registrarCambio('anticipo', true));
         cuotasInput.addEventListener('input', () => registrarCambio('cuotas', true));
         tasaInput.addEventListener('input', () => registrarCambio('tasa', true));
+        gastosInput.addEventListener('input', () => actualizarCalculos());
         fechaInput.addEventListener('change', () => registrarCambio('fecha', true));
 
         actualizarCalculos();
