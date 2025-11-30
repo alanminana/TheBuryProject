@@ -4,12 +4,12 @@ using TheBuryProject.Models.Entities;
 namespace TheBuryProject.Services.Interfaces;
 
 /// <summary>
-/// Servicio para gesti髇 de roles y permisos del sistema
+/// Servicio para gesti贸n de roles y permisos del sistema
 /// </summary>
 public interface IRolService
 {
     // ============================================
-    // GESTI覰 DE ROLES
+    // GESTI脫N DE ROLES
     // ============================================
 
     /// <summary>
@@ -48,7 +48,7 @@ public interface IRolService
     Task<bool> RoleExistsAsync(string roleName);
 
     // ============================================
-    // GESTI覰 DE PERMISOS
+    // GESTI脫N DE PERMISOS
     // ============================================
 
     /// <summary>
@@ -60,8 +60,8 @@ public interface IRolService
     /// Asigna un permiso a un rol
     /// </summary>
     /// <param name="roleId">ID del rol</param>
-    /// <param name="moduloId">ID del m骴ulo</param>
-    /// <param name="accionId">ID de la acci髇</param>
+    /// <param name="moduloId">ID del m贸dulo</param>
+    /// <param name="accionId">ID de la acci贸n</param>
     Task<RolPermiso> AssignPermissionToRoleAsync(string roleId, int moduloId, int accionId);
 
     /// <summary>
@@ -75,27 +75,27 @@ public interface IRolService
     Task ClearPermissionsForRoleAsync(string roleId);
 
     /// <summary>
-    /// Verifica si un rol tiene un permiso espec韋ico
+    /// Verifica si un rol tiene un permiso espec铆fico
     /// </summary>
     Task<bool> RoleHasPermissionAsync(string roleId, string moduloClave, string accionClave);
 
     /// <summary>
-    /// Asigna m鷏tiples permisos a un rol en una sola operaci髇
+    /// Asigna m煤ltiples permisos a un rol en una sola operaci贸n
     /// </summary>
     Task<List<RolPermiso>> AssignMultiplePermissionsAsync(string roleId, List<(int moduloId, int accionId)> permisos);
 
     /// <summary>
     /// Sincroniza los claims del rol con los permisos en BD
-    /// 趖il despu閟 de cambiar permisos
+    /// 脷til despu茅s de cambiar permisos
     /// </summary>
     Task SyncRoleClaimsAsync(string roleId);
 
     // ============================================
-    // GESTI覰 DE USUARIOS EN ROLES
+    // GESTI脫N DE USUARIOS EN ROLES
     // ============================================
 
     /// <summary>
-    /// Obtiene todos los usuarios que tienen un rol espec韋ico
+    /// Obtiene todos los usuarios que tienen un rol espec铆fico
     /// </summary>
     Task<List<IdentityUser>> GetUsersInRoleAsync(string roleName);
 
@@ -115,7 +115,7 @@ public interface IRolService
     Task<List<string>> GetUserRolesAsync(string userId);
 
     /// <summary>
-    /// Verifica si un usuario tiene un rol espec韋ico
+    /// Verifica si un usuario tiene un rol espec铆fico
     /// </summary>
     Task<bool> UserIsInRoleAsync(string userId, string roleName);
 
@@ -125,55 +125,65 @@ public interface IRolService
     Task<List<string>> GetUserEffectivePermissionsAsync(string userId);
 
     // ============================================
-    // M覦ULOS Y ACCIONES
+    // M脫DULOS Y ACCIONES
     // ============================================
 
     /// <summary>
-    /// Obtiene todos los m骴ulos del sistema
+    /// Obtiene todos los m贸dulos del sistema
     /// </summary>
     Task<List<ModuloSistema>> GetAllModulosAsync();
 
     /// <summary>
-    /// Obtiene un m骴ulo por su ID
+    /// Obtiene un m贸dulo por su ID
     /// </summary>
     Task<ModuloSistema?> GetModuloByIdAsync(int id);
 
     /// <summary>
-    /// Obtiene un m骴ulo por su clave
+    /// Obtiene un m贸dulo por su clave
     /// </summary>
     Task<ModuloSistema?> GetModuloByClaveAsync(string clave);
 
     /// <summary>
-    /// Obtiene todas las acciones de un m骴ulo espec韋ico
+    /// Obtiene todas las acciones de un m贸dulo espec铆fico
     /// </summary>
     Task<List<AccionModulo>> GetAccionesForModuloAsync(int moduloId);
 
     /// <summary>
-    /// Obtiene una acci髇 por su ID
+    /// Obtiene una acci贸n por su ID
     /// </summary>
     Task<AccionModulo?> GetAccionByIdAsync(int id);
 
     /// <summary>
-    /// Crea un nuevo m骴ulo del sistema
+    /// Crea un nuevo m贸dulo del sistema
     /// </summary>
     Task<ModuloSistema> CreateModuloAsync(ModuloSistema modulo);
 
     /// <summary>
-    /// Crea una nueva acci髇 para un m骴ulo
+    /// Crea una nueva acci贸n para un m贸dulo
     /// </summary>
     Task<AccionModulo> CreateAccionAsync(AccionModulo accion);
 
+    /// <summary>
+    /// Actualiza una acci贸n existente
+    /// </summary>
+    Task<bool> UpdateAccionAsync(AccionModulo accion, string? updatedBy = null);
+
+    /// <summary>
+    /// Elimina (soft delete) una acci贸n y sus permisos relacionados
+    /// </summary>
+    Task<bool> DeleteAccionAsync(int id, string? deletedBy = null);
+
     // ============================================
-    // REPORTES Y ESTAD蚐TICAS
+    // REPORTES Y ESTAD脥STICAS
     // ============================================
 
     /// <summary>
-    /// Obtiene la matriz de permisos: Roles x M骴ulos.Acciones
+    /// Obtiene la matriz de permisos: Roles x M贸dulos.Acciones
     /// </summary>
     Task<Dictionary<string, Dictionary<string, List<string>>>> GetPermissionsMatrixAsync();
 
     /// <summary>
-    /// Obtiene estad韘ticas de uso de roles
+    /// Obtiene estad铆sticas de uso de roles
     /// </summary>
     Task<Dictionary<string, int>> GetRoleUsageStatsAsync();
 }

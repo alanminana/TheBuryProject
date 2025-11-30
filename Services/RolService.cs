@@ -366,6 +366,56 @@ public class RolService : IRolService
         return accion;
     }
 
+    public async Task<bool> UpdateAccionAsync(AccionModulo accion, string? updatedBy = null)
+    {
+        var existing = await _context.AccionesModulo
+            .FirstOrDefaultAsync(a => a.Id == accion.Id && !a.IsDeleted);
+
+        if (existing == null)
+        {
+            return false;
+        }
+
+        existing.Nombre = accion.Nombre;
+        existing.Clave = accion.Clave;
+        existing.Descripcion = accion.Descripcion;
+        existing.ModuloId = accion.ModuloId;
+        existing.Activa = accion.Activa;
+        existing.Orden = accion.Orden;
+        existing.Icono = accion.Icono;
+        existing.UpdatedAt = DateTime.UtcNow;
+        existing.UpdatedBy = updatedBy;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteAccionAsync(int id, string? deletedBy = null)
+    {
+        var accion = await _context.AccionesModulo
+            .Include(a => a.Permisos)
+            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+
+        if (accion == null)
+        {
+            return false;
+        }
+
+        accion.IsDeleted = true;
+        accion.UpdatedAt = DateTime.UtcNow;
+        accion.UpdatedBy = deletedBy;
+
+        foreach (var permiso in accion.Permisos)
+        {
+            permiso.IsDeleted = true;
+            permiso.UpdatedAt = DateTime.UtcNow;
+            permiso.UpdatedBy = deletedBy;
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     #endregion
 
     #region Reportes y Estadísticas
