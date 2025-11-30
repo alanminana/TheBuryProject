@@ -101,7 +101,11 @@
                     <div class="p-3 rounded" style="background-color: #FFF6D1; color: #000000;">
                         <p class="mb-1 fw-semibold">Cuota estimada</p>
                         <h5 class="mb-0" id="cuotaEstimadaLabel">$0,00</h5>
-                        <small class="text-muted">Se actualizará al completar los datos.</small>
+                        <div class="small mt-2">
+                            <div><strong>Tasa aplicada:</strong> <span id="tasaAplicadaLabel">0%</span></div>
+                            <div><strong>Interés total:</strong> <span id="interesTotalLabel">$0,00</span></div>
+                            <div><strong>Total a pagar:</strong> <span id="totalAPagarLabel">$0,00</span></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -182,7 +186,7 @@
             document.getElementById('MontoFinanciado').value = montoFinanciado;
             document.getElementById('montoFinanciadoLabel').innerText = `$${formatear(montoFinanciado)}`;
 
-            const tieneAnticipo = anticipoInput.value !== '';
+            const tieneAnticipo = true;
             const tieneCuotas = cuotas > 0;
             const tieneTasa = tasa > 0;
             const tieneFecha = !!fechaInput.value;
@@ -192,11 +196,17 @@
             const badgeSemaforo = document.getElementById('estadoSemaforo');
             const msgIngreso = document.getElementById('msgIngreso');
             const msgAntiguedad = document.getElementById('msgAntiguedad');
+            const interesTotalLabel = document.getElementById('interesTotalLabel');
+            const totalAPagarLabel = document.getElementById('totalAPagarLabel');
+            const tasaAplicadaLabel = document.getElementById('tasaAplicadaLabel');
 
             const datosCompletos = tieneAnticipo && tieneCuotas && tieneTasa && tieneFecha && montoFinanciado > 0;
 
             if (!datosCompletos) {
                 document.getElementById('cuotaEstimadaLabel').innerText = '$0,00';
+                interesTotalLabel.innerText = '$0,00';
+                totalAPagarLabel.innerText = '$0,00';
+                tasaAplicadaLabel.innerText = '0%';
                 alertaError.style.display = 'block';
                 badgeSemaforo.style.backgroundColor = '#C29D00';
                 badgeSemaforo.style.color = '#000000';
@@ -219,6 +229,11 @@
                 : (montoFinanciado * tasaDecimal) / (1 - Math.pow(1 + tasaDecimal, -cuotas));
 
             document.getElementById('cuotaEstimadaLabel').innerText = `$${formatear(cuota)}`;
+            tasaAplicadaLabel.innerText = `${tasa.toFixed(2)}%`;
+            const totalAPagar = cuota * cuotas;
+            const interesTotal = Math.max(0, totalAPagar - montoFinanciado);
+            interesTotalLabel.innerText = `$${formatear(interesTotal)}`;
+            totalAPagarLabel.innerText = `$${formatear(totalAPagar)}`;
 
             const ratio = cuota / (montoFinanciado || 1);
             if (ratio <= 0.08) {

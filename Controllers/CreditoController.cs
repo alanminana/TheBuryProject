@@ -95,15 +95,26 @@ namespace TheBuryProject.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            decimal montoVenta = credito.MontoAprobado;
+
+            if (ventaId.HasValue)
+            {
+                var venta = await _context.Ventas.FindAsync(ventaId.Value);
+                if (venta != null)
+                {
+                    montoVenta = venta.Total;
+                }
+            }
+
             var modelo = new ConfiguracionCreditoVentaViewModel
             {
                 CreditoId = credito.Id,
                 VentaId = ventaId,
                 ClienteNombre = credito.ClienteNombre ?? string.Empty,
                 NumeroCredito = credito.Numero,
-                Monto = credito.MontoAprobado,
+                Monto = montoVenta,
                 Anticipo = 0,
-                MontoFinanciado = credito.MontoAprobado,
+                MontoFinanciado = montoVenta,
                 CantidadCuotas = credito.CantidadCuotas > 0 ? credito.CantidadCuotas : 0,
                 TasaMensual = credito.TasaInteres > 0 ? credito.TasaInteres : 0,
                 GastosAdministrativos = 0,

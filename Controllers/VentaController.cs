@@ -225,6 +225,29 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                if (resultado.TipoPago == TipoPago.CreditoPersonal)
+                {
+                    var documentacion = await _documentacionService.ProcesarDocumentacionVentaAsync(resultado.Id);
+
+                    if (!documentacion.DocumentacionCompleta)
+                    {
+                        TempData["Warning"] =
+                            $"Falta documentación obligatoria para otorgar crédito: {documentacion.MensajeFaltantes}";
+
+                        return RedirectToAction(
+                            "Index",
+                            "DocumentoCliente",
+                            new { clienteId = resultado.ClienteId, returnToVentaId = resultado.Id });
+                    }
+
+                    TempData["Success"] = "Venta actualizada. Crédito listo para configurar.";
+
+                    return RedirectToAction(
+                        "ConfigurarVenta",
+                        "Credito",
+                        new { id = documentacion.CreditoId, ventaId = resultado.Id });
+                }
+
                 TempData["Success"] = "Venta actualizada exitosamente";
                 return RedirectToAction(nameof(Details), new { id });
             }
@@ -384,6 +407,34 @@ namespace TheBuryProject.Controllers
         {
             try
             {
+                var venta = await _ventaService.GetByIdAsync(id);
+                if (venta == null)
+                {
+                    TempData["Error"] = "Venta no encontrada";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                if (venta.TipoPago == TipoPago.CreditoPersonal)
+                {
+                    var documentacion = await _documentacionService.ProcesarDocumentacionVentaAsync(id);
+
+                    if (!documentacion.DocumentacionCompleta)
+                    {
+                        TempData["Warning"] =
+                            $"Falta documentación obligatoria para otorgar crédito: {documentacion.MensajeFaltantes}";
+
+                        return RedirectToAction(
+                            "Index",
+                            "DocumentoCliente",
+                            new { clienteId = venta.ClienteId, returnToVentaId = venta.Id });
+                    }
+
+                    return RedirectToAction(
+                        "ConfigurarVenta",
+                        "Credito",
+                        new { id = documentacion.CreditoId, ventaId = venta.Id });
+                }
+
                 var resultado = await _ventaService.ConfirmarVentaAsync(id);
                 if (resultado)
                 {

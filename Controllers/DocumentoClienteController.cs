@@ -70,7 +70,7 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: DocumentoCliente/Upload
-        public async Task<IActionResult> Upload(int? clienteId, int? returnToVentaId)
+        public async Task<IActionResult> Upload(int? clienteId, int? returnToVentaId, int? replaceId)
         {
             await CargarViewBags(clienteId);
 
@@ -79,6 +79,20 @@ namespace TheBuryProject.Controllers
                 viewModel.ClienteId = clienteId.Value;
             if (returnToVentaId.HasValue)
                 viewModel.ReturnToVentaId = returnToVentaId;
+
+            if (replaceId.HasValue)
+            {
+                var documento = await _documentoService.GetByIdAsync(replaceId.Value);
+                if (documento != null)
+                {
+                    viewModel.DocumentoAReemplazarId = documento.Id;
+                    viewModel.ReemplazarExistente = true;
+                    viewModel.DocumentoAReemplazarNombre = documento.NombreArchivo;
+                    viewModel.ClienteId = documento.ClienteId;
+                    viewModel.TipoDocumento = documento.TipoDocumento;
+                    await CargarViewBags(documento.ClienteId);
+                }
+            }
 
             return View(viewModel);
         }

@@ -198,17 +198,16 @@
                                         <a asp-action="Descargar" asp-route-id="@doc.Id" class="btn btn-outline-success">
                                             <i class="bi bi-download"></i>
                                         </a>
-
-                                        @if (doc.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
-                                        {
-                                            <form asp-action="Delete" asp-route-id="@doc.Id" method="post"
-                                                  onsubmit="return confirm('¿Está seguro de eliminar este documento?')">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-outline-danger">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        }
+                                        <a asp-action="Upload" asp-route-clienteId="@doc.ClienteId" asp-route-replaceId="@doc.Id" class="btn btn-outline-warning text-dark">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@doc.Id" method="post"
+                                              onsubmit="return confirm('¿Está seguro de eliminar este documento?')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>

@@ -109,6 +109,11 @@ namespace TheBuryProject.ViewModels
 
         // Flujo de retorno a venta con crédito
         public int? ReturnToVentaId { get; set; }
+
+        // Gestión avanzada
+        public int? DocumentoAReemplazarId { get; set; }
+        public bool ReemplazarExistente { get; set; }
+        public string? DocumentoAReemplazarNombre { get; set; }
     }
 
 
