@@ -1,8 +1,9 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -95,12 +96,7 @@ namespace TheBuryProject.Controllers
         public async Task<IActionResult> Cotizar()
         {
             await CargarViewBags();
-            return View("Create", new VentaViewModel
-            {
-                FechaVenta = DateTime.Today,
-                Estado = EstadoVenta.Cotizacion,
-                TipoPago = TipoPago.Efectivo
-            });
+            return View("Create", CrearVentaInicial(EstadoVenta.Cotizacion));
         }
         // POST: Venta/Create
         [HttpPost]
@@ -109,77 +105,19 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                if (!ModelState.IsValid)
+                if (!ModelState.IsValid || !ValidarDetalles(viewModel))
                 {
-                    await CargarViewBags(viewModel.ClienteId);
-                    return View(viewModel);
+                    return await RetornarVistaConDatos(viewModel);
                 }
 
-                // Validar que tenga al menos un detalle
-                if (viewModel.Detalles == null || !viewModel.Detalles.Any())
+                if (!TryAsignarDatosCreditoPersonal(DatosCreditoPersonalJson, viewModel))
                 {
-                    ModelState.AddModelError("", "Debe agregar al menos un producto a la venta");
-                    await CargarViewBags(viewModel.ClienteId);
-                    return View(viewModel);
+                    return await RetornarVistaConDatos(viewModel);
                 }
 
-                // Si es crédito personal, parsear los datos del JSON
-                if (viewModel.TipoPago == TipoPago.CreditoPersonal && !string.IsNullOrEmpty(DatosCreditoPersonalJson))
+                if (!await ValidarCreditoPersonalAsync(viewModel))
                 {
-                    try
-                    {
-                        var datosCredito = System.Text.Json.JsonSerializer.Deserialize<DatosCreditoPersonalViewModel>(
-                            DatosCreditoPersonalJson,
-                            new System.Text.Json.JsonSerializerOptions
-                            {
-                                PropertyNameCaseInsensitive = true
-                            }
-                        );
-
-                        if (datosCredito != null)
-                        {
-                            viewModel.DatosCreditoPersonal = datosCredito;
-                            viewModel.CreditoId = datosCredito.CreditoId;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error al parsear datos de crédito personal");
-                        ModelState.AddModelError("", "Error al procesar los datos de crédito personal");
-                        await CargarViewBags(viewModel.ClienteId);
-                        return View(viewModel);
-                    }
-                }
-
-                // Validar crédito personal si aplica
-                if (viewModel.TipoPago == TipoPago.CreditoPersonal)
-                {
-                    if (!viewModel.CreditoId.HasValue)
-                    {
-                        ModelState.AddModelError("", "Debe seleccionar un crédito personal");
-                        await CargarViewBags(viewModel.ClienteId);
-                        return View(viewModel);
-                    }
-
-                    if (viewModel.DatosCreditoPersonal == null || !viewModel.DatosCreditoPersonal.Cuotas.Any())
-                    {
-                        ModelState.AddModelError("", "Debe calcular el plan de financiamiento antes de guardar");
-                        await CargarViewBags(viewModel.ClienteId);
-                        return View(viewModel);
-                    }
-
-                    // Validar disponibilidad
-                    var disponible = await _ventaService.ValidarDisponibilidadCreditoAsync(
-                        viewModel.CreditoId.Value,
-                        viewModel.DatosCreditoPersonal.MontoAFinanciar
-                    );
-
-                    if (!disponible)
-                    {
-                        ModelState.AddModelError("", "El monto a financiar supera el crédito disponible");
-                        await CargarViewBags(viewModel.ClienteId);
-                        return View(viewModel);
-                    }
+                    return await RetornarVistaConDatos(viewModel);
                 }
 
                 var venta = await _ventaService.CreateAsync(viewModel);
@@ -208,12 +146,7 @@ namespace TheBuryProject.Controllers
         public async Task<IActionResult> Create()
         {
             await CargarViewBags();
-            return View(new VentaViewModel
-            {
-                FechaVenta = DateTime.Today,
-                Estado = EstadoVenta.Presupuesto,
-                TipoPago = TipoPago.Efectivo
-            });
+            return View(CrearVentaInicial(EstadoVenta.Presupuesto));
         }
 
         // GET: Venta/Edit/5
@@ -252,17 +185,9 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                if (!ModelState.IsValid)
+                if (!ModelState.IsValid || !ValidarDetalles(viewModel))
                 {
-                    await CargarViewBags(viewModel.ClienteId);
-                    return View(viewModel);
-                }
-
-                if (viewModel.Detalles == null || !viewModel.Detalles.Any())
-                {
-                    ModelState.AddModelError("", "Debe agregar al menos un producto a la venta");
-                    await CargarViewBags(viewModel.ClienteId);
-                    return View(viewModel);
+                    return await RetornarVistaConDatos(viewModel);
                 }
 
                 var resultado = await _ventaService.UpdateAsync(id, viewModel);
@@ -901,6 +826,94 @@ namespace TheBuryProject.Controllers
                 _logger.LogError(ex, "Error al validar crédito");
                 return StatusCode(500, new { error = ex.Message });
             }
+        }
+
+        private VentaViewModel CrearVentaInicial(EstadoVenta estadoInicial)
+        {
+            return new VentaViewModel
+            {
+                FechaVenta = DateTime.Today,
+                Estado = estadoInicial,
+                TipoPago = TipoPago.Efectivo
+            };
+        }
+
+        private bool ValidarDetalles(VentaViewModel viewModel)
+        {
+            if (viewModel.Detalles != null && viewModel.Detalles.Any())
+            {
+                return true;
+            }
+
+            ModelState.AddModelError("", "Debe agregar al menos un producto a la venta");
+            return false;
+        }
+
+        private bool TryAsignarDatosCreditoPersonal(string? datosCreditoJson, VentaViewModel viewModel)
+        {
+            if (viewModel.TipoPago != TipoPago.CreditoPersonal || string.IsNullOrEmpty(datosCreditoJson))
+            {
+                return true;
+            }
+
+            try
+            {
+                var datosCredito = JsonSerializer.Deserialize<DatosCreditoPersonalViewModel>(
+                    datosCreditoJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (datosCredito != null)
+                {
+                    viewModel.DatosCreditoPersonal = datosCredito;
+                    viewModel.CreditoId = datosCredito.CreditoId;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al parsear datos de crédito personal");
+                ModelState.AddModelError("", "Error al procesar los datos de crédito personal");
+                return false;
+            }
+        }
+
+        private async Task<bool> ValidarCreditoPersonalAsync(VentaViewModel viewModel)
+        {
+            if (viewModel.TipoPago != TipoPago.CreditoPersonal)
+            {
+                return true;
+            }
+
+            if (!viewModel.CreditoId.HasValue)
+            {
+                ModelState.AddModelError("", "Debe seleccionar un crédito personal");
+                return false;
+            }
+
+            if (viewModel.DatosCreditoPersonal == null || !viewModel.DatosCreditoPersonal.Cuotas.Any())
+            {
+                ModelState.AddModelError("", "Debe calcular el plan de financiamiento antes de guardar");
+                return false;
+            }
+
+            var disponible = await _ventaService.ValidarDisponibilidadCreditoAsync(
+                viewModel.CreditoId.Value,
+                viewModel.DatosCreditoPersonal.MontoAFinanciar);
+
+            if (disponible)
+            {
+                return true;
+            }
+
+            ModelState.AddModelError("", "El monto a financiar supera el crédito disponible");
+            return false;
+        }
+
+        private async Task<IActionResult> RetornarVistaConDatos(VentaViewModel viewModel)
+        {
+            await CargarViewBags(viewModel.ClienteId);
+            return View(viewModel);
         }
     }
 }

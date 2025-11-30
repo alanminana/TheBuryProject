@@ -180,8 +180,9 @@ namespace TheBuryProject.Helpers
             // Mappings para Ventas
             // =======================
             CreateMap<Venta, VentaViewModel>()
-                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src => $"{src.Cliente.Apellido}, {src.Cliente.Nombre}"))
-                .ForMember(dest => dest.ClienteDocumento, opt => opt.MapFrom(src => src.Cliente.NumeroDocumento))
+                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
+                    src.Cliente != null ? $"{src.Cliente.Apellido}, {src.Cliente.Nombre}" : string.Empty))
+                .ForMember(dest => dest.ClienteDocumento, opt => opt.MapFrom(src => src.Cliente != null ? src.Cliente.NumeroDocumento : string.Empty))
                 .ForMember(dest => dest.CreditoNumero, opt => opt.MapFrom(src => src.Credito != null ? src.Credito.Numero : null))
                 .ForMember(dest => dest.Detalles, opt => opt.MapFrom(src => src.Detalles))
                 .ForMember(dest => dest.Facturas, opt => opt.MapFrom(src => src.Facturas));
