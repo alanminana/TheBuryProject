@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Filters;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -10,8 +11,16 @@ using TheBuryProject.ViewModels;
 namespace TheBuryProject.Controllers
 {
     [Authorize(Roles = "SuperAdmin,Contador")]
+    [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionVer)]
     public class OrdenCompraController : Controller
     {
+        private const string ModuloCompras = "ordenescompra";
+        private const string AccionVer = "view";
+        private const string AccionCrear = "create";
+        private const string AccionActualizar = "update";
+        private const string AccionRecepcionar = "receive";
+        private const string AccionCancelar = "cancel";
+
         private readonly IOrdenCompraService _ordenCompraService;
         private readonly IProveedorService _proveedorService;
         private readonly IProductoService _productoService;
@@ -33,6 +42,7 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: OrdenCompra
+        [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionVer)]
         public async Task<IActionResult> Index(OrdenCompraFilterViewModel filter)
         {
             try
@@ -66,6 +76,7 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: OrdenCompra/Details/5
+        [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionVer)]
         public async Task<IActionResult> Details(int id)
         {
             try
@@ -89,6 +100,7 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: OrdenCompra/Create
+        [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionCrear)]
         public async Task<IActionResult> Create()
         {
             try
@@ -114,6 +126,7 @@ namespace TheBuryProject.Controllers
         // POST: OrdenCompra/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionCrear)]
         public async Task<IActionResult> Create(OrdenCompraViewModel viewModel)
         {
             try
@@ -154,6 +167,7 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: OrdenCompra/Edit/5
+        [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionActualizar)]
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -188,6 +202,7 @@ namespace TheBuryProject.Controllers
         // POST: OrdenCompra/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionActualizar)]
         public async Task<IActionResult> Edit(int id, OrdenCompraViewModel viewModel)
         {
             if (id != viewModel.Id)
@@ -233,6 +248,7 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: OrdenCompra/Delete/5
+        [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionCancelar)]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -258,6 +274,7 @@ namespace TheBuryProject.Controllers
         // POST: OrdenCompra/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionCancelar)]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try
@@ -282,6 +299,7 @@ namespace TheBuryProject.Controllers
         // POST: OrdenCompra/CambiarEstado
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionActualizar)]
         public async Task<IActionResult> CambiarEstado(int id, EstadoOrdenCompra nuevoEstado)
         {
             try
@@ -306,7 +324,7 @@ namespace TheBuryProject.Controllers
             }
         }
         // GET: OrdenCompra/Recepcionar/5
-        // GET: OrdenCompra/Recepcionar/5
+        [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionRecepcionar)]
         public async Task<IActionResult> Recepcionar(int id)
         {
             try
@@ -359,6 +377,7 @@ namespace TheBuryProject.Controllers
         // POST: OrdenCompra/Recepcionar/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionRecepcionar)]
         public async Task<IActionResult> Recepcionar(int id, List<RecepcionDetalleViewModel> detalles)
         {
             try

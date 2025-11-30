@@ -12,9 +12,15 @@ namespace TheBuryProject.Controllers;
 /// Controlador para gestión de listas de precios
 /// </summary>
 [Authorize]
-[PermisoRequerido(Modulo = "precios", Accion = "view")]
+[PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionVer)]
 public class ListasPreciosController : Controller
 {
+    private const string ModuloPrecios = "precios";
+    private const string AccionVer = "view";
+    private const string AccionCrear = "create";
+    private const string AccionActualizar = "update";
+    private const string AccionEliminar = "delete";
+
     private readonly IPrecioService _precioService;
     private readonly ILogger<ListasPreciosController> _logger;
 
@@ -121,7 +127,7 @@ public class ListasPreciosController : Controller
     /// Muestra el formulario para crear una nueva lista de precios
     /// </summary>
     [HttpGet]
-    [PermisoRequerido(Modulo = "precios", Accion = "create")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionCrear)]
     public IActionResult Create()
     {
         var viewModel = new CrearListaPrecioViewModel
@@ -143,7 +149,7 @@ public class ListasPreciosController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [PermisoRequerido(Modulo = "precios", Accion = "create")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionCrear)]
     public async Task<IActionResult> Create(CrearListaPrecioViewModel viewModel)
     {
         if (!ModelState.IsValid)
@@ -191,7 +197,7 @@ public class ListasPreciosController : Controller
     /// Muestra el formulario para editar una lista de precios
     /// </summary>
     [HttpGet]
-    [PermisoRequerido(Modulo = "precios", Accion = "update")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionActualizar)]
     public async Task<IActionResult> Edit(int id)
     {
         try
@@ -236,7 +242,7 @@ public class ListasPreciosController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [PermisoRequerido(Modulo = "precios", Accion = "update")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionActualizar)]
     public async Task<IActionResult> Edit(int id, EditarListaPrecioViewModel viewModel)
     {
         if (id != viewModel.Id)
@@ -295,7 +301,7 @@ public class ListasPreciosController : Controller
     /// Muestra confirmación para eliminar una lista de precios
     /// </summary>
     [HttpGet]
-    [PermisoRequerido(Modulo = "precios", Accion = "delete")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionEliminar)]
     public async Task<IActionResult> Delete(int id)
     {
         try
@@ -334,7 +340,7 @@ public class ListasPreciosController : Controller
     /// </summary>
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    [PermisoRequerido(Modulo = "precios", Accion = "delete")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionEliminar)]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
         try
