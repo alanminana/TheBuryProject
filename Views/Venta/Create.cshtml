@@ -29,6 +29,7 @@
     </div>
 
     <form asp-action="Create" method="post" id="formVenta">
+        @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
         <input type="hidden" asp-for="Estado" />
 
@@ -65,6 +66,99 @@
                         <label asp-for="Descuento" class="form-label"></label>
                         <input asp-for="Descuento" class="form-control" type="number" step="0.01" id="descuentoGeneral" />
                         <span asp-validation-for="Descuento" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financiamiento -->
+        <div class="card mb-3">
+            <div class="card-header bg-warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-cash-coin me-1"></i> Financiamiento</h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="toggleFinanciado" @(Model.EsFinanciada ? "checked" : string.Empty) />
+                        <label class="form-check-label" for="toggleFinanciado">Marcar venta como financiada</label>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <input asp-for="EsFinanciada" type="hidden" id="EsFinanciada" />
+
+                <div id="financiamientoCampos" class="@(Model.EsFinanciada ? string.Empty : "d-none")">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <span class="ms-1">Completa el anticipo, la tasa mensual y las cuotas para ver el monto financiado y la cuota estimada.</span>
+                    </div>
+
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label asp-for="Anticipo" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="Anticipo" class="form-control" type="number" step="0.01" min="0" id="anticipoInput" />
+                            </div>
+                            <span asp-validation-for="Anticipo" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="TasaInteresMensualFinanciacion" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="TasaInteresMensualFinanciacion" class="form-control" type="number" step="0.01" min="0" max="100" id="tasaMensualInput" />
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <span class="form-text">Ingresa la tasa mensual como porcentaje.</span>
+                            <span asp-validation-for="TasaInteresMensualFinanciacion" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="CantidadCuotasFinanciacion" class="form-label"></label>
+                            <input asp-for="CantidadCuotasFinanciacion" class="form-control" type="number" min="1" max="120" id="cuotasFinanciacionInput" />
+                            <span asp-validation-for="CantidadCuotasFinanciacion" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="IngresoNetoDeclarado" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="IngresoNetoDeclarado" class="form-control" type="number" step="0.01" min="0" id="ingresoNetoInput" />
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="EndeudamientoDeclarado" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="EndeudamientoDeclarado" class="form-control" type="number" step="0.01" min="0" id="otrasDeudasInput" />
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="AntiguedadLaboralMeses" class="form-label"></label>
+                            <input asp-for="AntiguedadLaboralMeses" class="form-control" type="number" min="0" id="antiguedadLaboralInput" />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light border rounded">
+                                <p class="text-muted mb-1">Monto financiado</p>
+                                <h4 id="lblMontoFinanciadoEstimado" class="mb-0">$0.00</h4>
+                                <input asp-for="MontoFinanciadoEstimado" type="hidden" id="MontoFinanciadoEstimado" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light border rounded">
+                                <p class="text-muted mb-1">Cuota estimada</p>
+                                <h4 id="lblCuotaEstimada" class="mb-0 text-success">$0.00</h4>
+                                <input asp-for="CuotaEstimada" type="hidden" id="CuotaEstimada" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light border rounded h-100">
+                                <p class="text-muted mb-2">Semáforo preliminar</p>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span id="badgeSemaforo" class="badge bg-secondary">Sin datos</span>
+                                    <span id="mensajeSemaforo" class="text-muted small">Completa los datos para precalificar.</span>
+                                </div>
+                                <div id="flagsSemaforo" class="mt-2 small text-muted"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -396,11 +490,37 @@
         let tarjetasConfig = [];
         let creditoSeleccionado = null;
         let datosCreditoCalculados = null;
+        let recalculoFinanciamientoEnCurso = false;
 
         $(document).ready(function () {
             console.log('=== INICIANDO SCRIPT DE VENTA ===');
 
             cargarTarjetas();
+
+            // Financiamiento toggle
+            $('#toggleFinanciado').on('change', function () {
+                const activo = $(this).is(':checked');
+                $('#EsFinanciada').val(activo);
+                $('#financiamientoCampos').toggleClass('d-none', !activo);
+
+                if (activo) {
+                    recalcularFinanciamiento();
+                } else {
+                    limpiarResumenFinanciamiento();
+                }
+            });
+
+            $('#EsFinanciada').val($('#toggleFinanciado').is(':checked'));
+            if ($('#toggleFinanciado').is(':checked')) {
+                recalcularFinanciamiento();
+            }
+
+            $('#anticipoInput, #tasaMensualInput, #cuotasFinanciacionInput, #ingresoNetoInput, #otrasDeudasInput, #antiguedadLaboralInput')
+                .on('input change', function () {
+                    if ($('#toggleFinanciado').is(':checked')) {
+                        recalcularFinanciamiento();
+                    }
+                });
 
             // Inicializar fecha primera cuota
             let fechaInicial = new Date();
@@ -861,6 +981,119 @@
             $('#productosBody').html(html);
         }
 
+        function limpiarResumenFinanciamiento() {
+            $('#MontoFinanciadoEstimado').val('');
+            $('#CuotaEstimada').val('');
+            $('#lblMontoFinanciadoEstimado').text('$0.00');
+            $('#lblCuotaEstimada').text('$0.00');
+            actualizarSemaforo(null);
+        }
+
+        function recalcularFinanciamiento() {
+            if (recalculoFinanciamientoEnCurso) {
+                return;
+            }
+
+            const total = parseFloat($('#hiddenTotal').val()) || 0;
+            const anticipo = parseFloat($('#anticipoInput').val()) || 0;
+            const tasa = (parseFloat($('#tasaMensualInput').val()) || 0) / 100;
+            const cuotas = parseInt($('#cuotasFinanciacionInput').val()) || 0;
+
+            if (total <= 0 || cuotas < 1) {
+                limpiarResumenFinanciamiento();
+                return;
+            }
+
+            recalculoFinanciamientoEnCurso = true;
+            $('#badgeSemaforo').removeClass('bg-success bg-warning bg-danger').addClass('bg-secondary').text('Calculando...');
+
+            const token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("CalcularFinanciamiento", "Venta")',
+                type: 'POST',
+                contentType: 'application/json',
+                headers: { 'RequestVerificationToken': token },
+                data: JSON.stringify({
+                    total: total,
+                    anticipo: anticipo,
+                    tasaMensual: tasa,
+                    cuotas: cuotas,
+                    ingresoNeto: parseFloat($('#ingresoNetoInput').val()) || null,
+                    otrasDeudas: parseFloat($('#otrasDeudasInput').val()) || null,
+                    antiguedadLaboralMeses: parseInt($('#antiguedadLaboralInput').val()) || null
+                })
+            })
+                .done(function (data) {
+                    $('#MontoFinanciadoEstimado').val(data.financedAmount.toFixed(2));
+                    $('#CuotaEstimada').val(data.installment.toFixed(2));
+                    $('#lblMontoFinanciadoEstimado').text(`$${data.financedAmount.toFixed(2)}`);
+                    $('#lblCuotaEstimada').text(`$${data.installment.toFixed(2)}`);
+                    actualizarSemaforo(data.prequalification);
+                })
+                .fail(function (xhr) {
+                    const error = xhr.responseJSON?.error || 'No se pudo calcular el financiamiento';
+                    actualizarSemaforo(null, error);
+                })
+                .always(function () {
+                    recalculoFinanciamientoEnCurso = false;
+                });
+        }
+
+        function actualizarSemaforo(resultado, error) {
+            const badge = $('#badgeSemaforo');
+            const mensaje = $('#mensajeSemaforo');
+            const flags = $('#flagsSemaforo');
+
+            badge.removeClass('bg-success bg-warning bg-danger bg-secondary');
+
+            if (error) {
+                badge.addClass('bg-danger').text('Error');
+                mensaje.text(error);
+                flags.text('');
+                return;
+            }
+
+            if (!resultado) {
+                badge.addClass('bg-secondary').text('Sin datos');
+                mensaje.text('Completa los datos para precalificar.');
+                flags.text('');
+                return;
+            }
+
+            let label = 'Indeterminado';
+            let badgeClass = 'bg-secondary';
+
+            switch (resultado.status) {
+                case 1:
+                    label = 'Verde';
+                    badgeClass = 'bg-success';
+                    mensaje.text('Capacidad validada con política 30%.');
+                    break;
+                case 2:
+                    label = 'Amarillo';
+                    badgeClass = 'bg-warning';
+                    mensaje.text(resultado.recomendacion || 'Revisar datos adicionales.');
+                    break;
+                case 3:
+                    label = 'Rojo';
+                    badgeClass = 'bg-danger';
+                    mensaje.text(resultado.recomendacion || 'No cumple política.');
+                    break;
+                default:
+                    mensaje.text('Completa los datos para precalificar.');
+                    break;
+            }
+
+            badge.addClass(badgeClass).text(label);
+
+            if (resultado.flags && resultado.flags.length > 0) {
+                flags.text(resultado.flags.join(' • '));
+            } else {
+                flags.text('');
+            }
+        }
+
         function calcularTotales() {
             let subtotal = 0;
             productosSeleccionados.forEach(function (prod) {
@@ -884,6 +1117,10 @@
             const cuotas = $('#cuotasSelect').val();
             if (cuotas && cuotas > 1) {
                 calcularCuotasTarjeta();
+            }
+
+            if ($('#toggleFinanciado').is(':checked')) {
+                recalcularFinanciamiento();
             }
         }
     </script>

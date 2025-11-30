@@ -19,19 +19,25 @@ namespace TheBuryProject.Controllers
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly ILogger<VentaController> _logger;
+        private readonly IFinancialCalculationService _financialCalculationService;
+        private readonly IPrequalificationService _prequalificationService;
 
         public VentaController(
             IVentaService ventaService,
             IConfiguracionPagoService configuracionPagoService,
             AppDbContext context,
             IMapper mapper,
-            ILogger<VentaController> logger)
+            ILogger<VentaController> logger,
+            IFinancialCalculationService financialCalculationService,
+            IPrequalificationService prequalificationService)
         {
             _ventaService = ventaService;
             _configuracionPagoService = configuracionPagoService;
             _context = context;
             _mapper = mapper;
             _logger = logger;
+            _financialCalculationService = financialCalculationService;
+            _prequalificationService = prequalificationService;
         }
 
         // GET: Venta
@@ -207,6 +213,39 @@ namespace TheBuryProject.Controllers
                 ModelState.AddModelError("", "Error al actualizar la venta: " + ex.Message);
                 await CargarViewBags(viewModel.ClienteId);
                 return View(viewModel);
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CalcularFinanciamiento([FromBody] CalculoFinanciamientoViewModel request)
+        {
+            if (request == null)
+            {
+                return BadRequest(new { error = "Solicitud inválida" });
+            }
+
+            try
+            {
+                var montoFinanciado = _financialCalculationService.ComputeFinancedAmount(request.Total, request.Anticipo);
+                var cuota = _financialCalculationService.ComputePmt(request.TasaMensual, request.Cuotas, montoFinanciado);
+
+                var prequalification = _prequalificationService.Evaluate(
+                    cuota,
+                    request.IngresoNeto,
+                    request.OtrasDeudas,
+                    request.AntiguedadLaboralMeses);
+
+                return Ok(new
+                {
+                    financedAmount = montoFinanciado,
+                    installment = cuota,
+                    prequalification
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
         }
 
