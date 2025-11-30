@@ -20,6 +20,7 @@ namespace TheBuryProject.Controllers
         private readonly ICreditoService _creditoService;
         private readonly IEvaluacionCreditoService _evaluacionService;
         private readonly AppDbContext _context;
+        private readonly IFinancialCalculationService _financialService;
         private readonly IMapper _mapper;
         private readonly ILogger<ClienteController> _logger;
 
@@ -29,6 +30,7 @@ namespace TheBuryProject.Controllers
             ICreditoService creditoService,
             IEvaluacionCreditoService evaluacionService,
             AppDbContext context,
+            IFinancialCalculationService financialService,
             IMapper mapper,
             ILogger<ClienteController> logger)
         {
@@ -37,6 +39,7 @@ namespace TheBuryProject.Controllers
             _creditoService = creditoService;
             _evaluacionService = evaluacionService;
             _context = context;
+            _financialService = financialService;
             _mapper = mapper;
             _logger = logger;
         }
@@ -256,7 +259,7 @@ namespace TheBuryProject.Controllers
                 int? garanteId = await ProcesarGarante(model);
 
                 // Calcular parámetros del crédito
-                var calculos = ClienteControllerHelper.CalcularParametrosCredito(
+                var calculos = CalcularParametrosCredito(
                     model.MontoSolicitado, model.TasaInteres, model.CantidadCuotas);
 
                 // Generar número de crédito
@@ -304,6 +307,33 @@ namespace TheBuryProject.Controllers
         }
 
         #region Métodos Privados
+
+        private CreditoCalculos CalcularParametrosCredito(decimal montoSolicitado, decimal tasaInteres, int cantidadCuotas)
+        {
+            var tasaMensualDecimal = tasaInteres / 100;
+            var cuotaMensual = _financialService.CalcularCuotaSistemaFrances(
+                montoSolicitado,
+                tasaMensualDecimal,
+                cantidadCuotas);
+
+            var totalAPagar = _financialService.CalcularTotalConInteres(
+                montoSolicitado,
+                tasaMensualDecimal,
+                cantidadCuotas);
+
+            var cftea = _financialService.CalcularCFTEA(
+                totalAPagar,
+                montoSolicitado,
+                cantidadCuotas);
+
+            return new CreditoCalculos
+            {
+                TasaMensualDecimal = tasaMensualDecimal,
+                CuotaMensual = cuotaMensual,
+                TotalAPagar = totalAPagar,
+                CFTEA = cftea
+            };
+        }
 
         /// <summary>
         /// Construye el ViewModel de detalle con toda la información del cliente
@@ -385,7 +415,7 @@ namespace TheBuryProject.Controllers
             SolicitudCreditoViewModel model,
             Cliente cliente,
             int? garanteId,
-            ClienteControllerHelper.CreditoCalculos calculos,
+            CreditoCalculos calculos,
             string numeroCredito)
         {
             return new Credito
@@ -512,6 +542,14 @@ namespace TheBuryProject.Controllers
                 evaluacion.AlertasYRecomendaciones.Add("❌ Error al evaluar capacidad crediticia");
                 return Task.FromResult(evaluacion);
             }
+        }
+
+        private class CreditoCalculos
+        {
+            public decimal TasaMensualDecimal { get; init; }
+            public decimal CuotaMensual { get; init; }
+            public decimal TotalAPagar { get; init; }
+            public decimal CFTEA { get; init; }
         }
 
         #endregion
