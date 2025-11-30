@@ -10,6 +10,7 @@ namespace TheBuryProject.Extensions
         {
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IFinancialCalculationService, FinancialCalculationService>();
+            services.AddScoped<IPrequalificationService, PrequalificationService>();
             services.AddScoped<IVentaValidator, VentaValidator>();
             services.AddScoped<VentaNumberGenerator>();
 
