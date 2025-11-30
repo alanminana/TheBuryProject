@@ -159,6 +159,11 @@ public interface IRolService
     Task<ModuloSistema> CreateModuloAsync(ModuloSistema modulo);
 
     /// <summary>
+    /// Actualiza un módulo existente (soft updates)
+    /// </summary>
+    Task<bool> UpdateModuloAsync(ModuloSistema modulo, string? updatedBy = null);
+
+    /// <summary>
     /// Crea una nueva acción para un módulo
     /// </summary>
     Task<AccionModulo> CreateAccionAsync(AccionModulo accion);
@@ -172,6 +177,11 @@ public interface IRolService
     /// Elimina (soft delete) una acción y sus permisos relacionados
     /// </summary>
     Task<bool> DeleteAccionAsync(int id, string? deletedBy = null);
+
+    /// <summary>
+    /// Elimina (soft delete) un módulo y todas sus acciones y permisos relacionados
+    /// </summary>
+    Task<bool> DeleteModuloAsync(int id, string? deletedBy = null);
 
     // ============================================
     // REPORTES Y ESTADÍSTICAS

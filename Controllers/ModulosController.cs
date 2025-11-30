@@ -219,8 +219,14 @@ public class ModulosController : Controller
             modulo.Orden = model.Orden;
             modulo.Activo = model.Activo;
 
-            // Note: IRolService doesn't have UpdateModuloAsync, so we need to save via context
-            // This is a simplified version - you should add UpdateModuloAsync to IRolService
+            var actualizado = await _rolService.UpdateModuloAsync(modulo, User.Identity?.Name);
+
+            if (!actualizado)
+            {
+                TempData["Error"] = "No se pudo actualizar el módulo";
+                return View(model);
+            }
+
             _logger.LogInformation("Módulo actualizado: {ModuloId} por usuario {User}",
                 model.Id, User.Identity?.Name);
             TempData["Success"] = $"Módulo '{model.Nombre}' actualizado exitosamente";
@@ -285,8 +291,14 @@ public class ModulosController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
-            // Note: IRolService doesn't have DeleteModuloAsync
-            // This is a placeholder - you should add DeleteModuloAsync to IRolService
+            var eliminado = await _rolService.DeleteModuloAsync(id, User.Identity?.Name);
+
+            if (!eliminado)
+            {
+                TempData["Error"] = "No se pudo eliminar el módulo";
+                return RedirectToAction(nameof(Index));
+            }
+
             _logger.LogInformation("Módulo eliminado: {ModuloId} por usuario {User}",
                 id, User.Identity?.Name);
             TempData["Success"] = "Módulo eliminado exitosamente";

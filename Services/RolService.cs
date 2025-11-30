@@ -359,6 +359,30 @@ public class RolService : IRolService
         return modulo;
     }
 
+    public async Task<bool> UpdateModuloAsync(ModuloSistema modulo, string? updatedBy = null)
+    {
+        var existing = await _context.ModulosSistema
+            .FirstOrDefaultAsync(m => m.Id == modulo.Id && !m.IsDeleted);
+
+        if (existing == null)
+        {
+            return false;
+        }
+
+        existing.Nombre = modulo.Nombre;
+        existing.Clave = modulo.Clave;
+        existing.Descripcion = modulo.Descripcion;
+        existing.Categoria = modulo.Categoria;
+        existing.Icono = modulo.Icono;
+        existing.Orden = modulo.Orden;
+        existing.Activo = modulo.Activo;
+        existing.UpdatedAt = DateTime.UtcNow;
+        existing.UpdatedBy = updatedBy;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<AccionModulo> CreateAccionAsync(AccionModulo accion)
     {
         _context.AccionesModulo.Add(accion);
@@ -410,6 +434,40 @@ public class RolService : IRolService
             permiso.IsDeleted = true;
             permiso.UpdatedAt = DateTime.UtcNow;
             permiso.UpdatedBy = deletedBy;
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteModuloAsync(int id, string? deletedBy = null)
+    {
+        var modulo = await _context.ModulosSistema
+            .Include(m => m.Acciones)
+            .ThenInclude(a => a.Permisos)
+            .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
+
+        if (modulo == null)
+        {
+            return false;
+        }
+
+        modulo.IsDeleted = true;
+        modulo.UpdatedAt = DateTime.UtcNow;
+        modulo.UpdatedBy = deletedBy;
+
+        foreach (var accion in modulo.Acciones)
+        {
+            accion.IsDeleted = true;
+            accion.UpdatedAt = DateTime.UtcNow;
+            accion.UpdatedBy = deletedBy;
+
+            foreach (var permiso in accion.Permisos)
+            {
+                permiso.IsDeleted = true;
+                permiso.UpdatedAt = DateTime.UtcNow;
+                permiso.UpdatedBy = deletedBy;
+            }
         }
 
         await _context.SaveChangesAsync();
