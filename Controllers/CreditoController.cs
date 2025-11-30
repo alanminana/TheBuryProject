@@ -99,10 +99,19 @@ namespace TheBuryProject.Controllers
 
             if (ventaId.HasValue)
             {
-                var venta = await _context.Ventas.FindAsync(ventaId.Value);
+                var venta = await _context.Ventas
+                    .Include(v => v.Detalles)
+                    .FirstOrDefaultAsync(v => v.Id == ventaId.Value);
+
                 if (venta != null)
                 {
+                    // Prioriza el total guardado; si no existe, recalcula desde el detalle
                     montoVenta = venta.Total;
+
+                    if (montoVenta <= 0 && venta.Detalles != null && venta.Detalles.Any())
+                    {
+                        montoVenta = venta.Detalles.Sum(d => d.Subtotal);
+                    }
                 }
             }
 
