@@ -17,9 +17,20 @@
     <strong>Formatos permitidos:</strong> PDF, JPG, PNG, DOC, DOCX (máximo 5 MB)
 </div>
 
+@if (Model.ReemplazarExistente && !string.IsNullOrWhiteSpace(Model.DocumentoAReemplazarNombre))
+{
+    <div class="alert alert-warning border-0 shadow-sm">
+        <i class="bi bi-arrow-repeat me-2"></i>Se reemplazará el archivo <strong>@Model.DocumentoAReemplazarNombre</strong>.
+    </div>
+}
+
 <div class="card bg-dark border-0 shadow-sm">
     <div class="card-body">
         <form asp-action="Upload" method="post" enctype="multipart/form-data">
+            @if (Model.ReturnToVentaId.HasValue)
+            {
+                <input type="hidden" name="ReturnToVentaId" value="@Model.ReturnToVentaId" />
+            }
             <partial name="~/Views/Shared/Documento/_DocumentoAdjuntoForm.cshtml" model="Model" />
 
             <div class="d-flex gap-2 mt-4">
@@ -36,4 +47,63 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        const toggleReemplazo = document.getElementById('toggleReemplazo');
+        const contenedorReemplazo = document.getElementById('reemplazoContainer');
+        const selectReemplazo = document.getElementById('DocumentoAReemplazarId');
+        const clienteSelect = document.getElementById('ClienteId');
+
+        function cargarDocumentos(clienteId) {
+            if (!clienteId) {
+                selectReemplazo.innerHTML = '<option value="">Seleccione un documento...</option>';
+                return;
+            }
+
+            fetch(`@Url.Action("GetDocumentosByCliente", "DocumentoCliente")?clienteId=${clienteId}`)
+                .then(r => r.json())
+                .then(data => {
+                    selectReemplazo.innerHTML = '<option value="">Seleccione un documento...</option>';
+                    data.forEach(doc => {
+                        const option = document.createElement('option');
+                        const docId = doc.id ?? doc.Id;
+                        option.value = docId;
+                        const tipo = doc.tipoDocumentoNombre ?? doc.TipoDocumentoNombre;
+                        const archivo = doc.nombreArchivo ?? doc.NombreArchivo;
+                        const estado = doc.estadoNombre ?? doc.EstadoNombre;
+                        option.text = `${tipo} - ${archivo} (${estado})`;
+                        selectReemplazo.appendChild(option);
+                    });
+
+                    const seleccionado = '@Model.DocumentoAReemplazarId';
+                    if (seleccionado) {
+                        selectReemplazo.value = seleccionado;
+                    }
+                })
+                .catch(() => {
+                    selectReemplazo.innerHTML = '<option value="">No se pudieron cargar los documentos</option>';
+                });
+        }
+
+        function syncReemplazo() {
+            if (toggleReemplazo.checked) {
+                contenedorReemplazo.classList.remove('d-none');
+                cargarDocumentos(clienteSelect.value);
+            } else {
+                contenedorReemplazo.classList.add('d-none');
+                selectReemplazo.value = '';
+            }
+        }
+
+        toggleReemplazo.addEventListener('change', syncReemplazo);
+        clienteSelect.addEventListener('change', () => {
+            if (toggleReemplazo.checked) {
+                cargarDocumentos(clienteSelect.value);
+            }
+        });
+
+        if (toggleReemplazo.checked) {
+            contenedorReemplazo.classList.remove('d-none');
+            cargarDocumentos(clienteSelect.value);
+        }
+    </script>
 }
