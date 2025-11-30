@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -121,16 +120,6 @@ namespace TheBuryProject.Controllers
             try
             {
                 if (!ModelState.IsValid || !ValidarDetalles(viewModel))
-                {
-                    return await RetornarVistaConDatos(viewModel);
-                }
-
-                if (!TryAsignarDatosCreditoPersonal(DatosCreditoPersonalJson, viewModel))
-                {
-                    return await RetornarVistaConDatos(viewModel);
-                }
-
-                if (!await ValidarCreditoPersonalAsync(viewModel))
                 {
                     return await RetornarVistaConDatos(viewModel);
                 }
@@ -953,67 +942,6 @@ namespace TheBuryProject.Controllers
             }
 
             ModelState.AddModelError("", "Debe agregar al menos un producto a la venta");
-            return false;
-        }
-
-        private bool TryAsignarDatosCreditoPersonal(string? datosCreditoJson, VentaViewModel viewModel)
-        {
-            if (viewModel.TipoPago != TipoPago.CreditoPersonal || string.IsNullOrEmpty(datosCreditoJson))
-            {
-                return true;
-            }
-
-            try
-            {
-                var datosCredito = JsonSerializer.Deserialize<DatosCreditoPersonalViewModel>(
-                    datosCreditoJson,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                if (datosCredito != null)
-                {
-                    viewModel.DatosCreditoPersonal = datosCredito;
-                    viewModel.CreditoId = datosCredito.CreditoId;
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al parsear datos de crédito personal");
-                ModelState.AddModelError("", "Error al procesar los datos de crédito personal");
-                return false;
-            }
-        }
-
-        private async Task<bool> ValidarCreditoPersonalAsync(VentaViewModel viewModel)
-        {
-            if (viewModel.TipoPago != TipoPago.CreditoPersonal)
-            {
-                return true;
-            }
-
-            if (!viewModel.CreditoId.HasValue)
-            {
-                ModelState.AddModelError("", "Debe seleccionar un crédito personal");
-                return false;
-            }
-
-            if (viewModel.DatosCreditoPersonal == null || !viewModel.DatosCreditoPersonal.Cuotas.Any())
-            {
-                ModelState.AddModelError("", "Debe calcular el plan de financiamiento antes de guardar");
-                return false;
-            }
-
-            var disponible = await _ventaService.ValidarDisponibilidadCreditoAsync(
-                viewModel.CreditoId.Value,
-                viewModel.DatosCreditoPersonal.MontoAFinanciar);
-
-            if (disponible)
-            {
-                return true;
-            }
-
-            ModelState.AddModelError("", "El monto a financiar supera el crédito disponible");
             return false;
         }
 

@@ -102,6 +102,8 @@ namespace TheBuryProject.Controllers
                 ClienteNombre = credito.ClienteNombre ?? string.Empty,
                 NumeroCredito = credito.Numero,
                 Monto = credito.MontoAprobado,
+                Anticipo = 0,
+                MontoFinanciado = credito.MontoAprobado,
                 CantidadCuotas = credito.CantidadCuotas > 0 ? credito.CantidadCuotas : 12,
                 TasaMensual = credito.TasaInteres > 0 ? credito.TasaInteres : 5,
                 GastosAdministrativos = 0,
@@ -130,6 +132,9 @@ namespace TheBuryProject.Controllers
             credito.CantidadCuotas = modelo.CantidadCuotas;
             credito.TasaInteres = modelo.TasaMensual;
             credito.FechaPrimeraCuota = modelo.FechaPrimeraCuota;
+            credito.MontoAprobado = Math.Max(0, modelo.Monto - modelo.Anticipo);
+            credito.MontoSolicitado = credito.MontoAprobado;
+            credito.SaldoPendiente = credito.MontoAprobado;
             credito.Estado = EstadoCredito.Solicitado;
 
             if (modelo.GastosAdministrativos > 0)

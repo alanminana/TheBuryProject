@@ -18,6 +18,12 @@ namespace TheBuryProject.ViewModels
         [Display(Name = "Monto del Crédito")]
         public decimal Monto { get; set; }
 
+        [Display(Name = "Anticipo"), Range(0, double.MaxValue, ErrorMessage = "El anticipo no puede ser negativo")]
+        public decimal Anticipo { get; set; }
+
+        [Display(Name = "Monto financiado")]
+        public decimal MontoFinanciado { get; set; }
+
         [Display(Name = "Cantidad de cuotas")]
         [Range(1, 120, ErrorMessage = "La cantidad de cuotas debe estar entre 1 y 120")]
         public int CantidadCuotas { get; set; }
