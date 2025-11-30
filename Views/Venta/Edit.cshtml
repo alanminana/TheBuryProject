@@ -314,7 +314,7 @@
             $('#productoSelect').change(function () {
                 const productoId = $(this).val();
                 if (productoId) {
-                    $.get('@Url.Action("GetProductoPrecio", "Venta")', { productoId: productoId }, function (data) {
+                    $.get('@Url.Action("GetPrecioProducto", "Venta")', { id: productoId }, function (data) {
                         $('#precioInput').val(data.precioVenta.toFixed(2));
                     });
                 }
