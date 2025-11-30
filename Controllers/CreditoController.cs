@@ -122,9 +122,29 @@ namespace TheBuryProject.Controllers
                                 : Math.Max(0, (d.Cantidad * d.PrecioUnitario) - d.Descuento));
 
                         var subtotalConDescuento = subtotal - venta.Descuento;
-                        var iva = subtotalConDescuento * VentaConstants.IVA_RATE;
+                        var iva = venta.IVA > 0 ? venta.IVA : subtotalConDescuento * VentaConstants.IVA_RATE;
                         montoVenta = subtotalConDescuento + iva;
                     }
+                    if (montoVenta <= 0)
+                    {
+                        // Último recurso: traer los detalles directamente y recalcular cuando la navegación no trae datos
+                        var detallesPersistidos = await _context.VentaDetalles
+                            .Where(d => d.VentaId == venta.Id && !d.IsDeleted)
+                            .ToListAsync();
+
+                        if (detallesPersistidos.Any())
+                        {
+                            var subtotalPersistido = detallesPersistidos.Sum(d =>
+                                d.Subtotal > 0
+                                    ? d.Subtotal
+                                    : Math.Max(0, (d.Cantidad * d.PrecioUnitario) - d.Descuento));
+
+                            var subtotalConDescuento = subtotalPersistido - venta.Descuento;
+                            var iva = venta.IVA > 0 ? venta.IVA : subtotalConDescuento * VentaConstants.IVA_RATE;
+                            montoVenta = subtotalConDescuento + iva;
+                        }
+                    }
+
                 }
             }
 
