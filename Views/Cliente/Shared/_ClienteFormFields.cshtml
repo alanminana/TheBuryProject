@@ -1,0 +1,233 @@
+@model TheBuryProject.ViewModels.ClienteViewModel
+
+@{
+    // Este partial se usa tanto en Create como en Edit
+    var esEdicion = Model.Id > 0;
+}
+
+<!-- Datos Personales -->
+<fieldset class="mb-4">
+    <legend class="h6 fw-semibold text-info border-bottom border-info pb-2 mb-3">
+        <i class="bi bi-person me-2"></i>Datos Personales
+    </legend>
+    
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label asp-for="TipoDocumento" class="form-label">Tipo Documento *</label>
+            <select asp-for="TipoDocumento" class="form-select bg-body-secondary text-light border-0" required>
+                <option value="DNI">DNI</option>
+                <option value="CUIL">CUIL</option>
+                <option value="CUIT">CUIT</option>
+                <option value="Pasaporte">Pasaporte</option>
+            </select>
+            <span asp-validation-for="TipoDocumento" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-3">
+            <label asp-for="NumeroDocumento" class="form-label">Número *</label>
+            <input asp-for="NumeroDocumento" class="form-control bg-body-secondary text-light border-0" 
+                   placeholder="12345678" required />
+            <span asp-validation-for="NumeroDocumento" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-3">
+            <label asp-for="Apellido" class="form-label">Apellido *</label>
+            <input asp-for="Apellido" class="form-control bg-body-secondary text-light border-0" required />
+            <span asp-validation-for="Apellido" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-3">
+            <label asp-for="Nombre" class="form-label">Nombre *</label>
+            <input asp-for="Nombre" class="form-control bg-body-secondary text-light border-0" required />
+            <span asp-validation-for="Nombre" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label asp-for="FechaNacimiento" class="form-label">Fecha de Nacimiento</label>
+            <input asp-for="FechaNacimiento" type="date" class="form-control bg-body-secondary text-light border-0" />
+            <span asp-validation-for="FechaNacimiento" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label asp-for="EstadoCivil" class="form-label">Estado Civil</label>
+            <select asp-for="EstadoCivil" class="form-select bg-body-secondary text-light border-0">
+                <option value="">Seleccione...</option>
+                <option value="Soltero/a">Soltero/a</option>
+                <option value="Casado/a">Casado/a</option>
+                <option value="Divorciado/a">Divorciado/a</option>
+                <option value="Viudo/a">Viudo/a</option>
+                <option value="Conviviente">Conviviente</option>
+            </select>
+            <span asp-validation-for="EstadoCivil" class="text-danger small"></span>
+        </div>
+    </div>
+</fieldset>
+
+<!-- Datos de Contacto -->
+<fieldset class="mb-4">
+    <legend class="h6 fw-semibold text-success border-bottom border-success pb-2 mb-3">
+        <i class="bi bi-telephone me-2"></i>Datos de Contacto
+    </legend>
+    
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label asp-for="Email" class="form-label">Email</label>
+            <input asp-for="Email" type="email" class="form-control bg-body-secondary text-light border-0"
+                   placeholder="ejemplo@email.com" />
+            <span asp-validation-for="Email" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label asp-for="Telefono" class="form-label">Teléfono *</label>
+            <input asp-for="Telefono" type="tel" class="form-control bg-body-secondary text-light border-0"
+                   placeholder="1123456789" required />
+            <span asp-validation-for="Telefono" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label asp-for="TelefonoAlternativo" class="form-label">Teléfono Alternativo</label>
+            <input asp-for="TelefonoAlternativo" type="tel" class="form-control bg-body-secondary text-light border-0" />
+            <span asp-validation-for="TelefonoAlternativo" class="text-danger small"></span>
+        </div>
+    </div>
+</fieldset>
+
+<!-- Domicilio -->
+<fieldset class="mb-4">
+    <legend class="h6 fw-semibold text-warning border-bottom border-warning pb-2 mb-3">
+        <i class="bi bi-geo-alt me-2"></i>Domicilio
+    </legend>
+    
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="Domicilio" class="form-label">Dirección *</label>
+            <input asp-for="Domicilio" class="form-control bg-body-secondary text-light border-0"
+                   placeholder="Calle y número" required />
+            <span asp-validation-for="Domicilio" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-3">
+            <label asp-for="Localidad" class="form-label">Localidad *</label>
+            <input asp-for="Localidad" class="form-control bg-body-secondary text-light border-0" required />
+            <span asp-validation-for="Localidad" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-2">
+            <label asp-for="Provincia" class="form-label">Provincia *</label>
+            <select asp-for="Provincia" class="form-select bg-body-secondary text-light border-0" required>
+                <option value="">Seleccione...</option>
+                <option value="Buenos Aires">Buenos Aires</option>
+                <option value="CABA">CABA</option>
+                <option value="Catamarca">Catamarca</option>
+                <option value="Chaco">Chaco</option>
+                <option value="Chubut">Chubut</option>
+                <option value="Córdoba">Córdoba</option>
+                <option value="Corrientes">Corrientes</option>
+                <option value="Entre Ríos">Entre Ríos</option>
+                <option value="Formosa">Formosa</option>
+                <option value="Jujuy">Jujuy</option>
+                <option value="La Pampa">La Pampa</option>
+                <option value="La Rioja">La Rioja</option>
+                <option value="Mendoza">Mendoza</option>
+                <option value="Misiones">Misiones</option>
+                <option value="Neuquén">Neuquén</option>
+                <option value="Río Negro">Río Negro</option>
+                <option value="Salta">Salta</option>
+                <option value="San Juan">San Juan</option>
+                <option value="San Luis">San Luis</option>
+                <option value="Santa Cruz">Santa Cruz</option>
+                <option value="Santa Fe">Santa Fe</option>
+                <option value="Santiago del Estero">Santiago del Estero</option>
+                <option value="Tierra del Fuego">Tierra del Fuego</option>
+                <option value="Tucumán">Tucumán</option>
+            </select>
+            <span asp-validation-for="Provincia" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-1">
+            <label asp-for="CodigoPostal" class="form-label">CP</label>
+            <input asp-for="CodigoPostal" class="form-control bg-body-secondary text-light border-0" />
+            <span asp-validation-for="CodigoPostal" class="text-danger small"></span>
+        </div>
+    </div>
+</fieldset>
+
+<!-- Datos Laborales -->
+<fieldset class="mb-4">
+    <legend class="h6 fw-semibold text-secondary border-bottom border-secondary pb-2 mb-3">
+        <i class="bi bi-briefcase me-2"></i>Datos Laborales
+        <small class="text-muted fw-normal">(opcional)</small>
+    </legend>
+    
+    <div class="row g-3">
+        <div class="col-md-5">
+            <label asp-for="LugarTrabajo" class="form-label">Empleador</label>
+            <input asp-for="LugarTrabajo" class="form-control bg-body-secondary text-light border-0"
+                   placeholder="Nombre de la empresa" />
+            <span asp-validation-for="LugarTrabajo" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-3">
+            <label asp-for="TipoEmpleo" class="form-label">Tipo de Empleo</label>
+            <select asp-for="TipoEmpleo" class="form-select bg-body-secondary text-light border-0">
+                <option value="">Seleccione...</option>
+                <option value="Relación de Dependencia">Relación de Dependencia</option>
+                <option value="Autónomo">Autónomo</option>
+                <option value="Monotributista">Monotributista</option>
+                <option value="Jubilado">Jubilado</option>
+                <option value="Pensionado">Pensionado</option>
+                <option value="Desempleado">Desempleado</option>
+            </select>
+            <span asp-validation-for="TipoEmpleo" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-2">
+            <label asp-for="IngresoMensual" class="form-label">Sueldo</label>
+            <div class="input-group">
+                <span class="input-group-text bg-secondary border-0 text-light">$</span>
+                <input asp-for="IngresoMensual" type="number" step="0.01" min="0"
+                       class="form-control bg-body-secondary text-light border-0" />
+            </div>
+            <span asp-validation-for="IngresoMensual" class="text-danger small"></span>
+        </div>
+
+        <div class="col-md-2">
+            <label asp-for="TelefonoTrabajo" class="form-label">Tel. Laboral</label>
+            <input asp-for="TelefonoTrabajo" type="tel" class="form-control bg-body-secondary text-light border-0" />
+            <span asp-validation-for="TelefonoTrabajo" class="text-danger small"></span>
+        </div>
+    </div>
+</fieldset>
+
+<!-- Observaciones -->
+<fieldset class="mb-4">
+    <legend class="h6 fw-semibold text-secondary border-bottom border-secondary pb-2 mb-3">
+        <i class="bi bi-chat-left-text me-2"></i>Observaciones
+    </legend>
+    
+    <div class="row">
+        <div class="col-12">
+            <textarea asp-for="Observaciones" class="form-control bg-body-secondary text-light border-0"
+                      rows="3" placeholder="Notas adicionales sobre el cliente..."></textarea>
+            <span asp-validation-for="Observaciones" class="text-danger small"></span>
+        </div>
+    </div>
+</fieldset>
+
+<!-- Estado Activo (solo visible si hay ViewData para mostrarlo) -->
+@if (ViewData["MostrarToggleActivo"] != null || esEdicion)
+{
+    <div class="form-check form-switch mb-3">
+        <input asp-for="Activo" class="form-check-input" type="checkbox" role="switch" />
+        <label asp-for="Activo" class="form-check-label">Cliente Activo</label>
+    </div>
+}
+
+<!-- Mensaje de documentación -->
+@if (ViewData["MensajeDocumentacion"] != null)
+{
+    <div class="alert alert-info border-0 mt-4 mb-0">
+        <i class="bi bi-info-circle me-2"></i>
+        @Html.Raw(ViewData["MensajeDocumentacion"])
+    </div>
+}
