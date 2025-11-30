@@ -209,6 +209,16 @@ namespace TheBuryProject.Services
             }
         }
 
+        public async Task AsociarCreditoAVentaAsync(int ventaId, int creditoId)
+        {
+            var venta = await _context.Ventas.FindAsync(ventaId);
+            if (venta == null)
+                throw new InvalidOperationException(VentaConstants.ErrorMessages.VENTA_NO_ENCONTRADA);
+
+            venta.CreditoId = creditoId;
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<bool> CancelarVentaAsync(int id, string motivo)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();

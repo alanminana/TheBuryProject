@@ -86,6 +86,37 @@ namespace TheBuryProject.ViewModels
         public DatosChequeViewModel? DatosCheque { get; set; }
         public DatosCreditoPersonalViewModel? DatosCreditoPersonal { get; set; }  // NUEVO
 
+        // Datos de financiamiento
+        [Display(Name = "Venta financiada")]
+        public bool EsFinanciada { get; set; }
+
+        [Display(Name = "Anticipo"), DataType(DataType.Currency)]
+        [Range(0, double.MaxValue, ErrorMessage = "El anticipo no puede ser negativo")]
+        public decimal? Anticipo { get; set; }
+
+        [Display(Name = "Tasa mensual (%)")]
+        [Range(0, 100, ErrorMessage = "La tasa debe estar entre 0% y 100%")]
+        public decimal? TasaInteresMensualFinanciacion { get; set; }
+
+        [Display(Name = "Cantidad de cuotas")]
+        [Range(1, 120, ErrorMessage = "Las cuotas deben estar entre 1 y 120")]
+        public int? CantidadCuotasFinanciacion { get; set; }
+
+        [Display(Name = "Monto financiado estimado"), DataType(DataType.Currency)]
+        public decimal? MontoFinanciadoEstimado { get; set; }
+
+        [Display(Name = "Cuota estimada"), DataType(DataType.Currency)]
+        public decimal? CuotaEstimada { get; set; }
+
+        [Display(Name = "Ingreso neto declarado"), DataType(DataType.Currency)]
+        public decimal? IngresoNetoDeclarado { get; set; }
+
+        [Display(Name = "Otras deudas declaradas"), DataType(DataType.Currency)]
+        public decimal? EndeudamientoDeclarado { get; set; }
+
+        [Display(Name = "Antigüedad laboral (meses)")]
+        public int? AntiguedadLaboralMeses { get; set; }
+
         public DateTime CreatedAt { get; set; }
     }
 }

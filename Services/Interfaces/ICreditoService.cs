@@ -9,6 +9,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<CreditoViewModel?> GetByIdAsync(int id);
         Task<List<CreditoViewModel>> GetByClienteIdAsync(int clienteId);
         Task<CreditoViewModel> CreateAsync(CreditoViewModel viewModel);
+        Task<CreditoViewModel> CreatePendienteConfiguracionAsync(int clienteId, decimal montoTotal);
         Task<bool> UpdateAsync(CreditoViewModel viewModel);
         Task<bool> DeleteAsync(int id);
 

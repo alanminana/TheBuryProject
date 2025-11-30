@@ -12,6 +12,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<bool> DeleteAsync(int id);
         Task<bool> ConfirmarVentaAsync(int id);
         Task<bool> CancelarVentaAsync(int id, string motivo);
+        Task AsociarCreditoAVentaAsync(int ventaId, int creditoId);
         Task<bool> FacturarVentaAsync(int id, FacturaViewModel facturaViewModel);
         Task<bool> ValidarStockAsync(int ventaId);
 

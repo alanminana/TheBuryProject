@@ -1,38 +1,43 @@
 namespace TheBuryProject.Models.Enums
 {
     /// <summary>
-    /// Estados posibles de un crédito
+    /// Estados posibles de un crdito
     /// </summary>
     public enum EstadoCredito
     {
         /// <summary>
-        /// Crédito solicitado, pendiente de evaluación
+        /// Crdito solicitado, pendiente de evaluacin
         /// </summary>
         Solicitado = 0,
 
         /// <summary>
-        /// Crédito aprobado, pendiente de desembolso
+        /// Crdito aprobado, pendiente de desembolso
         /// </summary>
         Aprobado = 1,
 
         /// <summary>
-        /// Crédito activo con cuotas en pago
+        /// Crdito activo con cuotas en pago
         /// </summary>
         Activo = 2,
 
         /// <summary>
-        /// Crédito finalizado, todas las cuotas pagadas
+        /// Crdito finalizado, todas las cuotas pagadas
         /// </summary>
         Finalizado = 3,
 
         /// <summary>
-        /// Crédito rechazado
+        /// Crdito rechazado
         /// </summary>
         Rechazado = 4,
 
         /// <summary>
-        /// Crédito cancelado
+        /// Crdito cancelado
         /// </summary>
-        Cancelado = 5
+        Cancelado = 5,
+
+        /// <summary>
+        /// CrÃ©dito creado desde venta y pendiente de configuraciÃ³n de plan
+        /// </summary>
+        PendienteConfiguracion = 6
     }
 }

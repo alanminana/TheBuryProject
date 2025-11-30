@@ -1,8 +1,8 @@
-﻿using TheBuryProject.Services.Interfaces;
+using System;
+using TheBuryProject.Services.Interfaces;
 
 namespace TheBuryProject.Services
 {
-
     public class FinancialCalculationService : IFinancialCalculationService
     {
         public decimal CalcularCuotaSistemaFrances(decimal monto, decimal tasaMensual, int cuotas)
@@ -43,6 +43,42 @@ namespace TheBuryProject.Services
         {
             var totalConInteres = CalcularTotalConInteres(monto, tasaMensual, cuotas);
             return totalConInteres - monto;
+        }
+
+        public decimal ComputePmt(decimal tasaMensual, int cuotas, decimal monto)
+        {
+            if (monto < 0)
+                throw new ArgumentException("El monto financiado no puede ser negativo", nameof(monto));
+
+            if (cuotas < 1)
+                throw new ArgumentException("La cantidad de cuotas debe ser al menos 1", nameof(cuotas));
+
+            if (tasaMensual < 0)
+                throw new ArgumentException("La tasa mensual no puede ser negativa", nameof(tasaMensual));
+
+            if (monto == 0)
+                return 0;
+
+            if (tasaMensual == 0)
+                return Math.Round(monto / cuotas, 2, MidpointRounding.AwayFromZero);
+
+            var factor = (decimal)Math.Pow((double)(1 + tasaMensual), cuotas);
+            var cuota = monto * (tasaMensual * factor) / (factor - 1);
+            return Math.Round(cuota, 2, MidpointRounding.AwayFromZero);
+        }
+
+        public decimal ComputeFinancedAmount(decimal total, decimal anticipo)
+        {
+            if (total < 0)
+                throw new ArgumentException("El total no puede ser negativo", nameof(total));
+
+            if (anticipo < 0)
+                throw new ArgumentException("El anticipo no puede ser negativo", nameof(anticipo));
+
+            if (anticipo > total)
+                throw new ArgumentException("El anticipo no puede superar el total", nameof(anticipo));
+
+            return total - anticipo;
         }
     }
 }
