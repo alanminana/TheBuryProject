@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -23,6 +22,7 @@ namespace TheBuryProject.Controllers
         private readonly IPrequalificationService _prequalificationService;
         private readonly IDocumentoClienteService _documentoClienteService;
         private readonly ICreditoService _creditoService;
+        private readonly IDocumentacionService _documentacionService;
 
         public VentaController(
             IVentaService ventaService,
@@ -33,7 +33,8 @@ namespace TheBuryProject.Controllers
             IFinancialCalculationService financialCalculationService,
             IPrequalificationService prequalificationService,
             IDocumentoClienteService documentoClienteService,
-            ICreditoService creditoService)
+            ICreditoService creditoService,
+            IDocumentacionService documentacionService)
         {
             _ventaService = ventaService;
             _configuracionPagoService = configuracionPagoService;
@@ -44,6 +45,7 @@ namespace TheBuryProject.Controllers
             _prequalificationService = prequalificationService;
             _documentoClienteService = documentoClienteService;
             _creditoService = creditoService;
+            _documentacionService = documentacionService;
         }
 
         // GET: Venta
@@ -122,16 +124,6 @@ namespace TheBuryProject.Controllers
                     return await RetornarVistaConDatos(viewModel);
                 }
 
-                if (!TryAsignarDatosCreditoPersonal(DatosCreditoPersonalJson, viewModel))
-                {
-                    return await RetornarVistaConDatos(viewModel);
-                }
-
-                if (!await ValidarCreditoPersonalAsync(viewModel))
-                {
-                    return await RetornarVistaConDatos(viewModel);
-                }
-
                 var venta = await _ventaService.CreateAsync(viewModel);
 
                 var mensajeCreacion = venta.RequiereAutorizacion
@@ -140,12 +132,12 @@ namespace TheBuryProject.Controllers
 
                 if (venta.TipoPago == TipoPago.CreditoPersonal)
                 {
-                    var documentacion = await _documentoClienteService.ValidarDocumentacionObligatoriaAsync(venta.ClienteId);
+                    var documentacion = await _documentacionService.ProcesarDocumentacionVentaAsync(venta.Id);
 
-                    if (!documentacion.Completa)
+                    if (!documentacion.DocumentacionCompleta)
                     {
                         TempData["Warning"] =
-                            $"Falta documentación obligatoria para otorgar crédito: {documentacion.DescripcionFaltantes}";
+                            $"Falta documentación obligatoria para otorgar crédito: {documentacion.MensajeFaltantes}";
                         TempData["Info"] = mensajeCreacion;
 
                         return RedirectToAction(
@@ -154,17 +146,15 @@ namespace TheBuryProject.Controllers
                             new { clienteId = venta.ClienteId, returnToVentaId = venta.Id });
                     }
 
-                    if (!venta.CreditoId.HasValue)
-                    {
-                        var credito = await _creditoService.CreatePendienteConfiguracionAsync(venta.ClienteId, venta.Total);
-                        await _ventaService.AsociarCreditoAVentaAsync(venta.Id, credito.Id);
+                    TempData["Success"] = mensajeCreacion;
+                    TempData["Info"] = documentacion.CreditoCreado
+                        ? "Documentación completa. Crédito generado y listo para configurar."
+                        : "Documentación completa. Crédito listo para configurar.";
 
-                        TempData["Success"] = mensajeCreacion;
-                        TempData["Info"] =
-                            $"Documentación completa. Crédito {credito.Numero} creado y pendiente de configuración.";
-
-                        return RedirectToAction("Details", "Credito", new { id = credito.Id });
-                    }
+                    return RedirectToAction(
+                        "ConfigurarVenta",
+                        "Credito",
+                        new { id = documentacion.CreditoId, ventaId = venta.Id });
                 }
 
                 TempData[venta.RequiereAutorizacion ? "Warning" : "Success"] = mensajeCreacion;
@@ -281,6 +271,30 @@ namespace TheBuryProject.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetPrecioProducto(int id)
+        {
+            try
+            {
+                var producto = await _context.Productos
+                    .Where(p => p.Id == id && p.Activo)
+                    .Select(p => new { p.PrecioVenta, p.StockActual })
+                    .FirstOrDefaultAsync();
+
+                if (producto == null)
+                {
+                    return NotFound(new { error = "Producto no encontrado" });
+                }
+
+                return Json(producto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener precio del producto {Id}", id);
+                return StatusCode(500, new { error = "No se pudo obtener el precio del producto" });
+            }
+        }
+
+        [HttpGet]
         public async Task<IActionResult> ValidarDocumentacionCredito(int ventaId)
         {
             var venta = await _ventaService.GetByIdAsync(ventaId);
@@ -296,32 +310,24 @@ namespace TheBuryProject.Controllers
                 return RedirectToAction(nameof(Details), new { id = ventaId });
             }
 
-            var documentacion = await _documentoClienteService.ValidarDocumentacionObligatoriaAsync(venta.ClienteId);
+            var resultado = await _documentacionService.ProcesarDocumentacionVentaAsync(ventaId);
 
-            if (!documentacion.Completa)
+            if (!resultado.DocumentacionCompleta)
             {
                 TempData["Warning"] =
-                    $"Falta documentación obligatoria para otorgar crédito: {documentacion.DescripcionFaltantes}";
+                    $"Falta documentación obligatoria para otorgar crédito: {resultado.MensajeFaltantes}";
 
                 return RedirectToAction(
                     "Index",
                     "DocumentoCliente",
-                    new { clienteId = venta.ClienteId, returnToVentaId = venta.Id });
+                    new { clienteId = resultado.ClienteId, returnToVentaId = resultado.VentaId });
             }
 
-            if (venta.CreditoId.HasValue)
-            {
-                TempData["Success"] = "Documentación validada. Crédito listo para configurar.";
-                return RedirectToAction("Details", "Credito", new { id = venta.CreditoId.Value });
-            }
+            TempData["Success"] = resultado.CreditoCreado
+                ? "Documentación validada. Crédito creado y pendiente de configuración."
+                : "Documentación validada. Crédito listo para configurar.";
 
-            var credito = await _creditoService.CreatePendienteConfiguracionAsync(venta.ClienteId, venta.Total);
-            await _ventaService.AsociarCreditoAVentaAsync(venta.Id, credito.Id);
-
-            TempData["Success"] =
-                $"Documentación validada. Crédito {credito.Numero} creado y pendiente de configuración.";
-
-            return RedirectToAction("Details", "Credito", new { id = credito.Id });
+            return RedirectToAction("ConfigurarVenta", "Credito", new { id = resultado.CreditoId, ventaId });
         }
 
         // GET: Venta/Delete/5
@@ -960,67 +966,6 @@ namespace TheBuryProject.Controllers
             }
 
             ModelState.AddModelError("", "Debe agregar al menos un producto a la venta");
-            return false;
-        }
-
-        private bool TryAsignarDatosCreditoPersonal(string? datosCreditoJson, VentaViewModel viewModel)
-        {
-            if (viewModel.TipoPago != TipoPago.CreditoPersonal || string.IsNullOrEmpty(datosCreditoJson))
-            {
-                return true;
-            }
-
-            try
-            {
-                var datosCredito = JsonSerializer.Deserialize<DatosCreditoPersonalViewModel>(
-                    datosCreditoJson,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                if (datosCredito != null)
-                {
-                    viewModel.DatosCreditoPersonal = datosCredito;
-                    viewModel.CreditoId = datosCredito.CreditoId;
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al parsear datos de crédito personal");
-                ModelState.AddModelError("", "Error al procesar los datos de crédito personal");
-                return false;
-            }
-        }
-
-        private async Task<bool> ValidarCreditoPersonalAsync(VentaViewModel viewModel)
-        {
-            if (viewModel.TipoPago != TipoPago.CreditoPersonal)
-            {
-                return true;
-            }
-
-            if (!viewModel.CreditoId.HasValue)
-            {
-                ModelState.AddModelError("", "Debe seleccionar un crédito personal");
-                return false;
-            }
-
-            if (viewModel.DatosCreditoPersonal == null || !viewModel.DatosCreditoPersonal.Cuotas.Any())
-            {
-                ModelState.AddModelError("", "Debe calcular el plan de financiamiento antes de guardar");
-                return false;
-            }
-
-            var disponible = await _ventaService.ValidarDisponibilidadCreditoAsync(
-                viewModel.CreditoId.Value,
-                viewModel.DatosCreditoPersonal.MontoAFinanciar);
-
-            if (disponible)
-            {
-                return true;
-            }
-
-            ModelState.AddModelError("", "El monto a financiar supera el crédito disponible");
             return false;
         }
 

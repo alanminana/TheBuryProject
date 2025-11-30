@@ -20,6 +20,10 @@
 <div class="card bg-dark border-0 shadow-sm">
     <div class="card-body">
         <form asp-action="Upload" method="post" enctype="multipart/form-data">
+            @if (Model.ReturnToVentaId.HasValue)
+            {
+                <input type="hidden" name="ReturnToVentaId" value="@Model.ReturnToVentaId" />
+            }
             <partial name="~/Views/Shared/Documento/_DocumentoAdjuntoForm.cshtml" model="Model" />
 
             <div class="d-flex gap-2 mt-4">

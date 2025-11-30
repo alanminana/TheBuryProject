@@ -15,15 +15,18 @@ namespace TheBuryProject.Controllers
         private readonly IDocumentoClienteService _documentoService;
         private readonly AppDbContext _context;
         private readonly ILogger<DocumentoClienteController> _logger;
+        private readonly IDocumentacionService _documentacionService;
 
         public DocumentoClienteController(
             IDocumentoClienteService documentoService,
             AppDbContext context,
-            ILogger<DocumentoClienteController> logger)
+            ILogger<DocumentoClienteController> logger,
+            IDocumentacionService documentacionService)
         {
             _documentoService = documentoService;
             _context = context;
             _logger = logger;
+            _documentacionService = documentacionService;
         }
 
         // GET: DocumentoCliente
@@ -41,6 +44,16 @@ namespace TheBuryProject.Controllers
                 filtro.Documentos = documentos;
                 filtro.TotalResultados = total;
 
+                if (filtro.ReturnToVentaId.HasValue)
+                {
+                    var venta = await _context.Ventas.FindAsync(filtro.ReturnToVentaId.Value);
+                    if (venta != null)
+                    {
+                        ViewBag.DocumentacionPendiente =
+                            await _documentoService.ValidarDocumentacionObligatoriaAsync(venta.ClienteId);
+                    }
+                }
+
                 await CargarViewBags(filtro.ClienteId);
 
                 return View(filtro);
@@ -57,13 +70,15 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: DocumentoCliente/Upload
-        public async Task<IActionResult> Upload(int? clienteId)
+        public async Task<IActionResult> Upload(int? clienteId, int? returnToVentaId)
         {
             await CargarViewBags(clienteId);
 
             var viewModel = new DocumentoClienteViewModel();
             if (clienteId.HasValue)
                 viewModel.ClienteId = clienteId.Value;
+            if (returnToVentaId.HasValue)
+                viewModel.ReturnToVentaId = returnToVentaId;
 
             return View(viewModel);
         }
@@ -92,6 +107,32 @@ namespace TheBuryProject.Controllers
                 var resultado = await _documentoService.UploadAsync(viewModel);
 
                 TempData["Success"] = $"Documento '{resultado.TipoDocumentoNombre}' subido exitosamente";
+
+                if (viewModel.ReturnToVentaId.HasValue)
+                {
+                    var estado = await _documentacionService.ProcesarDocumentacionVentaAsync(viewModel.ReturnToVentaId.Value);
+
+                    if (!estado.DocumentacionCompleta)
+                    {
+                        TempData["Warning"] =
+                            $"Falta documentación obligatoria para otorgar crédito: {estado.MensajeFaltantes}";
+
+                        return RedirectToAction(nameof(Index), new
+                        {
+                            clienteId = viewModel.ClienteId,
+                            returnToVentaId = viewModel.ReturnToVentaId
+                        });
+                    }
+
+                    TempData["Info"] = estado.CreditoCreado
+                        ? "Documentación completa. Crédito generado para esta venta."
+                        : "Documentación completa. Crédito listo para configurar.";
+
+                    return RedirectToAction(
+                        "ConfigurarVenta",
+                        "Credito",
+                        new { id = estado.CreditoId, ventaId = viewModel.ReturnToVentaId });
+                }
 
                 // Si viene del upload inline, redirigir a Cliente/Details con tab documentos
                 if (returnToDetails)
