@@ -106,7 +106,10 @@ namespace TheBuryProject.ViewModels
         // Para filtros
         public bool? SoloPendientes { get; set; }
         public bool? SoloVencidos { get; set; }
+
+        // Flujo de retorno a venta con crédito
+        public int? ReturnToVentaId { get; set; }
     }
 
-    
+
 }
