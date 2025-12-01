@@ -45,6 +45,7 @@
                 selectReemplazo.value = documentoSeleccionado;
             }
         } catch (error) {
+            console.error(error);
             selectReemplazo.innerHTML = '<option value="">No se pudieron cargar los documentos</option>';
         }
     }

@@ -14,6 +14,12 @@
 
         if (!evaluarUrl) return;
 
+        const templates = {
+            evaluacion: document.getElementById('tpl-credito-evaluacion'),
+            loading: document.getElementById('tpl-credito-loading'),
+            error: document.getElementById('tpl-credito-error')
+        };
+
         let evaluacionTimeout;
 
         const toggleGaranteSection = () => {
@@ -30,8 +36,15 @@
             }
         };
 
+        const renderTemplate = (templateEl) => {
+            if (!templateEl) return null;
+            return templateEl.content.cloneNode(true);
+        };
+
         const mostrarEvaluacion = (evalData) => {
             if (!resultadoEvaluacion) return;
+            const fragment = renderTemplate(templates.evaluacion);
+            if (!fragment) return;
 
             const colorClass = evalData.resultado === 2 ? 'success' : evalData.resultado === 1 ? 'warning' : 'danger';
             const icono = evalData.resultado === 2
@@ -40,68 +53,56 @@
                     ? 'exclamation-triangle-fill'
                     : 'x-circle-fill';
 
-            resultadoEvaluacion.innerHTML = `
-                <div class="alert alert-${colorClass} border-0 mb-3">
-                    <h5 class="alert-heading">
-                        <i class="bi bi-${icono} me-2"></i>
-                        ${evalData.resultadoTexto}
-                    </h5>
-                    <p class="mb-0">${evalData.motivo}</p>
-                </div>
+            const alert = fragment.querySelector('[data-resultado-alert]');
+            const icon = fragment.querySelector('[data-resultado-icon]');
+            const titulo = fragment.querySelector('[data-resultado-titulo]');
+            const motivo = fragment.querySelector('[data-resultado-motivo]');
+            const puntaje = fragment.querySelector('[data-resultado-puntaje]');
+            const progress = fragment.querySelector('[data-resultado-progress]');
+            const ingresos = fragment.querySelector('[data-resultado-ingresos]');
+            const relacion = fragment.querySelector('[data-resultado-relacion]');
+            const documentacion = fragment.querySelector('[data-resultado-documentacion]');
 
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-muted mb-2">Puntaje: ${evalData.puntajeFinal.toFixed(0)} / 100</h6>
-                        <div class="progress credit-progress-lg">
-                            <div class="progress-bar bg-${colorClass}"
-                                 role="progressbar"
-                                 style="width: ${evalData.puntajeFinal}%">
-                                ${evalData.puntajeFinal.toFixed(0)}%
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            alert?.classList.add(`alert-${colorClass}`);
+            if (icon) icon.classList.add(`bi-${icono}`);
+            if (titulo) titulo.textContent = evalData.resultadoTexto;
+            if (motivo) motivo.textContent = evalData.motivo;
+            if (puntaje) puntaje.textContent = evalData.puntajeFinal.toFixed(0);
+            if (progress) {
+                progress.style.width = `${evalData.puntajeFinal}%`;
+                progress.textContent = `${evalData.puntajeFinal.toFixed(0)}%`;
+                progress.classList.add(`bg-${colorClass}`);
+            }
 
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="card bg-dark border-0 shadow-sm">
-                            <div class="card-body">
-                                <small class="text-secondary d-block">Ingresos estimados</small>
-                                <h5 class="text-light mb-0">${(evalData.ingresosEstimados ?? null)?.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }) ?? 'N/D'}</h5>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card bg-dark border-0 shadow-sm">
-                            <div class="card-body">
-                                <small class="text-secondary d-block">Relación cuota/ingreso</small>
-                                <h5 class="text-light mb-0">${(evalData.relacionCuotaIngreso ?? null)?.toFixed(2) ?? 'N/D'}%</h5>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card bg-dark border-0 shadow-sm">
-                            <div class="card-body">
-                                <small class="text-secondary d-block">Documentación</small>
-                                <h5 class="text-light mb-0">${evalData.documentacionCompleta ? 'Completa' : 'Incompleta'}</h5>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            if (ingresos) {
+                ingresos.textContent = formatearMoneda(evalData.ingresosEstimados);
+            }
+            if (relacion) {
+                relacion.textContent = evalData.relacionCuotaIngreso != null ? `${evalData.relacionCuotaIngreso.toFixed(2)}%` : 'N/D';
+            }
+            if (documentacion) {
+                documentacion.textContent = evalData.documentacionCompleta ? 'Completa' : 'Incompleta';
+            }
+
+            resultadoEvaluacion.replaceChildren(fragment);
         };
 
         const setLoading = () => {
             if (!resultadoEvaluacion) return;
+            const fragment = renderTemplate(templates.loading);
+            if (!fragment) return;
+            resultadoEvaluacion.replaceChildren(fragment);
+        };
 
-            resultadoEvaluacion.innerHTML = `
-                <div class="text-center py-4">
-                    <div class="spinner-border text-info" role="status">
-                        <span class="visually-hidden">Evaluando...</span>
-                    </div>
-                    <p class="text-muted mt-2">Evaluando solicitud...</p>
-                </div>
-            `;
+        const mostrarError = (message) => {
+            if (!resultadoEvaluacion) return;
+            const fragment = renderTemplate(templates.error);
+            if (!fragment) return;
+            const textEl = fragment.querySelector('[data-resultado-error]');
+            if (textEl) {
+                textEl.textContent = message;
+            }
+            resultadoEvaluacion.replaceChildren(fragment);
         };
 
         const evaluarCredito = async () => {
@@ -131,20 +132,22 @@
                 const evaluacion = await response.json();
                 mostrarEvaluacion(evaluacion);
             } catch (error) {
-                if (!resultadoEvaluacion) return;
-
-                resultadoEvaluacion.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Error al evaluar: ${error?.message || 'Error desconocido'}
-                    </div>
-                `;
+                mostrarError(error?.message || 'Error desconocido');
             }
         };
 
         const scheduleEvaluacion = () => {
             clearTimeout(evaluacionTimeout);
             evaluacionTimeout = setTimeout(evaluarCredito, 500);
+        };
+
+        const formatearMoneda = (valor) => {
+            if (valor == null || Number.isNaN(valor)) return 'N/D';
+            try {
+                return Number(valor).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+            } catch (error) {
+                return `$${Number(valor).toFixed(2)}`;
+            }
         };
 
         clienteSelect?.addEventListener('change', scheduleEvaluacion);
