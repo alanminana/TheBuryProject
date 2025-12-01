@@ -620,7 +620,9 @@ namespace TheBuryProject.Services
 
         private void CalcularTotales(Venta venta)
         {
-            var detalleRequests = venta.Detalles
+            var detallesList = venta.Detalles.ToList();
+
+            var detalleRequests = detallesList
                 .Select(d => new DetalleCalculoVentaRequest
                 {
                     ProductoId = d.ProductoId,
@@ -632,9 +634,9 @@ namespace TheBuryProject.Services
 
             var resultado = CalcularTotalesInterno(detalleRequests, venta.Descuento, false);
 
-            for (var i = 0; i < venta.Detalles.Count; i++)
+            for (var i = 0; i < detallesList.Count; i++)
             {
-                var detalle = venta.Detalles[i];
+                var detalle = detallesList[i];
                 var request = detalleRequests[i];
                 var subtotalDetalle = Math.Max(0, (request.PrecioUnitario * request.Cantidad) - request.Descuento);
                 detalle.Subtotal = subtotalDetalle;
