@@ -7,11 +7,8 @@ namespace TheBuryProject.Models.Enums
     {
         DNI = 1,
         ReciboSueldo = 2,
-        ServicioLuz = 3,
-        ServicioGas = 4,
-        ServicioAgua = 5,
+        Servicio = 3,
         ConstanciaCUIL = 6,
-        DeclaracionJurada = 7,
         Veraz = 8,
         Otro = 99
     }

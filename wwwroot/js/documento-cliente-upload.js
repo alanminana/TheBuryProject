@@ -9,11 +9,11 @@
         return;
     }
 
-    const documentosUrl = form.dataset.documentosUrl;
-    const documentoSeleccionado = form.dataset.documentoSeleccionado;
     const defaultOption = '<option value="">Seleccione un documento...</option>';
 
     async function cargarDocumentos(clienteId) {
+        const documentosUrl = form.dataset.documentosUrl;
+
         if (!clienteId || !documentosUrl) {
             selectReemplazo.innerHTML = defaultOption;
             return;
@@ -40,6 +40,7 @@
                 selectReemplazo.appendChild(option);
             });
 
+            const documentoSeleccionado = form.dataset.documentoSeleccionado;
             if (documentoSeleccionado) {
                 selectReemplazo.value = documentoSeleccionado;
             }
