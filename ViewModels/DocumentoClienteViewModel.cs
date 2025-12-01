@@ -31,11 +31,8 @@ namespace TheBuryProject.ViewModels
         {
             TipoDocumentoCliente.DNI => "DNI",
             TipoDocumentoCliente.ReciboSueldo => "Recibo de Sueldo",
-            TipoDocumentoCliente.ServicioLuz => "Servicio de Luz",
-            TipoDocumentoCliente.ServicioGas => "Servicio de Gas",
-            TipoDocumentoCliente.ServicioAgua => "Servicio de Agua",
+            TipoDocumentoCliente.Servicio => "Servicio",
             TipoDocumentoCliente.ConstanciaCUIL => "Constancia CUIL",
-            TipoDocumentoCliente.DeclaracionJurada => "Declaraci�n Jurada",
             TipoDocumentoCliente.Veraz => "Veraz",
             TipoDocumentoCliente.Otro => "Otro",
             _ => "Desconocido"

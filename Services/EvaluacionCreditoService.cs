@@ -170,9 +170,7 @@ namespace TheBuryProject.Services
                 docsEncontrados.Add("Recibo Sueldo");
             }
 
-            if (documentosVerificados.Any(d => d.TipoDocumento == TipoDocumentoCliente.ServicioLuz ||
-                                              d.TipoDocumento == TipoDocumentoCliente.ServicioGas ||
-                                              d.TipoDocumento == TipoDocumentoCliente.ServicioAgua))
+            if (documentosVerificados.Any(d => d.TipoDocumento == TipoDocumentoCliente.Servicio))
             {
                 docsImportantes++;
                 docsEncontrados.Add("Servicio");

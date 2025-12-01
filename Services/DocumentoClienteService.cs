@@ -179,7 +179,7 @@ namespace TheBuryProject.Services
             {
                 TipoDocumentoCliente.DNI,
                 TipoDocumentoCliente.ReciboSueldo,
-                TipoDocumentoCliente.ServicioLuz
+                TipoDocumentoCliente.Servicio
             };
 
             var documentosCliente = await _context.Set<DocumentoCliente>()

@@ -2,15 +2,6 @@
 
 @{
     ViewData["Title"] = "Detalles de Venta";
-
-    var puedeEditar = Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Cotizacion ||
-                      Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Presupuesto;
-    var puedeConfirmar = Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Presupuesto &&
-                         (!Model.RequiereAutorizacion || Model.EstadoAutorizacion == TheBuryProject.Models.Enums.EstadoAutorizacionVenta.Autorizada);
-    var puedeFacturar = Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Confirmada &&
-                        (!Model.RequiereAutorizacion || Model.EstadoAutorizacion == TheBuryProject.Models.Enums.EstadoAutorizacionVenta.Autorizada);
-    var puedeCancelar = Model.Estado != TheBuryProject.Models.Enums.EstadoVenta.Cancelada;
-    var puedeAutorizar = Model.EstadoAutorizacion == TheBuryProject.Models.Enums.EstadoAutorizacionVenta.PendienteAutorizacion;
 }
 
 @section Styles {
@@ -48,7 +39,7 @@
                 }
             }
 
-            @if (Model.RequiereAutorizacion && Model.EstadoAutorizacion == TheBuryProject.Models.Enums.EstadoAutorizacionVenta.PendienteAutorizacion)
+            @if (Model.DebeAlertarAutorizacionPendiente)
             {
                 <div class="alert alert-warning d-flex align-items-center gap-2">
                     <i class="bi bi-shield-exclamation"></i>
@@ -56,7 +47,7 @@
                 </div>
             }
 
-            @if (Model.EstadoAutorizacion == TheBuryProject.Models.Enums.EstadoAutorizacionVenta.Rechazada)
+            @if (Model.FueRechazada)
             {
                 <div class="alert alert-danger d-flex align-items-start gap-2">
                     <i class="bi bi-x-circle"></i>
@@ -76,9 +67,7 @@
             <div class="card bg-dark border-0 shadow-sm mb-4">
                 <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i> Información General</h5>
-                    <span class="badge badge-soft">
-                        @Model.Estado
-                    </span>
+                    <span class="@Model.EstadoBadgeClass">@Model.EstadoDisplay</span>
                 </div>
 
                 <div class="card-body">
@@ -178,16 +167,18 @@
                 </div>
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-2">
-                        @if (puedeEditar)
-                        { <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning"><i class="bi bi-pencil"></i> Editar</a> }
+                        @if (Model.PuedeEditar)
+                        {
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning"><i class="bi bi-pencil"></i> Editar</a>
+                        }
 
-                        @if (puedeAutorizar)
+                        @if (Model.PuedeAutorizar)
                         {
                             <a asp-action="Autorizar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-check-lg"></i> Autorizar</a>
                             <a asp-action="Rechazar" asp-route-id="@Model.Id" class="btn btn-danger"><i class="bi bi-x-lg"></i> Rechazar</a>
                         }
 
-                        @if (puedeConfirmar)
+                        @if (Model.PuedeConfirmar)
                         {
                             <form asp-action="Confirmar" asp-route-id="@Model.Id" method="post" class="d-inline" onsubmit="return confirm('¿Confirmar esta venta? Se descontará el stock.');">
                                 @Html.AntiForgeryToken()
@@ -195,23 +186,27 @@
                             </form>
                         }
 
-                        @if (puedeFacturar)
-                        { <a asp-action="Facturar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-receipt"></i> Facturar</a> }
+                        @if (Model.PuedeFacturar)
+                        {
+                            <a asp-action="Facturar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-receipt"></i> Facturar</a>
+                        }
 
-                        @if (Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Confirmada ||
-                             Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Facturada ||
-                             Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Entregada)
+                        @if (Model.PuedeCrearDevolucion)
                         {
                             <a asp-controller="Devolucion" asp-action="Create" asp-route-ventaId="@Model.Id" class="btn btn-outline-warning">
                                 <i class="bi bi-arrow-return-left"></i> Crear Devolución
                             </a>
                         }
 
-                        @if (puedeCancelar)
-                        { <a asp-action="Cancelar" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar</a> }
+                        @if (Model.PuedeCancelar)
+                        {
+                            <a asp-action="Cancelar" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar</a>
+                        }
 
-                        @if (puedeEditar)
-                        { <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</a> }
+                        @if (Model.PuedeEditar)
+                        {
+                            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</a>
+                        }
                     </div>
                 </div>
             </div>

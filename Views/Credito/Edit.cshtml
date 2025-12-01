@@ -58,12 +58,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        $(function () {
-            $('#chkRequiereGarante').on('change', function () {
-                if ($(this).is(':checked')) $('#garanteField').show();
-                else { $('#garanteField').hide(); $('#GaranteId').val(''); }
-            });
-        });
-    </script>
+    <script src="~/js/credito-edit.js" asp-append-version="true"></script>
 }

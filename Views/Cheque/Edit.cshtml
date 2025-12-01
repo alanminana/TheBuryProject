@@ -92,7 +92,8 @@
                                         class="form-select bg-dark text-light border-secondary"
                                         asp-items="ViewBag.Proveedores"
                                         id="proveedorSelect"
-                                        onchange="cargarOrdenesProveedor()">
+                                        data-ordenes-url="@Url.Action("OrdenesPorProveedor", "Cheque")"
+                                        data-orden-seleccionada="@Model.OrdenCompraId">
                                     <option value="">Seleccione un proveedor</option>
                                 </select>
                                 <span asp-validation-for="ProveedorId" class="text-danger small"></span>
@@ -103,7 +104,8 @@
                                 <select asp-for="OrdenCompraId"
                                         class="form-select bg-dark text-light border-secondary"
                                         asp-items="ViewBag.OrdenesCompra"
-                                        id="ordenCompraSelect">
+                                        id="ordenCompraSelect"
+                                        data-seleccionada="@Model.OrdenCompraId">
                                     <option value="">Ninguna (Opcional)</option>
                                 </select>
                                 <span asp-validation-for="OrdenCompraId" class="text-danger small"></span>
@@ -134,16 +136,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        function cargarOrdenesProveedor() {
-            const proveedorId = document.getElementById('proveedorSelect').value;
-            const ordenSelect = document.getElementById('ordenCompraSelect');
-            ordenSelect.innerHTML = '<option value="">Ninguna (Opcional)</option>';
-            if (!proveedorId) return;
-            ordenSelect.innerHTML = '<option value="">Cargando órdenes...</option>';
-            setTimeout(() => {
-                ordenSelect.innerHTML = '<option value="">Ninguna (Opcional)</option>';
-            }, 500);
-        }
-    </script>
+    <script src="~/js/cheque-form.js" asp-append-version="true"></script>
 }

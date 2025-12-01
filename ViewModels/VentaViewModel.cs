@@ -118,5 +118,81 @@ namespace TheBuryProject.ViewModels
         public int? AntiguedadLaboralMeses { get; set; }
 
         public DateTime CreatedAt { get; set; }
+
+        #region Presentación
+
+        public string EstadoDisplay => Estado switch
+        {
+            EstadoVenta.Cotizacion => "Cotización",
+            EstadoVenta.Presupuesto => "Presupuesto",
+            EstadoVenta.Confirmada => "Confirmada",
+            EstadoVenta.Facturada => "Facturada",
+            EstadoVenta.Entregada => "Entregada",
+            EstadoVenta.Cancelada => "Cancelada",
+            _ => Estado.ToString()
+        };
+
+        public string EstadoBadgeClass => Estado switch
+        {
+            EstadoVenta.Cotizacion => "badge bg-secondary",
+            EstadoVenta.Presupuesto => "badge bg-info text-dark",
+            EstadoVenta.Confirmada => "badge bg-primary",
+            EstadoVenta.Facturada => "badge bg-success",
+            EstadoVenta.Entregada => "badge bg-dark text-light",
+            EstadoVenta.Cancelada => "badge bg-danger",
+            _ => "badge bg-secondary"
+        };
+
+        public string EstadoAutorizacionDisplay => EstadoAutorizacion switch
+        {
+            EstadoAutorizacionVenta.NoRequiere => "No Requiere",
+            EstadoAutorizacionVenta.PendienteAutorizacion => "Pendiente",
+            EstadoAutorizacionVenta.Autorizada => "Autorizada",
+            EstadoAutorizacionVenta.Rechazada => "Rechazada",
+            _ => EstadoAutorizacion.ToString()
+        };
+
+        public string EstadoAutorizacionBadgeClass => EstadoAutorizacion switch
+        {
+            EstadoAutorizacionVenta.NoRequiere => "badge bg-dark text-light",
+            EstadoAutorizacionVenta.PendienteAutorizacion => "badge bg-warning text-dark",
+            EstadoAutorizacionVenta.Autorizada => "badge bg-success",
+            EstadoAutorizacionVenta.Rechazada => "badge bg-danger",
+            _ => "badge bg-secondary"
+        };
+
+        public string EstadoAutorizacionIconClass => EstadoAutorizacion switch
+        {
+            EstadoAutorizacionVenta.PendienteAutorizacion => "bi bi-hourglass-split",
+            EstadoAutorizacionVenta.Autorizada => "bi bi-check-circle",
+            EstadoAutorizacionVenta.Rechazada => "bi bi-x-circle",
+            _ => string.Empty
+        };
+
+        #endregion
+
+        #region Permisos de acción
+
+        public bool PuedeEditar => Estado == EstadoVenta.Cotizacion || Estado == EstadoVenta.Presupuesto;
+
+        public bool PuedeConfirmar =>
+            Estado == EstadoVenta.Presupuesto && (!RequiereAutorizacion || EstadoAutorizacion == EstadoAutorizacionVenta.Autorizada);
+
+        public bool PuedeFacturar =>
+            Estado == EstadoVenta.Confirmada && (!RequiereAutorizacion || EstadoAutorizacion == EstadoAutorizacionVenta.Autorizada);
+
+        public bool PuedeCancelar => Estado != EstadoVenta.Cancelada;
+
+        public bool PuedeAutorizar => EstadoAutorizacion == EstadoAutorizacionVenta.PendienteAutorizacion;
+
+        public bool PuedeCrearDevolucion =>
+            Estado == EstadoVenta.Confirmada || Estado == EstadoVenta.Facturada || Estado == EstadoVenta.Entregada;
+
+        public bool DebeAlertarAutorizacionPendiente =>
+            RequiereAutorizacion && EstadoAutorizacion == EstadoAutorizacionVenta.PendienteAutorizacion;
+
+        public bool FueRechazada => EstadoAutorizacion == EstadoAutorizacionVenta.Rechazada;
+
+        #endregion
     }
 }
