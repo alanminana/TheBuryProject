@@ -151,44 +151,16 @@
                                                 <small class="text-muted">@venta.ClienteDocumento</small>
                                             </td>
                                             <td>
-                                                @switch (venta.Estado)
-                                                {
-                                                    case TheBuryProject.Models.Enums.EstadoVenta.Cotizacion:
-                                                        <span class="badge bg-secondary">Cotización</span>;
-                                                        break;
-                                                    case TheBuryProject.Models.Enums.EstadoVenta.Presupuesto:
-                                                        <span class="badge bg-info text-dark">Presupuesto</span>;
-                                                        break;
-                                                    case TheBuryProject.Models.Enums.EstadoVenta.Confirmada:
-                                                        <span class="badge bg-primary">Confirmada</span>;
-                                                        break;
-                                                    case TheBuryProject.Models.Enums.EstadoVenta.Facturada:
-                                                        <span class="badge bg-success">Facturada</span>;
-                                                        break;
-                                                    case TheBuryProject.Models.Enums.EstadoVenta.Entregada:
-                                                        <span class="badge bg-dark text-light">Entregada</span>;
-                                                        break;
-                                                    case TheBuryProject.Models.Enums.EstadoVenta.Cancelada:
-                                                        <span class="badge bg-danger">Cancelada</span>;
-                                                        break;
-                                                }
+                                                <span class="@venta.EstadoBadgeClass">@venta.EstadoDisplay</span>
                                             </td>
                                             <td>
-                                                @switch (venta.EstadoAutorizacion)
-                                                {
-                                                    case TheBuryProject.Models.Enums.EstadoAutorizacionVenta.NoRequiere:
-                                                        <span class="badge bg-dark text-light">No Requiere</span>;
-                                                        break;
-                                                    case TheBuryProject.Models.Enums.EstadoAutorizacionVenta.PendienteAutorizacion:
-                                                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Pendiente</span>;
-                                                        break;
-                                                    case TheBuryProject.Models.Enums.EstadoAutorizacionVenta.Autorizada:
-                                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Autorizada</span>;
-                                                        break;
-                                                    case TheBuryProject.Models.Enums.EstadoAutorizacionVenta.Rechazada:
-                                                        <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Rechazada</span>;
-                                                        break;
-                                                }
+                                                <span class="@venta.EstadoAutorizacionBadgeClass">
+                                                    @if (!string.IsNullOrEmpty(venta.EstadoAutorizacionIconClass))
+                                                    {
+                                                        <i class="@venta.EstadoAutorizacionIconClass"></i>
+                                                    }
+                                                    @venta.EstadoAutorizacionDisplay
+                                                </span>
                                             </td>
                                             <td><small class="text-muted">@venta.TipoPago</small></td>
                                             <td class="text-end fw-semibold">@venta.Total.ToString("C2")</td>
@@ -197,7 +169,7 @@
                                                     <a asp-action="Details" asp-route-id="@venta.Id" class="btn btn-outline-light" title="Ver Detalles">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
-                                                    @if (venta.EstadoAutorizacion == TheBuryProject.Models.Enums.EstadoAutorizacionVenta.PendienteAutorizacion)
+                                                    @if (venta.PuedeAutorizar)
                                                     {
                                                         <a asp-action="Autorizar" asp-route-id="@venta.Id" class="btn btn-outline-success" title="Autorizar">
                                                             <i class="bi bi-check-lg"></i>
@@ -206,8 +178,7 @@
                                                             <i class="bi bi-x-lg"></i>
                                                         </a>
                                                     }
-                                                    @if (venta.Estado == TheBuryProject.Models.Enums.EstadoVenta.Cotizacion ||
-                                                        venta.Estado == TheBuryProject.Models.Enums.EstadoVenta.Presupuesto)
+                                                    @if (venta.PuedeEditar)
                                                     {
                                                         <a asp-action="Edit" asp-route-id="@venta.Id" class="btn btn-outline-warning" title="Editar">
                                                             <i class="bi bi-pencil"></i>
