@@ -7,44 +7,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
-    $(container).find('.permiso-checkbox').on('change', function () {
-        const checkbox = $(this);
-        const roleId = checkbox.data('role-id');
-        const moduloId = checkbox.data('modulo-id');
-        const accionId = checkbox.data('accion-id');
-        const asignar = checkbox.is(':checked');
+    container.querySelectorAll('.permiso-checkbox').forEach((checkbox) => {
+        checkbox.addEventListener('change', () => {
+            const roleId = checkbox.dataset.roleId;
+            const moduloId = checkbox.dataset.moduloId;
+            const accionId = checkbox.dataset.accionId;
+            const asignar = checkbox.checked;
 
-        checkbox.prop('disabled', true);
+            checkbox.disabled = true;
 
-        $.ajax({
-            url: toggleUrl,
-            type: 'POST',
-            data: {
-                roleId: roleId,
-                moduloId: moduloId,
-                accionId: accionId,
-                asignar: asignar,
-                __RequestVerificationToken: token
-            },
-            success: function (response) {
-                if (response.success) {
-                    const label = checkbox.next('label');
-                    label.addClass('text-success');
-                    setTimeout(function () {
-                        label.removeClass('text-success');
-                    }, 1000);
-                } else {
-                    checkbox.prop('checked', !asignar);
-                    alert('Error: ' + (response.message || 'No se pudo actualizar el permiso'));
-                }
-            },
-            error: function () {
-                checkbox.prop('checked', !asignar);
-                alert('Error de conexión. Por favor, intente nuevamente.');
-            },
-            complete: function () {
-                checkbox.prop('disabled', false);
+            const formData = new URLSearchParams();
+            formData.append('roleId', roleId);
+            formData.append('moduloId', moduloId);
+            formData.append('accionId', accionId);
+            formData.append('asignar', asignar);
+            if (token) {
+                formData.append('__RequestVerificationToken', token);
             }
+
+            fetch(toggleUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+                .then((response) => response.ok ? response.json() : Promise.reject())
+                .then((response) => {
+                    if (response.success) {
+                        const label = checkbox.parentElement?.querySelector('label');
+                        if (label) {
+                            label.classList.add('text-success');
+                            setTimeout(() => label.classList.remove('text-success'), 1000);
+                        }
+                    } else {
+                        checkbox.checked = !asignar;
+                        alert('Error: ' + (response.message || 'No se pudo actualizar el permiso'));
+                    }
+                })
+                .catch(() => {
+                    checkbox.checked = !asignar;
+                    alert('Error de conexión. Por favor, intente nuevamente.');
+                })
+                .finally(() => {
+                    checkbox.disabled = false;
+                });
         });
     });
 });
