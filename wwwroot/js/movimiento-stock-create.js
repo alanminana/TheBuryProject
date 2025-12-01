@@ -1,17 +1,17 @@
 (function () {
-    const productoSelect = $('#productoSelect');
-    const productoInfo = $('#productoInfo');
-    const productoCodigo = $('#productoCodigo');
-    const productoNombre = $('#productoNombre');
-    const stockActualBadge = $('#stockActual');
-    const tipoSelect = $('#tipoSelect');
-    const cantidadInput = $('#cantidadInput');
-    const stockResultado = $('#stockResultado');
+    const productoSelect = document.getElementById('productoSelect');
+    const productoInfo = document.getElementById('productoInfo');
+    const productoCodigo = document.getElementById('productoCodigo');
+    const productoNombre = document.getElementById('productoNombre');
+    const stockActualBadge = document.getElementById('stockActual');
+    const tipoSelect = document.getElementById('tipoSelect');
+    const cantidadInput = document.getElementById('cantidadInput');
+    const stockResultado = document.getElementById('stockResultado');
 
     let stockActual = 0;
 
     async function cargarProductoInfo(id) {
-        const baseUrl = productoSelect.data('producto-info-url');
+        const baseUrl = productoSelect?.dataset?.productoInfoUrl;
         if (!baseUrl) {
             return;
         }
@@ -23,24 +23,26 @@
             }
 
             const data = await response.json();
-            productoCodigo.text(data.codigo || '-');
-            productoNombre.text(data.nombre || '-');
-            stockActualBadge.text(data.stockActual ?? 0);
+            productoCodigo.textContent = data.codigo || '-';
+            productoNombre.textContent = data.nombre || '-';
+            stockActualBadge.textContent = data.stockActual ?? 0;
             stockActual = parseFloat(data.stockActual) || 0;
-            productoInfo.show();
+            productoInfo?.classList.remove('d-none');
             calcularStock();
         } catch (error) {
-            productoInfo.hide();
+            console.error(error);
+            productoInfo?.classList.add('d-none');
             stockActual = 0;
-            stockResultado.text('');
+            stockResultado.textContent = 'No se pudo cargar la información del producto.';
+            stockResultado.className = 'form-text text-danger';
         }
     }
 
     function calcularStock() {
-        const tipo = tipoSelect.val();
-        const cantidad = parseFloat(cantidadInput.val()) || 0;
+        const tipo = tipoSelect?.value;
+        const cantidad = parseFloat(cantidadInput?.value || '') || 0;
         if (!tipo || cantidad === 0) {
-            stockResultado.text('');
+            stockResultado.textContent = '';
             return;
         }
 
@@ -74,27 +76,30 @@
                 mensaje = '';
         }
 
-        stockResultado.text(mensaje).removeClass().addClass(`form-text ${clase}`);
+        stockResultado.textContent = mensaje;
+        stockResultado.className = `form-text ${clase}`.trim();
     }
 
-    productoSelect.on('change', function () {
-        const id = $(this).val();
+    productoSelect?.addEventListener('change', function () {
+        const id = this.value;
         if (!id) {
-            productoInfo.hide();
+            productoInfo?.classList.add('d-none');
             stockActual = 0;
-            stockResultado.text('');
+            stockResultado.textContent = '';
             return;
         }
 
         cargarProductoInfo(id);
     });
 
-    tipoSelect.add(cantidadInput).on('change keyup', calcularStock);
+    tipoSelect?.addEventListener('change', calcularStock);
+    cantidadInput?.addEventListener('change', calcularStock);
+    cantidadInput?.addEventListener('keyup', calcularStock);
 
-    $(function () {
-        const idInicial = productoSelect.val();
+    document.addEventListener('DOMContentLoaded', function () {
+        const idInicial = productoSelect?.value;
         if (idInicial) {
-            productoSelect.trigger('change');
+            productoSelect.dispatchEvent(new Event('change'));
         }
     });
 })();

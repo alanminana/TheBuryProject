@@ -1,41 +1,62 @@
-(function ($) {
+(function () {
     const form = document.getElementById('formVenta');
     if (!form) {
         return;
     }
 
-    const productosSeleccionados = [];
     const stockDisponible = {};
-    let tarjetasConfig = [];
-
-    const ivaInput = document.getElementById('ivaRate');
-    const ivaRate = ivaInput ? parseFloat(ivaInput.value.replace(',', '.')) || 0 : 0;
+    const detalleManager = VentaCommon.createDetalleManager({
+        keyFactory: function (index) { return index; },
+        onChange: function () {
+            actualizarTablaProductos();
+            calcularTotales();
+        }
+    });
 
     const getTarjetasUrl = form.dataset.getTarjetasUrl;
     const calcularCuotasUrl = form.dataset.calcularCuotasUrl;
     const getPrecioProductoUrl = form.dataset.getPrecioProductoUrl;
+    const calcularTotalesUrl = form.dataset.calcularTotalesUrl;
+    const descuentoEsPorcentaje = form.dataset.descuentoEsPorcentaje === 'true';
+    const antiforgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
-    const $productoSelect = $('#productoSelect');
-    const $precioInput = $('#precioInput');
-    const $cantidadInput = $('#cantidadInput');
-    const $descuentoInput = $('#descuentoInput');
-    const $tarjetaRow = $('#tarjetaRow');
-    const $chequeRow = $('#chequeRow');
-    const $tarjetaSelect = $('#tarjetaSelect');
-    const $cuotasSelect = $('#cuotasSelect');
-    const $cuotasDiv = $('#cuotasDiv');
-    const $infoCuotas = $('#infoCuotas');
+    const productoSelect = document.getElementById('productoSelect');
+    const precioInput = document.getElementById('precioInput');
+    const cantidadInput = document.getElementById('cantidadInput');
+    const descuentoInput = document.getElementById('descuentoInput');
+    const tarjetaRow = document.getElementById('tarjetaRow');
+    const chequeRow = document.getElementById('chequeRow');
+    const tarjetaSelect = document.getElementById('tarjetaSelect');
+    const cuotasSelect = document.getElementById('cuotasSelect');
+    const cuotasDiv = document.getElementById('cuotasDiv');
+    const infoCuotas = document.getElementById('infoCuotas');
+    const tipoPagoSelect = document.getElementById('tipoPagoSelect');
+    const productosBody = document.getElementById('productosBody');
+    const descuentoGeneralInput = document.getElementById('descuentoGeneral');
+
+    const tarjetaHandlers = VentaCommon.initTarjetaHandlers({
+        tipoPagoSelect: tipoPagoSelect,
+        tarjetaRow: tarjetaRow,
+        chequeRow: chequeRow,
+        chequeFechaInput: '#chequeFechaEmision',
+        tarjetaSelect: tarjetaSelect,
+        cuotasSelect: cuotasSelect,
+        cuotasDiv: cuotasDiv,
+        infoCuotas: infoCuotas,
+        getTarjetasUrl: getTarjetasUrl,
+        calcularCuotasUrl: calcularCuotasUrl,
+        totalHidden: '#hiddenTotal'
+    });
 
     function init() {
-        cargarTarjetas();
+        tarjetaHandlers.bindEvents();
+        tarjetaHandlers.handleTipoPagoChange(tipoPagoSelect?.value);
         bindEvents();
     }
 
     function bindEvents() {
-        $('#tipoPagoSelect').on('change', handleTipoPagoChange);
-
-        $productoSelect.on('change', function () {
-            const productoId = $(this).val();
+        productoSelect?.addEventListener('change', function () {
+            const productoId = this.value;
             if (productoId) {
                 cargarPrecioProducto(productoId);
             } else {
@@ -43,140 +64,72 @@
             }
         });
 
-        $('#btnAgregarProducto').on('click', agregarProducto);
+        document.getElementById('btnAgregarProducto')?.addEventListener('click', agregarProducto);
 
-        $tarjetaSelect.on('change', function () {
-            configurarTarjeta($(this).val());
+        descuentoGeneralInput?.addEventListener('change', calcularTotales);
+
+        productosBody?.addEventListener('click', function (event) {
+            const btn = event.target.closest('.btn-eliminar-producto');
+            if (!btn) return;
+            const index = btn.dataset.index;
+            if (index !== undefined) {
+                eliminarProducto(index);
+            }
         });
 
-        $cuotasSelect.on('change', calcularCuotasTarjeta);
-
-        $('#descuentoGeneral').on('change', calcularTotales);
-
-        $('#productosBody').on('click', '.btn-eliminar-producto', function () {
-            const index = $(this).data('index');
-            eliminarProducto(Number(index));
-        });
-
-        $(form).on('submit', function (e) {
-            if (productosSeleccionados.length === 0) {
+        form.addEventListener('submit', function (e) {
+            if (detalleManager.getAll().length === 0) {
                 e.preventDefault();
                 alert('Debe agregar al menos un producto a la venta');
             }
         });
     }
 
-    function handleTipoPagoChange() {
-        const tipoPago = $(this).val();
-        $tarjetaRow.add($chequeRow).addClass('d-none');
-
-        if (tipoPago === 'TarjetaDebito' || tipoPago === 'TarjetaCredito') {
-            $tarjetaRow.removeClass('d-none');
-        } else if (tipoPago === 'Cheque') {
-            $chequeRow.removeClass('d-none');
-            $('#chequeFechaEmision').val(new Date().toISOString().split('T')[0]);
-        }
-    }
-
-    function cargarTarjetas() {
-        if (!getTarjetasUrl) {
-            return;
-        }
-
-        $.get(getTarjetasUrl)
-            .done(function (tarjetas) {
-                tarjetasConfig = tarjetas || [];
-                let options = '<option value="">Seleccione tarjeta...</option>';
-                tarjetasConfig.forEach(function (tarjeta) {
-                    const tipo = tarjeta.tipo === 0 ? 'Débito' : 'Crédito';
-                    options += `<option value="${tarjeta.id}">${tarjeta.nombre} (${tipo})</option>`;
-                });
-                $tarjetaSelect.html(options);
-            });
-    }
-
-    function configurarTarjeta(tarjetaId) {
-        const tarjeta = tarjetasConfig.find(function (t) { return t.id == tarjetaId; });
-        if (!tarjeta) {
-            return;
-        }
-
-        if (tarjeta.permiteCuotas && tarjeta.cantidadMaximaCuotas > 1) {
-            let options = '';
-            for (let i = 1; i <= tarjeta.cantidadMaximaCuotas; i++) {
-                options += `<option value="${i}">${i} cuota${i > 1 ? 's' : ''}</option>`;
-            }
-            $cuotasSelect.html(options);
-            $cuotasDiv.show();
-        } else {
-            $cuotasDiv.hide();
-            $infoCuotas.hide();
-        }
-    }
-
-    function calcularCuotasTarjeta() {
-        const tarjetaId = $tarjetaSelect.val();
-        const cuotas = $cuotasSelect.val();
-        const total = parseFloat($('#hiddenTotal').val()) || 0;
-
-        if (!tarjetaId || !cuotas || cuotas == 1 || !calcularCuotasUrl) {
-            $infoCuotas.hide();
-            return;
-        }
-
-        $.get(calcularCuotasUrl, {
-            tarjetaId: tarjetaId,
-            monto: total,
-            cuotas: cuotas
-        })
-            .done(function (resultado) {
-                $('#lblMontoCuota').text(resultado.montoCuota.toFixed(2));
-                $('#lblMontoTotal').text(resultado.montoTotal.toFixed(2));
-                $('#lblInteres').text(resultado.interes.toFixed(2));
-                $infoCuotas.removeClass('d-none').show();
-            })
-            .fail(function () {
-                $infoCuotas.hide();
-            });
-    }
-
     function cargarPrecioProducto(productoId) {
-        if (!getPrecioProductoUrl) {
+        if (!getPrecioProductoUrl || !productoSelect) {
             return;
         }
 
-        const producto = $productoSelect.find('option:selected').text();
-        const stock = producto.match(/Stock: (\d+)/);
-        if (stock && stock[1]) {
-            stockDisponible[productoId] = parseInt(stock[1], 10);
+        const productoTexto = productoSelect.options[productoSelect.selectedIndex]?.text || '';
+        const stockMatch = productoTexto.match(/Stock: (\d+)/);
+        if (stockMatch && stockMatch[1]) {
+            stockDisponible[productoId] = parseInt(stockMatch[1], 10);
         }
 
-        $.get(getPrecioProductoUrl, { id: productoId })
-            .done(function (respuesta) {
-                if (respuesta && typeof respuesta.precioVenta !== 'undefined') {
-                    $precioInput.val(parseFloat(respuesta.precioVenta).toFixed(2));
+        const params = new URLSearchParams({ id: productoId });
+        fetch(`${getPrecioProductoUrl}?${params.toString()}`)
+            .then(function (response) { return response.ok ? response.json() : null; })
+            .then(function (respuesta) {
+                if (!respuesta) {
+                    throw new Error();
+                }
+
+                if (typeof respuesta.precioVenta !== 'undefined') {
+                    precioInput.value = parseFloat(respuesta.precioVenta).toFixed(2);
                     stockDisponible[productoId] = respuesta.stockActual ?? stockDisponible[productoId];
                 } else if (typeof respuesta === 'number') {
-                    $precioInput.val(parseFloat(respuesta).toFixed(2));
+                    precioInput.value = parseFloat(respuesta).toFixed(2);
                 }
             })
-            .fail(function () {
+            .catch(function () {
                 alert('No se pudo obtener el precio del producto seleccionado.');
-                $precioInput.val('');
+                precioInput.value = '';
             });
     }
 
     function agregarProducto() {
-        const productoId = $productoSelect.val();
+        if (!productoSelect || !precioInput || !cantidadInput || !descuentoInput) return;
+
+        const productoId = productoSelect.value;
         if (!productoId) {
             alert('Seleccione un producto');
             return;
         }
 
-        const productoTexto = $productoSelect.find('option:selected').text();
-        const cantidad = parseInt($cantidadInput.val(), 10);
-        const precio = parseFloat($precioInput.val());
-        const descuentoPct = parseFloat($descuentoInput.val()) || 0;
+        const productoTexto = productoSelect.options[productoSelect.selectedIndex]?.text || '';
+        const cantidad = parseInt(cantidadInput.value, 10);
+        const precio = parseFloat(precioInput.value);
+        const descuentoPct = parseFloat(descuentoInput.value) || 0;
 
         if (!cantidad || cantidad < 1) {
             alert('La cantidad debe ser mayor a cero');
@@ -202,7 +155,7 @@
         const descuentoMonto = (precio * cantidad * descuentoPct) / 100;
         const subtotal = (precio * cantidad) - descuentoMonto;
 
-        productosSeleccionados.push({
+        detalleManager.add({
             productoId: productoId,
             codigo: codigo,
             nombre: nombre,
@@ -211,24 +164,17 @@
             descuento: descuentoMonto,
             subtotal: subtotal
         });
-
-        actualizarTablaProductos();
-        calcularTotales();
         resetProductoInputs();
     }
 
     function eliminarProducto(index) {
-        if (Number.isNaN(index) || index < 0) {
-            return;
-        }
-        productosSeleccionados.splice(index, 1);
-        actualizarTablaProductos();
-        calcularTotales();
+        detalleManager.removeByKey(index);
     }
 
     function actualizarTablaProductos() {
+        if (!productosBody) return;
         let html = '';
-        productosSeleccionados.forEach(function (prod, index) {
+        detalleManager.getAll().forEach(function (prod, index) {
             html += `
                 <tr>
                     <td>${prod.codigo}</td>
@@ -238,7 +184,7 @@
                     <td class="text-end">$${prod.descuento.toFixed(2)}</td>
                     <td class="text-end">$${prod.subtotal.toFixed(2)}</td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-sm btn-danger btn-eliminar-producto" data-index="${index}">
+                        <button type="button" class="btn btn-sm btn-danger btn-eliminar-producto" data-index="${prod.key ?? index}">
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
@@ -250,34 +196,62 @@
                 </tr>
             `;
         });
-        $('#productosBody').html(html);
+        productosBody.innerHTML = html;
     }
 
     function calcularTotales() {
-        const descuentoGeneral = parseFloat($('#descuentoGeneral').val()) || 0;
-        let subtotal = productosSeleccionados.reduce(function (acc, prod) { return acc + prod.subtotal; }, 0);
-        const descuento = subtotal * (descuentoGeneral / 100);
-        subtotal -= descuento;
+        const detalles = detalleManager.getAll();
+        if (!calcularTotalesUrl || detalles.length === 0) {
+            VentaCommon.resetTotalesUI({
+                hiddenSubtotal: '#hiddenSubtotal',
+                hiddenIVA: '#hiddenIVA',
+                hiddenTotal: '#hiddenTotal',
+                subtotalSelector: '#lblSubtotal',
+                descuentoSelector: '#lblDescuento',
+                ivaSelector: '#lblIVA',
+                totalSelector: '#lblTotal'
+            });
+            return;
+        }
 
-        const iva = subtotal * ivaRate;
-        const total = subtotal + iva;
-
-        $('#hiddenSubtotal').val(subtotal.toFixed(2));
-        $('#hiddenIVA').val(iva.toFixed(2));
-        $('#hiddenTotal').val(total.toFixed(2));
-
-        $('#lblSubtotal').text(`$${subtotal.toFixed(2)}`);
-        $('#lblDescuento').text(`$${descuento.toFixed(2)}`);
-        $('#lblIVA').text(`$${iva.toFixed(2)}`);
-        $('#lblTotal').text(`$${total.toFixed(2)}`);
+        VentaCommon.calcularTotales({
+            detalles: detalles,
+            url: calcularTotalesUrl,
+            descuentoGeneral: parseFloat(descuentoGeneralInput?.value) || 0,
+            descuentoEsPorcentaje: descuentoEsPorcentaje,
+            antiforgeryToken: antiforgeryToken
+        })
+            .then(function (data) {
+                VentaCommon.aplicarTotalesUI(data, {
+                    hiddenSubtotal: '#hiddenSubtotal',
+                    hiddenIVA: '#hiddenIVA',
+                    hiddenTotal: '#hiddenTotal',
+                    subtotalSelector: '#lblSubtotal',
+                    descuentoSelector: '#lblDescuento',
+                    ivaSelector: '#lblIVA',
+                    totalSelector: '#lblTotal'
+                });
+            })
+            .catch(function () {
+                VentaCommon.resetTotalesUI({
+                    hiddenSubtotal: '#hiddenSubtotal',
+                    hiddenIVA: '#hiddenIVA',
+                    hiddenTotal: '#hiddenTotal',
+                    subtotalSelector: '#lblSubtotal',
+                    descuentoSelector: '#lblDescuento',
+                    ivaSelector: '#lblIVA',
+                    totalSelector: '#lblTotal'
+                });
+            });
     }
 
     function resetProductoInputs() {
-        $productoSelect.val('');
-        $cantidadInput.val(1);
-        $precioInput.val('');
-        $descuentoInput.val(0);
+        if (!productoSelect || !cantidadInput || !precioInput || !descuentoInput) return;
+        productoSelect.value = '';
+        cantidadInput.value = 1;
+        precioInput.value = '';
+        descuentoInput.value = 0;
     }
 
     init();
-})(jQuery);
+})();
