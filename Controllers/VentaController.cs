@@ -1,9 +1,7 @@
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using TheBuryProject.Data;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
@@ -15,37 +13,37 @@ namespace TheBuryProject.Controllers
     {
         private readonly IVentaService _ventaService;
         private readonly IConfiguracionPagoService _configuracionPagoService;
-        private readonly AppDbContext _context;
-        private readonly IMapper _mapper;
         private readonly ILogger<VentaController> _logger;
         private readonly IFinancialCalculationService _financialCalculationService;
         private readonly IPrequalificationService _prequalificationService;
         private readonly IDocumentoClienteService _documentoClienteService;
         private readonly ICreditoService _creditoService;
         private readonly IDocumentacionService _documentacionService;
+        private readonly IClienteService _clienteService;
+        private readonly IProductoService _productoService;
 
         public VentaController(
             IVentaService ventaService,
             IConfiguracionPagoService configuracionPagoService,
-            AppDbContext context,
-            IMapper mapper,
             ILogger<VentaController> logger,
             IFinancialCalculationService financialCalculationService,
             IPrequalificationService prequalificationService,
             IDocumentoClienteService documentoClienteService,
             ICreditoService creditoService,
-            IDocumentacionService documentacionService)
+            IDocumentacionService documentacionService,
+            IClienteService clienteService,
+            IProductoService productoService)
         {
             _ventaService = ventaService;
             _configuracionPagoService = configuracionPagoService;
-            _context = context;
-            _mapper = mapper;
             _logger = logger;
             _financialCalculationService = financialCalculationService;
             _prequalificationService = prequalificationService;
             _documentoClienteService = documentoClienteService;
             _creditoService = creditoService;
             _documentacionService = documentacionService;
+            _clienteService = clienteService;
+            _productoService = productoService;
         }
 
         // GET: Venta
@@ -56,15 +54,15 @@ namespace TheBuryProject.Controllers
                 var ventas = await _ventaService.GetAllAsync(filter);
 
                 // Cargar datos para filtros
-                ViewBag.Clientes = await _context.Clientes
-                    .Where(c => c.Activo)
-                    .OrderBy(c => c.Apellido)
+                var clientes = await _clienteService.SearchAsync(soloActivos: true, orderBy: "apellido");
+
+                ViewBag.Clientes = clientes
                     .Select(c => new SelectListItem
                     {
                         Value = c.NumeroDocumento,
                         Text = $"{c.Apellido}, {c.Nombre} - {c.NumeroDocumento}"
                     })
-                    .ToListAsync();
+                    .ToList();
 
                 ViewBag.Estados = new SelectList(Enum.GetValues(typeof(EstadoVenta)));
                 ViewBag.TiposPago = new SelectList(Enum.GetValues(typeof(TipoPago)));
@@ -110,6 +108,7 @@ namespace TheBuryProject.Controllers
         public async Task<IActionResult> Cotizar()
         {
             await CargarViewBags();
+            ViewBag.IvaRate = VentaConstants.IVA_RATE;
             return View("Create", CrearVentaInicial(EstadoVenta.Cotizacion));
         }
         // POST: Venta/Create
@@ -165,6 +164,7 @@ namespace TheBuryProject.Controllers
                 _logger.LogError(ex, "Error al crear venta");
                 ModelState.AddModelError("", "Error al crear la venta: " + ex.Message);
                 await CargarViewBags(viewModel.ClienteId);
+                ViewBag.IvaRate = VentaConstants.IVA_RATE;
                 return View(viewModel);
             }
         }
@@ -173,6 +173,7 @@ namespace TheBuryProject.Controllers
         public async Task<IActionResult> Create()
         {
             await CargarViewBags();
+            ViewBag.IvaRate = VentaConstants.IVA_RATE;
             return View(CrearVentaInicial(EstadoVenta.Presupuesto));
         }
 
@@ -195,6 +196,7 @@ namespace TheBuryProject.Controllers
                 }
 
                 await CargarViewBags(venta.ClienteId);
+                ViewBag.IvaRate = VentaConstants.IVA_RATE;
                 return View(venta);
             }
             catch (Exception ex)
@@ -290,30 +292,6 @@ namespace TheBuryProject.Controllers
             catch (ArgumentException ex)
             {
                 return BadRequest(new { error = ex.Message });
-            }
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetPrecioProducto(int id)
-        {
-            try
-            {
-                var producto = await _context.Productos
-                    .Where(p => p.Id == id && p.Activo)
-                    .Select(p => new { p.PrecioVenta, p.StockActual })
-                    .FirstOrDefaultAsync();
-
-                if (producto == null)
-                {
-                    return NotFound(new { error = "Producto no encontrado" });
-                }
-
-                return Json(producto);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener precio del producto {Id}", id);
-                return StatusCode(500, new { error = "No se pudo obtener el precio del producto" });
             }
         }
 
@@ -707,118 +685,6 @@ namespace TheBuryProject.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: API endpoint para obtener precio del producto
-        [HttpGet]
-        public async Task<IActionResult> GetProductoPrecio(int productoId)
-        {
-            try
-            {
-                var producto = await _context.Productos.FindAsync(productoId);
-                if (producto == null)
-                    return NotFound();
-
-                return Json(new
-                {
-                    precioVenta = producto.PrecioVenta,
-                    stockActual = producto.StockActual,
-                    codigo = producto.Codigo,
-                    nombre = producto.Nombre
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener precio del producto: {ProductoId}", productoId);
-                return StatusCode(500, "Error al obtener el precio del producto");
-            }
-        }
-
-        public async Task<IActionResult> GetCreditosCliente(int clienteId)
-        {
-            try
-            {
-                var creditos = await _context.Creditos
-                    .Where(c => c.ClienteId == clienteId
-                             && (c.Estado == EstadoCredito.Activo || c.Estado == EstadoCredito.Aprobado)
-                             && c.SaldoPendiente > 0)
-                    .OrderByDescending(c => c.FechaAprobacion)
-                    .Select(c => new
-                    {
-                        id = c.Id,
-                        numero = c.Numero,
-                        montoAprobado = c.MontoAprobado,
-                        saldoPendiente = c.SaldoPendiente,
-                        tasaInteres = c.TasaInteres,
-                        detalle = $"{c.Numero} - Saldo disponible: ${c.SaldoPendiente:N2}"
-                    })
-                    .ToListAsync();
-
-                if (!creditos.Any())
-                {
-                    _logger.LogWarning("No se encontraron créditos disponibles para cliente {ClienteId}", clienteId);
-                }
-
-                return Json(creditos);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener créditos del cliente: {ClienteId}", clienteId);
-                return StatusCode(500, "Error al obtener los créditos del cliente");
-            }
-        }
-        // GET: API endpoint para obtener información completa de un crédito
-        [HttpGet]
-        public async Task<IActionResult> GetInfoCredito(int creditoId)
-        {
-            try
-            {
-                _logger.LogInformation("Obteniendo información del crédito {CreditoId}", creditoId);
-
-                var credito = await _context.Creditos
-                    .Where(c => c.Id == creditoId
-                             && (c.Estado == EstadoCredito.Activo || c.Estado == EstadoCredito.Aprobado))
-                    .Select(c => new
-                    {
-                        id = c.Id,
-                        numero = c.Numero,
-                        montoAprobado = c.MontoAprobado,
-                        saldoPendiente = c.SaldoPendiente,
-                        tasaInteres = c.TasaInteres,
-                        estado = c.Estado
-                    })
-                    .FirstOrDefaultAsync();
-
-                if (credito == null)
-                {
-                    _logger.LogWarning("Crédito {CreditoId} no encontrado o no está en estado Activo/Aprobado", creditoId);
-
-                    // Verificar si el crédito existe pero en otro estado
-                    var creditoExiste = await _context.Creditos
-                        .Where(c => c.Id == creditoId)
-                        .Select(c => new { c.Numero, c.Estado })
-                        .FirstOrDefaultAsync();
-
-                    if (creditoExiste != null)
-                    {
-                        _logger.LogWarning("El crédito {Numero} existe pero está en estado {Estado}",
-                            creditoExiste.Numero, creditoExiste.Estado);
-                        return NotFound(new { error = $"El crédito está en estado {creditoExiste.Estado} y no se puede usar" });
-                    }
-
-                    return NotFound(new { error = "Crédito no encontrado" });
-                }
-
-                _logger.LogInformation("Crédito {CreditoId} encontrado: {Numero}, Estado: {Estado}, Saldo: {Saldo}",
-                    creditoId, credito.numero, credito.estado, credito.saldoPendiente);
-
-                return Json(credito);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener información del crédito: {CreditoId}", creditoId);
-                return StatusCode(500, new { error = "Error al obtener información del crédito" });
-            }
-        }
-
         // GET: API endpoint para obtener tarjetas activas
         [HttpGet]
         public async Task<IActionResult> GetTarjetasActivas()
@@ -849,72 +715,48 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        // GET: API endpoint para calcular cuotas de tarjeta
-        [HttpGet]
-        public async Task<IActionResult> CalcularCuotasTarjeta(int tarjetaId, decimal monto, int cuotas)
-        {
-            try
-            {
-                var resultado = await _ventaService.CalcularCuotasTarjetaAsync(tarjetaId, monto, cuotas);
-
-                return Json(new
-                {
-                    montoCuota = resultado.MontoCuota,
-                    montoTotal = resultado.MontoTotalConInteres,
-                    interes = resultado.MontoTotalConInteres - monto
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al calcular cuotas de tarjeta");
-                return StatusCode(500, "Error al calcular las cuotas");
-            }
-        }
-
         #region Métodos Privados
 
         private async Task CargarViewBags(int? clienteIdSeleccionado = null)
         {
-            var clientes = await _context.Clientes
-                .Where(c => c.Activo)
-                .OrderBy(c => c.Apellido)
-                .ThenBy(c => c.Nombre)
-                .Select(c => new
+            var clientes = await _clienteService.SearchAsync(soloActivos: true, orderBy: "apellido");
+
+            ViewBag.Clientes = new SelectList(
+                clientes.Select(c => new
                 {
                     c.Id,
                     NombreCompleto = $"{c.Apellido}, {c.Nombre} - DNI: {c.NumeroDocumento}"
-                })
-                .ToListAsync();
+                }),
+                "Id",
+                "NombreCompleto",
+                clienteIdSeleccionado);
 
-            ViewBag.Clientes = new SelectList(clientes, "Id", "NombreCompleto", clienteIdSeleccionado);
+            var productos = await _productoService.SearchAsync(soloActivos: true, orderBy: "nombre");
 
-            var productos = await _context.Productos
-                .Where(p => p.Activo && p.StockActual > 0)
-                .OrderBy(p => p.Nombre)
-                .Select(p => new
-                {
-                    p.Id,
-                    Detalle = $"{p.Codigo} - {p.Nombre} (Stock: {p.StockActual}) - ${p.PrecioVenta:N2}"
-                })
-                .ToListAsync();
-
-            ViewBag.Productos = new SelectList(productos, "Id", "Detalle");
+            ViewBag.Productos = new SelectList(
+                productos
+                    .Where(p => p.StockActual > 0)
+                    .Select(p => new
+                    {
+                        p.Id,
+                        Detalle = $"{p.Codigo} - {p.Nombre} (Stock: {p.StockActual}) - ${p.PrecioVenta:N2}"
+                    }),
+                "Id",
+                "Detalle");
             ViewBag.TiposPago = new SelectList(Enum.GetValues(typeof(TipoPago)));
 
             // Cargar créditos disponibles del cliente si hay uno seleccionado
             if (clienteIdSeleccionado.HasValue)
             {
-                var creditosDisponibles = await _context.Creditos
-                    .Where(c => c.ClienteId == clienteIdSeleccionado.Value
-                             && c.Estado == EstadoCredito.Activo
-                             && c.SaldoPendiente > 0)
-                    .OrderByDescending(c => c.FechaAprobacion)
+                var creditosDisponibles = (await _creditoService.GetByClienteIdAsync(clienteIdSeleccionado.Value))
+                    .Where(c => (c.Estado == EstadoCredito.Activo || c.Estado == EstadoCredito.Aprobado)
+                                && c.SaldoPendiente > 0)
+                    .OrderByDescending(c => c.FechaAprobacion ?? DateTime.MinValue)
                     .Select(c => new
                     {
                         c.Id,
                         Detalle = $"{c.Numero} - Saldo: ${c.SaldoPendiente:N2}"
-                    })
-                    .ToListAsync();
+                    });
 
                 ViewBag.Creditos = new SelectList(creditosDisponibles, "Id", "Detalle");
             }
@@ -1023,6 +865,7 @@ namespace TheBuryProject.Controllers
         private async Task<IActionResult> RetornarVistaConDatos(VentaViewModel viewModel)
         {
             await CargarViewBags(viewModel.ClienteId);
+            ViewBag.IvaRate = VentaConstants.IVA_RATE;
             return View(viewModel);
         }
     }

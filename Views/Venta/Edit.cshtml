@@ -235,7 +235,7 @@
                                     <td class="text-end"><span id="descuentoDisplay">$0.00</span></td>
                                 </tr>
                                 <tr>
-                                    <th class="text-muted">IVA (21%):</th>
+                                    <th class="text-muted">IVA (@(((decimal)ViewBag.IvaRate * 100).ToString("0"))%):</th>
                                     <td class="text-end"><span id="ivaDisplay">$0.00</span></td>
                                 </tr>
                                 <tr class="table-dark">
@@ -250,6 +250,7 @@
 
             <!-- Hidden inputs -->
             <input type="hidden" asp-for="Subtotal" id="subtotalHidden" />
+            <input type="hidden" id="ivaRate" value="@ViewBag.IvaRate" />
             <input type="hidden" asp-for="IVA" id="ivaHidden" />
             <input type="hidden" asp-for="Total" id="totalHidden" />
 
@@ -283,6 +284,7 @@
 
         let detalleIndex = detalles.length ? Math.max(...detalles.map(d => d.index)) + 1 : 1;
         let recalculoFinanciamientoEnCurso = false;
+        const ivaRate = parseFloat(document.getElementById('ivaRate').value.replace(',', '.')) || 0;
 
         $(document).ready(function () {
             calcularTotales();
@@ -314,7 +316,7 @@
             $('#productoSelect').change(function () {
                 const productoId = $(this).val();
                 if (productoId) {
-                    $.get('@Url.Action("GetPrecioProducto", "Venta")', { id: productoId }, function (data) {
+                    $.get('@Url.Action("GetPrecioProducto", "VentaApi")', { id: productoId }, function (data) {
                         $('#precioInput').val(data.precioVenta.toFixed(2));
                     });
                 }
@@ -511,7 +513,7 @@
             const subtotal = detalles.reduce((sum, d) => sum + d.Subtotal, 0);
             const descuentoGlobal = parseFloat($('#Descuento').val()) || 0;
             const subtotalConDescuento = subtotal - descuentoGlobal;
-            const iva = subtotalConDescuento * 0.21;
+            const iva = subtotalConDescuento * ivaRate;
             const total = subtotalConDescuento + iva;
 
             $('#subtotalDisplay').text('$' + subtotal.toFixed(2));

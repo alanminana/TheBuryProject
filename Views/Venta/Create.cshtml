@@ -232,8 +232,9 @@
                         <div class="value" id="lblDescuento">$0.00</div>
                     </div>
                     <div class="summary-item">
-                        <div class="label">IVA (21%)</div>
+                        <div class="label">IVA (@(((decimal)ViewBag.IvaRate * 100).ToString("0"))%)</div>
                         <div class="value" id="lblIVA">$0.00</div>
+                        <input type="hidden" id="ivaRate" value="@ViewBag.IvaRate" />
                         <input type="hidden" asp-for="IVA" id="hiddenIVA" />
                     </div>
                     <div class="summary-item totales-destacado">
@@ -265,6 +266,7 @@
         let productosSeleccionados = [];
         let stockDisponible = {};
         let tarjetasConfig = [];
+        const ivaRate = parseFloat(document.getElementById('ivaRate').value.replace(',', '.')) || 0;
 
         $(document).ready(function () {
             cargarTarjetas();
@@ -355,7 +357,7 @@
                 return;
             }
 
-            $.get('@Url.Action("CalcularCuotasTarjeta", "Venta")', {
+            $.get('@Url.Action("CalcularCuotasTarjeta", "VentaApi")', {
                 tarjetaId: tarjetaId,
                 monto: total,
                 cuotas: cuotas
@@ -378,7 +380,7 @@
                 stockDisponible[productoId] = parseInt(stock[1]);
             }
 
-            $.get('@Url.Action("GetPrecioProducto", "Venta")', { id: productoId })
+            $.get('@Url.Action("GetPrecioProducto", "VentaApi")', { id: productoId })
                 .done(function (respuesta) {
                     if (respuesta && typeof respuesta.precioVenta !== 'undefined') {
                         $('#precioInput').val(parseFloat(respuesta.precioVenta).toFixed(2));
@@ -486,7 +488,7 @@
             const descuento = subtotal * (descuentoGeneral / 100);
             subtotal -= descuento;
 
-            const iva = subtotal * 0.21;
+            const iva = subtotal * ivaRate;
             const total = subtotal + iva;
 
             $('#hiddenSubtotal').val(subtotal.toFixed(2));

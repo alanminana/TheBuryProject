@@ -22,6 +22,7 @@ namespace TheBuryProject.Controllers
     {
         private readonly ICreditoService _creditoService;
         private readonly IEvaluacionCreditoService _evaluacionService;
+        private readonly IFinancialCalculationService _financialService;
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly ILogger<CreditoController> _logger;
@@ -29,12 +30,14 @@ namespace TheBuryProject.Controllers
         public CreditoController(
             ICreditoService creditoService,
             IEvaluacionCreditoService evaluacionService,
+            IFinancialCalculationService financialService,
             AppDbContext context,
             IMapper mapper,
             ILogger<CreditoController> logger)
         {
             _creditoService = creditoService;
             _evaluacionService = evaluacionService;
+            _financialService = financialService;
             _context = context;
             _mapper = mapper;
             _logger = logger;
@@ -202,6 +205,92 @@ namespace TheBuryProject.Controllers
             TempData["Success"] = "Crédito configurado y listo para aprobación.";
             return RedirectToAction(nameof(Details), new { id = credito.Id });
         }
+
+        [HttpGet]
+        public IActionResult SimularPlanVenta(
+            decimal totalVenta,
+            decimal anticipo,
+            int cuotas,
+            decimal tasaMensual,
+            decimal gastosAdministrativos,
+            string? fechaPrimeraCuota)
+        {
+            try
+            {
+                if (totalVenta <= 0)
+                    return BadRequest(new { error = "El monto total de la venta debe ser mayor a cero." });
+
+                if (anticipo < 0)
+                    return BadRequest(new { error = "El anticipo no puede ser negativo." });
+
+                if (cuotas <= 0)
+                    return BadRequest(new { error = "Ingresá una cantidad de cuotas mayor a cero." });
+
+                if (tasaMensual < 0)
+                    return BadRequest(new { error = "La tasa mensual no puede ser negativa." });
+
+                if (gastosAdministrativos < 0)
+                    return BadRequest(new { error = "Los gastos administrativos no pueden ser negativos." });
+
+                var fecha = DateTime.TryParse(fechaPrimeraCuota, out var parsed)
+                    ? parsed
+                    : DateTime.Today.AddMonths(1);
+
+                var montoFinanciado = _financialService.ComputeFinancedAmount(totalVenta, anticipo);
+                var tasaDecimal = tasaMensual / 100;
+                var cuota = _financialService.ComputePmt(tasaDecimal, cuotas, montoFinanciado);
+                var interesTotal = _financialService.CalcularInteresTotal(montoFinanciado, tasaDecimal, cuotas);
+                var totalCuotas = cuota * cuotas;
+                var totalPlan = totalCuotas + gastosAdministrativos;
+
+                var semaforo = CalcularSemaforo(cuota, montoFinanciado);
+
+                return Json(new
+                {
+                    montoFinanciado,
+                    cuotaEstimada = cuota,
+                    tasaAplicada = tasaMensual,
+                    interesTotal,
+                    totalAPagar = totalCuotas,
+                    gastosAdministrativos,
+                    totalPlan,
+                    fechaPrimerPago = fecha.ToString("yyyy-MM-dd"),
+                    semaforoEstado = semaforo.Estado,
+                    semaforoMensaje = semaforo.Mensaje,
+                    mostrarMsgIngreso = semaforo.MostrarIngreso,
+                    mostrarMsgAntiguedad = semaforo.MostrarAntiguedad
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al simular plan de crédito");
+                return StatusCode(500, new { error = "Ocurrió un error al calcular el plan de crédito." });
+            }
+        }
+
+        private static SemaforoPrecalificacion CalcularSemaforo(decimal cuota, decimal montoFinanciado)
+        {
+            if (montoFinanciado <= 0 || cuota <= 0)
+            {
+                return new SemaforoPrecalificacion("sinDatos", "Completa los datos para precalificar.", false, false);
+            }
+
+            var ratio = cuota / montoFinanciado;
+
+            if (ratio <= 0.08m)
+            {
+                return new SemaforoPrecalificacion("verde", "Condiciones preliminares saludables.", false, false);
+            }
+
+            if (ratio <= 0.15m)
+            {
+                return new SemaforoPrecalificacion("amarillo", "Revisar ingresos declarados.", true, false);
+            }
+
+            return new SemaforoPrecalificacion("rojo", "Las condiciones requieren ajustes.", true, true);
+        }
+
+        private record SemaforoPrecalificacion(string Estado, string Mensaje, bool MostrarIngreso, bool MostrarAntiguedad);
 
         // GET: Credito/Create
         public async Task<IActionResult> Create()
