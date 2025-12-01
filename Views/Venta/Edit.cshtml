@@ -16,7 +16,9 @@
         <!-- Formulario principal -->
         <form asp-action="Edit" method="post" id="formVenta" novalidate
               data-get-precio-producto-url="@Url.Action("GetPrecioProducto", "VentaApi")"
-              data-calcular-financiamiento-url="@Url.Action("CalcularFinanciamiento", "Venta")">
+              data-calcular-financiamiento-url="@Url.Action("CalcularFinanciamiento", "Venta")"
+              data-calcular-totales-url="@Url.Action("CalcularTotalesVenta", "VentaApi")"
+              data-descuento-es-porcentaje="false">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
             <input type="hidden" asp-for="Numero" />
@@ -286,5 +288,6 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/venta-common.js" asp-append-version="true"></script>
     <script src="~/js/venta-edit.js" asp-append-version="true"></script>
 }

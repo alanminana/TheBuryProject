@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Extensions;
 using TheBuryProject.Helpers;
+using TheBuryProject.Hubs;
 using TheBuryProject.Services;
 using TheBuryProject.Services.Interfaces;
 
@@ -81,6 +82,9 @@ builder.Services.AddScoped<ICajaService, CajaService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
 builder.Services.AddScoped<IDocumentacionService, DocumentacionService>();
 
+// 4.6 SignalR
+builder.Services.AddSignalR();
+
 // 4.6 Servicios en background
 builder.Services.AddHostedService<MoraBackgroundService>();
 builder.Services.AddHostedService<AlertaStockBackgroundService>();
@@ -118,7 +122,10 @@ app.MapControllerRoute(
 // 10. Mapeo de Razor Pages (para Identity UI)
 app.MapRazorPages();
 
-// 11. Inicializar base de datos (roles y usuario admin)
+// 11. Hubs de SignalR
+app.MapHub<NotificacionesHub>("/hubs/notificaciones");
+
+// 12. Inicializar base de datos (roles y usuario admin)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;

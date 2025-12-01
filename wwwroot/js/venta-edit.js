@@ -1,6 +1,6 @@
 (function () {
-    const form = $('#formVenta');
-    if (!form.length) {
+    const form = document.getElementById('formVenta');
+    if (!form) {
         return;
     }
 
@@ -16,20 +16,46 @@
     }
 
     let detalleIndex = detalles.length ? Math.max(...detalles.map((d) => d.index || 0)) + 1 : 1;
+    const detalleManager = VentaCommon.createDetalleManager({
+        keyField: 'index',
+        initialDetalles: detalles,
+        keyFactory: function () { return detalleIndex++; },
+        onChange: function (list) { detalles = list; }
+    });
     let recalculoFinanciamientoEnCurso = false;
 
-    const ivaRate = parseFloat($('#ivaRate').val()?.replace(',', '.') || '0') || 0;
-    const precioProductoUrl = form.data('get-precio-producto-url');
-    const financiamientoUrl = form.data('calcular-financiamiento-url');
+    const precioProductoUrl = form.dataset.getPrecioProductoUrl;
+    const financiamientoUrl = form.dataset.calcularFinanciamientoUrl;
+    const calcularTotalesUrl = form.dataset.calcularTotalesUrl;
+    const descuentoEsPorcentaje = form.dataset.descuentoEsPorcentaje === 'true' || form.dataset.descuentoEsPorcentaje === true;
+    const antiforgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
-    $(document).ready(function () {
+    const toggleFinanciado = document.getElementById('toggleFinanciado');
+    const financiamientoCampos = document.getElementById('financiamientoCampos');
+    const productoSelect = document.getElementById('productoSelect');
+    const precioInput = document.getElementById('precioInput');
+    const cantidadInput = document.getElementById('cantidadInput');
+    const descuentoInput = document.getElementById('descuentoInput');
+    const detallesBody = document.getElementById('detallesBody');
+    const descuentoGeneralInput = document.getElementById('Descuento');
+    const totalHidden = document.getElementById('totalHidden');
+    const subtotalHidden = document.getElementById('subtotalHidden');
+    const ivaHidden = document.getElementById('ivaHidden');
+
+    function init() {
         inicializarFilasExistentes();
         calcularTotales();
+        bindEventos();
+    }
 
-        $('#toggleFinanciado').on('change', function () {
-            const activo = $(this).is(':checked');
-            $('#EsFinanciada').val(activo);
-            $('#financiamientoCampos').toggleClass('d-none', !activo);
+    function bindEventos() {
+        toggleFinanciado?.addEventListener('change', function () {
+            const activo = this.checked;
+            const esFinanciada = document.getElementById('EsFinanciada');
+            if (esFinanciada) {
+                esFinanciada.value = activo;
+            }
+            financiamientoCampos?.classList.toggle('d-none', !activo);
 
             if (activo) {
                 recalcularFinanciamiento();
@@ -38,37 +64,43 @@
             }
         });
 
-        $('#EsFinanciada').val($('#toggleFinanciado').is(':checked'));
-        if ($('#toggleFinanciado').is(':checked')) {
-            recalcularFinanciamiento();
+        const esFinanciadaHidden = document.getElementById('EsFinanciada');
+        if (toggleFinanciado && esFinanciadaHidden) {
+            esFinanciadaHidden.value = toggleFinanciado.checked;
+            if (toggleFinanciado.checked) {
+                recalcularFinanciamiento();
+            }
         }
 
-        $('#anticipoInput, #tasaMensualInput, #cuotasFinanciacionInput, #ingresoNetoInput, #otrasDeudasInput, #antiguedadLaboralInput')
-            .on('input change', function () {
-                if ($('#toggleFinanciado').is(':checked')) {
-                    recalcularFinanciamiento();
-                }
+        ['anticipoInput', 'tasaMensualInput', 'cuotasFinanciacionInput', 'ingresoNetoInput', 'otrasDeudasInput', 'antiguedadLaboralInput']
+            .forEach(function (id) {
+                const input = document.getElementById(id);
+                input?.addEventListener('input', handleFinanciamientoInput);
+                input?.addEventListener('change', handleFinanciamientoInput);
             });
 
-        $('#productoSelect').on('change', function () {
-            const productoId = $(this).val();
+        productoSelect?.addEventListener('change', function () {
+            const productoId = this.value;
             if (productoId && precioProductoUrl) {
-                $.get(precioProductoUrl, { id: productoId }, function (data) {
-                    if (data?.precioVenta !== undefined) {
-                        $('#precioInput').val(Number(data.precioVenta).toFixed(2));
-                    }
-                });
+                const params = new URLSearchParams({ id: productoId });
+                fetch(`${precioProductoUrl}?${params.toString()}`)
+                    .then(function (response) { return response.ok ? response.json() : null; })
+                    .then(function (data) {
+                        if (data?.precioVenta !== undefined && precioInput) {
+                            precioInput.value = Number(data.precioVenta).toFixed(2);
+                        }
+                    });
             }
         });
 
-        $('#btnAgregarProducto').on('click', function () {
-            const productoId = $('#productoSelect').val();
-            const productoTexto = $('#productoSelect option:selected').text();
-            const cantidad = parseFloat($('#cantidadInput').val());
-            const precio = parseFloat($('#precioInput').val());
-            const descuento = parseFloat($('#descuentoInput').val()) || 0;
+        document.getElementById('btnAgregarProducto')?.addEventListener('click', function () {
+            const productoId = productoSelect?.value;
+            const productoTexto = productoSelect?.options[productoSelect.selectedIndex]?.text;
+            const cantidad = parseFloat(cantidadInput?.value || '');
+            const precio = parseFloat(precioInput?.value || '');
+            const descuento = parseFloat(descuentoInput?.value || '0');
 
-            if (!productoId || cantidad <= 0 || precio <= 0) {
+            if (!productoId || !productoTexto || cantidad <= 0 || precio <= 0) {
                 alert('Complete todos los campos correctamente.');
                 return;
             }
@@ -86,27 +118,29 @@
                 Id: 0
             };
 
-            detalles.push(detalle);
-            agregarFilaDetalle(detalle);
+            const creado = detalleManager.add(detalle);
+            agregarFilaDetalle(creado);
             calcularTotales();
 
-            $('#productoSelect').val('');
-            $('#cantidadInput').val(1);
-            $('#precioInput').val('');
-            $('#descuentoInput').val(0);
+            if (productoSelect) productoSelect.value = '';
+            if (cantidadInput) cantidadInput.value = 1;
+            if (precioInput) precioInput.value = '';
+            if (descuentoInput) descuentoInput.value = 0;
         });
 
-        $('#detallesBody').on('click', '.btn-eliminar-detalle', function () {
-            const index = parseInt($(this).data('index'), 10);
+        detallesBody?.addEventListener('click', function (event) {
+            const btn = event.target.closest('.btn-eliminar-detalle');
+            if (!btn) return;
+            const index = parseInt(btn.dataset.index, 10);
             if (Number.isFinite(index)) {
                 eliminarDetalle(index);
             }
         });
 
-        form.on('submit', function () {
-            $('input[name^="Detalles"]').remove();
-            detalles.forEach((detalle, index) => {
-                $(this).append(`
+        form.addEventListener('submit', function () {
+            document.querySelectorAll('input[name^="Detalles"]').forEach(function (input) { input.remove(); });
+            detalleManager.getAll().forEach((detalle, index) => {
+                form.insertAdjacentHTML('beforeend', `
                     <input type="hidden" name="Detalles[${index}].ProductoId" value="${detalle.ProductoId}" />
                     <input type="hidden" name="Detalles[${index}].Cantidad" value="${detalle.Cantidad}" />
                     <input type="hidden" name="Detalles[${index}].PrecioUnitario" value="${detalle.PrecioUnitario}" />
@@ -116,23 +150,31 @@
             });
         });
 
-        $('#Descuento').on('input', calcularTotales);
-    });
+        descuentoGeneralInput?.addEventListener('input', calcularTotales);
+    }
+
+    function handleFinanciamientoInput() {
+        if (toggleFinanciado?.checked) {
+            recalcularFinanciamiento();
+        }
+    }
 
     function inicializarFilasExistentes() {
-        if (!detalles.length) {
+        const existentes = detalleManager.getAll();
+        if (!existentes.length) {
             return;
         }
 
-        detalles.forEach((detalle) => {
-            if (!$(`#detallesBody tr[data-index="${detalle.index}"]`).length) {
+        existentes.forEach((detalle) => {
+            if (!detallesBody?.querySelector(`tr[data-index="${detalle.index}"]`)) {
                 agregarFilaDetalle(detalle);
             }
         });
     }
 
     function agregarFilaDetalle(detalle) {
-        $('#detallesBody').append(`
+        if (!detallesBody) return;
+        detallesBody.insertAdjacentHTML('beforeend', `
             <tr data-index="${detalle.index}">
                 <td>${detalle.ProductoNombre}</td>
                 <td>${detalle.Cantidad}</td>
@@ -149,17 +191,31 @@
     }
 
     function eliminarDetalle(index) {
-        detalles = detalles.filter((d) => d.index !== index);
-        $(`tr[data-index="${index}"]`).remove();
+        detalleManager.removeByKey(index);
+        detallesBody?.querySelector(`tr[data-index="${index}"]`)?.remove();
         calcularTotales();
     }
 
     function limpiarResumenFinanciamiento() {
-        $('#MontoFinanciadoEstimado').val('');
-        $('#CuotaEstimada').val('');
-        $('#lblMontoFinanciadoEstimado').text('$0.00');
-        $('#lblCuotaEstimada').text('$0.00');
+        setValue('MontoFinanciadoEstimado', '');
+        setValue('CuotaEstimada', '');
+        setText('lblMontoFinanciadoEstimado', '$0.00');
+        setText('lblCuotaEstimada', '$0.00');
         actualizarSemaforo(null);
+    }
+
+    function setValue(id, value) {
+        const el = typeof id === 'string' ? document.getElementById(id) : id;
+        if (el) {
+            el.value = value;
+        }
+    }
+
+    function setText(id, value) {
+        const el = typeof id === 'string' ? document.getElementById(id) : id;
+        if (el) {
+            el.textContent = value;
+        }
     }
 
     function recalcularFinanciamiento() {
@@ -167,10 +223,10 @@
             return;
         }
 
-        const total = parseFloat($('#totalHidden').val()) || 0;
-        const anticipo = parseFloat($('#anticipoInput').val()) || 0;
-        const tasa = (parseFloat($('#tasaMensualInput').val()) || 0) / 100;
-        const cuotas = parseInt($('#cuotasFinanciacionInput').val(), 10) || 0;
+        const total = parseFloat(totalHidden?.value) || 0;
+        const anticipo = parseFloat(document.getElementById('anticipoInput')?.value || '') || 0;
+        const tasa = (parseFloat(document.getElementById('tasaMensualInput')?.value || '') || 0) / 100;
+        const cuotas = parseInt(document.getElementById('cuotasFinanciacionInput')?.value || '', 10) || 0;
 
         if (total <= 0 || cuotas < 1) {
             limpiarResumenFinanciamiento();
@@ -178,64 +234,73 @@
         }
 
         recalculoFinanciamientoEnCurso = true;
-        $('#badgeSemaforo').removeClass('bg-success bg-warning bg-danger').addClass('bg-secondary').text('Calculando...');
+        const badge = document.getElementById('badgeSemaforo');
+        badge?.classList.remove('bg-success', 'bg-warning', 'bg-danger');
+        badge?.classList.add('bg-secondary');
+        if (badge) badge.textContent = 'Calculando...';
 
-        const token = $('input[name="__RequestVerificationToken"]').val();
+        const headers = { 'Content-Type': 'application/json' };
+        if (antiforgeryToken) {
+            headers.RequestVerificationToken = antiforgeryToken;
+        }
 
-        $.ajax({
-            url: financiamientoUrl,
-            type: 'POST',
-            contentType: 'application/json',
-            headers: { RequestVerificationToken: token },
-            data: JSON.stringify({
-                total: total,
-                anticipo: anticipo,
-                tasaMensual: tasa,
-                cuotas: cuotas,
-                ingresoNeto: parseFloat($('#ingresoNetoInput').val()) || null,
-                otrasDeudas: parseFloat($('#otrasDeudasInput').val()) || null,
-                antiguedadLaboralMeses: parseInt($('#antiguedadLaboralInput').val(), 10) || null
-            })
+        const payload = {
+            total: total,
+            anticipo: anticipo,
+            tasaMensual: tasa,
+            cuotas: cuotas,
+            ingresoNeto: parseFloat(document.getElementById('ingresoNetoInput')?.value || '') || null,
+            otrasDeudas: parseFloat(document.getElementById('otrasDeudasInput')?.value || '') || null,
+            antiguedadLaboralMeses: parseInt(document.getElementById('antiguedadLaboralInput')?.value || '', 10) || null
+        };
+
+        fetch(financiamientoUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload)
         })
-            .done(function (data) {
+            .then(function (response) { return response.ok ? response.json() : null; })
+            .then(function (data) {
                 if (!data) {
                     actualizarSemaforo(null, 'No se pudo calcular el financiamiento');
                     return;
                 }
 
-                $('#MontoFinanciadoEstimado').val(Number(data.financedAmount).toFixed(2));
-                $('#CuotaEstimada').val(Number(data.installment).toFixed(2));
-                $('#lblMontoFinanciadoEstimado').text(`$${Number(data.financedAmount).toFixed(2)}`);
-                $('#lblCuotaEstimada').text(`$${Number(data.installment).toFixed(2)}`);
+                setValue('MontoFinanciadoEstimado', Number(data.financedAmount).toFixed(2));
+                setValue('CuotaEstimada', Number(data.installment).toFixed(2));
+                setText('lblMontoFinanciadoEstimado', `$${Number(data.financedAmount).toFixed(2)}`);
+                setText('lblCuotaEstimada', `$${Number(data.installment).toFixed(2)}`);
                 actualizarSemaforo(data.prequalification);
             })
-            .fail(function (xhr) {
-                const error = xhr.responseJSON?.error || 'No se pudo calcular el financiamiento';
-                actualizarSemaforo(null, error);
+            .catch(function (error) {
+                const message = error?.message || 'No se pudo calcular el financiamiento';
+                actualizarSemaforo(null, message);
             })
-            .always(function () {
+            .finally(function () {
                 recalculoFinanciamientoEnCurso = false;
             });
     }
 
     function actualizarSemaforo(resultado, error) {
-        const badge = $('#badgeSemaforo');
-        const mensaje = $('#mensajeSemaforo');
-        const flags = $('#flagsSemaforo');
+        const badge = document.getElementById('badgeSemaforo');
+        const mensaje = document.getElementById('mensajeSemaforo');
+        const flags = document.getElementById('flagsSemaforo');
 
-        badge.removeClass('bg-success bg-warning bg-danger bg-secondary');
+        badge?.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'bg-secondary');
 
         if (error) {
-            badge.addClass('bg-danger').text('Error');
-            mensaje.text(error);
-            flags.text('');
+            badge?.classList.add('bg-danger');
+            if (badge) badge.textContent = 'Error';
+            if (mensaje) mensaje.textContent = error;
+            if (flags) flags.textContent = '';
             return;
         }
 
         if (!resultado) {
-            badge.addClass('bg-secondary').text('Sin datos');
-            mensaje.text('Completa los datos para precalificar.');
-            flags.text('');
+            badge?.classList.add('bg-secondary');
+            if (badge) badge.textContent = 'Sin datos';
+            if (mensaje) mensaje.textContent = 'Completa los datos para precalificar.';
+            if (flags) flags.textContent = '';
             return;
         }
 
@@ -246,50 +311,86 @@
             case 1:
                 label = 'Verde';
                 badgeClass = 'bg-success';
-                mensaje.text('Capacidad validada con política 30%.');
+                if (mensaje) mensaje.textContent = 'Capacidad validada con política 30%.';
                 break;
             case 2:
                 label = 'Amarillo';
                 badgeClass = 'bg-warning';
-                mensaje.text(resultado.recomendacion || 'Revisar datos adicionales.');
+                if (mensaje) mensaje.textContent = resultado.recomendacion || 'Revisar datos adicionales.';
                 break;
             case 3:
                 label = 'Rojo';
                 badgeClass = 'bg-danger';
-                mensaje.text(resultado.recomendacion || 'No cumple política.');
+                if (mensaje) mensaje.textContent = resultado.recomendacion || 'No cumple política.';
                 break;
             default:
-                mensaje.text('Completa los datos para precalificar.');
+                if (mensaje) mensaje.textContent = 'Completa los datos para precalificar.';
                 break;
         }
 
-        badge.addClass(badgeClass).text(label);
+        badge?.classList.add(badgeClass);
+        if (badge) badge.textContent = label;
 
         if (resultado.flags && resultado.flags.length > 0) {
-            flags.text(resultado.flags.join(' • '));
-        } else {
-            flags.text('');
+            if (flags) flags.textContent = resultado.flags.join(' • ');
+        } else if (flags) {
+            flags.textContent = '';
         }
     }
 
     function calcularTotales() {
-        const subtotal = detalles.reduce((sum, d) => sum + Number(d.Subtotal), 0);
-        const descuentoGlobal = parseFloat($('#Descuento').val()) || 0;
-        const subtotalConDescuento = subtotal - descuentoGlobal;
-        const iva = subtotalConDescuento * ivaRate;
-        const total = subtotalConDescuento + iva;
+        const actuales = detalleManager.getAll();
+        if (!calcularTotalesUrl || actuales.length === 0) {
+            VentaCommon.resetTotalesUI({
+                subtotalSelector: '#subtotalDisplay',
+                descuentoSelector: '#descuentoDisplay',
+                ivaSelector: '#ivaDisplay',
+                totalSelector: '#totalDisplay',
+                hiddenSubtotal: subtotalHidden,
+                hiddenIVA: ivaHidden,
+                hiddenTotal: totalHidden
+            });
 
-        $('#subtotalDisplay').text(`$${subtotal.toFixed(2)}`);
-        $('#descuentoDisplay').text(`$${descuentoGlobal.toFixed(2)}`);
-        $('#ivaDisplay').text(`$${iva.toFixed(2)}`);
-        $('#totalDisplay').text(`$${total.toFixed(2)}`);
-
-        $('#subtotalHidden').val(subtotal.toFixed(2));
-        $('#ivaHidden').val(iva.toFixed(2));
-        $('#totalHidden').val(total.toFixed(2));
-
-        if ($('#toggleFinanciado').is(':checked')) {
-            recalcularFinanciamiento();
+            if (toggleFinanciado?.checked) {
+                recalcularFinanciamiento();
+            }
+            return;
         }
+
+        VentaCommon.calcularTotales({
+            detalles: actuales,
+            url: calcularTotalesUrl,
+            descuentoGeneral: parseFloat(descuentoGeneralInput?.value) || 0,
+            descuentoEsPorcentaje: descuentoEsPorcentaje,
+            antiforgeryToken: antiforgeryToken
+        })
+            .then((data) => {
+                VentaCommon.aplicarTotalesUI(data, {
+                    subtotalSelector: '#subtotalDisplay',
+                    descuentoSelector: '#descuentoDisplay',
+                    ivaSelector: '#ivaDisplay',
+                    totalSelector: '#totalDisplay',
+                    hiddenSubtotal: subtotalHidden,
+                    hiddenIVA: ivaHidden,
+                    hiddenTotal: totalHidden
+                });
+
+                if (toggleFinanciado?.checked) {
+                    recalcularFinanciamiento();
+                }
+            })
+            .catch(() => {
+                VentaCommon.resetTotalesUI({
+                    subtotalSelector: '#subtotalDisplay',
+                    descuentoSelector: '#descuentoDisplay',
+                    ivaSelector: '#ivaDisplay',
+                    totalSelector: '#totalDisplay',
+                    hiddenSubtotal: subtotalHidden,
+                    hiddenIVA: ivaHidden,
+                    hiddenTotal: totalHidden
+                });
+            });
     }
+
+    init();
 })();

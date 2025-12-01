@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
+using TheBuryProject.ViewModels.Requests;
 
 namespace TheBuryProject.Controllers
 {
@@ -147,6 +148,30 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al calcular cuotas de tarjeta");
                 return StatusCode(500, new { error = "Error al calcular las cuotas" });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult CalcularTotalesVenta([FromBody] CalcularTotalesVentaRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid || request.Detalles.Count == 0)
+                {
+                    return BadRequest(new { error = "Debe especificar al menos un detalle para calcular los totales" });
+                }
+
+                var totales = _ventaService.CalcularTotalesPreview(
+                    request.Detalles,
+                    request.DescuentoGeneral,
+                    request.DescuentoEsPorcentaje);
+
+                return Ok(totales);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al calcular totales de venta desde el backend");
+                return StatusCode(500, new { error = "No se pudieron calcular los totales" });
             }
         }
     }
