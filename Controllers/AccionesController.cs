@@ -18,6 +18,8 @@ public class AccionesController : Controller
     private readonly IRolService _rolService;
     private readonly ILogger<AccionesController> _logger;
 
+    private string CurrentUserName => User.Identity?.Name ?? "Sistema";
+
     public AccionesController(
         IRolService rolService,
         ILogger<AccionesController> logger)
@@ -220,11 +222,18 @@ public class AccionesController : Controller
             accion.Descripcion = model.Descripcion;
             accion.ModuloId = model.ModuloId;
             accion.Activa = model.Activo;
+            accion.UpdatedBy = CurrentUserName;
 
-            // Note: IRolService doesn't have UpdateAccionAsync
-            // This is a placeholder - you should add UpdateAccionAsync to IRolService
+            var actualizada = await _rolService.UpdateAccionAsync(accion, CurrentUserName);
+            if (!actualizada)
+            {
+                TempData["Error"] = "No se pudo actualizar la acción";
+                await CargarModulosEnViewBag();
+                return View(model);
+            }
+
             _logger.LogInformation("Acción actualizada: {AccionId} por usuario {User}",
-                model.Id, User.Identity?.Name);
+                model.Id, CurrentUserName);
             TempData["Success"] = $"Acción '{model.Nombre}' actualizada exitosamente";
             return RedirectToAction(nameof(Index));
         }
@@ -289,11 +298,18 @@ public class AccionesController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
-            // Note: IRolService doesn't have DeleteAccionAsync
-            // This is a placeholder - you should add DeleteAccionAsync to IRolService
-            _logger.LogInformation("Acción eliminada: {AccionId} por usuario {User}",
-                id, User.Identity?.Name);
-            TempData["Success"] = "Acción eliminada exitosamente";
+            var eliminada = await _rolService.DeleteAccionAsync(id, CurrentUserName);
+
+            if (eliminada)
+            {
+                _logger.LogInformation("Acción eliminada: {AccionId} por usuario {User}",
+                    id, CurrentUserName);
+                TempData["Success"] = "Acción eliminada exitosamente";
+            }
+            else
+            {
+                TempData["Error"] = "No se pudo eliminar la acción";
+            }
         }
         catch (Exception ex)
         {

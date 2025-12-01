@@ -1,85 +1,56 @@
 ﻿@model TheBuryProject.ViewModels.ClienteViewModel
 @{
-    ViewData["Title"] = "Eliminar Cliente";
+    Layout = "_ModuleLayout";
+    ViewData["Title"] = "Nuevo Cliente";
+    ViewData["PageTitle"] = "Nuevo Cliente";
+    ViewData["PageSubtitle"] = "Carga inicial del cliente, contacto y domicilio";
+    ViewData["MostrarToggleActivo"] = true;
+    ViewData["MensajeDocumentacion"] = "<strong>Documentación:</strong> Los documentos del cliente se cargan después de crear el registro, en la sección de \"Documentación\" en los detalles del cliente.";
 }
 
-<section class="container-fluid py-4 text-light">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+@section PageActions {
+    <a asp-action="Index" class="btn btn-outline-light">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+}
 
-            <div class="card bg-dark border-0 shadow-sm">
-                <div class="card-header bg-danger text-light">
-                    <h4 class="mb-0">
-                        <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
-                    </h4>
-                </div>
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card bg-dark border-0 shadow-sm">
+            <div class="card-header bg-secondary">
+                <h5 class="mb-0 text-light">
+                    <i class="bi bi-person-plus me-2"></i>Datos del Nuevo Cliente
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                    @Html.AntiForgeryToken()
 
-                <div class="card-body">
-                    <div class="alert alert-warning text-dark">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong>Atención:</strong> Está a punto de eliminar este cliente. Esta acción no se puede deshacer.
+                    <div asp-validation-summary="ModelOnly"
+                         class="alert alert-danger d-none"
+                         role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Por favor, corregí los errores antes de continuar.
                     </div>
 
-                    <h5 class="mb-3">¿Está seguro que desea eliminar el siguiente cliente?</h5>
+                    <partial name="~/Views/Shared/Cliente/_ClienteFormFields.cshtml" model="Model" />
 
-                    <dl class="row mb-4">
-                        <dt class="col-sm-4 text-secondary">Nombre Completo</dt>
-                        <dd class="col-sm-8 fw-bold">@Model.NombreCompleto</dd>
+                    <hr class="border-secondary mt-4" />
 
-                        <dt class="col-sm-4 text-secondary">Documento</dt>
-                        <dd class="col-sm-8">@Model.TipoDocumento @Model.NumeroDocumento</dd>
-
-                        <dt class="col-sm-4 text-secondary">Teléfono</dt>
-                        <dd class="col-sm-8">@Model.Telefono</dd>
-
-                        <dt class="col-sm-4 text-secondary">Email</dt>
-                        <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Email) ? "-" : Model.Email)</dd>
-
-                        <dt class="col-sm-4 text-secondary">Domicilio</dt>
-                        <dd class="col-sm-8">@Model.Domicilio</dd>
-
-                        <dt class="col-sm-4 text-secondary">Créditos Activos</dt>
-                        <dd class="col-sm-8">
-                            @if (Model.CreditosActivos > 0)
-                            {
-                                <span class="badge bg-warning text-dark">
-                                    @Model.CreditosActivos crédito(s) activo(s)
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-success">Sin créditos activos</span>
-                            }
-                        </dd>
-                    </dl>
-
-                    @if (Model.CreditosActivos > 0)
-                    {
-                        <div class="alert alert-danger d-flex align-items-center">
-                            <i class="bi bi-exclamation-circle-fill me-2"></i>
-                            <div>
-                                <strong>No se puede eliminar</strong>: el cliente tiene créditos activos.
-                            </div>
-                        </div>
-                    }
-
-                    <form asp-action="Delete" method="post">
-                        <input type="hidden" asp-for="Id" />
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-light px-4">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
-                            </a>
-                            @if (Model.CreditosActivos == 0)
-                            {
-                                <button type="submit" class="btn btn-danger px-4">
-                                    <i class="bi bi-trash me-1"></i>Eliminar Cliente
-                                </button>
-                            }
-                        </div>
-                    </form>
-                </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
+                            <i class="bi bi-x-circle me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg px-4">
+                            <i class="bi bi-check-circle me-2"></i>Crear Cliente
+                        </button>
+                    </div>
+                </form>
             </div>
-
         </div>
     </div>
-</section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

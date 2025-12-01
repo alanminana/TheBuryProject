@@ -1,0 +1,182 @@
+@model TheBuryProject.ViewModels.ConfiguracionCreditoVentaViewModel
+@using System.Globalization
+@{ 
+    Layout = "_ModuleLayout";
+    ViewData["Title"] = "Configurar Crédito de Venta";
+    ViewData["PageTitle"] = "Crédito Personal";
+    ViewData["PageSubtitle"] = "Completa los datos del plan para avanzar";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/creditos.css" asp-append-version="true" />
+}
+
+@section PageActions {
+    <a asp-controller="Venta" asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a la venta
+    </a>
+}
+
+<form asp-action="ConfigurarVenta" method="post" class="needs-validation" novalidate data-total-venta="@Model.Monto.ToString(CultureInfo.InvariantCulture)">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CreditoId" />
+    <input type="hidden" asp-for="VentaId" />
+
+    <div class="card bg-dark border-0 shadow-sm">
+        <div class="card-body p-4">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div class="flex-fill">Revisa los datos ingresados antes de continuar.</div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card shadow-sm h-100 panel-soft border-0">
+                        <div class="card-header border-0">
+                            <h5 class="mb-0">Datos de la venta</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Cliente</label>
+                                <div class="form-control bg-body-secondary text-light border-0 fw-semibold">@Model.ClienteNombre</div>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="NumeroCredito" class="form-label"></label>
+                                <input asp-for="NumeroCredito" class="form-control bg-body-secondary text-light border-0" readonly />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Monto total de venta</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-secondary text-light border-0">$</span>
+                                    <input class="form-control bg-body-secondary text-light border-0" value="@Model.Monto.ToString("N2")" readonly />
+                                </div>
+                                <small class="text-muted">Importe total de la venta antes de anticipo.</small>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="Anticipo" class="form-label"></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-secondary text-light border-0">$</span>
+                                    <input asp-for="Anticipo" class="form-control bg-body-secondary text-light border-0" type="number" step="0.01" min="0" id="anticipoInput" />
+                                </div>
+                                <span asp-validation-for="Anticipo" class="text-danger small"></span>
+                                <small class="text-muted">Opcional. Se descontará del monto a financiar.</small>
+                            </div>
+                            <div class="p-3 mt-2 rounded info-block">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="mb-1 fw-semibold">Monto financiado</p>
+                                        <h5 class="mb-0" id="montoFinanciadoLabel">$@Model.MontoFinanciado.ToString("N2")</h5>
+                                    </div>
+                                    <i class="bi bi-calculator fs-4"></i>
+                                </div>
+                                <input type="hidden" asp-for="MontoFinanciado" id="MontoFinanciado" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow-sm h-100 panel-soft border-0">
+                        <div class="card-header border-0">
+                            <h5 class="mb-0">Condiciones del crédito</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label asp-for="CantidadCuotas" class="form-label"></label>
+                                <input asp-for="CantidadCuotas" class="form-control bg-body-secondary text-light border-0" type="number" min="1" max="120" id="cuotasInput" />
+                                <span asp-validation-for="CantidadCuotas" class="text-danger small"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="TasaMensual" class="form-label"></label>
+                                <div class="input-group">
+                                    <input asp-for="TasaMensual" class="form-control bg-body-secondary text-light border-0" type="number" step="0.01" min="0.01" max="100" id="tasaMensualInput" />
+                                    <span class="input-group-text bg-secondary text-light border-0">%</span>
+                                </div>
+                                <span asp-validation-for="TasaMensual" class="text-danger small"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="GastosAdministrativos" class="form-label"></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-secondary text-light border-0">$</span>
+                                    <input asp-for="GastosAdministrativos" class="form-control bg-body-secondary text-light border-0" type="number" step="0.01" min="0" />
+                                </div>
+                                <small class="text-muted">Opcional. Si no aplica, déjalo en 0.</small>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="FechaPrimeraCuota" class="form-label"></label>
+                                <input asp-for="FechaPrimeraCuota" class="form-control bg-body-secondary text-light border-0" type="date" id="fechaPrimeraCuota" />
+                                <span asp-validation-for="FechaPrimeraCuota" class="text-danger small"></span>
+                            </div>
+                            <div class="p-3 rounded info-block">
+                                <p class="mb-1 fw-semibold">Cuota estimada</p>
+                                <h5 class="mb-0" id="cuotaEstimadaLabel">$0,00</h5>
+                                <div class="small mt-2">
+                                    <div><strong>Tasa aplicada:</strong> <span id="tasaAplicadaLabel">0%</span></div>
+                                    <div><strong>Interés total:</strong> <span id="interesTotalLabel">$0,00</span></div>
+                                    <div><strong>Total a pagar:</strong> <span id="totalAPagarLabel">$0,00</span></div>
+                                </div>
+                            </div>
+                            <div class="summary-grid d-flex flex-column flex-lg-row mt-3">
+                                <div class="summary-item flex-fill">
+                                    <small>Capital financiado</small>
+                                    <div class="value" id="capitalFinanciadoLabel">$0,00</div>
+                                </div>
+                                <div class="summary-item flex-fill">
+                                    <small>Gastos adm.</small>
+                                    <div class="value" id="gastosAdministrativosLabel">$0,00</div>
+                                </div>
+                                <div class="summary-item flex-fill">
+                                    <small>Total plan</small>
+                                    <div class="value" id="planTotalLabel">$0,00</div>
+                                </div>
+                                <div class="summary-item flex-fill">
+                                    <small>Primer vencimiento</small>
+                                    <div class="value" id="fechaPrimerPagoLabel">--</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow-sm h-100 panel-soft border-0">
+                        <div class="card-header border-0">
+                            <h5 class="mb-0">Evaluación preliminar</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="badge state-yellow" id="estadoSemaforo">Sin datos</span>
+                                <span class="small" id="mensajeSemaforo">Completa los datos para precalificar.</span>
+                            </div>
+                            <div class="p-3 rounded info-block" id="alertaDatos">
+                                <strong class="d-block">Mensajes:</strong>
+                                <ul class="mb-0 small" id="listaMensajes">
+                                    <li>Completa los datos para precalificar.</li>
+                                    <li id="msgIngreso" class="d-none">Falta ingreso</li>
+                                    <li id="msgAntiguedad" class="d-none">Falta antigüedad</li>
+                                </ul>
+                            </div>
+                            <div class="p-3 mt-3 rounded error-block d-none" id="errorCalculadora">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Ingresa anticipo, cuotas y tasa para ver los cálculos. La fecha ayuda a definir el primer vencimiento.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a asp-controller="Venta" asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Confirmar Crédito
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/creditos-configurar.js" asp-append-version="true"></script>
+}

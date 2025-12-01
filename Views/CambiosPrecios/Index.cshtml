@@ -1,24 +1,37 @@
 ﻿@model TheBuryProject.ViewModels.BatchListViewModel
 
 @{
-    ViewData["Title"] = "Cambios Masivos de Precios";
+    ViewData["Title"] = "Cambios masivos de precios";
 }
 
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-shuffle"></i> Cambios Masivos de Precios</h2>
+<div class="container-fluid px-0 py-4">
+
+    <!-- Header página -->
+    <div class="d-flex align-items-start justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Gestión de precios · Cambios masivos</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-shuffle"></i>
+                <span>Cambios masivos de precios</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Simulaciones, aprobaciones y aplicación de cambios de precios sobre múltiples productos.
+            </p>
+        </div>
+
         @if (User.HasClaim("Permission", "precios:simulate"))
         {
-            <a asp-action="Simular" class="btn btn-primary">
-                <i class="bi bi-calculator"></i> Nueva Simulación
+            <a asp-action="Simular" class="btn btn-primary btn-sm">
+                <i class="bi bi-calculator me-1"></i>Nueva simulación
             </a>
         }
     </div>
 
+    <!-- Alertas -->
     @if (TempData["Success"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle"></i> @TempData["Success"]
+            <i class="bi bi-check-circle me-1"></i>@TempData["Success"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
@@ -26,22 +39,26 @@
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle"></i> @TempData["Error"]
+            <i class="bi bi-exclamation-triangle me-1"></i>@TempData["Error"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
     <!-- Filtros -->
-    <div class="card shadow-sm mb-3">
+    <div class="card card-animate border-0 mb-3">
         <div class="card-body">
-            <form asp-action="Index" method="get" class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Estado</label>
-                    <select name="estado" class="form-select" onchange="this.form.submit()">
+            <form asp-action="Index" method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-md-4 col-lg-3">
+                    <label class="form-label small mb-1">Estado</label>
+                    <select name="estado"
+                            class="form-select form-select-sm"
+                            onchange="this.form.submit()">
                         <option value="">Todos los estados</option>
                         @foreach (var estado in Enum.GetValues<TheBuryProject.Models.Enums.EstadoBatch>())
                         {
-                            <option value="@((int)estado)" selected="@(Model.EstadoFiltro == estado)">@estado</option>
+                            <option value="@((int)estado)" selected="@(Model.EstadoFiltro == estado)">
+                                @estado
+                            </option>
                         }
                     </select>
                 </div>
@@ -49,23 +66,33 @@
         </div>
     </div>
 
-    <!-- Lista de Batches -->
-    <div class="card shadow-sm">
-        <div class="card-header">
-            <i class="bi bi-list"></i> Listado de Batches
+    <!-- Lista de batches -->
+    <div class="card card-animate border-0">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-list"></i>
+                <span class="fw-semibold">Listado de batches</span>
+            </div>
+            @if (Model.Batches.Any())
+            {
+                <span class="badge bg-dark-subtle text-light small">
+                    @Model.Batches.Count batch(es)
+                </span>
+            }
         </div>
-        <div class="card-body">
+
+        <div class="card-body p-0">
             @if (Model.Batches.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped align-middle">
+                    <table class="table table-sm table-hover table-striped align-middle mb-0">
                         <thead class="table-dark">
                             <tr>
                                 <th>Nombre</th>
                                 <th>Tipo</th>
                                 <th class="text-center">Valor</th>
                                 <th class="text-center">Productos</th>
-                                <th class="text-center">% Promedio</th>
+                                <th class="text-center">% promedio</th>
                                 <th class="text-center">Estado</th>
                                 <th>Solicitado</th>
                                 <th class="text-center">Acciones</th>
@@ -76,26 +103,45 @@
                             {
                                 <tr>
                                     <td>
-                                        <strong>@batch.Nombre</strong>
-                                        @if (batch.RequiereAutorizacion)
-                                        {
-                                            <i class="bi bi-shield-lock text-warning" title="Requiere autorización"></i>
-                                        }
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-semibold">@batch.Nombre</span>
+                                            @if (batch.RequiereAutorizacion)
+                                            {
+                                                <span class="small text-warning d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-shield-lock"></i>
+                                                    Requiere autorización
+                                                </span>
+                                            }
+                                        </div>
                                     </td>
+
                                     <td>
-                                        <span class="badge bg-secondary">@batch.TipoCambioDisplay</span>
+                                        <span class="badge bg-secondary">
+                                            @batch.TipoCambioDisplay
+                                        </span>
                                     </td>
+
                                     <td class="text-center">
                                         @if (batch.TipoAplicacion == TheBuryProject.Models.Enums.TipoAplicacion.Aumento)
                                         {
-                                            <span class="text-success">+@batch.ValorCambio.ToString("N2")</span>
+                                            <span class="text-success fw-semibold">
+                                                +@batch.ValorCambio.ToString("N2")
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span class="text-danger">-@batch.ValorCambio.ToString("N2")</span>
+                                            <span class="text-danger fw-semibold">
+                                                -@batch.ValorCambio.ToString("N2")
+                                            </span>
                                         }
                                     </td>
-                                    <td class="text-center">@batch.CantidadProductos</td>
+
+                                    <td class="text-center">
+                                        <span class="badge bg-dark-subtle text-light">
+                                            @batch.CantidadProductos
+                                        </span>
+                                    </td>
+
                                     <td class="text-center">
                                         @if (batch.PorcentajePromedioCambio.HasValue)
                                         {
@@ -103,73 +149,87 @@
                                         }
                                         else
                                         {
-                                            <span class="text-muted">-</span>
+                                            <span class="text-muted small">—</span>
                                         }
                                     </td>
+
                                     <td class="text-center">
                                         @switch (batch.Estado)
                                         {
                                             case TheBuryProject.Models.Enums.EstadoBatch.Simulado:
-                                                <span class="badge bg-info">Simulado</span>
+                                                @:<span class="badge bg-info">Simulado</span>
                                                 break;
                                             case TheBuryProject.Models.Enums.EstadoBatch.Aprobado:
-                                                <span class="badge bg-primary">Aprobado</span>
+                                                @:<span class="badge bg-primary">Aprobado</span>
                                                 break;
                                             case TheBuryProject.Models.Enums.EstadoBatch.Aplicado:
-                                                <span class="badge bg-success">Aplicado</span>
+                                                @:<span class="badge bg-success">Aplicado</span>
                                                 break;
                                             case TheBuryProject.Models.Enums.EstadoBatch.Revertido:
-                                                <span class="badge bg-warning text-dark">Revertido</span>
+                                                @:<span class="badge bg-warning text-dark">Revertido</span>
                                                 break;
                                             case TheBuryProject.Models.Enums.EstadoBatch.Rechazado:
-                                                <span class="badge bg-danger">Rechazado</span>
+                                                @:<span class="badge bg-danger">Rechazado</span>
                                                 break;
                                             case TheBuryProject.Models.Enums.EstadoBatch.Cancelado:
-                                                <span class="badge bg-secondary">Cancelado</span>
+                                                @:<span class="badge bg-secondary">Cancelado</span>
                                                 break;
                                         }
                                     </td>
+
                                     <td>
-                                        <small>
-                                            <strong>@batch.SolicitadoPor</strong><br>
+                                        <small class="d-block fw-semibold">@batch.SolicitadoPor</small>
+                                        <small class="text-muted d-block">
                                             @batch.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")
                                         </small>
                                     </td>
+
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a asp-action="Preview" asp-route-id="@batch.Id"
-                                               class="btn btn-outline-info" title="Ver Detalle">
+                                            <a asp-action="Preview"
+                                               asp-route-id="@batch.Id"
+                                               class="btn btn-outline-info"
+                                               title="Ver detalle">
                                                 <i class="bi bi-eye"></i>
                                             </a>
 
+                                            @* Autorizar (solo estado Simulado) *@
                                             @if (batch.Estado == TheBuryProject.Models.Enums.EstadoBatch.Simulado)
                                             {
-                                                @if (User.HasClaim("Permission", "precios:authorize"))
+                                                if (User.HasClaim("Permission", "precios:authorize"))
                                                 {
-                                                    <a asp-action="Autorizar" asp-route-id="@batch.Id"
-                                                       class="btn btn-outline-warning" title="Autorizar">
+                                                    <a asp-action="Autorizar"
+                                                       asp-route-id="@batch.Id"
+                                                       class="btn btn-outline-warning"
+                                                       title="Autorizar">
                                                         <i class="bi bi-shield-check"></i>
                                                     </a>
                                                 }
                                             }
 
+                                            @* Aplicar (solo estado Aprobado) *@
                                             @if (batch.Estado == TheBuryProject.Models.Enums.EstadoBatch.Aprobado)
                                             {
-                                                @if (User.HasClaim("Permission", "precios:apply"))
+                                                if (User.HasClaim("Permission", "precios:apply"))
                                                 {
-                                                    <a asp-action="Aplicar" asp-route-id="@batch.Id"
-                                                       class="btn btn-outline-success" title="Aplicar">
+                                                    <a asp-action="Aplicar"
+                                                       asp-route-id="@batch.Id"
+                                                       class="btn btn-outline-success"
+                                                       title="Aplicar">
                                                         <i class="bi bi-check-circle"></i>
                                                     </a>
                                                 }
                                             }
 
+                                            @* Revertir (solo estado Aplicado) *@
                                             @if (batch.Estado == TheBuryProject.Models.Enums.EstadoBatch.Aplicado)
                                             {
-                                                @if (User.HasClaim("Permission", "precios:revert"))
+                                                if (User.HasClaim("Permission", "precios:revert"))
                                                 {
-                                                    <a asp-action="Revertir" asp-route-id="@batch.Id"
-                                                       class="btn btn-outline-danger" title="Revertir">
+                                                    <a asp-action="Revertir"
+                                                       asp-route-id="@batch.Id"
+                                                       class="btn btn-outline-danger"
+                                                       title="Revertir">
                                                         <i class="bi bi-arrow-counterclockwise"></i>
                                                     </a>
                                                 }
@@ -184,8 +244,12 @@
             }
             else
             {
-                <div class="alert alert-info text-center">
-                    <i class="bi bi-info-circle"></i> No hay batches de cambios registrados.
+                <div class="py-5 text-center text-muted">
+                    <i class="bi bi-info-circle" style="font-size: 2.5rem;"></i>
+                    <p class="mt-3 mb-1">No hay batches de cambios registrados.</p>
+                    <p class="small mb-0">
+                        Cuando registres una nueva simulación aparecerá aquí con su estado y acciones disponibles.
+                    </p>
                 </div>
             }
         </div>

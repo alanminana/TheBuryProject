@@ -1,47 +1,72 @@
 ﻿@model TheBuryProject.ViewModels.DetallesAperturaViewModel
+
 @{
     ViewData["Title"] = "Detalles de Apertura";
 }
 
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-receipt"></i> Detalles de Apertura de Caja</h2>
+<div class="container-fluid px-0">
+
+    <!-- Header de página -->
+    <div class="d-flex align-items-start justify-content-between mb-4">
         <div>
-            <a asp-action="RegistrarMovimiento" asp-route-aperturaId="@Model.Apertura.Id" class="btn btn-success">
-                <i class="bi bi-plus-circle"></i> Nuevo Movimiento
+            <div class="text-muted text-uppercase small mb-1">Cajas</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-receipt"></i>
+                <span>Detalles de apertura de caja</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Visualiza el estado de la caja, su saldo y todos los movimientos asociados.
+            </p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="RegistrarMovimiento"
+               asp-route-aperturaId="@Model.Apertura.Id"
+               class="btn btn-success btn-sm">
+                <i class="bi bi-plus-circle me-1"></i>Nuevo movimiento
             </a>
+
             @if (!Model.Apertura.Cerrada)
             {
-                <a asp-action="Cerrar" asp-route-aperturaId="@Model.Apertura.Id" class="btn btn-warning">
-                    <i class="bi bi-lock"></i> Cerrar Caja
+                <a asp-action="Cerrar"
+                   asp-route-aperturaId="@Model.Apertura.Id"
+                   class="btn btn-warning btn-sm">
+                    <i class="bi bi-lock me-1"></i>Cerrar caja
                 </a>
             }
-            <a asp-action="Index" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Volver al listado
             </a>
         </div>
     </div>
 
     <!-- Información de la apertura -->
     <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
+        <div class="col-12">
+            <div class="card card-animate">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Información General</h5>
+                    <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Información general</span>
+                    </h2>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row small gy-2">
                         <div class="col-md-3">
-                            <strong>Caja:</strong> @Model.Apertura.Caja.Nombre (@Model.Apertura.Caja.Codigo)
+                            <span class="text-muted d-block">Caja</span>
+                            <strong>@Model.Apertura.Caja.Nombre (@Model.Apertura.Caja.Codigo)</strong>
                         </div>
                         <div class="col-md-3">
-                            <strong>Usuario:</strong> @Model.Apertura.UsuarioApertura
+                            <span class="text-muted d-block">Usuario apertura</span>
+                            <strong>@Model.Apertura.UsuarioApertura</strong>
                         </div>
                         <div class="col-md-3">
-                            <strong>Fecha Apertura:</strong> @Model.Apertura.FechaApertura.ToString("dd/MM/yyyy HH:mm")
+                            <span class="text-muted d-block">Fecha apertura</span>
+                            <strong>@Model.Apertura.FechaApertura.ToString("dd/MM/yyyy HH:mm")</strong>
                         </div>
                         <div class="col-md-3">
-                            <strong>Estado:</strong>
+                            <span class="text-muted d-block">Estado</span>
                             @if (Model.Apertura.Cerrada)
                             {
                                 <span class="badge bg-secondary">Cerrada</span>
@@ -52,10 +77,14 @@
                             }
                         </div>
                     </div>
+
                     @if (!string.IsNullOrWhiteSpace(Model.Apertura.ObservacionesApertura))
                     {
-                        <hr />
-                        <p class="mb-0"><strong>Observaciones:</strong> @Model.Apertura.ObservacionesApertura</p>
+                        <hr class="my-3" />
+                        <p class="mb-0 small">
+                            <span class="text-muted fw-semibold">Observaciones:</span>
+                            <span>@Model.Apertura.ObservacionesApertura</span>
+                        </p>
                     }
                 </div>
             </div>
@@ -63,57 +92,80 @@
     </div>
 
     <!-- Resumen financiero -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h6 class="text-muted">Monto Inicial</h6>
-                    <h3 class="text-primary">@Model.Apertura.MontoInicial.ToString("C")</h3>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card card-animate border-0 bg-dark bg-opacity-25 h-100">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted text-uppercase small mb-1">Monto inicial</h6>
+                    <h3 class="mb-0 text-primary">
+                        @Model.Apertura.MontoInicial.ToString("C")
+                    </h3>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h6 class="text-muted">Total Ingresos</h6>
-                    <h3 class="text-success">@Model.TotalIngresos.ToString("C")</h3>
-                    <small class="text-muted">@Model.Movimientos.Count(m => m.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Ingreso) movimientos</small>
+        <div class="col-6 col-md-3">
+            <div class="card card-animate border-0 bg-dark bg-opacity-25 h-100">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted text-uppercase small mb-1">Total ingresos</h6>
+                    <h3 class="mb-0 text-success">
+                        @Model.TotalIngresos.ToString("C")
+                    </h3>
+                    <small class="text-muted">
+                        @Model.Movimientos.Count(m => m.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Ingreso) movimientos
+                    </small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h6 class="text-muted">Total Egresos</h6>
-                    <h3 class="text-danger">@Model.TotalEgresos.ToString("C")</h3>
-                    <small class="text-muted">@Model.Movimientos.Count(m => m.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Egreso) movimientos</small>
+        <div class="col-6 col-md-3">
+            <div class="card card-animate border-0 bg-dark bg-opacity-25 h-100">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted text-uppercase small mb-1">Total egresos</h6>
+                    <h3 class="mb-0 text-danger">
+                        @Model.TotalEgresos.ToString("C")
+                    </h3>
+                    <small class="text-muted">
+                        @Model.Movimientos.Count(m => m.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Egreso) movimientos
+                    </small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center bg-success text-white">
-                <div class="card-body">
-                    <h6>Saldo Actual</h6>
-                    <h3>@Model.SaldoActual.ToString("C")</h3>
-                    <small>@Model.CantidadMovimientos movimientos</small>
+        <div class="col-6 col-md-3">
+            <div class="card card-animate border-0 bg-success bg-opacity-25 h-100">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted text-uppercase small mb-1">Saldo actual</h6>
+                    <h3 class="mb-0 text-success">
+                        @Model.SaldoActual.ToString("C")
+                    </h3>
+                    <small class="text-muted">
+                        @Model.CantidadMovimientos movimientos
+                    </small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Tabla de movimientos -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Movimientos de Caja</h5>
+    <!-- Movimientos -->
+    <div class="card card-animate">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-list-ul"></i>
+                <span>Movimientos de caja</span>
+            </h2>
+            @if (Model.Movimientos.Any())
+            {
+                <span class="badge bg-dark bg-opacity-50">
+                    @Model.CantidadMovimientos movimientos
+                </span>
+            }
         </div>
         <div class="card-body">
             @if (Model.Movimientos.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
+                    <table class="table table-hover table-sm align-middle mb-0">
+                        <thead class="table-dark">
                             <tr>
-                                <th>Fecha/Hora</th>
+                                <th>Fecha / hora</th>
                                 <th>Tipo</th>
                                 <th>Concepto</th>
                                 <th>Descripción</th>
@@ -126,38 +178,60 @@
                             @foreach (var mov in Model.Movimientos.OrderBy(m => m.FechaMovimiento))
                             {
                                 <tr>
-                                    <td>@mov.FechaMovimiento.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="small">
+                                        @mov.FechaMovimiento.ToString("dd/MM/yyyy HH:mm")
+                                    </td>
                                     <td>
                                         @if (mov.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Ingreso)
                                         {
-                                            <span class="badge bg-success"><i class="bi bi-arrow-down"></i> Ingreso</span>
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-arrow-down"></i> Ingreso
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-danger"><i class="bi bi-arrow-up"></i> Egreso</span>
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-arrow-up"></i> Egreso
+                                            </span>
                                         }
                                     </td>
-                                    <td>@mov.Concepto.ToString()</td>
-                                    <td>@mov.Descripcion</td>
-                                    <td>@(mov.Referencia ?? "-")</td>
+                                    <td class="small">
+                                        @mov.Concepto.ToString()
+                                    </td>
+                                    <td class="small">
+                                        @mov.Descripcion
+                                    </td>
+                                    <td class="small">
+                                        @(mov.Referencia ?? "-")
+                                    </td>
                                     <td class="text-end">
                                         @if (mov.Tipo == TheBuryProject.Models.Enums.TipoMovimientoCaja.Ingreso)
                                         {
-                                            <span class="text-success">+@mov.Monto.ToString("C")</span>
+                                            <span class="text-success fw-semibold">
+                                                +@mov.Monto.ToString("C")
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span class="text-danger">-@mov.Monto.ToString("C")</span>
+                                            <span class="text-danger fw-semibold">
+                                                -@mov.Monto.ToString("C")
+                                            </span>
                                         }
                                     </td>
-                                    <td>@mov.Usuario</td>
+                                    <td class="small">
+                                        @mov.Usuario
+                                    </td>
                                 </tr>
                             }
                         </tbody>
                         <tfoot>
                             <tr class="table-active">
-                                <td colspan="5" class="text-end"><strong>Saldo Actual:</strong></td>
-                                <td class="text-end"><strong>@Model.SaldoActual.ToString("C")</strong></td>
+                                <td colspan="5" class="text-end">
+                                    <strong>Saldo actual:</strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong>@Model.SaldoActual.ToString("C")</strong>
+                                </td>
                                 <td></td>
                             </tr>
                         </tfoot>
@@ -166,9 +240,14 @@
             }
             else
             {
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> No hay movimientos registrados.
-                    <a asp-action="RegistrarMovimiento" asp-route-aperturaId="@Model.Apertura.Id" class="alert-link">Registrar primer movimiento</a>
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    No hay movimientos registrados.
+                    <a asp-action="RegistrarMovimiento"
+                       asp-route-aperturaId="@Model.Apertura.Id"
+                       class="alert-link ms-1">
+                        Registrar primer movimiento
+                    </a>
                 </div>
             }
         </div>

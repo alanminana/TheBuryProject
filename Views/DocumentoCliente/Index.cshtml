@@ -1,4 +1,5 @@
 @model TheBuryProject.ViewModels.DocumentoClienteFilterViewModel
+@using TheBuryProject.ViewModels
 @{
     Layout = "_ModuleLayout";
     ViewData["Title"] = "Documentos de Clientes";
@@ -7,9 +8,21 @@
 }
 
 @section PageActions {
-    <a asp-action="Upload" class="btn btn-info text-dark fw-semibold shadow-sm">
-        <i class="bi bi-upload me-2"></i>Subir Documento
-    </a>
+    @if (Model.ReturnToVentaId.HasValue)
+    {
+        <a asp-action="Upload"
+           asp-route-returnToVentaId="@Model.ReturnToVentaId"
+           asp-route-clienteId="@Model.ClienteId"
+           class="btn btn-info text-dark fw-semibold shadow-sm">
+            <i class="bi bi-upload me-2"></i>Subir Documento
+        </a>
+    }
+    else
+    {
+        <a asp-action="Upload" class="btn btn-info text-dark fw-semibold shadow-sm">
+            <i class="bi bi-upload me-2"></i>Subir Documento
+        </a>
+    }
 }
 
 @section PageFilters {
@@ -28,6 +41,10 @@
         <div class="collapse show" id="filtrosCollapse">
             <div class="card-body">
                 <form asp-action="Index" method="get">
+                    @if (Model.ReturnToVentaId.HasValue)
+                    {
+                        <input type="hidden" name="ReturnToVentaId" value="@Model.ReturnToVentaId" />
+                    }
                     <div class="row g-3">
 
                         <div class="col-md-3">
@@ -104,6 +121,31 @@
     </div>
 }
 
+@if (Model.ReturnToVentaId.HasValue)
+{
+    <div class="alert alert-warning d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Falta documentación obligatoria para continuar con el crédito de la venta @Model.ReturnToVentaId.
+            @if (ViewBag.DocumentacionPendiente is DocumentacionClienteEstadoViewModel estadoDocs && !estadoDocs.Completa)
+            {
+                <div class="mt-1 small">
+                    <strong>Documentos faltantes:</strong>
+                    <span class="badge bg-light text-dark">@string.Join(", ", estadoDocs.Faltantes)</span>
+                </div>
+            }
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-light" asp-controller="Venta" asp-action="ValidarDocumentacionCredito" asp-route-ventaId="@Model.ReturnToVentaId">
+                Validar y continuar
+            </a>
+            <a class="btn btn-outline-light" asp-controller="Venta" asp-action="Details" asp-route-id="@Model.ReturnToVentaId">
+                Volver a la venta
+            </a>
+        </div>
+    </div>
+}
+
 @if (Model.TotalResultados > 0)
 {
     <div class="alert alert-info border-0 shadow-sm mb-3">
@@ -168,17 +210,20 @@
                                         <a asp-action="Descargar" asp-route-id="@doc.Id" class="btn btn-outline-success">
                                             <i class="bi bi-download"></i>
                                         </a>
-
-                                        @if (doc.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
-                                        {
-                                            <form asp-action="Delete" asp-route-id="@doc.Id" method="post"
-                                                  onsubmit="return confirm('¿Está seguro de eliminar este documento?')">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-outline-danger">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        }
+                                        <a asp-action="Upload"
+                                           asp-route-clienteId="@doc.ClienteId"
+                                           asp-route-replaceId="@doc.Id"
+                                           asp-route-returnToVentaId="@Model.ReturnToVentaId"
+                                           class="btn btn-outline-warning text-dark">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@doc.Id" method="post"
+                                              onsubmit="return confirm('¿Está seguro de eliminar este documento?')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -190,7 +235,17 @@
                             <td colspan="8" class="text-center py-5">
                                 <i class="bi bi-inbox display-5 text-secondary d-block mb-3"></i>
                                 <p class="text-secondary mb-2">No hay documentos disponibles</p>
-                                <a asp-action="Upload" class="btn btn-info text-dark">Subir Documento</a>
+                                @if (Model.ReturnToVentaId.HasValue)
+                                {
+                                    <a asp-action="Upload"
+                                       asp-route-returnToVentaId="@Model.ReturnToVentaId"
+                                       asp-route-clienteId="@Model.ClienteId"
+                                       class="btn btn-info text-dark">Subir Documento</a>
+                                }
+                                else
+                                {
+                                    <a asp-action="Upload" class="btn btn-info text-dark">Subir Documento</a>
+                                }
                             </td>
                         </tr>
                     }

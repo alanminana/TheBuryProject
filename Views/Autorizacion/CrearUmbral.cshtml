@@ -1,20 +1,38 @@
 ﻿@model TheBuryProject.ViewModels.UmbralAutorizacionViewModel
+
 @{
     ViewData["Title"] = "Crear Umbral de Autorización";
 }
 
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">🔐 Crear Nuevo Umbral de Autorización</h4>
-                </div>
-                <div class="card-body">
-                    <form asp-action="CrearUmbral" method="post">
-                        @Html.AntiForgeryToken()
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+<div class="container-fluid px-0">
 
+    <!-- Header de página -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Autorizaciones</div>
+            <h1 class="h4 mb-1">Crear umbral de autorización</h1>
+            <p class="text-muted small mb-0">
+                Define los límites máximos que requieren autorización según rol y tipo de umbral.
+            </p>
+        </div>
+
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver al listado
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-8 col-xl-6">
+
+            <div class="card card-animate">
+                <div class="card-body">
+
+                    <form asp-action="CrearUmbral" method="post" novalidate>
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
+
+                        <!-- Rol -->
                         <div class="mb-3">
                             <label asp-for="Rol" class="form-label"></label>
                             <select asp-for="Rol" class="form-select" required>
@@ -24,51 +42,70 @@
                                     <option value="@rol">@rol</option>
                                 }
                             </select>
-                            <span asp-validation-for="Rol" class="text-danger"></span>
+                            <span asp-validation-for="Rol" class="text-danger small"></span>
                         </div>
 
+                        <!-- Tipo de umbral -->
                         <div class="mb-3">
                             <label asp-for="TipoUmbral" class="form-label"></label>
-                            <select asp-for="TipoUmbral" class="form-select" asp-items="Html.GetEnumSelectList<TheBuryProject.Models.Entities.TipoUmbral>()" required>
+                            <select asp-for="TipoUmbral"
+                                    class="form-select"
+                                    asp-items="Html.GetEnumSelectList<TheBuryProject.Models.Entities.TipoUmbral>()"
+                                    required>
                                 <option value="">Seleccione un tipo...</option>
                             </select>
-                            <span asp-validation-for="TipoUmbral" class="text-danger"></span>
+                            <span asp-validation-for="TipoUmbral" class="text-danger small"></span>
                         </div>
 
+                        <!-- Valor máximo -->
                         <div class="mb-3">
                             <label asp-for="ValorMaximo" class="form-label"></label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input asp-for="ValorMaximo" class="form-control" type="number" step="0.01" min="0" required />
+                                <input asp-for="ValorMaximo"
+                                       class="form-control"
+                                       type="number"
+                                       step="0.01"
+                                       min="0"
+                                       required />
                             </div>
-                            <span asp-validation-for="ValorMaximo" class="text-danger"></span>
-                            <small class="text-muted">
-                                Para descuentos, ingrese el porcentaje (ej: 15 para 15%). Para montos, ingrese el valor en pesos.
-                            </small>
+                            <span asp-validation-for="ValorMaximo" class="text-danger small d-block"></span>
+                            <div class="form-text">
+                                Para descuentos, ingrese el porcentaje (ej: 15 para 15%).<br />
+                                Para montos, ingrese el valor en pesos.
+                            </div>
                         </div>
 
+                        <!-- Descripción -->
                         <div class="mb-3">
                             <label asp-for="Descripcion" class="form-label"></label>
-                            <textarea asp-for="Descripcion" class="form-control" rows="3" maxlength="500"></textarea>
-                            <span asp-validation-for="Descripcion" class="text-danger"></span>
+                            <textarea asp-for="Descripcion"
+                                      class="form-control"
+                                      rows="3"
+                                      maxlength="500"></textarea>
+                            <span asp-validation-for="Descripcion" class="text-danger small"></span>
                         </div>
 
+                        <!-- Activo -->
                         <div class="mb-3 form-check">
-                            <input asp-for="Activo" class="form-check-input" type="checkbox" checked />
+                            <input asp-for="Activo" class="form-check-input" />
                             <label asp-for="Activo" class="form-check-label"></label>
                         </div>
 
-                        <div class="d-flex justify-content-between">
-                            <a asp-action="Index" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-1"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Guardar Umbral
+                                <i class="bi bi-save me-1"></i>Guardar umbral
                             </button>
                         </div>
                     </form>
+
                 </div>
             </div>
+
         </div>
     </div>
 </div>

@@ -5,6 +5,7 @@
     ViewData["PageTitle"] = "Editar Cliente";
     ViewData["PageSubtitle"] = "Actualizá datos personales, de contacto y domicilio";
     ViewData["MensajeDocumentacion"] = "<strong>Documentación:</strong> Los documentos se gestionan en la pestaña \"Documentos\" del detalle del cliente y se usan en las evaluaciones crediticias.";
+    ViewData["MostrarToggleActivo"] = true; // opcional, el switch igual se muestra por esEdicion
 }
 
 @section PageActions {
@@ -15,10 +16,10 @@
 
 <div class="row justify-content-center">
     <div class="col-lg-10">
-        <form asp-action="Edit" method="post" novalidate>
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
             <input type="hidden" asp-for="Id" />
             <input type="hidden" asp-for="PuntajeRiesgo" />
-            <input type="hidden" asp-for="Activo" />
+            @* IMPORTANTE: ya no mandamos Activo como hidden *@
 
             <partial name="~/Views/Shared/Cliente/_ClienteFormFields.cshtml" model="Model" />
 

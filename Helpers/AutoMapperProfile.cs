@@ -27,12 +27,8 @@ namespace TheBuryProject.Helpers
             // =======================
             CreateMap<Producto, ProductoViewModel>()
                 .ForMember(d => d.CategoriaNombre, o => o.MapFrom(s => s.Categoria != null ? s.Categoria.Nombre : null))
-                .ForMember(d => d.MarcaNombre, o => o.MapFrom(s => s.Marca != null ? s.Marca.Nombre : null));
-            CreateMap<Producto, ProductoViewModel>()
-    .ForMember(dest => dest.CategoriaNombre, opt => opt.MapFrom(src => src.Categoria.Nombre))
-    .ForMember(dest => dest.MarcaNombre, opt => opt.MapFrom(src => src.Marca.Nombre))
-    .ReverseMap();
-            CreateMap<ProductoViewModel, Producto>();
+                .ForMember(d => d.MarcaNombre, o => o.MapFrom(s => s.Marca != null ? s.Marca.Nombre : null))
+                .ReverseMap();
 
             // =======================
             // Proveedor
@@ -140,12 +136,9 @@ namespace TheBuryProject.Helpers
                 .ForMember(d => d.Telefono, o => o.MapFrom(s =>
                     s.GaranteCliente != null ? s.GaranteCliente.Telefono : s.Telefono ?? string.Empty))
                 .ForMember(d => d.Email, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Email : null))
-                .ForMember(d => d.Domicilio, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Domicilio : s.Domi
-cilio))
-                .ForMember(d => d.PuntajeRiesgo, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.PuntajeRiesgo :
- 0))
-                .ForMember(d => d.Sueldo, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Sueldo : (decimal?)nul
-l));
+                .ForMember(d => d.Domicilio, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Domicilio : s.Domicilio))
+                .ForMember(d => d.PuntajeRiesgo, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.PuntajeRiesgo :0))
+                .ForMember(d => d.Sueldo, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Sueldo : (decimal?)null));
 
             CreateMap<Cliente, ClienteViewModel>()
                 .ForMember(d => d.Edad, o => o.MapFrom(s =>
@@ -187,8 +180,9 @@ l));
             // Mappings para Ventas
             // =======================
             CreateMap<Venta, VentaViewModel>()
-                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src => $"{src.Cliente.Apellido}, {src.Cliente.Nombre}"))
-                .ForMember(dest => dest.ClienteDocumento, opt => opt.MapFrom(src => src.Cliente.NumeroDocumento))
+                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
+                    src.Cliente != null ? $"{src.Cliente.Apellido}, {src.Cliente.Nombre}" : string.Empty))
+                .ForMember(dest => dest.ClienteDocumento, opt => opt.MapFrom(src => src.Cliente != null ? src.Cliente.NumeroDocumento : string.Empty))
                 .ForMember(dest => dest.CreditoNumero, opt => opt.MapFrom(src => src.Credito != null ? src.Credito.Numero : null))
                 .ForMember(dest => dest.Detalles, opt => opt.MapFrom(src => src.Detalles))
                 .ForMember(dest => dest.Facturas, opt => opt.MapFrom(src => src.Facturas));

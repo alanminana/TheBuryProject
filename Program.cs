@@ -53,6 +53,7 @@ builder.Services.AddVentaServices();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();
+builder.Services.AddScoped<ICatalogLookupService, CatalogLookupService>();
 builder.Services.AddScoped<IPrecioHistoricoService, PrecioHistoricoService>();
 builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();
@@ -78,6 +79,7 @@ builder.Services.AddScoped<IAutorizacionService, AutorizacionService>();
 builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 builder.Services.AddScoped<ICajaService, CajaService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
+builder.Services.AddScoped<IDocumentacionService, DocumentacionService>();
 
 // 4.6 Servicios en background
 builder.Services.AddHostedService<MoraBackgroundService>();

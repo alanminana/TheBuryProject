@@ -78,7 +78,11 @@ public static class RolesPermisosSeeder
                 ("Simular Cambio", "simulate", 2),
                 ("Aprobar Cambio", "approve", 3),
                 ("Aplicar Cambio", "apply", 4),
-                ("Ver Historial", "history", 5)
+                ("Revertir Cambio", "revert", 5),
+                ("Crear Lista", "create", 6),
+                ("Editar Lista", "update", 7),
+                ("Eliminar Lista", "delete", 8),
+                ("Ver Historial", "history", 9)
             }),
 
             // CLIENTES

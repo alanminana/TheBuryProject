@@ -1,61 +1,100 @@
 ﻿@model TheBuryProject.ViewModels.AbrirCajaViewModel
+
 @{
     ViewData["Title"] = "Abrir Caja";
 }
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h4 class="mb-0"><i class="bi bi-unlock"></i> Abrir Caja</h4>
-                </div>
-                <div class="card-body">
-                    <form asp-action="Abrir" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+<div class="container-fluid px-0">
 
+    <!-- Header de página -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Cajas</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <span>Abrir caja</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Define el monto inicial y deja registrada la apertura para los próximos movimientos.
+            </p>
+        </div>
+
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver al listado
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-7 col-xl-5">
+
+            <div class="card card-animate">
+                <div class="card-body">
+
+                    <form asp-action="Abrir" method="post" novalidate>
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
+
+                        <!-- Caja -->
                         <div class="mb-3">
                             <label asp-for="CajaId" class="form-label"></label>
-                            <select asp-for="CajaId" class="form-select" asp-items="ViewBag.Cajas">
+                            <select asp-for="CajaId"
+                                    class="form-select"
+                                    asp-items="ViewBag.Cajas">
                                 <option value="">-- Seleccione una caja --</option>
                             </select>
-                            <span asp-validation-for="CajaId" class="text-danger"></span>
+                            <span asp-validation-for="CajaId" class="text-danger small"></span>
                         </div>
 
+                        <!-- Monto inicial -->
                         <div class="mb-3">
                             <label asp-for="MontoInicial" class="form-label"></label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input asp-for="MontoInicial" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                                <input asp-for="MontoInicial"
+                                       type="number"
+                                       step="0.01"
+                                       min="0"
+                                       class="form-control"
+                                       placeholder="0,00" />
                             </div>
-                            <span asp-validation-for="MontoInicial" class="text-danger"></span>
-                            <small class="form-text text-muted">
-                                Monto en efectivo con el que inicia la caja
-                            </small>
+                            <span asp-validation-for="MontoInicial" class="text-danger small d-block"></span>
+                            <div class="form-text">
+                                Monto en efectivo con el que inicia la caja.
+                            </div>
                         </div>
 
+                        <!-- Observaciones -->
                         <div class="mb-3">
                             <label asp-for="ObservacionesApertura" class="form-label"></label>
-                            <textarea asp-for="ObservacionesApertura" class="form-control" rows="3" placeholder="Observaciones opcionales..."></textarea>
-                            <span asp-validation-for="ObservacionesApertura" class="text-danger"></span>
+                            <textarea asp-for="ObservacionesApertura"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Observaciones opcionales..."></textarea>
+                            <span asp-validation-for="ObservacionesApertura" class="text-danger small"></span>
                         </div>
 
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>Importante:</strong> Una vez abierta la caja, se registrarán todos los movimientos hasta su cierre.
+                        <!-- Info -->
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <strong>Importante:</strong>
+                            Una vez abierta la caja, se registrarán todos los movimientos hasta su cierre.
                         </div>
 
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a asp-action="Index" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-unlock"></i> Abrir Caja
+                                <i class="bi bi-unlock me-1"></i>Abrir caja
                             </button>
                         </div>
+
                     </form>
+
                 </div>
             </div>
+
         </div>
     </div>
 </div>

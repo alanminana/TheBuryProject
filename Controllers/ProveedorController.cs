@@ -18,22 +18,16 @@ namespace TheBuryProject.Controllers
         private readonly IProveedorService _proveedorService;
         private readonly ILogger<ProveedorController> _logger;
         private readonly IMapper _mapper;
-        private readonly ICategoriaService _categoriaService;
-        private readonly IMarcaService _marcaService;
-        private readonly IProductoService _productoService;
+        private readonly ICatalogLookupService _catalogLookupService;
         public ProveedorController(
             IProveedorService proveedorService,
-            ICategoriaService categoriaService,
-            IMarcaService marcaService,
-            IProductoService productoService,
+            ICatalogLookupService catalogLookupService,
             ILogger<ProveedorController> logger,
             IMapper mapper,
             AppDbContext context)
         {
             _proveedorService = proveedorService;
-            _categoriaService = categoriaService;
-            _marcaService = marcaService;
-            _productoService = productoService;
+            _catalogLookupService = catalogLookupService;
             _logger = logger;
             _mapper = mapper;
             _context = context;
@@ -363,7 +357,7 @@ namespace TheBuryProject.Controllers
         }
         private async Task CargarAsociacionesAsync(ProveedorViewModel viewModel)
         {
-            var categorias = await _categoriaService.GetAllAsync();
+            var (categorias, marcas, productos) = await _catalogLookupService.GetCategoriasMarcasYProductosAsync();
             viewModel.CategoriasDisponibles = categorias
                 .OrderBy(c => c.Nombre)
                 .Select(c => new SelectListItem
@@ -374,7 +368,6 @@ namespace TheBuryProject.Controllers
                 })
                 .ToList();
 
-            var marcas = await _marcaService.GetAllAsync();
             viewModel.MarcasDisponibles = marcas
                 .OrderBy(m => m.Nombre)
                 .Select(m => new SelectListItem
@@ -385,7 +378,6 @@ namespace TheBuryProject.Controllers
                 })
                 .ToList();
 
-            var productos = await _productoService.GetAllAsync();
             viewModel.ProductosDisponibles = productos
                 .OrderBy(p => p.Nombre)
                 .Select(p => new SelectListItem

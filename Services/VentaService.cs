@@ -1,4 +1,4 @@
-ï»¿using AutoMapper;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Constants;
@@ -105,6 +105,8 @@ namespace TheBuryProject.Services
 
                 venta.Numero = await _numberGenerator.GenerarNumeroAsync(viewModel.Estado);
 
+                AgregarDetalles(venta, viewModel.Detalles);
+
                 CalcularTotales(venta);
 
                 await VerificarAutorizacionSiCorrespondeAsync(venta, viewModel);
@@ -207,6 +209,16 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al confirmar venta {Id}", id);
                 throw;
             }
+        }
+
+        public async Task AsociarCreditoAVentaAsync(int ventaId, int creditoId)
+        {
+            var venta = await _context.Ventas.FindAsync(ventaId);
+            if (venta == null)
+                throw new InvalidOperationException(VentaConstants.ErrorMessages.VENTA_NO_ENCONTRADA);
+
+            venta.CreditoId = creditoId;
+            await _context.SaveChangesAsync();
         }
 
         public async Task<bool> CancelarVentaAsync(int id, string motivo)
@@ -626,6 +638,16 @@ namespace TheBuryProject.Services
             {
                 var detalle = _mapper.Map<VentaDetalle>(detalleVM);
                 detalle.VentaId = venta.Id;
+                venta.Detalles.Add(detalle);
+            }
+        }
+
+        private void AgregarDetalles(Venta venta, List<VentaDetalleViewModel> detallesVM)
+        {
+            foreach (var detalleVM in detallesVM)
+            {
+                var detalle = _mapper.Map<VentaDetalle>(detalleVM);
+                detalle.Venta = venta;
                 venta.Detalles.Add(detalle);
             }
         }

@@ -4,66 +4,98 @@
     ViewData["Title"] = "Eliminar Acción";
 }
 
-<div class="container-fluid">
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a asp-action="Index">Acciones</a></li>
-                    <li class="breadcrumb-item active">Eliminar</li>
-                </ol>
-            </nav>
+<div class="container-fluid px-0">
+
+    <!-- Header de página -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Acciones</div>
+            <h1 class="h4 mb-0">Eliminar acción</h1>
         </div>
+
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>
+            Volver al listado
+        </a>
     </div>
 
     <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0"><i class="bi bi-trash me-2"></i>Confirmar Eliminación</h4>
-                </div>
+        <div class="col-12 col-lg-8 col-xl-6">
+
+            <div class="card card-animate border-danger-subtle">
                 <div class="card-body">
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <strong>¿Está seguro que desea eliminar esta acción?</strong>
+
+                    <!-- Mensaje principal de peligro -->
+                    <div class="alert alert-danger d-flex align-items-start gap-2">
+                        <i class="bi bi-trash fs-5 mt-1"></i>
+                        <div>
+                            <div class="fw-semibold mb-1">
+                                ¿Está seguro de que desea eliminar esta acción?
+                            </div>
+                            <small class="text-light">
+                                Esta operación afectará permisos y no se puede deshacer.
+                            </small>
+                        </div>
                     </div>
 
-                    <dl class="row">
-                        <dt class="col-sm-3">Módulo:</dt>
-                        <dd class="col-sm-9">
-                            <span class="badge bg-info">@Model.ModuloNombre</span>
-                        </dd>
+                    <!-- Detalle de la acción -->
+                    <div class="mb-3">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Módulo</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge bg-info text-dark">@Model.ModuloNombre</span>
+                            </dd>
 
-                        <dt class="col-sm-3">Acción:</dt>
-                        <dd class="col-sm-9"><strong>@Model.Nombre</strong></dd>
+                            <dt class="col-sm-3">Acción</dt>
+                            <dd class="col-sm-9">
+                                <strong>@Model.Nombre</strong>
+                            </dd>
 
-                        <dt class="col-sm-3">Clave:</dt>
-                        <dd class="col-sm-9"><code>@Model.Clave</code></dd>
-                    </dl>
-
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Advertencia:</strong> Al eliminar esta acción, se removerán todos los permisos basados en ella de todos los roles.
+                            <dt class="col-sm-3">Clave</dt>
+                            <dd class="col-sm-9">
+                                <code>@Model.Clave</code>
+                            </dd>
+                        </dl>
                     </div>
 
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-circle me-2"></i>
-                        <strong>ATENCIÓN:</strong> Esta acción no se puede deshacer.
+                    <!-- Advertencias -->
+                    <div class="alert alert-warning d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-exclamation-triangle mt-1"></i>
+                        <div>
+                            <strong>Impacto en permisos.</strong>
+                            <div class="small">
+                                Se removerán todos los permisos basados en esta acción de todos los roles.
+                            </div>
+                        </div>
                     </div>
 
-                    <form asp-action="Delete" method="post">
+                    <div class="alert alert-danger d-flex align-items-start gap-2 mb-0">
+                        <i class="bi bi-exclamation-octagon mt-1"></i>
+                        <div>
+                            <strong>Acción irreversible.</strong>
+                            <div class="small">
+                                Una vez eliminada, esta acción no se podrá recuperar.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de confirmación -->
+                    <form asp-action="Delete" method="post" class="mt-4">
                         <input type="hidden" asp-for="Id" />
-                        <div class="d-flex justify-content-between mt-4">
-                            <a asp-action="Index" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-1"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash me-1"></i>Eliminar Acción
+                                <i class="bi bi-trash me-1"></i>Eliminar acción
                             </button>
                         </div>
                     </form>
+
                 </div>
             </div>
+
         </div>
     </div>
 </div>

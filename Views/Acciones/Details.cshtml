@@ -4,79 +4,90 @@
     ViewData["Title"] = "Detalles de la Acción";
 }
 
-<div class="container-fluid">
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a asp-action="Index">Acciones</a></li>
-                    <li class="breadcrumb-item active">Detalles</li>
-                </ol>
-            </nav>
+<div class="container-fluid px-0">
+
+    <!-- Header de página -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Acciones</div>
+            <h1 class="h4 mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-lightning"></i>
+                <span>Detalles de la acción</span>
+            </h1>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary btn-sm">
+                <i class="bi bi-pencil me-1"></i>Editar
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
         </div>
     </div>
 
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2>
-                    <i class="bi bi-lightning me-2"></i>@Model.Nombre
-                    @if (Model.Activo)
-                    {
-                        <span class="badge bg-success">Activo</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary">Inactivo</span>
-                    }
-                </h2>
-                <div>
-                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
-                        <i class="bi bi-pencil me-1"></i>Editar
-                    </a>
-                    <a asp-action="Index" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left me-1"></i>Volver
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <!-- Contenido -->
     <div class="row">
-        <div class="col-md-6 offset-md-3">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información de la Acción</h5>
-                </div>
+        <div class="col-12 col-lg-8 col-xl-6">
+
+            <div class="card card-animate">
                 <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-4">Módulo:</dt>
+
+                    <!-- Encabezado de la acción -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <div class="text-muted small mb-1">Acción</div>
+                            <h2 class="h5 mb-0 d-flex align-items-center gap-2">
+                                <span>@Model.Nombre</span>
+                                @if (Model.Activo)
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                }
+                            </h2>
+                        </div>
+                    </div>
+
+                    <!-- Detalles -->
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">Módulo</dt>
                         <dd class="col-sm-8">
-                            <span class="badge bg-info">@Model.ModuloNombre</span>
-                            <br />
-                            <small class="text-muted">Clave: <code>@Model.ModuloClave</code></small>
+                            <span class="badge bg-info text-dark">@Model.ModuloNombre</span>
+                            <div class="small text-muted mt-1">
+                                Clave módulo: <code>@Model.ModuloClave</code>
+                            </div>
                         </dd>
 
-                        <dt class="col-sm-4">Nombre:</dt>
-                        <dd class="col-sm-8"><strong>@Model.Nombre</strong></dd>
+                        <dt class="col-sm-4 text-muted">Nombre</dt>
+                        <dd class="col-sm-8">
+                            <strong>@Model.Nombre</strong>
+                        </dd>
 
-                        <dt class="col-sm-4">Clave:</dt>
-                        <dd class="col-sm-8"><code>@Model.Clave</code></dd>
+                        <dt class="col-sm-4 text-muted">Clave</dt>
+                        <dd class="col-sm-8">
+                            <code>@Model.Clave</code>
+                        </dd>
 
-                        <dt class="col-sm-4">Claim generado:</dt>
+                        <dt class="col-sm-4 text-muted">Claim generado</dt>
                         <dd class="col-sm-8">
                             <code>@Model.ModuloClave.@Model.Clave</code>
-                            <br />
-                            <small class="text-muted">Este es el permiso que se asigna a los roles</small>
+                            <div class="small text-muted mt-1">
+                                Este es el permiso que se asigna a los roles.
+                            </div>
                         </dd>
 
                         @if (!string.IsNullOrEmpty(Model.Descripcion))
                         {
-                            <dt class="col-sm-4">Descripción:</dt>
-                            <dd class="col-sm-8">@Model.Descripcion</dd>
+                            <dt class="col-sm-4 text-muted">Descripción</dt>
+                            <dd class="col-sm-8">
+                                @Model.Descripcion
+                            </dd>
                         }
 
-                        <dt class="col-sm-4">Estado:</dt>
+                        <dt class="col-sm-4 text-muted">Estado</dt>
                         <dd class="col-sm-8">
                             @if (Model.Activo)
                             {
@@ -88,17 +99,27 @@
                             }
                         </dd>
 
-                        <dt class="col-sm-4">Creado:</dt>
-                        <dd class="col-sm-8">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                        <dt class="col-sm-4 text-muted">Creado</dt>
+                        <dd class="col-sm-8">
+                            @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                        </dd>
                     </dl>
 
-                    <div class="alert alert-info mt-3">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong>Nota:</strong> Esta acción se puede asignar a roles desde la interfaz de
-                        <a asp-controller="Roles" asp-action="Index" class="alert-link">Gestión de Roles</a>.
+                    <!-- Nota -->
+                    <div class="alert alert-info mt-4 mb-0 d-flex align-items-start gap-2">
+                        <i class="bi bi-info-circle mt-1"></i>
+                        <div>
+                            <strong>Nota.</strong>
+                            <div class="small">
+                                Esta acción se puede asignar a roles desde la interfaz de
+                                <a asp-controller="Roles" asp-action="Index" class="alert-link">Gestión de Roles</a>.
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </div>
+
         </div>
     </div>
 </div>

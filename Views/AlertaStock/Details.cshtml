@@ -1,177 +1,221 @@
 ﻿@model TheBuryProject.ViewModels.AlertaStockViewModel
+
 @{
     ViewData["Title"] = "Detalle de Alerta";
 }
 
-<div class="container">
-    <div class="row mb-3">
-        <div class="col">
-            <h2>📋 Detalle de Alerta de Stock</h2>
+<div class="container-fluid px-0">
+
+    <!-- Header de página -->
+    <div class="d-flex align-items-start justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Alertas de stock</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <span>Detalle de alerta</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Información detallada de la alerta y del producto afectado.
+            </p>
         </div>
-        <div class="col-auto">
-            <a asp-action="Index" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Volver
             </a>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-8">
+    <div class="row g-3">
+
+        <!-- COLUMNA IZQUIERDA -->
+        <div class="col-12 col-lg-8">
+
             <!-- Información de la Alerta -->
-            <div class="card mb-3">
+            <div class="card card-animate mb-3">
                 <div class="card-header @Model.BadgeTipo">
-                    <h5 class="mb-0 text-white">
-                        <i class="@Model.IconoTipo"></i> @Model.TipoDescripcion
-                        <span class="badge bg-dark float-end">@Model.PrioridadDescripcion</span>
-                    </h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="h6 mb-0 text-white d-flex align-items-center gap-2">
+                            <i class="@Model.IconoTipo"></i>
+                            <span>@Model.TipoDescripcion</span>
+                        </h2>
+                        <span class="badge bg-dark">@Model.PrioridadDescripcion</span>
+                    </div>
                 </div>
+
                 <div class="card-body">
                     <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-muted">Estado</label>
-                            <div>
-                                <span class="badge @Model.BadgeEstado fs-6">
-                                    @Model.EstadoDescripcion
-                                </span>
-                            </div>
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <small class="form-label text-muted d-block">Estado</small>
+                            <span class="badge @Model.BadgeEstado fs-6">
+                                @Model.EstadoDescripcion
+                            </span>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted">Fecha de Alerta</label>
+                            <small class="form-label text-muted d-block">Fecha de alerta</small>
                             <div>
-                                <i class="bi bi-calendar"></i> @Model.FechaAlerta.ToString("dd/MM/yyyy HH:mm")
-                                <br />
-                                <small class="text-muted">Hace @Model.DiasDesdeAlerta día(s)</small>
+                                <i class="bi bi-calendar"></i>
+                                @Model.FechaAlerta.ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                            <div class="small text-muted">
+                                Hace @Model.DiasDesdeAlerta día(s)
                             </div>
                         </div>
                     </div>
 
                     @if (Model.EstaVencida)
                     {
-                        <div class="alert alert-danger">
-                            <i class="bi bi-exclamation-triangle-fill"></i>
-                            <strong>¡Alerta vencida!</strong> Esta alerta lleva más de 7 días sin resolverse.
+                        <div class="alert alert-danger mb-2">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Alerta vencida.</strong>
+                            Esta alerta lleva más de 7 días sin resolverse.
                         </div>
                     }
 
                     @if (Model.NotificacionUrgente)
                     {
-                        <div class="alert alert-warning">
-                            <i class="bi bi-bell-fill"></i>
-                            <strong>Notificación urgente</strong> - Requiere atención inmediata
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-bell-fill me-2"></i>
+                            <strong>Notificación urgente.</strong>
+                            Requiere atención inmediata.
                         </div>
                     }
 
                     <div class="mb-3">
-                        <label class="form-label text-muted">Mensaje</label>
-                        <p class="lead">@Model.Mensaje</p>
+                        <small class="form-label text-muted d-block">Mensaje</small>
+                        <p class="lead mb-0">@Model.Mensaje</p>
                     </div>
 
                     @if (!string.IsNullOrEmpty(Model.Observaciones))
                     {
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Observaciones</label>
-                            <p>@Model.Observaciones</p>
+                        <div class="mt-3">
+                            <small class="form-label text-muted d-block">Observaciones</small>
+                            <p class="mb-0">@Model.Observaciones</p>
                         </div>
                     }
                 </div>
             </div>
 
             <!-- Información del Producto -->
-            <div class="card mb-3">
+            <div class="card card-animate mb-3">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-box"></i> Información del Producto
-                    </h5>
+                    <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-box"></i>
+                        <span>Información del producto</span>
+                    </h2>
                 </div>
+
                 <div class="card-body">
-                    <h4 class="mb-3">
+                    <h4 class="mb-2 d-flex align-items-center gap-2 flex-wrap">
                         <span class="badge bg-secondary">@Model.ProductoCodigo</span>
-                        @Model.ProductoNombre
+                        <span>@Model.ProductoNombre</span>
                     </h4>
 
-                    <p class="text-muted">
-                        <i class="bi bi-tag"></i> @Model.CategoriaNombre
+                    <p class="text-muted mb-3">
+                        <small>
+                            <i class="bi bi-tag"></i> @Model.CategoriaNombre
+                        </small>
                     </p>
 
                     <hr />
 
                     <div class="row text-center mb-3">
-                        <div class="col-md-4">
-                            <h3 class="@(Model.StockActual == 0 ? "text-danger" : Model.StockActual <= (Model.StockMinimo * 0.3m) ? "text-warning" : "text-secondary")">
+                        <div class="col-md-4 mb-3 mb-md-0">
+                            <h3 class="mb-0 @(Model.StockActual == 0 ? "text-danger" : Model.StockActual <= (Model.StockMinimo * 0.3m) ? "text-warning" : "text-secondary")">
                                 @Model.StockActual.ToString("N0")
                             </h3>
-                            <small class="text-muted">Stock Actual</small>
+                            <small class="text-muted d-block">Stock actual</small>
+                        </div>
+                        <div class="col-md-4 mb-3 mb-md-0">
+                            <h3 class="mb-0 text-primary">
+                                @Model.StockMinimo.ToString("N0")
+                            </h3>
+                            <small class="text-muted d-block">Stock mínimo</small>
                         </div>
                         <div class="col-md-4">
-                            <h3 class="text-primary">@Model.StockMinimo.ToString("N0")</h3>
-                            <small class="text-muted">Stock Mínimo</small>
-                        </div>
-                        <div class="col-md-4">
-                            <h3 class="text-info">@Model.PorcentajeStockMinimo.ToString("N0")%</h3>
-                            <small class="text-muted">% del Mínimo</small>
+                            <h3 class="mb-0 text-info">
+                                @Model.PorcentajeStockMinimo.ToString("N0")%
+                            </h3>
+                            <small class="text-muted d-block">% del mínimo</small>
                         </div>
                     </div>
 
                     @if (Model.CantidadSugeridaReposicion.HasValue)
                     {
-                        <div class="alert alert-info">
-                            <h5><i class="bi bi-lightbulb"></i> Reposición Sugerida</h5>
-                            <h2 class="mb-0">+@Model.CantidadSugeridaReposicion.Value.ToString("N0") unidades</h2>
+                        <div class="alert alert-info mb-3">
+                            <h5 class="mb-2">
+                                <i class="bi bi-lightbulb me-1"></i>
+                                Reposición sugerida
+                            </h5>
+                            <h2 class="mb-1">
+                                +@Model.CantidadSugeridaReposicion.Value.ToString("N0") unidades
+                            </h2>
                             <small class="text-muted">
-                                Stock objetivo: @((Model.StockMinimo * 3).ToString("N0")) unidades
+                                Stock objetivo: @((Model.StockMinimo * 3).ToString("N0")) unidades.
                             </small>
                         </div>
                     }
 
                     <div class="mt-3">
-                        <a asp-controller="Producto" asp-action="Details" asp-route-id="@Model.ProductoId"
-                           class="btn btn-info w-100 mb-2">
-                            <i class="bi bi-eye"></i> Ver Detalles del Producto
+                        <a asp-controller="Producto"
+                           asp-action="Details"
+                           asp-route-id="@Model.ProductoId"
+                           class="btn btn-outline-info w-100 mb-2">
+                            <i class="bi bi-eye me-1"></i>Ver detalles del producto
                         </a>
-                        <a asp-controller="Producto" asp-action="Edit" asp-route-id="@Model.ProductoId"
+                        <a asp-controller="Producto"
+                           asp-action="Edit"
+                           asp-route-id="@Model.ProductoId"
                            class="btn btn-primary w-100">
-                            <i class="bi bi-pencil"></i> Editar Producto
+                            <i class="bi bi-pencil me-1"></i>Editar producto
                         </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <!-- Acciones -->
+        <!-- COLUMNA DERECHA -->
+        <div class="col-12 col-lg-4">
+
+            <!-- Acciones / Resolución -->
             @if (Model.Estado == TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)
             {
-                <div class="card mb-3">
+                <div class="card card-animate mb-3">
                     <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-check-circle"></i> Acciones
-                        </h5>
+                        <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-check-circle"></i>
+                            <span>Acciones</span>
+                        </h2>
                     </div>
                     <div class="card-body">
-                        <form asp-action="Resolver" asp-route-id="@Model.Id" method="post" class="mb-2">
+                        <form asp-action="Resolver" asp-route-id="@Model.Id" method="post" class="mb-3">
                             @Html.AntiForgeryToken()
                             <div class="mb-3">
                                 <label class="form-label">Observaciones (opcional)</label>
-                                <textarea name="observaciones" class="form-control" rows="3"
+                                <textarea name="observaciones"
+                                      class="form-control"
+                                      rows="3"
                                       placeholder="Ej: Stock repuesto mediante orden de compra #123"></textarea>
                             </div>
                             <button type="submit" class="btn btn-success w-100">
-                                <i class="bi bi-check-circle"></i> Resolver Alerta
+                                <i class="bi bi-check-circle me-1"></i>Resolver alerta
                             </button>
                         </form>
 
-                        <hr />
+                        <hr class="my-3" />
 
                         <form asp-action="Ignorar" asp-route-id="@Model.Id" method="post">
                             @Html.AntiForgeryToken()
                             <div class="mb-3">
                                 <label class="form-label">Motivo (opcional)</label>
-                                <textarea name="observaciones" class="form-control" rows="3"
+                                <textarea name="observaciones"
+                                      class="form-control"
+                                      rows="3"
                                       placeholder="Ej: Producto descontinuado"></textarea>
                             </div>
-                            <button type="submit" class="btn btn-secondary w-100"
+                            <button type="submit"
+                                    class="btn btn-outline-secondary w-100"
                                     onclick="return confirm('¿Está seguro de ignorar esta alerta?')">
-                                <i class="bi bi-x-circle"></i> Ignorar Alerta
+                                <i class="bi bi-x-circle me-1"></i>Ignorar alerta
                             </button>
                         </form>
                     </div>
@@ -179,16 +223,17 @@
             }
             else
             {
-                <div class="card mb-3">
+                <div class="card card-animate mb-3">
                     <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-info-circle"></i> Resolución
-                        </h5>
+                        <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-info-circle"></i>
+                            <span>Resolución</span>
+                        </h2>
                     </div>
                     <div class="card-body">
                         @if (Model.FechaResolucion.HasValue)
                         {
-                            <p>
+                            <p class="mb-2">
                                 <strong>Fecha:</strong><br />
                                 @Model.FechaResolucion.Value.ToString("dd/MM/yyyy HH:mm")
                             </p>
@@ -196,7 +241,7 @@
 
                         @if (!string.IsNullOrEmpty(Model.UsuarioResolucion))
                         {
-                            <p>
+                            <p class="mb-2">
                                 <strong>Usuario:</strong><br />
                                 <i class="bi bi-person"></i> @Model.UsuarioResolucion
                             </p>
@@ -204,7 +249,7 @@
 
                         @if (!string.IsNullOrEmpty(Model.Observaciones))
                         {
-                            <p>
+                            <p class="mb-0">
                                 <strong>Observaciones:</strong><br />
                                 @Model.Observaciones
                             </p>
@@ -213,34 +258,31 @@
                 </div>
             }
 
-            <!-- Estadísticas Rápidas -->
-            <div class="card">
+            <!-- Estadísticas rápidas -->
+            <div class="card card-animate">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-graph-up"></i> Datos Adicionales
-                    </h5>
+                    <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-graph-up"></i>
+                        <span>Datos adicionales</span>
+                    </h2>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <small class="text-muted">Prioridad</small>
-                        <h5>
-                            <span class="badge @Model.BadgePrioridad">
-                                @Model.PrioridadDescripcion
-                            </span>
-                        </h5>
+                        <small class="text-muted d-block">Prioridad</small>
+                        <span class="badge @Model.BadgePrioridad mt-1">
+                            @Model.PrioridadDescripcion
+                        </span>
                     </div>
 
                     <div class="mb-3">
-                        <small class="text-muted">Tipo de Alerta</small>
-                        <h5>
-                            <span class="badge @Model.BadgeTipo">
-                                <i class="@Model.IconoTipo"></i> @Model.TipoDescripcion
-                            </span>
-                        </h5>
+                        <small class="text-muted d-block">Tipo de alerta</small>
+                        <span class="badge @Model.BadgeTipo mt-1">
+                            <i class="@Model.IconoTipo"></i> @Model.TipoDescripcion
+                        </span>
                     </div>
 
                     <div class="mb-3">
-                        <small class="text-muted">Días desde creación</small>
+                        <small class="text-muted d-block">Días desde creación</small>
                         <h4 class="mb-0 @(Model.EstaVencida ? "text-danger" : "")">
                             @Model.DiasDesdeAlerta
                         </h4>
@@ -249,7 +291,8 @@
                     @if (Model.NotificacionUrgente)
                     {
                         <div class="alert alert-warning mb-0">
-                            <i class="bi bi-bell-fill"></i> Urgente
+                            <i class="bi bi-bell-fill me-1"></i>
+                            Urgente
                         </div>
                     }
                 </div>

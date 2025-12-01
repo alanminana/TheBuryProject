@@ -1,4 +1,5 @@
 ﻿using TheBuryProject.Services;
+using TheBuryProject.Services.Interfaces;
 using TheBuryProject.Services.Validators;
 
 namespace TheBuryProject.Extensions
@@ -9,6 +10,7 @@ namespace TheBuryProject.Extensions
         {
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IFinancialCalculationService, FinancialCalculationService>();
+            services.AddScoped<IPrequalificationService, PrequalificationService>();
             services.AddScoped<IVentaValidator, VentaValidator>();
             services.AddScoped<VentaNumberGenerator>();
 

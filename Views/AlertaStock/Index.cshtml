@@ -1,4 +1,5 @@
 ﻿@model TheBuryProject.ViewModels.PaginatedResult<TheBuryProject.ViewModels.AlertaStockViewModel>
+
 @{
     ViewData["Title"] = "Alertas de Stock";
     var filtro = ViewBag.Filtro as TheBuryProject.ViewModels.AlertaStockFiltroViewModel;
@@ -7,114 +8,153 @@
     var estados = ViewBag.Estados as TheBuryProject.Models.Enums.EstadoAlerta[];
 }
 
-<div class="container-fluid">
-    <div class="row mb-3">
-        <div class="col">
-            <h2>⚠️ Alertas de Stock</h2>
-            <p class="text-muted">Gestión de alertas automáticas de productos con stock bajo</p>
+<div class="container-fluid px-0">
+
+    <!-- Header de página -->
+    <div class="d-flex align-items-start justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Alertas de stock</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <span>Gestión de alertas</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Gestión de alertas automáticas de productos con stock bajo.
+            </p>
         </div>
-        <div class="col-auto">
-            <a asp-action="Pendientes" class="btn btn-warning">
-                <i class="bi bi-exclamation-triangle"></i> Ver Pendientes
+
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Pendientes" class="btn btn-warning btn-sm">
+                <i class="bi bi-exclamation-triangle me-1"></i>Pendientes
             </a>
-            <a asp-action="Criticos" class="btn btn-danger">
-                <i class="bi bi-exclamation-octagon"></i> Productos Críticos
+            <a asp-action="Criticos" class="btn btn-danger btn-sm">
+                <i class="bi bi-exclamation-octagon me-1"></i>Productos críticos
             </a>
-            <a asp-action="Estadisticas" class="btn btn-info">
-                <i class="bi bi-bar-chart"></i> Estadísticas
+            <a asp-action="Estadisticas" class="btn btn-info btn-sm">
+                <i class="bi bi-bar-chart me-1"></i>Estadísticas
             </a>
-            <form asp-action="GenerarAlertas" method="post" style="display:inline;">
+            <form asp-action="GenerarAlertas" method="post" class="d-inline-block">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-primary" onclick="return confirm('¿Generar alertas de stock manualmente?')">
-                    <i class="bi bi-arrow-clockwise"></i> Generar Alertas
+                <button type="submit"
+                        class="btn btn-primary btn-sm"
+                        onclick="return confirm('¿Generar alertas de stock manualmente?')">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Generar alertas
                 </button>
             </form>
         </div>
     </div>
 
     <!-- Filtros -->
-    <div class="card mb-3">
+    <div class="card card-animate mb-3">
         <div class="card-body">
             <form asp-action="Index" method="get">
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <label class="form-label">Código Producto</label>
-                        <input type="text" class="form-control" name="ProductoCodigo" value="@filtro?.ProductoCodigo" placeholder="Buscar por código..." />
+                        <label class="form-label">Código producto</label>
+                        <input type="text"
+                               class="form-control"
+                               name="ProductoCodigo"
+                               value="@filtro?.ProductoCodigo"
+                               placeholder="Buscar por código..." />
                     </div>
+
                     <div class="col-md-3">
-                        <label class="form-label">Nombre Producto</label>
-                        <input type="text" class="form-control" name="ProductoNombre" value="@filtro?.ProductoNombre" placeholder="Buscar por nombre..." />
+                        <label class="form-label">Nombre producto</label>
+                        <input type="text"
+                               class="form-control"
+                               name="ProductoNombre"
+                               value="@filtro?.ProductoNombre"
+                               placeholder="Buscar por nombre..." />
                     </div>
+
                     <div class="col-md-2">
                         <label class="form-label">Tipo</label>
                         <select class="form-select" name="Tipo">
                             <option value="">Todos</option>
                             @if (tiposAlerta != null)
                             {
-                                @foreach (var tipo in tiposAlerta)
+                                foreach (var tipo in tiposAlerta)
                                 {
-                                    <option value="@((int)tipo)" selected="@(filtro?.Tipo == tipo)">@tipo</option>
+                                    var selected = (filtro?.Tipo == tipo) ? "selected" : null;
+                                    <option value="@((int)tipo)" selected="@selected">@tipo</option>
                                 }
                             }
                         </select>
                     </div>
+
                     <div class="col-md-2">
                         <label class="form-label">Prioridad</label>
                         <select class="form-select" name="Prioridad">
                             <option value="">Todas</option>
                             @if (prioridades != null)
                             {
-                                @foreach (var prioridad in prioridades)
+                                foreach (var prioridad in prioridades)
                                 {
-                                    <option value="@((int)prioridad)" selected="@(filtro?.Prioridad == prioridad)">@prioridad</option>
+                                    var selected = (filtro?.Prioridad == prioridad) ? "selected" : null;
+                                    <option value="@((int)prioridad)" selected="@selected">@prioridad</option>
                                 }
                             }
                         </select>
                     </div>
+
                     <div class="col-md-2">
                         <label class="form-label">Estado</label>
                         <select class="form-select" name="Estado">
                             <option value="">Todos</option>
                             @if (estados != null)
                             {
-                                @foreach (var estado in estados)
+                                foreach (var estado in estados)
                                 {
-                                    <option value="@((int)estado)" selected="@(filtro?.Estado == estado)">@estado</option>
+                                    var selected = (filtro?.Estado == estado) ? "selected" : null;
+                                    <option value="@((int)estado)" selected="@selected">@estado</option>
                                 }
                             }
                         </select>
                     </div>
                 </div>
+
                 <div class="row g-3 mt-2">
                     <div class="col-md-3">
                         <div class="form-check mt-4">
-                            <input class="form-check-input" type="checkbox" name="SoloUrgentes" value="true" id="soloUrgentes" @(filtro?.SoloUrgentes == true ? "checked" : "") />
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="SoloUrgentes"
+                                   value="true"
+                                   id="soloUrgentes"
+                                   @(filtro?.SoloUrgentes == true ? "checked" : "") />
                             <label class="form-check-label" for="soloUrgentes">
                                 Solo urgentes
                             </label>
                         </div>
                     </div>
+
                     <div class="col-md-3">
                         <div class="form-check mt-4">
-                            <input class="form-check-input" type="checkbox" name="SoloVencidas" value="true" id="soloVencidas" @(filtro?.SoloVencidas == true ? "checked" : "") />
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="SoloVencidas"
+                                   value="true"
+                                   id="soloVencidas"
+                                   @(filtro?.SoloVencidas == true ? "checked" : "") />
                             <label class="form-check-label" for="soloVencidas">
-                                Solo vencidas (>7 días)
+                                Solo vencidas (&gt; 7 días)
                             </label>
                         </div>
                     </div>
+
                     <div class="col-md-3">
                         <label class="form-label">&nbsp;</label>
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-search"></i> Buscar
+                                <i class="bi bi-search me-1"></i>Buscar
                             </button>
                         </div>
                     </div>
+
                     <div class="col-md-3">
                         <label class="form-label">&nbsp;</label>
                         <div class="d-grid">
                             <a asp-action="Index" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Limpiar
+                                <i class="bi bi-x-circle me-1"></i>Limpiar
                             </a>
                         </div>
                     </div>
@@ -126,20 +166,33 @@
     <!-- Resultados -->
     @if (Model.TotalRecords == 0)
     {
-        <div class="alert alert-success">
-            <i class="bi bi-check-circle"></i> No hay alertas de stock con los filtros especificados.
+        <div class="card card-animate border-0">
+            <div class="card-body text-center py-5">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle text-success" style="font-size: 2.8rem;"></i>
+                </div>
+                <h2 class="h5 mb-2">No hay alertas de stock</h2>
+                <p class="text-muted mb-0">
+                    No se encontraron alertas con los filtros especificados.
+                </p>
+            </div>
         </div>
     }
     else
     {
-        <div class="card">
-            <div class="card-header">
-                <strong>@Model.TotalRecords</strong> alertas encontradas
-                (Mostrando @Model.FirstRecord - @Model.LastRecord)
+        <div class="card card-animate">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>@Model.TotalRecords</strong> alertas encontradas
+                    <span class="text-muted small">
+                        (Mostrando @Model.FirstRecord - @Model.LastRecord)
+                    </span>
+                </div>
             </div>
+
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0 align-middle">
                         <thead class="table-dark">
                             <tr>
                                 <th>Producto</th>
@@ -149,72 +202,103 @@
                                 <th>Reposición</th>
                                 <th>Fecha</th>
                                 <th>Estado</th>
-                                <th>Acciones</th>
+                                <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var alerta in Model.Items)
                             {
-                                <tr class="@(alerta.NotificacionUrgente ? "table-danger" : "") @(alerta.EstaVencida ? "table-warning" : "")">
+                                var rowClass = "";
+                                if (alerta.NotificacionUrgente)
+                                {
+                                    rowClass = "table-danger";
+                                }
+                                else if (alerta.EstaVencida)
+                                {
+                                    rowClass = "table-warning";
+                                }
+
+                                <tr class="@rowClass">
                                     <td>
-                                        <strong>@alerta.ProductoCodigo</strong><br />
-                                        <small class="text-muted">@alerta.ProductoNombre</small><br />
-                                        <small class="badge bg-secondary">@alerta.CategoriaNombre</small>
+                                        <div class="fw-semibold">@alerta.ProductoCodigo</div>
+                                        <div class="small text-muted">@alerta.ProductoNombre</div>
+                                        <div class="mt-1">
+                                            <span class="badge bg-secondary">@alerta.CategoriaNombre</span>
+                                        </div>
                                     </td>
+
                                     <td>
                                         <span class="badge @alerta.BadgeTipo">
                                             <i class="@alerta.IconoTipo"></i> @alerta.TipoDescripcion
                                         </span>
                                     </td>
+
                                     <td>
                                         <span class="badge @alerta.BadgePrioridad">
                                             @alerta.PrioridadDescripcion
                                         </span>
                                     </td>
+
                                     <td>
-                                        <strong>@alerta.StockActual</strong> / @alerta.StockMinimo<br />
-                                        <small class="text-muted">@alerta.PorcentajeStockMinimo.ToString("N0")%</small>
+                                        <div class="fw-semibold">
+                                            @alerta.StockActual / @alerta.StockMinimo
+                                        </div>
+                                        <small class="text-muted">
+                                            @alerta.PorcentajeStockMinimo.ToString("N0")%
+                                        </small>
                                     </td>
+
                                     <td>
                                         @if (alerta.CantidadSugeridaReposicion.HasValue)
                                         {
                                             <span class="badge bg-info">
-                                                +@alerta.CantidadSugeridaReposicion.Value.ToString("N0") unidades
+                                                +@alerta.CantidadSugeridaReposicion.Value.ToString("N0") u.
                                             </span>
                                         }
                                     </td>
+
                                     <td>
                                         <small>@alerta.FechaAlerta.ToString("dd/MM/yyyy HH:mm")</small><br />
                                         @if (alerta.EstaVencida)
                                         {
                                             <small class="text-danger">
-                                                <i class="bi bi-clock"></i> Vencida (@alerta.DiasDesdeAlerta días)
+                                                <i class="bi bi-clock me-1"></i>Vencida (@alerta.DiasDesdeAlerta días)
                                             </small>
                                         }
                                         else
                                         {
-                                            <small class="text-muted">Hace @alerta.DiasDesdeAlerta día(s)</small>
+                                            <small class="text-muted">
+                                                Hace @alerta.DiasDesdeAlerta día(s)
+                                            </small>
                                         }
                                     </td>
+
                                     <td>
                                         <span class="badge @alerta.BadgeEstado">
                                             @alerta.EstadoDescripcion
                                         </span>
                                     </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a asp-controller="Producto" asp-action="Details" asp-route-id="@alerta.ProductoId"
-                                               class="btn btn-sm btn-info" title="Ver producto">
+
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-controller="Producto"
+                                               asp-action="Details"
+                                               asp-route-id="@alerta.ProductoId"
+                                               class="btn btn-outline-info"
+                                               title="Ver producto">
                                                 <i class="bi bi-eye"></i>
                                             </a>
+
                                             @if (alerta.Estado == TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)
                                             {
-                                                <button type="button" class="btn btn-sm btn-success"
+                                                <button type="button"
+                                                        class="btn btn-outline-success"
                                                         onclick="resolverAlerta(@alerta.Id, '@alerta.ProductoNombre')"
                                                         title="Resolver">
                                                     <i class="bi bi-check-circle"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-secondary"
+                                                <button type="button"
+                                                        class="btn btn-outline-secondary"
                                                         onclick="ignorarAlerta(@alerta.Id, '@alerta.ProductoNombre')"
                                                         title="Ignorar">
                                                     <i class="bi bi-x-circle"></i>
@@ -228,22 +312,37 @@
                     </table>
                 </div>
             </div>
+
             @if (Model.TotalPages > 1)
             {
                 <div class="card-footer">
                     <nav>
-                        <ul class="pagination mb-0 justify-content-center">
+                        <ul class="pagination pagination-sm mb-0 justify-content-center">
                             <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
-                                <a class="page-link" asp-action="Index" asp-route-PageNumber="@(Model.PageNumber - 1)">Anterior</a>
+                                <a class="page-link"
+                                   asp-action="Index"
+                                   asp-route-PageNumber="@(Model.PageNumber - 1)">
+                                    Anterior
+                                </a>
                             </li>
+
                             @for (int i = 1; i <= Model.TotalPages && i <= 10; i++)
                             {
                                 <li class="page-item @(i == Model.PageNumber ? "active" : "")">
-                                    <a class="page-link" asp-action="Index" asp-route-PageNumber="@i">@i</a>
+                                    <a class="page-link"
+                                       asp-action="Index"
+                                       asp-route-PageNumber="@i">
+                                        @i
+                                    </a>
                                 </li>
                             }
+
                             <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
-                                <a class="page-link" asp-action="Index" asp-route-PageNumber="@(Model.PageNumber + 1)">Siguiente</a>
+                                <a class="page-link"
+                                   asp-action="Index"
+                                   asp-route-PageNumber="@(Model.PageNumber + 1)">
+                                    Siguiente
+                                </a>
                             </li>
                         </ul>
                     </nav>
@@ -251,6 +350,11 @@
             }
         </div>
     }
+</div>
+
+<!-- Token global para JS (formularios dinámicos) -->
+<div class="d-none">
+    @Html.AntiForgeryToken()
 </div>
 
 @section Scripts {
@@ -310,5 +414,3 @@
         }
     </script>
 }
-
-@Html.AntiForgeryToken()

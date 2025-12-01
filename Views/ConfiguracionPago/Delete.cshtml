@@ -1,28 +1,44 @@
 ﻿@model TheBuryProject.ViewModels.ConfiguracionPagoViewModel
 @{
-    ViewData["Title"] = "Eliminar Configuración";
+    ViewData["Title"] = "Eliminar Configuración de Pago";
 }
 
 <section class="container-fluid py-4 text-light">
     <div class="row justify-content-center">
         <div class="col-lg-8">
 
+            <!-- Encabezado -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">
+                        <i class="bi bi-trash text-danger me-2"></i>@ViewData["Title"]
+                    </h2>
+                    <p class="text-secondary mb-0">Esta acción no se puede deshacer.</p>
+                </div>
+                <a asp-action="Index" class="btn btn-outline-light">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+
+            <!-- Card principal -->
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-danger text-light">
                     <h4 class="fw-bold mb-0">
-                        <i class="bi bi-trash me-2"></i>@ViewData["Title"]
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación
                     </h4>
                 </div>
 
                 <div class="card-body">
+
                     <div class="alert alert-danger bg-opacity-10 border-danger text-light">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         <strong>Atención:</strong> Esta acción eliminará permanentemente la configuración de pago seleccionada.
                     </div>
 
-                    <h5 class="fw-semibold mt-3">¿Confirma la eliminación?</h5>
+                    <h5 class="fw-semibold mt-3 mb-3">¿Confirmás la eliminación de esta configuración?</h5>
 
-                    <table class="table table-dark table-borderless align-middle mt-3">
+                    <!-- Resumen principal -->
+                    <table class="table table-dark table-borderless align-middle mt-2 mb-0">
                         <tr>
                             <th class="text-muted" width="30%">Tipo de Pago:</th>
                             <td class="fw-semibold">@Model.TipoPago</td>
@@ -45,14 +61,91 @@
                         </tr>
                     </table>
 
+                    <!-- Resumen de reglas -->
+                    <div class="row mt-3 g-3">
+                        <div class="col-md-4">
+                            <div class="card bg-secondary bg-opacity-10 border-secondary h-100">
+                                <div class="card-body">
+                                    <h6 class="text-secondary text-uppercase small mb-2">
+                                        <i class="bi bi-tag me-1"></i>Descuentos
+                                    </h6>
+                                    @if (Model.PermiteDescuento)
+                                    {
+                                        <p class="mb-1">
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Permite descuento
+                                            </span>
+                                        </p>
+                                        <p class="mb-0 text-secondary small">
+                                            Máximo: @(Model.PorcentajeDescuentoMaximo.HasValue
+                                                                                    ? Model.PorcentajeDescuentoMaximo.Value.ToString("N2") + " %"
+                                                                                : "-")
+                                    </p>
+                                                                        }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle"></i> No permite descuento
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card bg-secondary bg-opacity-10 border-secondary h-100">
+                                <div class="card-body">
+                                    <h6 class="text-secondary text-uppercase small mb-2">
+                                        <i class="bi bi-percent me-1"></i>Recargos
+                                    </h6>
+                                    @if (Model.TieneRecargo)
+                                    {
+                                        <p class="mb-1">
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-exclamation-circle"></i> Con recargo
+                                            </span>
+                                        </p>
+                                        <p class="mb-0 text-secondary small">
+                                            Recargo: @(Model.PorcentajeRecargo.HasValue
+                                                                                    ? Model.PorcentajeRecargo.Value.ToString("N2") + " %"
+                                                                                : "-")
+                                    </p>
+                                                                        }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle"></i> Sin recargo
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card bg-secondary bg-opacity-10 border-secondary h-100">
+                                <div class="card-body">
+                                    <h6 class="text-secondary text-uppercase small mb-2">
+                                        <i class="bi bi-info-circle me-1"></i>Impacto
+                                    </h6>
+                                    <p class="text-secondary small mb-0">
+                                        Esta configuración ya no estará disponible para nuevas ventas o cobranzas.
+                                        Los registros históricos no se modifican.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario -->
                     <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="mt-4">
                         @Html.AntiForgeryToken()
                         <div class="d-flex justify-content-end gap-3">
                             <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-light px-4">
                                 <i class="bi bi-x-circle me-1"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-danger px-4">
-                                <i class="bi bi-trash me-1"></i>Eliminar Definitivamente
+                            <button type="submit" class="btn btn-danger px-4"
+                                    onclick="return confirm('¿Está seguro de eliminar esta configuración de pago? Esta acción no se puede deshacer.');">
+                                <i class="bi bi-trash me-1"></i>Eliminar definitivamente
                             </button>
                         </div>
                     </form>
