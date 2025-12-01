@@ -1,0 +1,16 @@
+/* Estilos específicos para comprobantes de cierre de caja */
+@media print {
+    .page-toolbar-print,
+    .btn,
+    a.btn {
+        display: none !important;
+    }
+
+    body {
+        background: #ffffff !important;
+    }
+
+    .card {
+        border: 1px solid #000 !important;
+    }
+}

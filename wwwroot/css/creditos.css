@@ -1,0 +1,80 @@
+/* Créditos y configuraciones de venta */
+.validation-summary-valid.alert {
+    display: none;
+}
+
+.panel-soft {
+    background: linear-gradient(135deg, var(--tb-bg-elevated), var(--tb-bg-surface));
+    border: 1px solid var(--tb-border-soft);
+    color: var(--tb-text-main);
+    border-radius: var(--tb-radius);
+}
+
+.panel-soft .card-header {
+    background: linear-gradient(120deg, color-mix(in srgb, var(--tb-primary) 18%, transparent), color-mix(in srgb, var(--tb-primary) 8%, transparent));
+    color: var(--tb-text-main);
+    border-bottom: 1px solid var(--tb-border-soft);
+}
+
+.info-block {
+    background: color-mix(in srgb, var(--tb-primary) 12%, transparent);
+    color: var(--tb-text-main);
+    border: 1px solid color-mix(in srgb, var(--tb-primary) 35%, transparent);
+}
+
+.error-block {
+    background: color-mix(in srgb, var(--tb-danger) 14%, transparent);
+    color: #f8d7da;
+    border: 1px solid color-mix(in srgb, var(--tb-danger) 45%, transparent);
+}
+
+.state-yellow {
+    background-color: var(--tb-warning);
+    color: #0c0c0c;
+}
+
+.state-green {
+    background-color: var(--tb-success-soft);
+    color: #e8f7ef;
+}
+
+.state-red {
+    background-color: var(--tb-danger);
+    color: #ffeaea;
+}
+
+.summary-grid {
+    background: var(--tb-bg-surface-soft);
+    border: 1px solid var(--tb-border-soft);
+    border-radius: var(--tb-radius);
+}
+
+.summary-grid .summary-item {
+    padding: 0.75rem;
+    border-right: 1px solid var(--tb-border-soft);
+}
+
+.summary-grid .summary-item:last-child {
+    border-right: none;
+}
+
+.summary-item small {
+    color: var(--tb-text-muted);
+    letter-spacing: 0.5px;
+}
+
+.summary-item .value {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+@media (max-width: 991.98px) {
+    .summary-grid .summary-item {
+        border-right: none;
+        border-bottom: 1px solid var(--tb-border-soft);
+    }
+
+    .summary-grid .summary-item:last-child {
+        border-bottom: none;
+    }
+}

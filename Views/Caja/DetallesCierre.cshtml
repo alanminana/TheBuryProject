@@ -4,11 +4,15 @@
     ViewData["Title"] = "Detalles del Cierre";
 }
 
-<div class="container-fluid px-0">
+@section Styles {
+    <link rel="stylesheet" href="~/css/caja.css" asp-append-version="true" />
+}
+
+<section class="container-fluid py-4 text-light">
 
     <!-- Header de página -->
-    <div class="d-flex align-items-start justify-content-between mb-4 page-toolbar-print">
-        <div>
+    <div class="row align-items-start justify-content-between mb-4 page-toolbar-print g-3">
+        <div class="col">
             <div class="text-muted text-uppercase small mb-1">Cajas</div>
             <h1 class="h4 mb-1 d-flex align-items-center gap-2">
                 <i class="bi bi-file-text"></i>
@@ -19,10 +23,8 @@
             </p>
         </div>
 
-        <div class="d-flex flex-wrap gap-2">
-            <button type="button"
-                    onclick="window.print()"
-                    class="btn btn-primary btn-sm">
+        <div class="col-auto d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary btn-sm" id="imprimirCierre">
                 <i class="bi bi-printer me-1"></i>Imprimir
             </button>
             <a asp-action="Historial" class="btn btn-outline-secondary btn-sm">
@@ -34,7 +36,7 @@
         </div>
     </div>
 
-    <div class="card card-animate">
+    <div class="card bg-dark border-0 shadow-sm card-animate">
         <div class="card-body">
 
             <!-- Encabezado del comprobante -->
@@ -49,11 +51,11 @@
             <!-- Información general -->
             <div class="row g-3 mb-4">
                 <div class="col-md-6">
-                    <div class="card bg-dark bg-opacity-25 h-100">
+                    <div class="card bg-dark border-0 h-100 shadow-sm">
                         <div class="card-body">
                             <h2 class="h6 text-uppercase text-muted mb-3">Información de la caja</h2>
                             <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
+                                <table class="table table-dark table-hover align-middle mb-0">
                                     <tbody class="small">
                                         <tr>
                                             <td class="text-muted w-25">Caja</td>
@@ -79,11 +81,11 @@
                 </div>
 
                 <div class="col-md-6">
-                    <div class="card bg-dark bg-opacity-25 h-100">
+                    <div class="card bg-dark border-0 h-100 shadow-sm">
                         <div class="card-body">
                             <h2 class="h6 text-uppercase text-muted mb-3">Información del turno</h2>
                             <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
+                                <table class="table table-dark table-hover align-middle mb-0">
                                     <tbody class="small">
                                         <tr>
                                             <td class="text-muted w-35">Apertura</td>
@@ -120,7 +122,7 @@
                 <h2 class="h6 text-uppercase text-muted mb-3">Datos del sistema</h2>
                 <div class="row g-3">
                     <div class="col-6 col-md-3">
-                        <div class="card border-0 bg-dark bg-opacity-25 h-100">
+                        <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
                                 <small class="text-muted text-uppercase d-block mb-1">Monto inicial</small>
                                 <h5 class="mb-0 text-primary">
@@ -130,7 +132,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="card border-0 bg-dark bg-opacity-25 h-100">
+                        <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
                                 <small class="text-muted text-uppercase d-block mb-1">Total ingresos</small>
                                 <h5 class="mb-0 text-success">
@@ -140,7 +142,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="card border-0 bg-dark bg-opacity-25 h-100">
+                        <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
                                 <small class="text-muted text-uppercase d-block mb-1">Total egresos</small>
                                 <h5 class="mb-0 text-danger">
@@ -150,7 +152,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="card border-0 bg-info bg-opacity-25 h-100">
+                        <div class="card border-0 bg-info bg-opacity-25 h-100 shadow-sm">
                             <div class="card-body text-center py-3">
                                 <small class="text-muted text-uppercase d-block mb-1">Monto esperado</small>
                                 <h5 class="mb-0 text-info">
@@ -167,7 +169,7 @@
                 <h2 class="h6 text-uppercase text-muted mb-3">Arqueo físico</h2>
                 <div class="row g-3">
                     <div class="col-6 col-md-3">
-                        <div class="card border-0 bg-dark bg-opacity-25 h-100">
+                        <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
                                 <small class="text-muted text-uppercase d-block mb-1">Efectivo</small>
                                 <h5 class="mb-0">
@@ -177,7 +179,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="card border-0 bg-dark bg-opacity-25 h-100">
+                        <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
                                 <small class="text-muted text-uppercase d-block mb-1">Cheques</small>
                                 <h5 class="mb-0">
@@ -187,7 +189,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="card border-0 bg-dark bg-opacity-25 h-100">
+                        <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
                                 <small class="text-muted text-uppercase d-block mb-1">Vales / otros</small>
                                 <h5 class="mb-0">
@@ -197,7 +199,7 @@
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="card border-0 bg-primary bg-opacity-25 h-100">
+                        <div class="card border-0 bg-primary bg-opacity-25 h-100 shadow-sm">
                             <div class="card-body text-center py-3">
                                 <small class="text-muted text-uppercase d-block mb-1">Total real</small>
                                 <h5 class="mb-0 text-primary">
@@ -219,7 +221,7 @@
                     ? (Model.Diferencia > 0 ? "text-success" : "text-danger")
                     : "text-success";
                 }
-                <div class="card @diffCardClass">
+                <div class="card bg-dark border-0 shadow-sm @diffCardClass">
                     <div class="card-body text-center">
                         <h2 class="h6 text-uppercase text-muted mb-2">Diferencia</h2>
 
@@ -269,7 +271,7 @@
             {
                 <div class="mb-4">
                     <h2 class="h6 text-uppercase text-muted mb-2">Detalle de billetes y monedas</h2>
-                    <div class="card bg-dark bg-opacity-25">
+                    <div class="card bg-dark border-0 shadow-sm">
                         <div class="card-body">
                             <pre class="mb-0 small">@Model.DetalleArqueo</pre>
                         </div>
@@ -282,7 +284,7 @@
             {
                 <div class="mb-4">
                     <h2 class="h6 text-uppercase text-muted mb-2">Observaciones del cierre</h2>
-                    <div class="card bg-dark bg-opacity-25">
+                    <div class="card bg-dark border-0 shadow-sm">
                         <div class="card-body">
                             <p class="mb-0 small">@Model.ObservacionesCierre</p>
                         </div>
@@ -293,7 +295,7 @@
             <!-- Resumen de movimientos -->
             <div class="mb-4">
                 <h2 class="h6 text-uppercase text-muted mb-2">Resumen de movimientos</h2>
-                <div class="card bg-dark bg-opacity-25">
+                <div class="card bg-dark border-0 shadow-sm">
                     <div class="card-body small">
                         <p class="mb-1">
                             <strong>Total de movimientos:</strong>
@@ -323,26 +325,12 @@
                     <p class="mb-0 small"><strong>Firma usuario cierre</strong></p>
                     <small class="text-muted">@Model.UsuarioCierre</small>
                 </div>
-            </div>
+                </div>
 
         </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
-    <style media="print">
-        .page-toolbar-print,
-        .btn,
-        a.btn {
-            display: none !important;
-        }
-
-        body {
-            background: #ffffff !important;
-        }
-
-        .card {
-            border: 1px solid #000 !important;
-        }
-    </style>
+    <script src="~/js/caja-detalles-cierre.js" asp-append-version="true"></script>
 }
