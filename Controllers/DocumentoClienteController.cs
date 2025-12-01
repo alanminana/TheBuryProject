@@ -44,6 +44,29 @@ namespace TheBuryProject.Controllers
                 filtro.Documentos = documentos;
                 filtro.TotalResultados = total;
 
+                filtro.UploadModel = new DocumentoClienteViewModel
+                {
+                    ClienteId = filtro.ClienteId ?? 0,
+                    ReturnToVentaId = filtro.ReturnToVentaId
+                };
+
+                if (filtro.UploadModel.ClienteId > 0)
+                {
+                    var cliente = await _context.Clientes
+                        .Where(c => c.Id == filtro.UploadModel.ClienteId)
+                        .Select(c => new
+                        {
+                            c.Id,
+                            NombreCompleto = $"{c.Apellido}, {c.Nombre} - DNI: {c.NumeroDocumento}"
+                        })
+                        .FirstOrDefaultAsync();
+
+                    if (cliente != null)
+                    {
+                        filtro.UploadModel.ClienteNombre = cliente.NombreCompleto;
+                    }
+                }
+
                 if (filtro.ReturnToVentaId.HasValue)
                 {
                     var venta = await _context.Ventas.FindAsync(filtro.ReturnToVentaId.Value);
@@ -418,11 +441,8 @@ namespace TheBuryProject.Controllers
             {
                 TipoDocumentoCliente.DNI => "DNI",
                 TipoDocumentoCliente.ReciboSueldo => "Recibo de Sueldo",
-                TipoDocumentoCliente.ServicioLuz => "Servicio de Luz",
-                TipoDocumentoCliente.ServicioGas => "Servicio de Gas",
-                TipoDocumentoCliente.ServicioAgua => "Servicio de Agua",
+                TipoDocumentoCliente.Servicio => "Servicio",
                 TipoDocumentoCliente.ConstanciaCUIL => "Constancia CUIL",
-                TipoDocumentoCliente.DeclaracionJurada => "Declaración Jurada",
                 TipoDocumentoCliente.Veraz => "Veraz",
                 TipoDocumentoCliente.Otro => "Otro",
                 _ => "Desconocido"

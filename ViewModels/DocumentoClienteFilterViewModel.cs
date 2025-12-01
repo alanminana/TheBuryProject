@@ -29,5 +29,8 @@ namespace TheBuryProject.ViewModels
         public int TotalPages => TotalResultados == 0 ? 1 : (int)Math.Ceiling((double)TotalResultados / PageSize);
         public bool HasPreviousPage => PageNumber > 1;
         public bool HasNextPage => PageNumber < TotalPages;
+
+        // Formulario embebido para carga rápida
+        public DocumentoClienteViewModel UploadModel { get; set; } = new();
     }
 }
