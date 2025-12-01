@@ -287,6 +287,19 @@ footer {
     text-align: right;
 }
 
+/* Modal layering fixes */
+.modal-open {
+    padding-right: 0 !important;
+}
+
+.modal-backdrop {
+    z-index: 1990;
+}
+
+.modal {
+    z-index: 2000;
+}
+
 /* ======================== */
 /* OVERLAY MOBILE           */
 /* ======================== */
