@@ -1,0 +1,14 @@
+.credit-empty-icon {
+    font-size: 4rem;
+    color: var(--tb-text-muted, #6c757d);
+}
+
+.credit-progress {
+    height: 24px;
+    background-color: var(--tb-bg-surface, #1f1f1f);
+}
+
+.credit-progress-lg {
+    height: 25px;
+    background-color: var(--tb-bg-surface, #1f1f1f);
+}
