@@ -1,0 +1,94 @@
+/* Estilos para vistas de Venta */
+
+.venta-section {
+    background: var(--tb-bg-body);
+}
+
+.venta-header {
+    background: var(--tb-bg-surface);
+    border: 1px solid var(--tb-border-soft);
+    border-radius: var(--tb-radius);
+    padding: 1rem 1.25rem;
+}
+
+.venta-header h2 {
+    font-weight: 700;
+    color: var(--tb-text-main);
+}
+
+.card-compact .card-body {
+    padding: 1rem;
+}
+
+.filter-toggle {
+    color: var(--tb-text-main);
+}
+
+.filter-toggle:hover {
+    color: var(--tb-primary);
+}
+
+.table-meta {
+    color: var(--tb-text-muted);
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.summary-item {
+    background: linear-gradient(135deg, var(--tb-bg-elevated), var(--tb-bg-surface));
+    border: 1px solid var(--tb-border-soft);
+    border-radius: var(--tb-radius);
+    padding: 1rem;
+}
+
+.summary-item .label {
+    color: var(--tb-text-muted);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+.summary-item .value {
+    color: var(--tb-text-main);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.badge-soft {
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--tb-border-soft);
+    color: var(--tb-text-main);
+}
+
+.alert-inline {
+    border: 1px solid var(--tb-border-soft);
+    background: var(--tb-bg-elevated);
+    color: var(--tb-text-main);
+}
+
+.table-card .card-header {
+    background-color: var(--tb-bg-elevated);
+}
+
+.table-card .table thead {
+    background-color: var(--tb-bg-elevated);
+}
+
+.table-empty {
+    color: var(--tb-text-muted);
+}
+
+.totales-destacado {
+    background: var(--tb-bg-elevated);
+    border-radius: var(--tb-radius);
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--tb-border-soft);
+}
+
+.totales-destacado strong {
+    color: var(--tb-text-main);
+}
