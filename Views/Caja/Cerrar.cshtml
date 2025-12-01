@@ -4,7 +4,7 @@
     ViewData["Title"] = "Cerrar Caja";
 }
 
-<div class="container-fluid px-0">
+<div class="container-fluid px-0" data-monto-esperado="@Model.MontoEsperadoSistema.ToString(System.Globalization.CultureInfo.InvariantCulture)">
 
     <!-- Header de página -->
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -253,36 +253,5 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
-    <script>
-        const montoEsperado = parseFloat('@Model.MontoEsperadoSistema.ToString(System.Globalization.CultureInfo.InvariantCulture)');
-
-        function calcularDiferencia() {
-            const efectivo = parseFloat(document.getElementById('efectivoInput').value.replace(',', '.')) || 0;
-            const cheques = parseFloat(document.getElementById('chequesInput').value.replace(',', '.')) || 0;
-            const vales = parseFloat(document.getElementById('valesInput').value.replace(',', '.')) || 0;
-
-            const totalReal = efectivo + cheques + vales;
-            const diferencia = totalReal - montoEsperado;
-
-            const totalRealEl = document.getElementById('totalReal');
-            const diferenciaEl = document.getElementById('diferencia');
-
-            totalRealEl.textContent = '$' + totalReal.toFixed(2);
-            diferenciaEl.textContent = '$' + diferencia.toFixed(2);
-
-            if (Math.abs(diferencia) > 0.01) {
-                diferenciaEl.className = diferencia > 0 ? 'text-success' : 'text-danger';
-                document.getElementById('justificacionDiv').style.display = 'block';
-                document.getElementById('justificacionInput').required = true;
-            } else {
-                diferenciaEl.className = 'text-success';
-                document.getElementById('justificacionDiv').style.display = 'none';
-                document.getElementById('justificacionInput').required = false;
-            }
-        }
-
-        document.getElementById('efectivoInput').addEventListener('input', calcularDiferencia);
-        document.getElementById('chequesInput').addEventListener('input', calcularDiferencia);
-        document.getElementById('valesInput').addEventListener('input', calcularDiferencia);
-    </script>
+    <script src="~/js/caja-cerrar.js" asp-append-version="true"></script>
 }

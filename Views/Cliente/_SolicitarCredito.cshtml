@@ -167,7 +167,7 @@ else
         </h5>
     </div>
     <div class="card-body">
-        <form asp-controller="Cliente" asp-action="SolicitarCredito" method="post" id="formSolicitarCredito">
+        <form asp-controller="Cliente" asp-action="SolicitarCredito" method="post" id="formSolicitarCredito" data-capacidad-pago="@Model.EvaluacionCredito.CapacidadPagoMensual.ToString("0.00", CultureInfo.InvariantCulture)">
             @Html.AntiForgeryToken()
             <input type="hidden" name="ClienteId" value="@Model.Cliente.Id" />
 
@@ -385,59 +385,5 @@ else
 </div>
 
 @section Scripts {
-    <script>
-        // Calcular cuota mensual en tiempo real
-        function calcularCuota() {
-            const montoInput = document.getElementById('montoSolicitado');
-            const cuotasInput = document.getElementById('cantidadCuotas');
-            const tasaInput = document.getElementById('tasaInteres');
-
-            if (!montoInput || !cuotasInput || !tasaInput) return;
-
-            const monto = parseFloat(montoInput.value) || 0;
-            const cuotas = parseInt(cuotasInput.value) || 1;
-            const tasaMensual = (parseFloat(tasaInput.value) || 0) / 100;
-
-            if (monto > 0 && cuotas > 0) {
-                let cuotaMensual;
-                if (tasaMensual > 0) {
-                    const factor = Math.pow(1 + tasaMensual, cuotas);
-                    cuotaMensual = monto * (tasaMensual * factor) / (factor - 1);
-                } else {
-                    cuotaMensual = monto / cuotas;
-                }
-
-                const montoTotal = cuotaMensual * cuotas;
-
-                document.getElementById('cuotaMensual').textContent =
-                    cuotaMensual.toLocaleString('es-AR', {
-                        style: 'currency',
-                        currency: 'ARS'
-                    });
-
-                document.getElementById('montoTotalConInteres').textContent =
-                    montoTotal.toLocaleString('es-AR', {
-                        style: 'currency',
-                        currency: 'ARS'
-                    });
-
-                const capacidadPago = parseFloat('@Model.EvaluacionCredito.CapacidadPagoMensual.ToString("0.00", CultureInfo.InvariantCulture)');
-                const elementoCuota = document.getElementById('cuotaMensual');
-
-                if (cuotaMensual > capacidadPago) {
-                    elementoCuota.classList.remove('text-success');
-                    elementoCuota.classList.add('text-danger');
-                } else {
-                    elementoCuota.classList.remove('text-danger');
-                    elementoCuota.classList.add('text-success');
-                }
-            }
-        }
-
-        document.getElementById('montoSolicitado')?.addEventListener('input', calcularCuota);
-        document.getElementById('cantidadCuotas')?.addEventListener('change', calcularCuota);
-        document.getElementById('tasaInteres')?.addEventListener('input', calcularCuota);
-
-        document.addEventListener('DOMContentLoaded', calcularCuota);
-    </script>
+    <script src="~/js/cliente-solicitar-credito.js" asp-append-version="true"></script>
 }

@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+using AutoMapper;
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -30,6 +31,20 @@ namespace TheBuryProject.Controllers
             _ordenCompraService = ordenCompraService;
             _mapper = mapper;
             _logger = logger;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> OrdenesPorProveedor(int proveedorId)
+        {
+            var ordenes = await _ordenCompraService.GetByProveedorIdAsync(proveedorId);
+
+            var resultado = ordenes.Select(o => new
+            {
+                id = o.Id,
+                numero = o.Numero
+            });
+
+            return Json(resultado);
         }
 
         // GET: Cheque

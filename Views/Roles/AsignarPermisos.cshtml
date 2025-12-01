@@ -4,7 +4,7 @@
     ViewData["Title"] = "Asignar Permisos";
 }
 
-<div class="container-fluid">
+<div class="container-fluid" id="permisosApp" data-toggle-url="@Url.Action("TogglePermiso", "Roles")">
     <div class="row mb-3">
         <div class="col-md-12">
             <nav aria-label="breadcrumb">
@@ -111,57 +111,7 @@
 </div>
 
 @section Scripts {
-    <script>
-        $(document).ready(function () {
-            // Handle checkbox changes
-            $('.permiso-checkbox').on('change', function () {
-                const checkbox = $(this);
-                const roleId = checkbox.data('role-id');
-                const moduloId = checkbox.data('modulo-id');
-                const accionId = checkbox.data('accion-id');
-                const asignar = checkbox.is(':checked');
-
-                // Disable checkbox while processing
-                checkbox.prop('disabled', true);
-
-                // Send AJAX request
-                $.ajax({
-                    url: '@Url.Action("TogglePermiso", "Roles")',
-                    type: 'POST',
-                    data: {
-                        roleId: roleId,
-                        moduloId: moduloId,
-                        accionId: accionId,
-                        asignar: asignar,
-                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function (response) {
-                        if (response.success) {
-                            // Show success feedback
-                            const label = checkbox.next('label');
-                            label.addClass('text-success');
-                            setTimeout(function () {
-                                label.removeClass('text-success');
-                            }, 1000);
-                        } else {
-                            // Revert checkbox on error
-                            checkbox.prop('checked', !asignar);
-                            alert('Error: ' + (response.message || 'No se pudo actualizar el permiso'));
-                        }
-                    },
-                    error: function () {
-                        // Revert checkbox on error
-                        checkbox.prop('checked', !asignar);
-                        alert('Error de conexión. Por favor, intente nuevamente.');
-                    },
-                    complete: function () {
-                        // Re-enable checkbox
-                        checkbox.prop('disabled', false);
-                    }
-                });
-            });
-        });
-    </script>
+    <script src="~/js/roles-asignar-permisos.js" asp-append-version="true"></script>
 
     @* Anti-forgery token for AJAX requests *@
     @Html.AntiForgeryToken()
