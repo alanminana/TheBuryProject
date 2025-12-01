@@ -24,9 +24,7 @@
         </div>
 
         <div class="col-auto d-flex flex-wrap gap-2">
-            <button type="button"
-                    onclick="window.print()"
-                    class="btn btn-primary btn-sm">
+            <button type="button" class="btn btn-primary btn-sm" id="imprimirCierre">
                 <i class="bi bi-printer me-1"></i>Imprimir
             </button>
             <a asp-action="Historial" class="btn btn-outline-secondary btn-sm">
@@ -327,8 +325,12 @@
                     <p class="mb-0 small"><strong>Firma usuario cierre</strong></p>
                     <small class="text-muted">@Model.UsuarioCierre</small>
                 </div>
-            </div>
+                </div>
 
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <script src="~/js/caja-detalles-cierre.js" asp-append-version="true"></script>
+}
