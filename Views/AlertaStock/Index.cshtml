@@ -292,14 +292,16 @@
                                             @if (alerta.Estado == TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)
                                             {
                                                 <button type="button"
-                                                        class="btn btn-outline-success"
-                                                        onclick="resolverAlerta(@alerta.Id, '@alerta.ProductoNombre')"
+                                                        class="btn btn-outline-success js-resolver-alerta"
+                                                        data-id="@alerta.Id"
+                                                        data-producto="@alerta.ProductoNombre"
                                                         title="Resolver">
                                                     <i class="bi bi-check-circle"></i>
                                                 </button>
                                                 <button type="button"
-                                                        class="btn btn-outline-secondary"
-                                                        onclick="ignorarAlerta(@alerta.Id, '@alerta.ProductoNombre')"
+                                                        class="btn btn-outline-secondary js-ignorar-alerta"
+                                                        data-id="@alerta.Id"
+                                                        data-producto="@alerta.ProductoNombre"
                                                         title="Ignorar">
                                                     <i class="bi bi-x-circle"></i>
                                                 </button>
@@ -353,64 +355,13 @@
 </div>
 
 <!-- Token global para JS (formularios dinámicos) -->
-<div class="d-none">
+<div class="d-none"
+     data-alerta-stock-config
+     data-resolver-url="@Url.Action("Resolver")"
+     data-ignorar-url="@Url.Action("Ignorar")">
     @Html.AntiForgeryToken()
 </div>
 
 @section Scripts {
-    <script>
-        function resolverAlerta(id, producto) {
-            var observaciones = prompt(`Resolver alerta de "${producto}".\n\nObservaciones (opcional):`);
-            if (observaciones !== null) {
-                var form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '@Url.Action("Resolver")/' + id;
-
-                var tokenInput = document.createElement('input');
-                tokenInput.type = 'hidden';
-                tokenInput.name = '__RequestVerificationToken';
-                tokenInput.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
-                form.appendChild(tokenInput);
-
-                if (observaciones) {
-                    var obsInput = document.createElement('input');
-                    obsInput.type = 'hidden';
-                    obsInput.name = 'observaciones';
-                    obsInput.value = observaciones;
-                    form.appendChild(obsInput);
-                }
-
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
-
-        function ignorarAlerta(id, producto) {
-            if (confirm(`¿Ignorar alerta de "${producto}"?`)) {
-                var observaciones = prompt('Motivo (opcional):');
-                if (observaciones !== null) {
-                    var form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '@Url.Action("Ignorar")/' + id;
-
-                    var tokenInput = document.createElement('input');
-                    tokenInput.type = 'hidden';
-                    tokenInput.name = '__RequestVerificationToken';
-                    tokenInput.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
-                    form.appendChild(tokenInput);
-
-                    if (observaciones) {
-                        var obsInput = document.createElement('input');
-                        obsInput.type = 'hidden';
-                        obsInput.name = 'observaciones';
-                        obsInput.value = observaciones;
-                        form.appendChild(obsInput);
-                    }
-
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            }
-        }
-    </script>
+    <script src="~/js/alerta-stock-index.js"></script>
 }
