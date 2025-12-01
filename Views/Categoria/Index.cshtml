@@ -1,6 +1,7 @@
 ﻿@model TheBuryProject.ViewModels.CategoriaFilterViewModel
 @{
     ViewData["Title"] = "Categorías";
+    var filtrosActivos = !string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos;
 }
 
 <section class="container-fluid py-4 text-light">
@@ -52,7 +53,7 @@
                 </div>
             </button>
         </div>
-        <div class="collapse show" id="filtrosCollapse">
+        <div class="collapse @(filtrosActivos ? "show" : "")" id="filtrosCollapse">
             <div class="card-body">
                 <form asp-action="Index" method="get">
                     <div class="row g-3">
@@ -60,19 +61,18 @@
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-search me-1"></i>Búsqueda por texto
                             </label>
-                            <input type="text"
+                            <input asp-for="SearchTerm"
                                    class="form-control bg-dark text-light border-secondary"
-                                   name="searchTerm"
-                                   value="@Model.SearchTerm"
                                    placeholder="Buscar por nombre o descripción..." />
                         </div>
 
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Opciones</label>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox"
-                                       name="soloActivos" id="soloActivos" value="true"
-                                       @(Model.SoloActivos ? "checked" : "") />
+                                <input asp-for="SoloActivos"
+                                       class="form-check-input"
+                                       type="checkbox"
+                                       id="soloActivos" />
                                 <label class="form-check-label" for="soloActivos">
                                     <i class="bi bi-check-circle text-success me-1"></i>Solo categorías activas
                                 </label>
@@ -83,18 +83,20 @@
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-sort-down me-1"></i>Ordenar por
                             </label>
-                            <select class="form-select bg-dark text-light border-secondary" name="orderBy">
-                                <option value="nombre" selected="@(Model.OrderBy == "nombre" || string.IsNullOrEmpty(Model.OrderBy))">Nombre</option>
-                                <option value="descripcion" selected="@(Model.OrderBy == "descripcion")">Descripción</option>
-                                <option value="parent" selected="@(Model.OrderBy == "parent")">Categoría Padre</option>
+                            <select asp-for="OrderBy"
+                                    class="form-select bg-dark text-light border-secondary">
+                                <option value="nombre">Nombre</option>
+                                <option value="descripcion">Descripción</option>
+                                <option value="parent">Categoría Padre</option>
                             </select>
                         </div>
 
                         <div class="col-md-1">
                             <label class="form-label fw-semibold">Dir.</label>
-                            <select class="form-select bg-dark text-light border-secondary" name="orderDirection">
-                                <option value="asc" selected="@(Model.OrderDirection == "asc" || string.IsNullOrEmpty(Model.OrderDirection))">Asc</option>
-                                <option value="desc" selected="@(Model.OrderDirection == "desc")">Desc</option>
+                            <select asp-for="OrderDirection"
+                                    class="form-select bg-dark text-light border-secondary">
+                                <option value="asc">Asc</option>
+                                <option value="desc">Desc</option>
                             </select>
                         </div>
 
@@ -174,11 +176,15 @@
                                     <td class="text-center">
                                         @if (categoria.Activo)
                                         {
-                                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Activo</span>
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Activo
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Inactivo</span>
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-x-circle"></i> Inactivo
+                                            </span>
                                         }
                                     </td>
                                     <td class="text-center px-4">

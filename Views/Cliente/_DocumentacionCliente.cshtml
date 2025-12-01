@@ -40,7 +40,7 @@ else
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label text-light fw-semibold">Tipo de Documento *</label>
-                    <select name="TipoDocumento" class="form-select bg-body-secondary text-light border-0" required>
+                    <select name="TipoDocumento" class="form-select bg-dark text-light border-secondary" required>
                         <option value="">Seleccione...</option>
                         @foreach (TipoDocumentoCliente tipo in Enum.GetValues(typeof(TipoDocumentoCliente)))
                         {
@@ -51,14 +51,18 @@ else
 
                 <div class="col-md-4">
                     <label class="form-label text-light fw-semibold">Archivo *</label>
-                    <input type="file" name="Archivo" class="form-control bg-body-secondary text-light border-0"
+                    <input type="file"
+                           name="Archivo"
+                           class="form-control bg-dark text-light border-secondary"
                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required />
                     <div class="form-text text-muted">Formatos: PDF, JPG, PNG, DOC, DOCX (Max 5MB)</div>
                 </div>
 
                 <div class="col-md-2">
                     <label class="form-label text-light fw-semibold">Vencimiento</label>
-                    <input type="date" name="FechaVencimiento" class="form-control bg-body-secondary text-light border-0" />
+                    <input type="date"
+                           name="FechaVencimiento"
+                           class="form-control bg-dark text-light border-secondary" />
                 </div>
 
                 <div class="col-md-2 d-flex align-items-end">
@@ -71,8 +75,10 @@ else
             <div class="row mt-2">
                 <div class="col-md-12">
                     <label class="form-label text-light fw-semibold">Observaciones</label>
-                    <textarea name="Observaciones" class="form-control bg-body-secondary text-light border-0"
-                              rows="2" placeholder="Observaciones adicionales sobre el documento"></textarea>
+                    <textarea name="Observaciones"
+                              class="form-control bg-dark text-light border-secondary"
+                              rows="2"
+                              placeholder="Observaciones adicionales sobre el documento"></textarea>
                 </div>
             </div>
         </form>

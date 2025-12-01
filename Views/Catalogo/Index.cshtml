@@ -4,19 +4,25 @@
     ViewData["Title"] = "Catálogo";
 }
 
-<section class="container-fluid py-4 text-light">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="h3 fw-bold mb-1">
-                <i class="bi bi-grid text-primary"></i> Catálogo del Sistema
+<div class="container-fluid px-0 py-4">
+
+    <!-- Encabezado de página -->
+    <div class="d-flex align-items-start justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Productos · Catálogo</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2 text-light">
+                <i class="bi bi-grid text-primary"></i>
+                <span>Catálogo del sistema</span>
             </h1>
-            <p class="text-secondary mb-0">Gestión centralizada de categorías y marcas</p>
+            <p class="text-muted small mb-0">
+                Gestión centralizada de categorías y marcas.
+            </p>
         </div>
     </div>
 
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show small shadow-sm" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             @TempData["Error"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -24,33 +30,42 @@
     }
 
     <div class="row g-4">
+
         <!-- Categorías -->
         <div class="col-lg-6">
-            <div class="card bg-dark border-secondary shadow-sm h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="bg-primary bg-opacity-25 rounded p-3 me-3">
-                            <i class="bi bi-diagram-3 text-primary fs-2"></i>
+            <div class="card card-animate border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3 gap-3">
+                        <div class="rounded-3 p-3 bg-primary bg-opacity-10">
+                            <i class="bi bi-diagram-3 text-primary fs-3"></i>
                         </div>
                         <div>
-                            <h4 class="fw-bold mb-0 text-light">Categorías</h4>
-                            <p class="text-secondary mb-0">Clasificación de productos</p>
+                            <h2 class="h5 mb-1 text-light">Categorías</h2>
+                            <p class="text-muted small mb-0">Clasificación de productos.</p>
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center p-3 rounded bg-secondary bg-opacity-10 border border-secondary">
-                            <span class="fw-semibold text-light">Total de categorías</span>
-                            <span class="badge bg-primary fs-5">@Model.Categorias.Count()</span>
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 rounded-3 border border-dark-subtle bg-body-tertiary bg-opacity-10">
+                            <span class="small text-muted text-uppercase fw-semibold">Total de categorías</span>
+                            <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis fs-6">
+                                @Model.Categorias.Count()
+                            </span>
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <a asp-controller="Categoria" asp-action="Index" class="btn btn-primary btn-lg">
-                            <i class="bi bi-search me-2"></i> Ver todas las categorías
+                    <div class="d-flex flex-column flex-md-row gap-2">
+                        <a asp-controller="Categoria"
+                           asp-action="Index"
+                           class="btn btn-primary btn-sm flex-fill d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-search"></i>
+                            <span>Ver todas las categorías</span>
                         </a>
-                        <a asp-controller="Categoria" asp-action="Create" class="btn btn-outline-light border-primary text-primary">
-                            <i class="bi bi-plus-circle me-2"></i> Nueva Categoría
+                        <a asp-controller="Categoria"
+                           asp-action="Create"
+                           class="btn btn-outline-primary btn-sm flex-fill d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Nueva categoría</span>
                         </a>
                     </div>
                 </div>
@@ -59,35 +74,44 @@
 
         <!-- Marcas -->
         <div class="col-lg-6">
-            <div class="card bg-dark border-secondary shadow-sm h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="bg-success bg-opacity-25 rounded p-3 me-3">
-                            <i class="bi bi-award text-success fs-2"></i>
+            <div class="card card-animate border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3 gap-3">
+                        <div class="rounded-3 p-3 bg-success bg-opacity-10">
+                            <i class="bi bi-award text-success fs-3"></i>
                         </div>
                         <div>
-                            <h4 class="fw-bold mb-0 text-light">Marcas</h4>
-                            <p class="text-secondary mb-0">Fabricantes y proveedores</p>
+                            <h2 class="h5 mb-1 text-light">Marcas</h2>
+                            <p class="text-muted small mb-0">Fabricantes y proveedores.</p>
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center p-3 rounded bg-secondary bg-opacity-10 border border-secondary">
-                            <span class="fw-semibold text-light">Total de marcas</span>
-                            <span class="badge bg-success fs-5">@Model.Marcas.Count()</span>
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 rounded-3 border border-dark-subtle bg-body-tertiary bg-opacity-10">
+                            <span class="small text-muted text-uppercase fw-semibold">Total de marcas</span>
+                            <span class="badge rounded-pill bg-success-subtle text-success-emphasis fs-6">
+                                @Model.Marcas.Count()
+                            </span>
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <a asp-controller="Marca" asp-action="Index" class="btn btn-success btn-lg">
-                            <i class="bi bi-search me-2"></i> Ver todas las marcas
+                    <div class="d-flex flex-column flex-md-row gap-2">
+                        <a asp-controller="Marca"
+                           asp-action="Index"
+                           class="btn btn-success btn-sm flex-fill d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-search"></i>
+                            <span>Ver todas las marcas</span>
                         </a>
-                        <a asp-controller="Marca" asp-action="Create" class="btn btn-outline-light border-success text-success">
-                            <i class="bi bi-plus-circle me-2"></i> Nueva Marca
+                        <a asp-controller="Marca"
+                           asp-action="Create"
+                           class="btn btn-outline-success btn-sm flex-fill d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Nueva marca</span>
                         </a>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
-</section>
+</div>

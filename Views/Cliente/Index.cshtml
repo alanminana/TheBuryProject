@@ -1,6 +1,12 @@
 ﻿@model TheBuryProject.ViewModels.ClienteFilterViewModel
 @{
     ViewData["Title"] = "Clientes";
+
+    var filtrosActivos =
+        !string.IsNullOrWhiteSpace(Model.SearchTerm)
+        || Model.SoloActivos.HasValue
+        || Model.PuntajeMinimo.HasValue
+        || !string.IsNullOrWhiteSpace(Model.TipoDocumento);
 }
 
 <section class="container-fluid py-4 text-light">
@@ -28,50 +34,40 @@
                     </button>
                 </div>
 
-                <div class="collapse" id="filtrosCliente">
+                <div class="collapse @(filtrosActivos ? "show" : "")" id="filtrosCliente">
                     <div class="card-body">
                         <form asp-action="Index" method="get" class="row g-3 align-items-end">
+
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Búsqueda</label>
-                                <input type="text" name="SearchTerm" class="form-control bg-body-secondary text-light border-0"
-                                       value="@Model.SearchTerm"
+                                <label asp-for="SearchTerm" class="form-label fw-semibold">Búsqueda</label>
+                                <input asp-for="SearchTerm"
+                                       class="form-control bg-body-secondary text-light border-0"
                                        placeholder="Nombre, DNI, teléfono, email..." />
                             </div>
 
                             <div class="col-md-2">
-                                <label class="form-label fw-semibold">Tipo Documento</label>
-                                <select name="TipoDocumento" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.TiposDocumento">
+                                <label asp-for="TipoDocumento" class="form-label fw-semibold">Tipo Documento</label>
+                                <select asp-for="TipoDocumento"
+                                        class="form-select bg-body-secondary text-light border-0"
+                                        asp-items="ViewBag.TiposDocumento">
                                     <option value="">Todos</option>
                                 </select>
                             </div>
 
                             <div class="col-md-2">
-                                <label class="form-label fw-semibold">Estado</label>
-                                <select name="SoloActivos" class="form-select bg-body-secondary text-light border-0">
+                                <label asp-for="SoloActivos" class="form-label fw-semibold">Estado</label>
+                                <select asp-for="SoloActivos" class="form-select bg-body-secondary text-light border-0">
                                     <option value="">Todos</option>
-                                    @if (Model.SoloActivos == true)
-                                    {
-                                        <option value="true" selected>Solo Activos</option>
-                                        <option value="false">Solo Inactivos</option>
-                                    }
-                                    else if (Model.SoloActivos == false)
-                                    {
-                                        <option value="true">Solo Activos</option>
-                                        <option value="false" selected>Solo Inactivos</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="true">Solo Activos</option>
-                                        <option value="false">Solo Inactivos</option>
-                                    }
+                                    <option value="true">Solo Activos</option>
+                                    <option value="false">Solo Inactivos</option>
                                 </select>
                             </div>
 
                             <div class="col-md-2">
-                                <label class="form-label fw-semibold">Puntaje Mínimo</label>
-                                <input type="number" name="PuntajeMinimo"
+                                <label asp-for="PuntajeMinimo" class="form-label fw-semibold">Puntaje Mínimo</label>
+                                <input asp-for="PuntajeMinimo"
+                                       type="number"
                                        class="form-control bg-body-secondary text-light border-0"
-                                       value="@Model.PuntajeMinimo"
                                        min="0" max="10" step="0.1" />
                             </div>
 
@@ -108,7 +104,9 @@
             <!-- Resultados -->
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-list me-2"></i>Resultados (@Model.TotalResultados)</h5>
+                    <h5 class="mb-0">
+                        <i class="bi bi-list me-2"></i>Resultados (@Model.TotalResultados)
+                    </h5>
                 </div>
 
                 <div class="card-body p-0">
@@ -131,9 +129,12 @@
                                 <tbody>
                                     @foreach (var cliente in Model.Clientes)
                                     {
-                                        var badgeClass = cliente.PuntajeRiesgo >= 7 ? "bg-success" :
-                                        cliente.PuntajeRiesgo >= 4 ? "bg-warning text-dark" :
-                                        "bg-danger";
+                                        var badgeClass = cliente.PuntajeRiesgo >= 7
+                                        ? "bg-success"
+                                        : cliente.PuntajeRiesgo >= 4
+                                        ? "bg-warning text-dark"
+                                        : "bg-danger";
+
                                         <tr>
                                             <td>
                                                 <strong>@cliente.TipoDocumento</strong><br />
@@ -151,7 +152,9 @@
                                                 <i class="bi bi-telephone"></i> @cliente.Telefono<br />
                                                 @if (!string.IsNullOrEmpty(cliente.Email))
                                                 {
-                                                    <small><i class="bi bi-envelope"></i> @cliente.Email</small>
+                                                    <small>
+                                                        <i class="bi bi-envelope"></i> @cliente.Email
+                                                    </small>
                                                 }
                                             </td>
                                             <td>
@@ -163,7 +166,9 @@
                                                 }
                                             </td>
                                             <td class="text-center">
-                                                <span class="badge @badgeClass fs-6">@cliente.PuntajeRiesgo.ToString("F1")</span>
+                                                <span class="badge @badgeClass fs-6">
+                                                    @cliente.PuntajeRiesgo.ToString("F1")
+                                                </span>
                                             </td>
                                             <td class="text-center">
                                                 @if (cliente.CreditosActivos > 0)

@@ -7,88 +7,169 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
 
+            <!-- Encabezado -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold mb-0">
-                    <i class="bi bi-plus-circle text-success me-2"></i>@ViewData["Title"]
-                </h2>
+                <div>
+                    <h2 class="fw-bold mb-1">
+                        <i class="bi bi-plus-circle text-success me-2"></i>@ViewData["Title"]
+                    </h2>
+                    <p class="text-secondary mb-0">Definí cómo se comporta este medio de pago (descuentos y recargos).</p>
+                </div>
                 <a asp-action="Index" class="btn btn-outline-light">
                     <i class="bi bi-arrow-left"></i> Volver
                 </a>
             </div>
 
+            <!-- Card principal -->
             <div class="card bg-dark border-0 shadow-sm">
+                <div class="card-header bg-success text-light py-3">
+                    <h4 class="mb-0 fw-semibold">
+                        <i class="bi bi-credit-card-2-back me-2"></i>Configuración de Pago
+                    </h4>
+                </div>
+
                 <div class="card-body">
                     <form asp-action="Create" method="post" novalidate>
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <div>Revisá los campos marcados en rojo antes de continuar.</div>
+                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="TipoPago" class="form-label fw-semibold"></label>
-                                <select asp-for="TipoPago" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.TiposPago" required></select>
-                                <span asp-validation-for="TipoPago" class="text-danger small"></span>
+                        <!-- Datos generales -->
+                        <fieldset class="mb-4">
+                            <legend class="h6 fw-semibold text-info border-bottom border-info pb-2 mb-3">
+                                <i class="bi bi-gear me-2"></i>Datos generales
+                            </legend>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="TipoPago" class="form-label fw-semibold"></label>
+                                    <select asp-for="TipoPago"
+                                            class="form-select bg-body-secondary text-light border-0"
+                                            asp-items="ViewBag.TiposPago"
+                                            required>
+                                    </select>
+                                    <span asp-validation-for="TipoPago" class="text-danger small"></span>
+                                    <div class="form-text text-secondary">Ej: Efectivo, Débito, Crédito, Transferencia.</div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="Nombre" class="form-label fw-semibold"></label>
+                                    <input asp-for="Nombre"
+                                           class="form-control bg-body-secondary text-light border-0"
+                                           placeholder="Nombre visible en cajas y ventas" />
+                                    <span asp-validation-for="Nombre" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-12">
+                                    <label asp-for="Descripcion" class="form-label fw-semibold"></label>
+                                    <textarea asp-for="Descripcion"
+                                              class="form-control bg-body-secondary text-light border-0"
+                                              rows="3"
+                                              placeholder="Detalle cómo y cuándo se usa este medio de pago"></textarea>
+                                    <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-12">
+                                    <div class="form-check form-switch mt-2">
+                                        <input asp-for="Activo" class="form-check-input" type="checkbox" checked />
+                                        <label asp-for="Activo" class="form-check-label fw-semibold"></label>
+                                    </div>
+                                    <div class="form-text text-secondary">
+                                        Si está desactivado, no se podrá seleccionar en nuevas operaciones.
+                                    </div>
+                                </div>
                             </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="Nombre" class="form-label fw-semibold"></label>
-                                <input asp-for="Nombre" class="form-control bg-body-secondary text-light border-0" />
-                                <span asp-validation-for="Nombre" class="text-danger small"></span>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Descripcion" class="form-label fw-semibold"></label>
-                            <textarea asp-for="Descripcion" class="form-control bg-body-secondary text-light border-0" rows="3"></textarea>
-                            <span asp-validation-for="Descripcion" class="text-danger small"></span>
-                        </div>
-
-                        <div class="form-check form-switch mb-4">
-                            <input asp-for="Activo" class="form-check-input" type="checkbox" checked />
-                            <label asp-for="Activo" class="form-check-label fw-semibold"></label>
-                        </div>
+                        </fieldset>
 
                         <hr class="border-secondary" />
 
-                        <h5 class="text-info mb-3"><i class="bi bi-tag me-2"></i>Descuentos</h5>
-                        <div class="row g-3 align-items-center">
-                            <div class="col-md-6">
-                                <div class="form-check form-switch">
-                                    <input asp-for="PermiteDescuento" class="form-check-input" type="checkbox" id="permiteDescuentoCheck" />
-                                    <label asp-for="PermiteDescuento" class="form-check-label fw-semibold"></label>
+                        <!-- Descuentos -->
+                        <fieldset class="mb-4">
+                            <legend class="h6 fw-semibold text-info border-bottom border-info pb-2 mb-3">
+                                <i class="bi bi-tag me-2"></i>Descuentos
+                            </legend>
+
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-6">
+                                    <div class="card bg-secondary bg-opacity-10 border-secondary">
+                                        <div class="card-body">
+                                            <div class="form-check form-switch">
+                                                <input asp-for="PermiteDescuento"
+                                                       class="form-check-input"
+                                                       type="checkbox"
+                                                       id="permiteDescuentoCheck" />
+                                                <label asp-for="PermiteDescuento" class="form-check-label fw-semibold"></label>
+                                            </div>
+                                            <div class="form-text text-secondary mt-2">
+                                                Activá esta opción si en este medio de pago se puede aplicar descuento (ej: pago en efectivo).
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6" id="descuentoMaxDiv" style="display:none;">
+                                    <label asp-for="PorcentajeDescuentoMaximo" class="form-label fw-semibold"></label>
+                                    <div class="input-group">
+                                        <input asp-for="PorcentajeDescuentoMaximo"
+                                               class="form-control bg-body-secondary text-light border-0"
+                                               type="number"
+                                               step="0.01" min="0" max="100" />
+                                        <span class="input-group-text bg-secondary text-light border-0">%</span>
+                                    </div>
+                                    <span asp-validation-for="PorcentajeDescuentoMaximo" class="text-danger small"></span>
+                                    <div class="form-text text-secondary">
+                                        Límite máximo de descuento permitido para este medio de pago.
+                                    </div>
                                 </div>
                             </div>
+                        </fieldset>
 
-                            <div class="col-md-6" id="descuentoMaxDiv" style="display:none;">
-                                <label asp-for="PorcentajeDescuentoMaximo" class="form-label fw-semibold"></label>
-                                <div class="input-group">
-                                    <input asp-for="PorcentajeDescuentoMaximo" class="form-control bg-body-secondary text-light border-0" type="number" step="0.01" min="0" max="100" />
-                                    <span class="input-group-text bg-secondary text-light border-0">%</span>
+                        <hr class="border-secondary" />
+
+                        <!-- Recargos -->
+                        <fieldset class="mb-4">
+                            <legend class="h6 fw-semibold text-warning border-bottom border-warning pb-2 mb-3">
+                                <i class="bi bi-percent me-2"></i>Recargos
+                            </legend>
+
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-6">
+                                    <div class="card bg-secondary bg-opacity-10 border-secondary">
+                                        <div class="card-body">
+                                            <div class="form-check form-switch">
+                                                <input asp-for="TieneRecargo"
+                                                       class="form-check-input"
+                                                       type="checkbox"
+                                                       id="tieneRecargoCheck" />
+                                                <label asp-for="TieneRecargo" class="form-check-label fw-semibold"></label>
+                                            </div>
+                                            <div class="form-text text-secondary mt-2">
+                                                Usá esta opción para medios de pago con recargo (ej: tarjeta en cuotas).
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <span asp-validation-for="PorcentajeDescuentoMaximo" class="text-danger small"></span>
-                            </div>
-                        </div>
 
-                        <hr class="border-secondary mt-4" />
-
-                        <h5 class="text-warning mb-3"><i class="bi bi-percent me-2"></i>Recargos</h5>
-                        <div class="row g-3 align-items-center">
-                            <div class="col-md-6">
-                                <div class="form-check form-switch">
-                                    <input asp-for="TieneRecargo" class="form-check-input" type="checkbox" id="tieneRecargoCheck" />
-                                    <label asp-for="TieneRecargo" class="form-check-label fw-semibold"></label>
+                                <div class="col-md-6" id="recargoDiv" style="display:none;">
+                                    <label asp-for="PorcentajeRecargo" class="form-label fw-semibold"></label>
+                                    <div class="input-group">
+                                        <input asp-for="PorcentajeRecargo"
+                                               class="form-control bg-body-secondary text-light border-0"
+                                               type="number"
+                                               step="0.01" min="0" max="100" />
+                                        <span class="input-group-text bg-secondary text-light border-0">%</span>
+                                    </div>
+                                    <span asp-validation-for="PorcentajeRecargo" class="text-danger small"></span>
+                                    <div class="form-text text-secondary">
+                                        Porcentaje de recargo que se sumará al total cuando se use este medio de pago.
+                                    </div>
                                 </div>
                             </div>
+                        </fieldset>
 
-                            <div class="col-md-6" id="recargoDiv" style="display:none;">
-                                <label asp-for="PorcentajeRecargo" class="form-label fw-semibold"></label>
-                                <div class="input-group">
-                                    <input asp-for="PorcentajeRecargo" class="form-control bg-body-secondary text-light border-0" type="number" step="0.01" min="0" max="100" />
-                                    <span class="input-group-text bg-secondary text-light border-0">%</span>
-                                </div>
-                                <span asp-validation-for="PorcentajeRecargo" class="text-danger small"></span>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-3 mt-5">
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-end gap-3 mt-4">
                             <a asp-action="Index" class="btn btn-outline-light px-4">
                                 <i class="bi bi-x-circle me-1"></i>Cancelar
                             </a>
@@ -99,6 +180,7 @@
                     </form>
                 </div>
             </div>
+
         </div>
     </div>
 </section>
@@ -113,19 +195,30 @@
             const recargoDiv = document.getElementById("recargoDiv");
 
             const toggle = (check, div, inputId) => {
-                if (check.checked) div.style.display = "block";
-                else {
-                    div.style.display = "none";
-                    const input = document.getElementById(inputId);
-                    if (input) input.value = "";
+                if (check && div) {
+                    if (check.checked) {
+                        div.style.display = "block";
+                    } else {
+                        div.style.display = "none";
+                        const input = document.getElementById(inputId);
+                        if (input) input.value = "";
+                    }
                 }
             };
 
-            descuentoCheck.addEventListener("change", () => toggle(descuentoCheck, descuentoDiv, "PorcentajeDescuentoMaximo"));
-            recargoCheck.addEventListener("change", () => toggle(recargoCheck, recargoDiv, "PorcentajeRecargo"));
+            if (descuentoCheck && descuentoDiv) {
+                descuentoCheck.addEventListener("change", () =>
+                    toggle(descuentoCheck, descuentoDiv, "@Html.IdFor(m => m.PorcentajeDescuentoMaximo)")
+                );
+                toggle(descuentoCheck, descuentoDiv, "@Html.IdFor(m => m.PorcentajeDescuentoMaximo)");
+            }
 
-            toggle(descuentoCheck, descuentoDiv, "PorcentajeDescuentoMaximo");
-            toggle(recargoCheck, recargoDiv, "PorcentajeRecargo");
+            if (recargoCheck && recargoDiv) {
+                recargoCheck.addEventListener("change", () =>
+                    toggle(recargoCheck, recargoDiv, "@Html.IdFor(m => m.PorcentajeRecargo)")
+                );
+                toggle(recargoCheck, recargoDiv, "@Html.IdFor(m => m.PorcentajeRecargo)");
+            }
         });
     </script>
 }

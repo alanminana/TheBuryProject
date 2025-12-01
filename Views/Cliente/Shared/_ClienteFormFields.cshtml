@@ -10,11 +10,11 @@
     <legend class="h6 fw-semibold text-info border-bottom border-info pb-2 mb-3">
         <i class="bi bi-person me-2"></i>Datos Personales
     </legend>
-    
+
     <div class="row g-3">
         <div class="col-md-3">
             <label asp-for="TipoDocumento" class="form-label">Tipo Documento *</label>
-            <select asp-for="TipoDocumento" class="form-select bg-body-secondary text-light border-0" required>
+            <select asp-for="TipoDocumento" class="form-select bg-dark text-light border-secondary" required>
                 <option value="DNI">DNI</option>
                 <option value="CUIL">CUIL</option>
                 <option value="CUIT">CUIT</option>
@@ -25,32 +25,37 @@
 
         <div class="col-md-3">
             <label asp-for="NumeroDocumento" class="form-label">Número *</label>
-            <input asp-for="NumeroDocumento" class="form-control bg-body-secondary text-light border-0" 
+            <input asp-for="NumeroDocumento"
+                   class="form-control bg-dark text-light border-secondary"
                    placeholder="12345678" required />
             <span asp-validation-for="NumeroDocumento" class="text-danger small"></span>
         </div>
 
         <div class="col-md-3">
             <label asp-for="Apellido" class="form-label">Apellido *</label>
-            <input asp-for="Apellido" class="form-control bg-body-secondary text-light border-0" required />
+            <input asp-for="Apellido"
+                   class="form-control bg-dark text-light border-secondary" required />
             <span asp-validation-for="Apellido" class="text-danger small"></span>
         </div>
 
         <div class="col-md-3">
             <label asp-for="Nombre" class="form-label">Nombre *</label>
-            <input asp-for="Nombre" class="form-control bg-body-secondary text-light border-0" required />
+            <input asp-for="Nombre"
+                   class="form-control bg-dark text-light border-secondary" required />
             <span asp-validation-for="Nombre" class="text-danger small"></span>
         </div>
 
         <div class="col-md-4">
             <label asp-for="FechaNacimiento" class="form-label">Fecha de Nacimiento</label>
-            <input asp-for="FechaNacimiento" type="date" class="form-control bg-body-secondary text-light border-0" />
+            <input asp-for="FechaNacimiento" type="date"
+                   class="form-control bg-dark text-light border-secondary" />
             <span asp-validation-for="FechaNacimiento" class="text-danger small"></span>
         </div>
 
         <div class="col-md-4">
             <label asp-for="EstadoCivil" class="form-label">Estado Civil</label>
-            <select asp-for="EstadoCivil" class="form-select bg-body-secondary text-light border-0">
+            <select asp-for="EstadoCivil"
+                    class="form-select bg-dark text-light border-secondary">
                 <option value="">Seleccione...</option>
                 <option value="Soltero/a">Soltero/a</option>
                 <option value="Casado/a">Casado/a</option>
@@ -68,25 +73,28 @@
     <legend class="h6 fw-semibold text-success border-bottom border-success pb-2 mb-3">
         <i class="bi bi-telephone me-2"></i>Datos de Contacto
     </legend>
-    
+
     <div class="row g-3">
         <div class="col-md-4">
             <label asp-for="Email" class="form-label">Email</label>
-            <input asp-for="Email" type="email" class="form-control bg-body-secondary text-light border-0"
+            <input asp-for="Email" type="email"
+                   class="form-control bg-dark text-light border-secondary"
                    placeholder="ejemplo@email.com" />
             <span asp-validation-for="Email" class="text-danger small"></span>
         </div>
 
         <div class="col-md-4">
             <label asp-for="Telefono" class="form-label">Teléfono *</label>
-            <input asp-for="Telefono" type="tel" class="form-control bg-body-secondary text-light border-0"
+            <input asp-for="Telefono" type="tel"
+                   class="form-control bg-dark text-light border-secondary"
                    placeholder="1123456789" required />
             <span asp-validation-for="Telefono" class="text-danger small"></span>
         </div>
 
         <div class="col-md-4">
             <label asp-for="TelefonoAlternativo" class="form-label">Teléfono Alternativo</label>
-            <input asp-for="TelefonoAlternativo" type="tel" class="form-control bg-body-secondary text-light border-0" />
+            <input asp-for="TelefonoAlternativo" type="tel"
+                   class="form-control bg-dark text-light border-secondary" />
             <span asp-validation-for="TelefonoAlternativo" class="text-danger small"></span>
         </div>
     </div>
@@ -97,24 +105,27 @@
     <legend class="h6 fw-semibold text-warning border-bottom border-warning pb-2 mb-3">
         <i class="bi bi-geo-alt me-2"></i>Domicilio
     </legend>
-    
+
     <div class="row g-3">
         <div class="col-md-6">
             <label asp-for="Domicilio" class="form-label">Dirección *</label>
-            <input asp-for="Domicilio" class="form-control bg-body-secondary text-light border-0"
+            <input asp-for="Domicilio"
+                   class="form-control bg-dark text-light border-secondary"
                    placeholder="Calle y número" required />
             <span asp-validation-for="Domicilio" class="text-danger small"></span>
         </div>
 
         <div class="col-md-3">
             <label asp-for="Localidad" class="form-label">Localidad *</label>
-            <input asp-for="Localidad" class="form-control bg-body-secondary text-light border-0" required />
+            <input asp-for="Localidad"
+                   class="form-control bg-dark text-light border-secondary" required />
             <span asp-validation-for="Localidad" class="text-danger small"></span>
         </div>
 
         <div class="col-md-2">
             <label asp-for="Provincia" class="form-label">Provincia *</label>
-            <select asp-for="Provincia" class="form-select bg-body-secondary text-light border-0" required>
+            <select asp-for="Provincia"
+                    class="form-select bg-dark text-light border-secondary" required>
                 <option value="">Seleccione...</option>
                 <option value="Buenos Aires">Buenos Aires</option>
                 <option value="CABA">CABA</option>
@@ -146,7 +157,8 @@
 
         <div class="col-md-1">
             <label asp-for="CodigoPostal" class="form-label">CP</label>
-            <input asp-for="CodigoPostal" class="form-control bg-body-secondary text-light border-0" />
+            <input asp-for="CodigoPostal"
+                   class="form-control bg-dark text-light border-secondary" />
             <span asp-validation-for="CodigoPostal" class="text-danger small"></span>
         </div>
     </div>
@@ -158,18 +170,20 @@
         <i class="bi bi-briefcase me-2"></i>Datos Laborales
         <small class="text-muted fw-normal">(opcional)</small>
     </legend>
-    
+
     <div class="row g-3">
         <div class="col-md-5">
             <label asp-for="LugarTrabajo" class="form-label">Empleador</label>
-            <input asp-for="LugarTrabajo" class="form-control bg-body-secondary text-light border-0"
+            <input asp-for="LugarTrabajo"
+                   class="form-control bg-dark text-light border-secondary"
                    placeholder="Nombre de la empresa" />
             <span asp-validation-for="LugarTrabajo" class="text-danger small"></span>
         </div>
 
         <div class="col-md-3">
             <label asp-for="TipoEmpleo" class="form-label">Tipo de Empleo</label>
-            <select asp-for="TipoEmpleo" class="form-select bg-body-secondary text-light border-0">
+            <select asp-for="TipoEmpleo"
+                    class="form-select bg-dark text-light border-secondary">
                 <option value="">Seleccione...</option>
                 <option value="Relación de Dependencia">Relación de Dependencia</option>
                 <option value="Autónomo">Autónomo</option>
@@ -186,14 +200,15 @@
             <div class="input-group">
                 <span class="input-group-text bg-secondary border-0 text-light">$</span>
                 <input asp-for="IngresoMensual" type="number" step="0.01" min="0"
-                       class="form-control bg-body-secondary text-light border-0" />
+                       class="form-control bg-dark text-light border-secondary" />
             </div>
             <span asp-validation-for="IngresoMensual" class="text-danger small"></span>
         </div>
 
         <div class="col-md-2">
             <label asp-for="TelefonoTrabajo" class="form-label">Tel. Laboral</label>
-            <input asp-for="TelefonoTrabajo" type="tel" class="form-control bg-body-secondary text-light border-0" />
+            <input asp-for="TelefonoTrabajo" type="tel"
+                   class="form-control bg-dark text-light border-secondary" />
             <span asp-validation-for="TelefonoTrabajo" class="text-danger small"></span>
         </div>
     </div>
@@ -204,11 +219,13 @@
     <legend class="h6 fw-semibold text-secondary border-bottom border-secondary pb-2 mb-3">
         <i class="bi bi-chat-left-text me-2"></i>Observaciones
     </legend>
-    
+
     <div class="row">
         <div class="col-12">
-            <textarea asp-for="Observaciones" class="form-control bg-body-secondary text-light border-0"
-                      rows="3" placeholder="Notas adicionales sobre el cliente..."></textarea>
+            <textarea asp-for="Observaciones"
+                      class="form-control bg-dark text-light border-secondary"
+                      rows="3"
+                      placeholder="Notas adicionales sobre el cliente..."></textarea>
             <span asp-validation-for="Observaciones" class="text-danger small"></span>
         </div>
     </div>

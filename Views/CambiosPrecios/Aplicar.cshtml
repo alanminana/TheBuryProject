@@ -1,70 +1,122 @@
 ﻿@model TheBuryProject.ViewModels.AplicarBatchViewModel
 
 @{
-    ViewData["Title"] = "Aplicar Cambio de Precios";
+    ViewData["Title"] = "Aplicar cambio de precios";
 }
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm border-success">
-                <div class="card-header bg-success text-white">
-                    <h4><i class="bi bi-check-circle"></i> Aplicar Cambio de Precios</h4>
-                </div>
+<div class="container-fluid px-0">
+
+    <!-- Header de página -->
+    <div class="d-flex align-items-start justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Gestión de precios · Cambios masivos</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-check-circle"></i>
+                <span>Aplicar cambio de precios</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Este batch fue aprobado y está listo para impactar los precios de los productos afectados.
+            </p>
+        </div>
+
+        <a asp-action="Preview"
+           asp-route-id="@Model.BatchId"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver al detalle
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-7 col-xl-5">
+
+            <div class="card card-animate border-0">
                 <div class="card-body">
-                    <div class="alert alert-success">
-                        <i class="bi bi-check-circle-fill"></i>
-                        <strong>Este cambio ha sido aprobado y está listo para aplicarse.</strong>
+
+                    <div class="alert alert-success mb-3">
+                        <div class="d-flex">
+                            <div class="me-2">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="small">
+                                <div class="fw-semibold">Cambio aprobado</div>
+                                <div>El batch está listo para ser aplicado sobre los productos seleccionados.</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <dl class="row">
-                        <dt class="col-sm-4">Nombre:</dt>
-                        <dd class="col-sm-8"><strong>@Model.Nombre</strong></dd>
+                    <dl class="row small mb-3">
+                        <dt class="col-sm-4 text-muted">Nombre</dt>
+                        <dd class="col-sm-8 fw-semibold">@Model.Nombre</dd>
 
-                        <dt class="col-sm-4">Productos Afectados:</dt>
-                        <dd class="col-sm-8"><strong class="text-primary">@Model.CantidadProductos</strong></dd>
-
-                        <dt class="col-sm-4">Aprobado por:</dt>
+                        <dt class="col-sm-4 text-muted">Productos afectados</dt>
                         <dd class="col-sm-8">
-                            @Model.AprobadoPor<br>
-                            <small>@Model.FechaAprobacion?.ToString("dd/MM/yyyy HH:mm")</small>
+                            <span class="fw-semibold text-primary">@Model.CantidadProductos</span>
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted">Aprobado por</dt>
+                        <dd class="col-sm-8">
+                            <div>@Model.AprobadoPor</div>
+                            @if (Model.FechaAprobacion.HasValue)
+                            {
+                                <div class="text-muted">
+                                    <small>@Model.FechaAprobacion.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                </div>
+                            }
                         </dd>
                     </dl>
 
-                    <hr>
+                    <hr />
 
-                    <form asp-action="AplicarConfirmed" method="post">
+                    <form asp-action="AplicarConfirmed" method="post" novalidate>
+                        @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.BatchId" />
 
                         <div class="mb-3">
-                            <label asp-for="FechaVigencia" class="form-label">Fecha de Vigencia *</label>
-                            <input asp-for="FechaVigencia" type="datetime-local" class="form-control" />
-                            <small class="text-muted">Fecha desde la cual los nuevos precios serán válidos</small>
-                            <span asp-validation-for="FechaVigencia" class="text-danger"></span>
+                            <label asp-for="FechaVigencia" class="form-label small">Fecha de vigencia *</label>
+                            <input asp-for="FechaVigencia"
+                                   type="datetime-local"
+                                   class="form-control form-control-sm" />
+                            <small class="text-muted">
+                                Fecha y hora a partir de la cual los nuevos precios serán válidos.
+                            </small>
+                            <span asp-validation-for="FechaVigencia" class="text-danger small"></span>
                         </div>
 
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <strong>IMPORTANTE:</strong>
-                            <ul class="mb-0">
-                                <li>Esta acción modificará <strong>@Model.CantidadProductos precios</strong> en la base de datos</li>
-                                <li>Los precios anteriores quedarán registrados en el historial</li>
-                                <li>Esta operación es <strong>transaccional</strong> (todo o nada)</li>
-                                <li>Podrá revertir el cambio posteriormente si es necesario</li>
-                            </ul>
+                        <div class="alert alert-warning small mb-3">
+                            <div class="d-flex">
+                                <div class="me-2">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+                                <div>
+                                    <strong>Importante antes de aplicar:</strong>
+                                    <ul class="mb-0 mt-1 ps-3">
+                                        <li>Se modificarán <strong>@Model.CantidadProductos precios</strong> en la base de datos.</li>
+                                        <li>Los precios anteriores quedarán registrados en el historial.</li>
+                                        <li>La operación es <strong>transaccional</strong> (o se aplica todo, o no se aplica nada).</li>
+                                        <li>Podrá generar una reversión del batch si fuera necesario.</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="d-flex justify-content-between">
-                            <a asp-action="Preview" asp-route-id="@Model.BatchId" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Preview"
+                               asp-route-id="@Model.BatchId"
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('¿Está ABSOLUTAMENTE SEGURO de aplicar este cambio de precios?\n\nEsta acción modificará ' + @Model.CantidadProductos + ' precios en la base de datos.')">
-                                <i class="bi bi-check-circle"></i> Aplicar Cambio AHORA
+
+                            <button type="submit"
+                                    class="btn btn-success"
+                                    onclick="return confirm('¿Está ABSOLUTAMENTE SEGURO de aplicar este cambio de precios?\n\nEsta acción modificará @Model.CantidadProductos precios en la base de datos.');">
+                                <i class="bi bi-check-circle me-1"></i>Aplicar cambio ahora
                             </button>
                         </div>
                     </form>
+
                 </div>
             </div>
+
         </div>
     </div>
 </div>

@@ -1,71 +1,104 @@
 ﻿@model TheBuryProject.ViewModels.CajaViewModel
+
 @{
     ViewData["Title"] = "Nueva Caja";
 }
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Crear Nueva Caja</h4>
-                </div>
+<div class="container-fluid px-0">
+
+    <!-- Header de página -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Cajas</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <span>Nueva caja</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Crea una nueva caja indicando su código, ubicación y estado inicial.
+            </p>
+        </div>
+
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver al listado
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-7 col-xl-5">
+
+            <div class="card card-animate">
                 <div class="card-body">
-                    <form asp-action="Create" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <form asp-action="Create" method="post" novalidate>
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label asp-for="Codigo" class="form-label"></label>
-                                <input asp-for="Codigo" class="form-control" placeholder="Ej: CAJA01" />
-                                <span asp-validation-for="Codigo" class="text-danger"></span>
+                                <input asp-for="Codigo"
+                                       class="form-control"
+                                       placeholder="Ej: CAJA01" />
+                                <span asp-validation-for="Codigo" class="text-danger small"></span>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label asp-for="Nombre" class="form-label"></label>
-                                <input asp-for="Nombre" class="form-control" placeholder="Ej: Caja Principal" />
-                                <span asp-validation-for="Nombre" class="text-danger"></span>
+                                <input asp-for="Nombre"
+                                       class="form-control"
+                                       placeholder="Ej: Caja principal" />
+                                <span asp-validation-for="Nombre" class="text-danger small"></span>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label asp-for="Sucursal" class="form-label"></label>
-                                <input asp-for="Sucursal" class="form-control" placeholder="Ej: Sucursal Centro" />
-                                <span asp-validation-for="Sucursal" class="text-danger"></span>
+                                <input asp-for="Sucursal"
+                                       class="form-control"
+                                       placeholder="Ej: Sucursal Centro" />
+                                <span asp-validation-for="Sucursal" class="text-danger small"></span>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label asp-for="Ubicacion" class="form-label"></label>
-                                <input asp-for="Ubicacion" class="form-control" placeholder="Ej: Mostrador 1" />
-                                <span asp-validation-for="Ubicacion" class="text-danger"></span>
+                                <input asp-for="Ubicacion"
+                                       class="form-control"
+                                       placeholder="Ej: Mostrador 1" />
+                                <span asp-validation-for="Ubicacion" class="text-danger small"></span>
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="Descripcion" class="form-label"></label>
-                            <textarea asp-for="Descripcion" class="form-control" rows="3" placeholder="Descripción opcional"></textarea>
-                            <span asp-validation-for="Descripcion" class="text-danger"></span>
+                            <textarea asp-for="Descripcion"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Descripción opcional"></textarea>
+                            <span asp-validation-for="Descripcion" class="text-danger small"></span>
                         </div>
 
                         <div class="form-check mb-3">
-                            <input asp-for="Activa" class="form-check-input" type="checkbox" checked />
+                            <input asp-for="Activa" class="form-check-input" />
                             <label asp-for="Activa" class="form-check-label">
                                 Caja activa
                             </label>
                         </div>
 
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a asp-action="Index" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                        <div class="d-flex justify-content-end gap-2 mt-2">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i> Crear Caja
+                                <i class="bi bi-check-circle me-1"></i>Crear caja
                             </button>
                         </div>
                     </form>
+
                 </div>
             </div>
+
         </div>
     </div>
 </div>

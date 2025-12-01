@@ -1,45 +1,89 @@
 ﻿@model TheBuryProject.ViewModels.ClienteDetalleViewModel
+@using System.Globalization
 
 <!-- Evaluación Crediticia -->
 <div class="row mb-3">
     <div class="col-md-3">
-        <div class="card bg-dark @(Model.EvaluacionCredito.ScoreCrediticio >= 700 ? "border-success" : Model.EvaluacionCredito.ScoreCrediticio >= 500 ? "border-warning" : "border-danger") shadow-sm">
+        <div class="card bg-dark shared-stat-card shadow-sm
+                    @(Model.EvaluacionCredito.ScoreCrediticio >= 700
+                                     ? "border-success"
+                                     : Model.EvaluacionCredito.ScoreCrediticio >= 500
+                                         ? "border-warning"
+                                         : "border-danger")">
             <div class="card-body text-center">
-                <h6 class="text-muted mb-2"><i class="bi bi-speedometer2"></i> Score Crediticio</h6>
-                <h2 class="fw-bold mb-0 @(Model.EvaluacionCredito.ScoreCrediticio >= 700 ? "text-success" : Model.EvaluacionCredito.ScoreCrediticio >= 500 ? "text-warning" : "text-danger")">
+                <h6 class="text-secondary text-uppercase small mb-2">
+                    <i class="bi bi-speedometer2 me-1"></i>Score Crediticio
+                </h6>
+                <h2 class="fw-bold mb-0
+                           @(Model.EvaluacionCredito.ScoreCrediticio >= 700
+                                                    ? "text-success"
+                                                    : Model.EvaluacionCredito.ScoreCrediticio >= 500
+                                                        ? "text-warning"
+                                                        : "text-danger")">
                     @Model.EvaluacionCredito.ScoreCrediticio
                 </h2>
                 <small class="text-muted">Nivel: @Model.EvaluacionCredito.NivelRiesgo</small>
             </div>
         </div>
     </div>
+
     <div class="col-md-3">
-        <div class="card bg-dark @(Model.EvaluacionCredito.MontoMaximoDisponible > 0 ? "border-success" : "border-warning") shadow-sm">
+        <div class="card bg-dark shared-stat-card shadow-sm
+                    @(Model.EvaluacionCredito.MontoMaximoDisponible > 0
+                                     ? "border-success"
+                                     : "border-warning")">
             <div class="card-body text-center">
-                <h6 class="text-muted mb-2"><i class="bi bi-cash-stack"></i> Monto Máximo</h6>
-                <h2 class="fw-bold mb-0 @(Model.EvaluacionCredito.MontoMaximoDisponible > 0 ? "text-success" : "text-warning")">
+                <h6 class="text-secondary text-uppercase small mb-2">
+                    <i class="bi bi-cash-stack me-1"></i>Monto Máximo
+                </h6>
+                <h2 class="fw-bold mb-0
+                           @(Model.EvaluacionCredito.MontoMaximoDisponible > 0
+                                                    ? "text-success"
+                                                    : "text-warning")">
                     @Model.EvaluacionCredito.MontoMaximoDisponible.ToString("C")
                 </h2>
                 <small class="text-muted">Disponible</small>
             </div>
         </div>
     </div>
+
     <div class="col-md-3">
-        <div class="card bg-dark @(Model.EvaluacionCredito.PorcentajeEndeudamiento < 40 ? "border-success" : Model.EvaluacionCredito.PorcentajeEndeudamiento < 60 ? "border-warning" : "border-danger") shadow-sm">
+        <div class="card bg-dark shared-stat-card shadow-sm
+                    @(Model.EvaluacionCredito.PorcentajeEndeudamiento < 40
+                                     ? "border-success"
+                                     : Model.EvaluacionCredito.PorcentajeEndeudamiento < 60
+                                         ? "border-warning"
+                                         : "border-danger")">
             <div class="card-body text-center">
-                <h6 class="text-muted mb-2"><i class="bi bi-percent"></i> Endeudamiento</h6>
-                <h2 class="fw-bold mb-0 @(Model.EvaluacionCredito.PorcentajeEndeudamiento < 40 ? "text-success" : Model.EvaluacionCredito.PorcentajeEndeudamiento < 60 ? "text-warning" : "text-danger")">
+                <h6 class="text-secondary text-uppercase small mb-2">
+                    <i class="bi bi-percent me-1"></i>Endeudamiento
+                </h6>
+                <h2 class="fw-bold mb-0
+                           @(Model.EvaluacionCredito.PorcentajeEndeudamiento < 40
+                                                    ? "text-success"
+                                                    : Model.EvaluacionCredito.PorcentajeEndeudamiento < 60
+                                                        ? "text-warning"
+                                                        : "text-danger")">
                     @Model.EvaluacionCredito.PorcentajeEndeudamiento.ToString("F1")%
                 </h2>
                 <small class="text-muted">de ingresos</small>
             </div>
         </div>
     </div>
+
     <div class="col-md-3">
-        <div class="card bg-dark @(Model.EvaluacionCredito.TieneDocumentosCompletos ? "border-success" : "border-warning") shadow-sm">
+        <div class="card bg-dark shared-stat-card shadow-sm
+                    @(Model.EvaluacionCredito.TieneDocumentosCompletos
+                                     ? "border-success"
+                                     : "border-warning")">
             <div class="card-body text-center">
-                <h6 class="text-muted mb-2"><i class="bi bi-file-earmark-check"></i> Documentación</h6>
-                <h2 class="fw-bold mb-0 @(Model.EvaluacionCredito.TieneDocumentosCompletos ? "text-success" : "text-warning")">
+                <h6 class="text-secondary text-uppercase small mb-2">
+                    <i class="bi bi-file-earmark-check me-1"></i>Documentación
+                </h6>
+                <h2 class="fw-bold mb-0
+                           @(Model.EvaluacionCredito.TieneDocumentosCompletos
+                                                    ? "text-success"
+                                                    : "text-warning")">
                     @if (Model.EvaluacionCredito.TieneDocumentosCompletos)
                     {
                         <i class="bi bi-check-circle-fill"></i>
@@ -49,7 +93,9 @@
                         <i class="bi bi-exclamation-triangle-fill"></i>
                     }
                 </h2>
-                <small class="text-muted">@(Model.EvaluacionCredito.TieneDocumentosCompletos ? "Completa" : "Incompleta")</small>
+                <small class="text-muted">
+                    @(Model.EvaluacionCredito.TieneDocumentosCompletos ? "Completa" : "Incompleta")
+                </small>
             </div>
         </div>
     </div>
@@ -58,9 +104,11 @@
 <!-- Alertas y Recomendaciones -->
 @if (Model.EvaluacionCredito.AlertasYRecomendaciones.Any())
 {
-    <div class="card bg-dark border-warning shadow-sm mb-3">
-        <div class="card-header bg-warning text-dark">
-            <h6 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Alertas y Recomendaciones</h6>
+    <div class="card bg-dark border-warning shadow-sm mb-3 shared-panel">
+        <div class="card-header bg-warning text-dark shared-panel-header">
+            <h6 class="mb-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Alertas y Recomendaciones
+            </h6>
         </div>
         <div class="card-body">
             <ul class="mb-0 text-light">
@@ -76,13 +124,16 @@
 <!-- Estado de Aprobación -->
 @if (!Model.EvaluacionCredito.CumpleRequisitos)
 {
-    @if (Model.EvaluacionCredito.PuedeAprobarConExcepcion)
+    if (Model.EvaluacionCredito.PuedeAprobarConExcepcion)
     {
         <div class="alert alert-warning border-0 shadow-sm">
             <h6 class="alert-heading">
                 <i class="bi bi-info-circle-fill me-2"></i>Requiere Aprobación con Excepción
             </h6>
-            <p class="mb-0">El cliente no cumple con todos los requisitos estándar, pero puede ser aprobado con una excepción justificada por un supervisor.</p>
+            <p class="mb-0">
+                El cliente no cumple con todos los requisitos estándar, pero puede ser aprobado
+                con una excepción justificada por un supervisor.
+            </p>
         </div>
     }
     else
@@ -91,7 +142,10 @@
             <h6 class="alert-heading">
                 <i class="bi bi-x-circle-fill me-2"></i>No Cumple Requisitos Mínimos
             </h6>
-            <p class="mb-0">El cliente no cumple con los requisitos mínimos para solicitar un crédito en este momento. Se recomienda completar la documentación y reducir elendeudamiento actual.</p>
+            <p class="mb-0">
+                El cliente no cumple con los requisitos mínimos para solicitar un crédito en este momento.
+                Se recomienda completar la documentación y reducir el endeudamiento actual.
+            </p>
         </div>
     }
 }
@@ -106,9 +160,11 @@ else
 }
 
 <!-- Formulario de Solicitud -->
-<div class="card bg-dark border-0 shadow-sm">
-    <div class="card-header bg-secondary">
-        <h5 class="mb-0 text-light"><i class="bi bi-currency-dollar"></i> Solicitar Crédito</h5>
+<div class="card bg-dark border-0 shadow-sm shared-panel mt-3">
+    <div class="card-header bg-secondary shared-panel-header">
+        <h5 class="mb-0 text-light">
+            <i class="bi bi-currency-dollar me-2"></i>Solicitar Crédito
+        </h5>
     </div>
     <div class="card-body">
         <form asp-controller="Cliente" asp-action="SolicitarCredito" method="post" id="formSolicitarCredito">
@@ -121,10 +177,14 @@ else
                     <label class="form-label text-light fw-semibold">Monto Solicitado *</label>
                     <div class="input-group">
                         <span class="input-group-text bg-secondary text-light border-0">$</span>
-                        <input type="number" name="MontoSolicitado" id="montoSolicitado"
+                        <input type="number"
+                               name="MontoSolicitado"
+                               id="montoSolicitado"
                                class="form-control bg-body-secondary text-light border-0"
-                               min="1000" max="@Model.EvaluacionCredito.MontoMaximoDisponible"
-                               step="1000" required
+                               min="1000"
+                               max="@Model.EvaluacionCredito.MontoMaximoDisponible"
+                               step="1000"
+                               required
                                @(Model.EvaluacionCredito.MontoMaximoDisponible <= 0 ? "disabled" : "") />
                     </div>
                     <div class="form-text text-muted">
@@ -135,7 +195,10 @@ else
                 <!-- Cantidad de Cuotas -->
                 <div class="col-md-3">
                     <label class="form-label text-light fw-semibold">Cantidad de Cuotas *</label>
-                    <select name="CantidadCuotas" id="cantidadCuotas" class="form-select bg-body-secondary text-light border-0" required
+                    <select name="CantidadCuotas"
+                            id="cantidadCuotas"
+                            class="form-select bg-body-secondary text-light border-0"
+                            required
                             @(Model.EvaluacionCredito.MontoMaximoDisponible <= 0 ? "disabled" : "")>
                         <option value="3">3 cuotas</option>
                         <option value="6" selected>6 cuotas</option>
@@ -149,9 +212,15 @@ else
                 <!-- Tasa de Interés -->
                 <div class="col-md-3">
                     <label class="form-label text-light fw-semibold">Tasa de Interés % (Mensual) *</label>
-                    <input type="number" name="TasaInteres" id="tasaInteres"
+                    <input type="number"
+                           name="TasaInteres"
+                           id="tasaInteres"
                            class="form-control bg-body-secondary text-light border-0"
-                           value="5.0" min="0" max="15" step="0.1" required
+                           value="5.0"
+                           min="0"
+                           max="15"
+                           step="0.1"
+                           required
                            @(Model.EvaluacionCredito.MontoMaximoDisponible <= 0 ? "disabled" : "") />
                 </div>
 
@@ -182,8 +251,10 @@ else
                 <!-- Observaciones -->
                 <div class="col-md-12">
                     <label class="form-label text-light fw-semibold">Observaciones</label>
-                    <textarea name="Observaciones" class="form-control bg-body-secondary text-light border-0"
-                              rows="3" placeholder="Observaciones adicionales sobre la solicitud de crédito"></textarea>
+                    <textarea name="Observaciones"
+                              class="form-control bg-body-secondary text-light border-0"
+                              rows="3"
+                              placeholder="Observaciones adicionales sobre la solicitud de crédito"></textarea>
                 </div>
             </div>
 
@@ -192,7 +263,7 @@ else
             {
                 <hr class="border-secondary my-4" />
                 <h6 class="text-light mb-3">
-                    <i class="bi bi-person-check text-warning"></i> Información del Garante
+                    <i class="bi bi-person-check text-warning me-1"></i>Información del Garante
                     <span class="badge bg-warning text-dark">Requerido</span>
                 </h6>
 
@@ -200,7 +271,8 @@ else
                 {
                     <div class="alert alert-success border-0 mb-3">
                         <i class="bi bi-check-circle-fill me-2"></i>
-                        Garante registrado: <strong>@Model.EvaluacionCredito.GaranteNombre</strong>
+                        Garante registrado:
+                        <strong>@Model.EvaluacionCredito.GaranteNombre</strong>
                     </div>
                 }
                 else
@@ -213,29 +285,38 @@ else
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label text-light fw-semibold">Nombre del Garante *</label>
-                            <input type="text" name="GaranteNombre" class="form-control bg-body-secondary text-light border-0"
-                                   required placeholder="Nombre completo" />
+                            <input type="text"
+                                   name="GaranteNombre"
+                                   class="form-control bg-body-secondary text-light border-0"
+                                   required
+                                   placeholder="Nombre completo" />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label text-light fw-semibold">Documento *</label>
-                            <input type="text" name="GaranteDocumento" class="form-control bg-body-secondary text-light border-0"
-                                   required placeholder="DNI del garante" />
+                            <input type="text"
+                                   name="GaranteDocumento"
+                                   class="form-control bg-body-secondary text-light border-0"
+                                   required
+                                   placeholder="DNI del garante" />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label text-light fw-semibold">Teléfono *</label>
-                            <input type="tel" name="GaranteTelefono" class="form-control bg-body-secondary text-light border-0"
-                                   required placeholder="Teléfono de contacto" />
+                            <input type="tel"
+                                   name="GaranteTelefono"
+                                   class="form-control bg-body-secondary text-light border-0"
+                                   required
+                                   placeholder="Teléfono de contacto" />
                         </div>
                     </div>
                 }
             }
 
-            <!-- Sección de Excepción (si no cumple requisitos pero puede aprobarse) -->
+            <!-- Sección de Excepción -->
             @if (!Model.EvaluacionCredito.CumpleRequisitos && Model.EvaluacionCredito.PuedeAprobarConExcepcion)
             {
                 <hr class="border-secondary my-4" />
                 <h6 class="text-light mb-3">
-                    <i class="bi bi-shield-exclamation text-warning"></i> Aprobación con Excepción
+                    <i class="bi bi-shield-exclamation text-warning me-1"></i>Aprobación con Excepción
                     <span class="badge bg-warning text-dark">Requiere Autorización</span>
                 </h6>
 
@@ -245,8 +326,12 @@ else
                 </div>
 
                 <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" name="AprobarConExcepcion" id="aprobarConExcepcion"
-                           value="true" required />
+                    <input class="form-check-input"
+                           type="checkbox"
+                           name="AprobarConExcepcion"
+                           id="aprobarConExcepcion"
+                           value="true"
+                           required />
                     <label class="form-check-label text-light" for="aprobarConExcepcion">
                         Confirmo que este crédito ha sido autorizado con excepción
                     </label>
@@ -255,13 +340,19 @@ else
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label text-light fw-semibold">Motivo de la Excepción *</label>
-                        <textarea name="MotivoExcepcion" class="form-control bg-body-secondary text-light border-0"
-                              rows="2" required placeholder="Justifique por qué se aprueba este crédito con excepción"></textarea>
+                        <textarea name="MotivoExcepcion"
+                              class="form-control bg-body-secondary text-light border-0"
+                              rows="2"
+                              required
+                              placeholder="Justifique por qué se aprueba este crédito con excepción"></textarea>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label text-light fw-semibold">Autorizado Por *</label>
-                        <input type="text" name="AutorizadoPor" class="form-control bg-body-secondary text-light border-0"
-                               required placeholder="Nombre del supervisor que autoriza" />
+                        <input type="text"
+                               name="AutorizadoPor"
+                               class="form-control bg-body-secondary text-light border-0"
+                               required
+                               placeholder="Nombre del supervisor que autoriza" />
                     </div>
                 </div>
             }
@@ -271,7 +362,8 @@ else
                 <div class="col-md-12">
                     @if (Model.EvaluacionCredito.CumpleRequisitos || Model.EvaluacionCredito.PuedeAprobarConExcepcion)
                     {
-                        <button type="submit" class="btn btn-success btn-lg fw-semibold me-2"
+                        <button type="submit"
+                                class="btn btn-success btn-lg fw-semibold me-2"
                                 @(Model.EvaluacionCredito.MontoMaximoDisponible <= 0 ? "disabled" : "")>
                             <i class="bi bi-check-circle me-2"></i>Solicitar Crédito
                         </button>
@@ -282,6 +374,7 @@ else
                             <i class="bi bi-x-circle me-2"></i>No Cumple Requisitos
                         </button>
                     }
+
                     <a asp-action="Index" class="btn btn-outline-light btn-lg">
                         <i class="bi bi-arrow-left me-2"></i>Volver
                     </a>
@@ -295,9 +388,15 @@ else
     <script>
         // Calcular cuota mensual en tiempo real
         function calcularCuota() {
-            const monto = parseFloat(document.getElementById('montoSolicitado').value) || 0;
-            const cuotas = parseInt(document.getElementById('cantidadCuotas').value) || 1;
-            const tasaMensual = parseFloat(document.getElementById('tasaInteres').value) / 100 || 0;
+            const montoInput = document.getElementById('montoSolicitado');
+            const cuotasInput = document.getElementById('cantidadCuotas');
+            const tasaInput = document.getElementById('tasaInteres');
+
+            if (!montoInput || !cuotasInput || !tasaInput) return;
+
+            const monto = parseFloat(montoInput.value) || 0;
+            const cuotas = parseInt(cuotasInput.value) || 1;
+            const tasaMensual = (parseFloat(tasaInput.value) || 0) / 100;
 
             if (monto > 0 && cuotas > 0) {
                 let cuotaMensual;
@@ -310,17 +409,19 @@ else
 
                 const montoTotal = cuotaMensual * cuotas;
 
-                document.getElementById('cuotaMensual').textContent = cuotaMensual.toLocaleString('es-AR', {
-                    style: 'currency',
-                    currency: 'ARS'
-                });
+                document.getElementById('cuotaMensual').textContent =
+                    cuotaMensual.toLocaleString('es-AR', {
+                        style: 'currency',
+                        currency: 'ARS'
+                    });
 
-                document.getElementById('montoTotalConInteres').textContent = montoTotal.toLocaleString('es-AR', {
-                    style: 'currency',
-                    currency: 'ARS'
-                });
+                document.getElementById('montoTotalConInteres').textContent =
+                    montoTotal.toLocaleString('es-AR', {
+                        style: 'currency',
+                        currency: 'ARS'
+                    });
 
-                const capacidadPago = parseFloat('@Model.EvaluacionCredito.CapacidadPagoMensual.ToString("F2")');
+                const capacidadPago = parseFloat('@Model.EvaluacionCredito.CapacidadPagoMensual.ToString("0.00", CultureInfo.InvariantCulture)');
                 const elementoCuota = document.getElementById('cuotaMensual');
 
                 if (cuotaMensual > capacidadPago) {

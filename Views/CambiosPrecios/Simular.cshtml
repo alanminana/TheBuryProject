@@ -1,128 +1,210 @@
 ﻿@model TheBuryProject.ViewModels.SimularCambioMasivoViewModel
 
 @{
-    ViewData["Title"] = "Simular Cambio Masivo de Precios";
+    ViewData["Title"] = "Simular cambio masivo de precios";
 }
 
-<div class="container py-4">
+<div class="container-fluid px-0 py-4">
+
+    <!-- Header página -->
+    <div class="d-flex align-items-start justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Gestión de precios · Cambios masivos</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-calculator"></i>
+                <span>Simular cambio masivo de precios</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Configure el escenario de aumento o rebaja y los filtros de productos para generar una simulación sin afectar aún los precios reales.
+            </p>
+        </div>
+
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver al listado
+        </a>
+    </div>
+
     <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card shadow-sm">
+        <div class="col-xxl-9 col-lg-10">
+            <div class="card card-animate border-0 shadow-sm">
+
                 <div class="card-header">
-                    <h4><i class="bi bi-calculator"></i> Simular Cambio Masivo de Precios</h4>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-gear"></i>
+                            <span>Parámetros de simulación</span>
+                        </h2>
+                    </div>
                 </div>
+
                 <div class="card-body">
                     <form asp-action="Simular" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small"></div>
 
                         <div class="row">
-                            <!-- Configuración del Cambio -->
-                            <div class="col-md-6">
-                                <h5 class="mb-3"><i class="bi bi-gear"></i> Configuración del Cambio</h5>
+                            <!-- Configuración del cambio -->
+                            <div class="col-md-6 border-md-end mb-4 mb-md-0">
+                                <h5 class="mb-3 d-flex align-items-center gap-2">
+                                    <i class="bi bi-sliders"></i>
+                                    <span>Configuración del cambio</span>
+                                </h5>
 
                                 <div class="mb-3">
-                                    <label asp-for="Nombre" class="form-label">Nombre de la Simulación *</label>
-                                    <input asp-for="Nombre" class="form-control" placeholder="Ej: Aumento general 15% - Enero 2024" />
-                                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                                    <label asp-for="Nombre" class="form-label small fw-semibold">Nombre de la simulación *</label>
+                                    <input asp-for="Nombre"
+                                           class="form-control form-control-sm"
+                                           placeholder="Ej: Aumento general 15% - Enero 2026" />
+                                    <span asp-validation-for="Nombre" class="text-danger small"></span>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label asp-for="TipoCambio" class="form-label">Tipo de Cambio *</label>
-                                    <select asp-for="TipoCambio" class="form-select" asp-items="Html.GetEnumSelectList<TheBuryProject.Models.Enums.TipoCambio>()">
+                                    <label asp-for="TipoCambio" class="form-label small fw-semibold">Tipo de cambio *</label>
+                                    <select asp-for="TipoCambio"
+                                            class="form-select form-select-sm"
+                                            asp-items="Html.GetEnumSelectList<TheBuryProject.Models.Enums.TipoCambio>()">
                                         <option value="">Seleccione un tipo</option>
                                     </select>
-                                    <span asp-validation-for="TipoCambio" class="text-danger"></span>
-                                    <small class="text-muted">Sobre qué base se calcula el cambio</small>
+                                    <span asp-validation-for="TipoCambio" class="text-danger small"></span>
+                                    <small class="text-muted d-block mt-1">
+                                        Define sobre qué base se calcula el cambio (precio actual, costo, etc.).
+                                    </small>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label asp-for="TipoAplicacion" class="form-label">Tipo de Aplicación *</label>
-                                    <select asp-for="TipoAplicacion" class="form-select" asp-items="Html.GetEnumSelectList<TheBuryProject.Models.Enums.TipoAplicacion>()">
+                                    <label asp-for="TipoAplicacion" class="form-label small fw-semibold">Tipo de aplicación *</label>
+                                    <select asp-for="TipoAplicacion"
+                                            class="form-select form-select-sm"
+                                            asp-items="Html.GetEnumSelectList<TheBuryProject.Models.Enums.TipoAplicacion>()">
                                         <option value="">Seleccione un tipo</option>
                                     </select>
-                                    <span asp-validation-for="TipoAplicacion" class="text-danger"></span>
+                                    <span asp-validation-for="TipoAplicacion" class="text-danger small"></span>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label asp-for="ValorCambio" class="form-label">Valor del Cambio *</label>
-                                    <input asp-for="ValorCambio" type="number" step="0.01" class="form-control" placeholder="Ej: 15.50" />
-                                    <span asp-validation-for="ValorCambio" class="text-danger"></span>
-                                    <small class="text-muted">Porcentaje o valor absoluto según tipo de cambio</small>
+                                    <label asp-for="ValorCambio" class="form-label small fw-semibold">Valor del cambio *</label>
+                                    <div class="input-group input-group-sm">
+                                        <input asp-for="ValorCambio"
+                                               type="number"
+                                               step="0.01"
+                                               class="form-control"
+                                               placeholder="Ej: 15.50" />
+                                    </div>
+                                    <span asp-validation-for="ValorCambio" class="text-danger small"></span>
+                                    <small class="text-muted d-block mt-1">
+                                        Interprétese como porcentaje o monto fijo según el tipo de cambio seleccionado.
+                                    </small>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label">Listas de Precios Afectadas *</label>
-                                    <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                <div class="mb-0">
+                                    <label class="form-label small fw-semibold">Listas de precios afectadas *</label>
+                                    <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
                                         @foreach (var lista in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Listas)
                                         {
-                                            <div class="form-check">
-                                                <input type="checkbox" name="ListasIds" value="@lista.Value" class="form-check-input" id="lista_@lista.Value" />
+                                            <div class="form-check small">
+                                                <input type="checkbox"
+                                                       name="ListasIds"
+                                                       value="@lista.Value"
+                                                       class="form-check-input"
+                                                       id="lista_@lista.Value" />
                                                 <label class="form-check-label" for="lista_@lista.Value">
                                                     @lista.Text
                                                 </label>
                                             </div>
                                         }
                                     </div>
-                                    <span asp-validation-for="ListasIds" class="text-danger"></span>
+                                    <span asp-validation-for="ListasIds" class="text-danger small"></span>
                                 </div>
                             </div>
 
-                            <!-- Filtros de Productos -->
-                            <div class="col-md-6">
-                                <h5 class="mb-3"><i class="bi bi-funnel"></i> Filtros de Productos</h5>
+                            <!-- Filtros de productos -->
+                            <div class="col-md-6 ps-md-4">
+                                <h5 class="mb-3 d-flex align-items-center gap-2">
+                                    <i class="bi bi-funnel"></i>
+                                    <span>Filtros de productos</span>
+                                </h5>
 
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle"></i>
-                                    <strong>Filtros opcionales:</strong> Si no selecciona ningún filtro, se aplicará a todos los productos.
+                                <div class="alert alert-info small">
+                                    <div class="fw-semibold mb-1 d-flex align-items-center gap-2">
+                                        <i class="bi bi-info-circle"></i>
+                                        <span>Filtros opcionales</span>
+                                    </div>
+                                    <p class="mb-0">
+                                        Si no aplica ningún filtro, la simulación se realizará sobre todos los productos
+                                        de las listas seleccionadas.
+                                    </p>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Categorías</label>
-                                    <select name="CategoriaIds" class="form-select" multiple size="5">
+                                    <label class="form-label small fw-semibold">Categorías</label>
+                                    <select name="CategoriaIds"
+                                            class="form-select form-select-sm"
+                                            multiple
+                                            size="6">
                                         @foreach (var categoria in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Categorias)
                                         {
                                             <option value="@categoria.Value">@categoria.Text</option>
                                         }
                                     </select>
-                                    <small class="text-muted">Mantén Ctrl/Cmd para seleccionar múltiples</small>
+                                    <small class="text-muted d-block mt-1">
+                                        Mantenga Ctrl/Cmd para seleccionar múltiples opciones.
+                                    </small>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Marcas</label>
-                                    <select name="MarcaIds" class="form-select" multiple size="5">
+                                    <label class="form-label small fw-semibold">Marcas</label>
+                                    <select name="MarcaIds"
+                                            class="form-select form-select-sm"
+                                            multiple
+                                            size="6">
                                         @foreach (var marca in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Marcas)
                                         {
                                             <option value="@marca.Value">@marca.Text</option>
                                         }
                                     </select>
-                                    <small class="text-muted">Mantén Ctrl/Cmd para seleccionar múltiples</small>
+                                    <small class="text-muted d-block mt-1">
+                                        Mantenga Ctrl/Cmd para seleccionar múltiples opciones.
+                                    </small>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label">IDs de Productos Específicos</label>
-                                    <textarea name="ProductoIdsText" class="form-control" rows="3" placeholder="Ingrese IDs separados por comas: 1,2,3,4"></textarea>
-                                    <small class="text-muted">Opcional: lista de IDs separados por comas</small>
+                                <div class="mb-0">
+                                    <label class="form-label small fw-semibold">IDs de productos específicos</label>
+                                    <textarea name="ProductoIdsText"
+                                              class="form-control form-control-sm"
+                                              rows="3"
+                                              placeholder="Ingrese IDs separados por comas: 1,2,3,4"></textarea>
+                                    <small class="text-muted d-block mt-1">
+                                        Opcional: limita la simulación a un conjunto concreto de productos.
+                                    </small>
                                 </div>
                             </div>
                         </div>
 
-                        <hr class="my-4">
+                        <hr class="my-4" />
 
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <strong>Importante:</strong> Esta acción solo creará una simulación. Los precios NO se modificarán hasta que la simulación sea autorizada y aplicada.
+                        <div class="alert alert-warning small">
+                            <div class="fw-semibold mb-1 d-flex align-items-center gap-2">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span>Importante</span>
+                            </div>
+                            <p class="mb-0">
+                                Esta acción solo creará una <strong>simulación</strong>. Los precios
+                                <strong>no</strong> se modificarán hasta que el batch sea autorizado y aplicado.
+                            </p>
                         </div>
 
-                        <div class="d-flex justify-content-between">
-                            <a asp-action="Index" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-calculator"></i> Simular Cambios
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-calculator me-1"></i>Simular cambios
                             </button>
                         </div>
                     </form>
                 </div>
+
             </div>
         </div>
     </div>

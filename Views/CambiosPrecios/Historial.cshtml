@@ -1,31 +1,59 @@
 ﻿@model TheBuryProject.ViewModels.HistorialPreciosViewModel
 
 @{
-    ViewData["Title"] = "Historial de Precios - " + Model.ProductoNombre;
+    ViewData["Title"] = "Historial de precios - " + Model.ProductoNombre;
 }
 
-<div class="container-fluid py-4">
-    <div class="card shadow-sm mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h4><i class="bi bi-clock-history"></i> Historial de Precios</h4>
-            <a asp-controller="Productos" asp-action="Details" asp-route-id="@Model.ProductoId" class="btn btn-secondary btn-sm">
-                <i class="bi bi-arrow-left"></i> Volver al Producto
-            </a>
+<div class="container-fluid px-0">
+
+    <!-- Header de página -->
+    <div class="d-flex align-items-start justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Gestión de precios · Historial</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-clock-history"></i>
+                <span>Historial de precios</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Evolución de precios y márgenes del producto en las distintas listas.
+            </p>
         </div>
+
+        <a asp-controller="Producto"
+           asp-action="Details"
+           asp-route-id="@Model.ProductoId"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver al producto
+        </a>
+    </div>
+
+    <div class="card card-animate border-0">
         <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <h5>@Model.ProductoNombre</h5>
-                    <p class="text-muted">Código: <code>@Model.ProductoCodigo</code></p>
-                </div>
-                <div class="col-md-6 text-end">
-                    <form asp-action="Historial" method="get" class="row g-2">
-                        <input type="hidden" name="productoId" value="@Model.ProductoId" />
-                        <div class="col-auto">
-                            <label class="col-form-label">Filtrar por lista:</label>
+
+            <!-- Cabecera producto + filtros -->
+            <div class="row align-items-center mb-3 g-3">
+                <div class="col-12 col-lg-6">
+                    <div class="mb-1">
+                        <h2 class="h5 mb-1">@Model.ProductoNombre</h2>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary">
+                                Código: @Model.ProductoCodigo
+                            </span>
+                            <span class="text-muted small">
+                                @Model.Precios.Count registro(s) en historial
+                            </span>
                         </div>
-                        <div class="col-auto">
-                            <select name="listaId" class="form-select" onchange="this.form.submit()">
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6">
+                    <form asp-action="Historial" method="get" class="row g-2 justify-content-lg-end">
+                        <input type="hidden" name="productoId" value="@Model.ProductoId" />
+                        <div class="col-12 col-sm-5 col-md-6">
+                            <label class="form-label small mb-1">Filtrar por lista</label>
+                            <select name="listaId"
+                                    class="form-select form-select-sm"
+                                    onchange="this.form.submit()">
                                 <option value="">Todas las listas</option>
                                 @foreach (var lista in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.Listas)
                                 {
@@ -36,29 +64,24 @@
                     </form>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="card shadow-sm">
-        <div class="card-header">
-            <i class="bi bi-list-ul"></i> Historial (@Model.Precios.Count registros)
-        </div>
-        <div class="card-body">
+            <hr class="my-3" />
+
             @if (Model.Precios.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped align-middle">
+                    <table class="table table-sm table-hover align-middle mb-0">
                         <thead class="table-dark">
                             <tr>
                                 <th>Lista</th>
-                                <th>Vigencia Desde</th>
-                                <th>Vigencia Hasta</th>
+                                <th>Vigencia desde</th>
+                                <th>Vigencia hasta</th>
                                 <th class="text-end">Costo</th>
                                 <th class="text-end">Precio</th>
                                 <th class="text-center">Margen %</th>
-                                <th class="text-center">Tipo</th>
+                                <th class="text-center">Origen</th>
                                 <th class="text-center">Estado</th>
-                                <th>Creado Por</th>
+                                <th>Creado por</th>
                                 <th>Notas</th>
                             </tr>
                         </thead>
@@ -67,40 +90,66 @@
                             {
                                 <tr class="@(precio.EsVigente ? "table-success" : "")">
                                     <td>@precio.ListaNombre</td>
-                                    <td>@precio.VigenciaDesde.ToString("dd/MM/yyyy HH:mm")</td>
+
+                                    <td>
+                                        <span class="small">
+                                            @precio.VigenciaDesde.ToString("dd/MM/yyyy HH:mm")
+                                        </span>
+                                    </td>
+
                                     <td>
                                         @if (precio.VigenciaHasta.HasValue)
                                         {
-                                            <span>@precio.VigenciaHasta.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                            <span class="small">
+                                                @precio.VigenciaHasta.Value.ToString("dd/MM/yyyy HH:mm")
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span class="text-muted">-</span>
+                                            <span class="text-muted small">—</span>
                                         }
                                     </td>
-                                    <td class="text-end">$@precio.Costo.ToString("N2")</td>
-                                    <td class="text-end"><strong>$@precio.Precio.ToString("N2")</strong></td>
-                                    <td class="text-center">@precio.MargenPorcentaje.ToString("N2")%</td>
+
+                                    <td class="text-end">
+                                        <span class="small">
+                                            $@precio.Costo.ToString("N2")
+                                        </span>
+                                    </td>
+
+                                    <td class="text-end">
+                                        <span class="fw-semibold">
+                                            $@precio.Precio.ToString("N2")
+                                        </span>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <span class="badge bg-dark-subtle text-light small">
+                                            @precio.MargenPorcentaje.ToString("N2")%
+                                        </span>
+                                    </td>
+
                                     <td class="text-center">
                                         @if (precio.EsManual)
                                         {
-                                            <span class="badge bg-warning text-dark">Manual</span>
+                                            <span class="badge bg-warning text-dark small">Manual</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-info">Automático</span>
+                                            <span class="badge bg-info small">Automático</span>
                                         }
                                     </td>
+
                                     <td class="text-center">
                                         @if (precio.EsVigente)
                                         {
-                                            <span class="badge bg-success">Vigente</span>
+                                            <span class="badge bg-success small">Vigente</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-secondary">Histórico</span>
+                                            <span class="badge bg-secondary small">Histórico</span>
                                         }
                                     </td>
+
                                     <td>
                                         @if (!string.IsNullOrEmpty(precio.CreadoPor))
                                         {
@@ -108,17 +157,27 @@
                                         }
                                         else
                                         {
-                                            <span class="text-muted">-</span>
+                                            <span class="text-muted small">—</span>
                                         }
                                     </td>
+
                                     <td>
                                         @if (!string.IsNullOrEmpty(precio.Notas))
                                         {
-                                            <small title="@precio.Notas">@precio.Notas.Substring(0, Math.Min(30, precio.Notas.Length))...</small>
+                                            @{
+                                                var textoNotas = precio.Notas.Length > 60
+                                                    ? precio.Notas.Substring(0, 60) + "…"
+                                                    : precio.Notas;
+                                            }
+                                            <small class="d-inline-block text-truncate"
+                                                   style="max-width: 220px;"
+                                                   title="@precio.Notas">
+                                                @textoNotas
+                                            </small>
                                         }
                                         else
                                         {
-                                            <span class="text-muted">-</span>
+                                            <span class="text-muted small">—</span>
                                         }
                                     </td>
                                 </tr>
@@ -129,10 +188,15 @@
             }
             else
             {
-                <div class="alert alert-info text-center">
-                    <i class="bi bi-info-circle"></i> No hay historial de precios para este producto.
+                <div class="py-5 text-center text-muted">
+                    <i class="bi bi-info-circle" style="font-size: 2.5rem;"></i>
+                    <p class="mt-3 mb-1">No hay historial de precios para este producto.</p>
+                    <p class="small mb-0">
+                        Los cambios de precio futuros aparecerán aquí con su vigencia y origen.
+                    </p>
                 </div>
             }
+
         </div>
     </div>
 </div>
