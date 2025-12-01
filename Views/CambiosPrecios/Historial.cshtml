@@ -164,17 +164,14 @@
                                     <td>
                                         @if (!string.IsNullOrEmpty(precio.Notas))
                                         {
-                                            @{
-                                                var textoNotas = precio.Notas.Length > 60
-                                                    ? precio.Notas.Substring(0, 60) + "…"
-                                                    : precio.Notas;
-                                            }
                                             <small class="d-inline-block text-truncate"
                                                    style="max-width: 220px;"
                                                    title="@precio.Notas">
-                                                @textoNotas
-                                            </small>
-                                        }
+                                                @(precio.Notas.Length > 60
+                                                                                    ? precio.Notas.Substring(0, 60) + "…"
+                                                                                    : precio.Notas)
+                                </small>
+                                                                }
                                         else
                                         {
                                             <span class="text-muted small">—</span>

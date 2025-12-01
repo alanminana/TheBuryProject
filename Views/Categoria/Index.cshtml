@@ -1,16 +1,18 @@
 ﻿@model TheBuryProject.ViewModels.CategoriaFilterViewModel
+
 @{
     ViewData["Title"] = "Categorías";
     var filtrosActivos = !string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos;
 }
 
 <section class="container-fluid py-4 text-light">
+
     <div class="row align-items-center mb-4">
         <div class="col">
             <h1 class="h3 fw-bold">
                 <i class="bi bi-tag text-primary"></i> Gestión de Categorías
             </h1>
-            <p class="text-secondary mb-0">Administrá las categorías de productos del sistema</p>
+            <p class="page-header-subtitle mb-0">Administrá las categorías de productos del sistema</p>
         </div>
         <div class="col-auto d-flex gap-2">
             <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-light fw-semibold shadow-sm">
@@ -38,37 +40,37 @@
         </div>
     }
 
-    <!-- Filtros -->
-    <div class="card bg-dark border-secondary shadow-sm mb-4">
-        <div class="card-header bg-secondary bg-opacity-10 border-secondary">
-            <button class="btn btn-link text-decoration-none text-light w-100 text-start p-0"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#filtrosCollapse">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">
-                        <i class="bi bi-funnel me-2"></i>Búsqueda y Filtros
-                    </h6>
-                    <i class="bi bi-chevron-down"></i>
-                </div>
-            </button>
-        </div>
+    <div class="card bg-dark border-0 shadow-sm mb-4 filter-card">
+        <button class="card-header bg-secondary text-light d-flex justify-content-between align-items-center @(filtrosActivos ? string.Empty : "collapsed")"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#filtrosCollapse"
+                aria-expanded="@(filtrosActivos.ToString().ToLower())">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-funnel"></i>
+                <span class="fw-semibold">Búsqueda y filtros</span>
+            </div>
+            <i class="bi bi-chevron-down chevron"></i>
+        </button>
+
         <div class="collapse @(filtrosActivos ? "show" : "")" id="filtrosCollapse">
             <div class="card-body">
+
                 <form asp-action="Index" method="get">
                     <div class="row g-3">
+
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-search me-1"></i>Búsqueda por texto
                             </label>
                             <input asp-for="SearchTerm"
-                                   class="form-control bg-dark text-light border-secondary"
+                                   class="form-control bg-body-secondary text-light border-0"
                                    placeholder="Buscar por nombre o descripción..." />
                         </div>
 
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Opciones</label>
-                            <div class="form-check">
+                            <div class="form-check form-switch">
                                 <input asp-for="SoloActivos"
                                        class="form-check-input"
                                        type="checkbox"
@@ -84,7 +86,7 @@
                                 <i class="bi bi-sort-down me-1"></i>Ordenar por
                             </label>
                             <select asp-for="OrderBy"
-                                    class="form-select bg-dark text-light border-secondary">
+                                    class="form-select bg-body-secondary text-light border-0">
                                 <option value="nombre">Nombre</option>
                                 <option value="descripcion">Descripción</option>
                                 <option value="parent">Categoría Padre</option>
@@ -94,7 +96,7 @@
                         <div class="col-md-1">
                             <label class="form-label fw-semibold">Dir.</label>
                             <select asp-for="OrderDirection"
-                                    class="form-select bg-dark text-light border-secondary">
+                                    class="form-select bg-body-secondary text-light border-0">
                                 <option value="asc">Asc</option>
                                 <option value="desc">Desc</option>
                             </select>
@@ -110,13 +112,14 @@
                                 </a>
                             </div>
                         </div>
+
                     </div>
                 </form>
+
             </div>
         </div>
     </div>
 
-    <!-- Resultados -->
     @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos)
     {
         <div class="alert alert-info d-flex align-items-center mb-3 text-dark">
@@ -125,10 +128,19 @@
         </div>
     }
 
-    <div class="card bg-dark border-secondary shadow-sm">
+    <div class="card bg-dark border-0 shadow-sm">
+        <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-table"></i>
+                <span class="fw-semibold">Listado de categorías</span>
+            </div>
+            <span class="badge bg-light text-dark">Total: @Model.TotalResultados</span>
+        </div>
+
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-dark table-hover align-middle mb-0 border-secondary">
+                <table class="table table-dark table-hover align-middle mb-0">
+
                     <thead class="table-secondary text-dark">
                         <tr>
                             <th class="px-4 py-3">Código</th>
@@ -140,15 +152,19 @@
                             <th class="text-center px-4">Acciones</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         @if (Model.Categorias.Any())
                         {
-                            @foreach (var categoria in Model.Categorias)
+                            foreach (var categoria in Model.Categorias)
                             {
                                 <tr>
-                                    <td class="px-4"><span class="badge bg-primary">@categoria.Codigo</span></td>
+                                    <td class="px-4">
+                                        <span class="badge bg-primary">@categoria.Codigo</span>
+                                    </td>
                                     <td>@categoria.Nombre</td>
-                                    <td class="text-secondary">@(categoria.Descripcion ?? "-")</td>
+                                    <td class="text-secondary">@((categoria.Descripcion ?? "-"))</td>
+
                                     <td>
                                         @if (!string.IsNullOrEmpty(categoria.ParentNombre))
                                         {
@@ -158,21 +174,27 @@
                                         }
                                         else
                                         {
-                                            <span class="text-muted">-</span>
+                                            <span class="badge bg-primary">
+                                                <i class="bi bi-star-fill"></i> Raíz
+                                            </span>
                                         }
                                     </td>
+
                                     <td class="text-center">
                                         @if (categoria.ControlSerieDefault)
                                         {
-                                            <span class="badge bg-info text-dark">
+                                            <span class="badge bg-success">
                                                 <i class="bi bi-check-circle"></i> Sí
                                             </span>
                                         }
                                         else
                                         {
-                                            <span class="text-muted">No</span>
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-x-circle"></i> No
+                                            </span>
                                         }
                                     </td>
+
                                     <td class="text-center">
                                         @if (categoria.Activo)
                                         {
@@ -187,15 +209,19 @@
                                             </span>
                                         }
                                     </td>
+
                                     <td class="text-center px-4">
                                         <div class="btn-group btn-group-sm">
-                                            <a asp-action="Details" asp-route-id="@categoria.Id" class="btn btn-outline-info" data-bs-toggle="tooltip" title="Ver detalles">
+                                            <a asp-action="Details" asp-route-id="@categoria.Id"
+                                               class="btn btn-outline-info" data-bs-toggle="tooltip" title="Ver detalles">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <a asp-action="Edit" asp-route-id="@categoria.Id" class="btn btn-outline-warning" data-bs-toggle="tooltip" title="Editar">
+                                            <a asp-action="Edit" asp-route-id="@categoria.Id"
+                                               class="btn btn-outline-warning" data-bs-toggle="tooltip" title="Editar">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            <a asp-action="Delete" asp-route-id="@categoria.Id" class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar">
+                                            <a asp-action="Delete" asp-route-id="@categoria.Id"
+                                               class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar">
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                         </div>
@@ -206,22 +232,24 @@
                         else
                         {
                             <tr>
-                                <td colspan="7" class="text-center py-5">
-                                    <i class="bi bi-inbox display-1 text-secondary d-block mb-3"></i>
+                                <td colspan="7" class="text-center py-5 table-empty-state">
+                                    <i class="bi bi-inbox display-1 d-block mb-3"></i>
+
                                     @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos)
                                     {
-                                        <p class="text-secondary mb-2">No se encontraron categorías con los filtros aplicados</p>
+                                        <p class="mb-2">No se encontraron categorías con los filtros aplicados</p>
                                         <a asp-action="Index" class="btn btn-outline-light">Limpiar filtros</a>
                                     }
                                     else
                                     {
-                                        <p class="text-secondary mb-2">No hay categorías registradas</p>
+                                        <p class="mb-2">No hay categorías registradas</p>
                                         <a asp-action="Create" class="btn btn-primary">Crear la primera categoría</a>
                                     }
                                 </td>
                             </tr>
                         }
                     </tbody>
+
                 </table>
             </div>
         </div>
@@ -231,15 +259,16 @@
     {
         <div class="row mt-4">
             <div class="col-md-6">
-                <div class="card bg-dark border-secondary shadow-sm">
+                <div class="card bg-dark border-0 shadow-sm">
                     <div class="card-body">
                         <h6 class="text-secondary mb-2">Total Categorías</h6>
                         <h3 class="fw-bold">@Model.TotalResultados</h3>
                     </div>
                 </div>
             </div>
+
             <div class="col-md-6">
-                <div class="card bg-dark border-secondary shadow-sm">
+                <div class="card bg-dark border-0 shadow-sm">
                     <div class="card-body">
                         <h6 class="text-secondary mb-2">Categorías Activas</h6>
                         <h3 class="fw-bold text-success">@Model.Categorias.Count(c => c.Activo)</h3>
@@ -248,4 +277,9 @@
             </div>
         </div>
     }
+
 </section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/catalogo.css" />
+}

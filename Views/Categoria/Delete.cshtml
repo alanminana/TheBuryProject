@@ -1,51 +1,71 @@
 ﻿@model TheBuryProject.ViewModels.CategoriaViewModel
+
 @{
     ViewData["Title"] = "Eliminar categoría";
 }
 
-<div class="container-fluid px-0 py-4">
+<section class="container-fluid py-4 text-light">
 
     <div class="row mb-3">
         <div class="col-12 d-flex justify-content-between align-items-center">
+
             <div>
                 <div class="text-muted text-uppercase small mb-1">Productos · Categorías</div>
-                <h1 class="h4 mb-0 d-flex align-items-center gap-2 text-light">
+
+                <h1 class="h4 mb-0 d-flex align-items-center gap-2">
                     <i class="bi bi-diagram-3"></i>
                     <span>Eliminar categoría</span>
                 </h1>
-                <p class="text-muted small mb-0">
+
+                <p class="page-header-subtitle small mb-0">
                     Confirmá la eliminación de la categoría seleccionada.
                 </p>
             </div>
+
             <div class="d-flex gap-2">
-                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                <a asp-action="Index" class="btn btn-outline-light">
                     <i class="bi bi-arrow-left"></i>
                     <span>Volver al listado</span>
                 </a>
             </div>
+
         </div>
     </div>
 
     <div class="row g-3">
         <div class="col-lg-8 col-xl-7">
-            <div class="card card-animate border-0 shadow-sm">
+
+            <div class="card bg-dark border-0 shadow-sm">
+
+                <div class="card-header bg-danger text-light">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span class="fw-semibold">Confirmar eliminación</span>
+                    </div>
+                </div>
+
                 <div class="card-body">
 
                     <div class="alert alert-warning d-flex align-items-start gap-3 mb-4" role="alert">
                         <i class="bi bi-exclamation-triangle-fill fs-4 text-warning flex-shrink-0"></i>
+
                         <div>
                             <h5 class="fw-semibold mb-1">¿Eliminar esta categoría?</h5>
+
                             <p class="mb-1 small">
                                 Esta acción no se puede deshacer. La categoría dejará de estar disponible para nuevos productos.
                             </p>
+
                             <p class="mb-0 small text-muted">
                                 Los productos que ya la utilizan conservarán el historial, pero no se podrá asignar en altas futuras.
                             </p>
                         </div>
                     </div>
 
-                    <div class="border rounded-3 p-3 bg-body-tertiary bg-opacity-50 mb-4">
+                    <div class="border rounded-3 p-3 bg-body-tertiary bg-opacity-25 mb-4">
+
                         <div class="row g-3">
+
                             <div class="col-md-6">
                                 <div class="text-muted small text-uppercase mb-1">Código</div>
                                 <span class="badge text-bg-primary fs-6 px-3 py-2">
@@ -55,6 +75,7 @@
 
                             <div class="col-md-6">
                                 <div class="text-muted small text-uppercase mb-1">Control de serie por defecto</div>
+
                                 @if (Model.ControlSerieDefault)
                                 {
                                     <span class="badge text-bg-success fs-6 px-3 py-2">
@@ -70,13 +91,9 @@
                             </div>
 
                             <div class="col-12">
-                                <div class="text-muted small text-uppercase mb-1">Nombre</div>
-                                <p class="fw-semibold mb-0">@Model.Nombre</p>
-                            </div>
-
-                            <div class="col-12">
                                 <div class="text-muted small text-uppercase mb-1">Descripción</div>
-                                @if (!string.IsNullOrEmpty(Model.Descripcion))
+
+                                @if (!string.IsNullOrWhiteSpace(Model.Descripcion))
                                 {
                                     <p class="mb-0">@Model.Descripcion</p>
                                 }
@@ -88,6 +105,7 @@
 
                             <div class="col-12">
                                 <div class="text-muted small text-uppercase mb-1">Categoría padre</div>
+
                                 @if (!string.IsNullOrEmpty(Model.ParentNombre))
                                 {
                                     <span class="badge text-bg-secondary fs-6 px-3 py-2">
@@ -101,31 +119,40 @@
                                     </span>
                                 }
                             </div>
+
                         </div>
+
                     </div>
 
                     <form asp-action="Delete" method="post" class="d-flex justify-content-end gap-2">
                         <input type="hidden" asp-for="Id" />
 
-                        <a asp-action="Index" class="btn btn-outline-secondary btn-sm px-3">
+                        <a asp-action="Index" class="btn btn-outline-light px-3">
                             <i class="bi bi-x-circle me-1"></i>
                             <span>Cancelar</span>
                         </a>
 
-                        <button type="submit" class="btn btn-danger btn-sm px-3">
+                        <button type="submit" class="btn btn-danger px-3">
                             <i class="bi bi-trash me-1"></i>
                             <span>Eliminar definitivamente</span>
                         </button>
                     </form>
 
                 </div>
+
             </div>
+
         </div>
     </div>
-</div>
+
+</section>
 
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/catalogo.css" />
 }
