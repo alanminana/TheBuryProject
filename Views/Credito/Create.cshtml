@@ -37,7 +37,10 @@
         </div>
 
         <div class="card-body p-4">
-            <form asp-action="Create" method="post">
+            <form asp-action="Create"
+                  method="post"
+                  data-credito-form
+                  data-evaluar-url="@Url.Action("EvaluarCredito", "Credito")">
 
                 <div asp-validation-summary="ModelOnly"
                      class="alert alert-danger d-flex align-items-center"
@@ -121,134 +124,5 @@
     </div>
 </section>
 @section Scripts {
-    <script>
-        $(document).ready(function () {
-            let evaluacionTimeout;
-            const $garanteSection = $('#garanteSection');
-            const $requiereGarante = $('#chkRequiereGarante');
-
-            $('#ClienteId, #MontoSolicitado, #GaranteId').on('change', function () {
-                clearTimeout(evaluacionTimeout);
-                evaluacionTimeout = setTimeout(evaluarCredito, 500);
-            });
-
-            $requiereGarante.on('change', function () {
-                if (!$(this).is(':checked')) {
-                    $('#GaranteId').val('');
-                }
-
-                toggleGaranteSection();
-                evaluarCredito();
-            });
-
-            toggleGaranteSection();
-
-            function evaluarCredito() {
-                const clienteId = $('#ClienteId').val();
-                const montoSolicitado = $('#MontoSolicitado').val();
-                const garanteId = $('#GaranteId').val();
-
-                if (!clienteId || !montoSolicitado || montoSolicitado <= 0) {
-                    $('#panelEvaluacion').addClass('d-none');
-                    return;
-                }
-
-                $('#panelEvaluacion').removeClass('d-none');
-                $('#resultadoEvaluacion').html(`
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-info" role="status">
-                            <span class="visually-hidden">Evaluando...</span>
-                        </div>
-                        <p class="text-muted mt-2">Evaluando solicitud...</p>
-                    </div>
-                `);
-
-                $.ajax({
-                    url: '@Url.Action("EvaluarCredito", "Credito")',
-                    type: 'GET',
-                    data: {
-                        clienteId: clienteId,
-                        montoSolicitado: montoSolicitado,
-                        garanteId: garanteId || null
-                    },
-                    success: function (evaluacion) {
-                        mostrarEvaluacion(evaluacion);
-                    },
-                    error: function (xhr) {
-                        $('#resultadoEvaluacion').html(`
-                            <div class="alert alert-danger">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                Error al evaluar: ${xhr.responseJSON?.error || 'Error desconocido'}
-                            </div>
-                        `);
-                    }
-                });
-            }
-
-            function mostrarEvaluacion(eval) {
-                const colorClass = eval.resultado === 2 ? 'success' : eval.resultado === 1 ? 'warning' : 'danger';
-                const icono = eval.resultado === 2 ? 'check-circle-fill' : eval.resultado === 1 ? 'exclamation-triangle-fill' : 'x-circle-fill';
-
-                let html = `
-                    <div class="alert alert-${colorClass} border-0 mb-3">
-                        <h5 class="alert-heading">
-                            <i class="bi bi-${icono} me-2"></i>
-                            ${eval.resultadoTexto}
-                        </h5>
-                        <p class="mb-0">${eval.motivo}</p>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6 class="text-muted mb-2">Puntaje: ${eval.puntajeFinal.toFixed(0)} / 100</h6>
-                            <div class="progress credit-progress-lg">
-                                <div class="progress-bar bg-${colorClass}"
-                                     role="progressbar"
-                                     style="width: ${eval.puntajeFinal}%">
-                                    ${eval.puntajeFinal.toFixed(0)}%
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="card bg-dark border-0 shadow-sm">
-                                <div class="card-body">
-                                    <small class="text-secondary d-block">Ingresos estimados</small>
-                                    <h5 class="text-light mb-0">${eval.ingresosEstimados?.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }) ?? 'N/D'}</h5>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card bg-dark border-0 shadow-sm">
-                                <div class="card-body">
-                                    <small class="text-secondary d-block">Relación cuota/ingreso</small>
-                                    <h5 class="text-light mb-0">${eval.relacionCuotaIngreso?.toFixed(2) ?? 'N/D'}%</h5>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card bg-dark border-0 shadow-sm">
-                                <div class="card-body">
-                                    <small class="text-secondary d-block">Documentación</small>
-                                    <h5 class="text-light mb-0">${eval.documentacionCompleta ? 'Completa' : 'Incompleta'}</h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                $('#resultadoEvaluacion').html(html);
-            }
-
-            function toggleGaranteSection() {
-                if ($requiereGarante.is(':checked')) {
-                    $garanteSection.removeClass('d-none');
-                } else {
-                    $garanteSection.addClass('d-none');
-                }
-            }
-        });
-    </script>
+    <script src="~/js/credito-create.js" asp-append-version="true"></script>
 }

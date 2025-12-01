@@ -54,7 +54,7 @@
                         </select>
                     </div>
                     <div class="col-md-6 d-flex align-items-end">
-                        <button type="button" class="btn btn-primary" id="btnCargarVenta">
+                        <button type="button" class="btn btn-primary" id="btnCargarVenta" data-create-url="@Url.Action("Create", "Devolucion")">
                             <i class="bi bi-arrow-right-circle me-1"></i>Cargar Venta
                         </button>
                     </div>
@@ -225,72 +225,5 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
-    <script>
-        $(document).ready(function() {
-            // Cargar venta seleccionada
-            $('#btnCargarVenta').on('click', function() {
-                const ventaId = $('#ventaSelect').val();
-                if (!ventaId) {
-                    alert('Debe seleccionar una venta');
-                    return;
-                }
-                window.location.href = '@Url.Action("Create", "Devolucion")?ventaId=' + ventaId;
-            });
-
-            // Calcular subtotales y total
-            function calcularTotales() {
-                let total = 0;
-                let hayProductos = false;
-
-                $('.cantidad-devolver').each(function() {
-                    const index = $(this).data('index');
-                    const cantidad = parseInt($(this).val()) || 0;
-                    const precio = parseFloat($(`input[name="Productos[${index}].PrecioUnitario"]`).val()) || 0;
-                    const subtotal = cantidad * precio;
-
-                    $(`#subtotal_${index}`).text('$' + subtotal.toFixed(2));
-                    total += subtotal;
-
-                    if (cantidad > 0) {
-                        hayProductos = true;
-                    }
-                });
-
-                $('#totalDevolucion').text('$' + total.toFixed(2));
-
-                // Habilitar/deshabilitar botón según si hay productos
-                $('#btnGuardar').prop('disabled', !hayProductos);
-            }
-
-            // Event listener para cambios en cantidades
-            $('.cantidad-devolver').on('input', calcularTotales);
-
-            // Calcular al cargar
-            calcularTotales();
-
-            // Validar que la descripción tenga al menos 20 caracteres
-            $('form').on('submit', function(e) {
-                const descripcion = $('textarea[name="Descripcion"]').val();
-                if (descripcion.length < 20) {
-                    e.preventDefault();
-                    alert('La descripción debe tener al menos 20 caracteres.');
-                    return false;
-                }
-
-                let hayProductos = false;
-                $('.cantidad-devolver').each(function() {
-                    if (parseInt($(this).val()) > 0) {
-                        hayProductos = true;
-                        return false;
-                    }
-                });
-
-                if (!hayProductos) {
-                    e.preventDefault();
-                    alert('Debe seleccionar al menos un producto para devolver.');
-                    return false;
-                }
-            });
-        });
-    </script>
+    <script src="~/js/devolucion-create.js" asp-append-version="true"></script>
 }

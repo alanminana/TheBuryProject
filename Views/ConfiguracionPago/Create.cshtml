@@ -29,7 +29,12 @@
                 </div>
 
                 <div class="card-body">
-                    <form asp-action="Create" method="post" novalidate>
+                    <form asp-action="Create"
+                          method="post"
+                          novalidate
+                          data-configuracion-pago-form
+                          data-porcentaje-descuento-id="@Html.IdFor(m => m.PorcentajeDescuentoMaximo)"
+                          data-porcentaje-recargo-id="@Html.IdFor(m => m.PorcentajeRecargo)">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
                             <div>Revisá los campos marcados en rojo antes de continuar.</div>
@@ -187,38 +192,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const descuentoCheck = document.getElementById("permiteDescuentoCheck");
-            const descuentoDiv = document.getElementById("descuentoMaxDiv");
-            const recargoCheck = document.getElementById("tieneRecargoCheck");
-            const recargoDiv = document.getElementById("recargoDiv");
-
-            const toggle = (check, div, inputId) => {
-                if (check && div) {
-                    if (check.checked) {
-                        div.style.display = "block";
-                    } else {
-                        div.style.display = "none";
-                        const input = document.getElementById(inputId);
-                        if (input) input.value = "";
-                    }
-                }
-            };
-
-            if (descuentoCheck && descuentoDiv) {
-                descuentoCheck.addEventListener("change", () =>
-                    toggle(descuentoCheck, descuentoDiv, "@Html.IdFor(m => m.PorcentajeDescuentoMaximo)")
-                );
-                toggle(descuentoCheck, descuentoDiv, "@Html.IdFor(m => m.PorcentajeDescuentoMaximo)");
-            }
-
-            if (recargoCheck && recargoDiv) {
-                recargoCheck.addEventListener("change", () =>
-                    toggle(recargoCheck, recargoDiv, "@Html.IdFor(m => m.PorcentajeRecargo)")
-                );
-                toggle(recargoCheck, recargoDiv, "@Html.IdFor(m => m.PorcentajeRecargo)");
-            }
-        });
-    </script>
+    <script src="~/js/configuracion-pago-create.js" asp-append-version="true"></script>
 }
