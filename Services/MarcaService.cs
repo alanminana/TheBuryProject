@@ -155,11 +155,19 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException("El nombre no puede estar vacío");
                 }
 
-                // Verificar que existe
-                var existing = await _context.Marcas.FindAsync(marca.Id);
+                // Verificar que existe (usando IgnoreQueryFilters para manejar entidades soft-deleted)
+                var existing = await _context.Marcas
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(m => m.Id == marca.Id);
                 if (existing == null)
                 {
                     throw new InvalidOperationException($"No se encontró la marca con Id {marca.Id}");
+                }
+
+                // Validar que no esté eliminada
+                if (existing.IsDeleted)
+                {
+                    throw new InvalidOperationException($"No se puede actualizar una marca eliminada (Id {marca.Id})");
                 }
 
                 // Validar código único (excluyendo el registro actual)
