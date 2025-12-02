@@ -23,7 +23,7 @@ namespace TheBuryProject.Controllers
         private readonly ICreditoService _creditoService;
         private readonly IEvaluacionCreditoService _evaluacionService;
         private readonly IFinancialCalculationService _financialService;
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly IMapper _mapper;
         private readonly ILogger<CreditoController> _logger;
 
@@ -31,14 +31,14 @@ namespace TheBuryProject.Controllers
             ICreditoService creditoService,
             IEvaluacionCreditoService evaluacionService,
             IFinancialCalculationService financialService,
-            AppDbContext context,
+            IDbContextFactory<AppDbContext> contextFactory,
             IMapper mapper,
             ILogger<CreditoController> logger)
         {
             _creditoService = creditoService;
             _evaluacionService = evaluacionService;
             _financialService = financialService;
-            _context = context;
+            _contextFactory = contextFactory;
             _mapper = mapper;
             _logger = logger;
         }
@@ -108,7 +108,9 @@ namespace TheBuryProject.Controllers
 
             if (ventaId.HasValue)
             {
-                var venta = await _context.Ventas
+                await using var context = await _contextFactory.CreateDbContextAsync();
+
+                var venta = await context.Ventas
                     .Include(v => v.Detalles)
                     .FirstOrDefaultAsync(v => v.Id == ventaId.Value);
 
@@ -131,7 +133,7 @@ namespace TheBuryProject.Controllers
                     if (montoVenta <= 0)
                     {
                         // Último recurso: traer los detalles directamente y recalcular cuando la navegación no trae datos
-                        var detallesPersistidos = await _context.VentaDetalles
+                        var detallesPersistidos = await context.VentaDetalles
                             .Where(d => d.VentaId == venta.Id && !d.IsDeleted)
                             .ToListAsync();
 
@@ -712,7 +714,9 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                var cuotas = await _context.Cuotas
+                await using var context = await _contextFactory.CreateDbContextAsync();
+
+                var cuotas = await context.Cuotas
                     .Include(c => c.Credito)
                         .ThenInclude(cr => cr.Cliente)
                     .Where(c => c.Estado == Models.Enums.EstadoCuota.Vencida ||
@@ -753,7 +757,9 @@ namespace TheBuryProject.Controllers
         {
             _logger.LogInformation("Cargando ViewBags...");
 
-            var clientes = await _context.Clientes
+            await using var context = await _contextFactory.CreateDbContextAsync();
+
+            var clientes = await context.Clientes
                 .Where(c => !c.IsDeleted && c.Activo)
                 .OrderBy(c => c.Apellido)
                 .ThenBy(c => c.Nombre)
@@ -767,7 +773,7 @@ namespace TheBuryProject.Controllers
             _logger.LogInformation("Clientes cargados: {Count}", clientes.Count);
             ViewBag.Clientes = new SelectList(clientes, "Id", "NombreCompleto", clienteIdSeleccionado);
 
-            var garantes = await _context.Clientes
+            var garantes = await context.Clientes
                 .Where(c => !c.IsDeleted && c.Activo)
                 .OrderBy(c => c.Apellido)
                 .ThenBy(c => c.Nombre)
