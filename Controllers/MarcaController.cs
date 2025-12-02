@@ -178,7 +178,8 @@ namespace TheBuryProject.Controllers
                     Nombre = marca.Nombre,
                     Descripcion = marca.Descripcion,
                     ParentId = marca.ParentId,
-                    PaisOrigen = marca.PaisOrigen
+                    PaisOrigen = marca.PaisOrigen,
+                    RowVersion = marca.RowVersion
                 };
 
                 await CargarMarcasParaDropdown(viewModel.ParentId, id.Value);
@@ -221,7 +222,8 @@ namespace TheBuryProject.Controllers
                         Nombre = viewModel.Nombre,
                         Descripcion = viewModel.Descripcion,
                         ParentId = viewModel.ParentId,
-                        PaisOrigen = viewModel.PaisOrigen
+                        PaisOrigen = viewModel.PaisOrigen,
+                        RowVersion = viewModel.RowVersion
                     };
 
                     await _marcaService.UpdateAsync(marca);

@@ -22,6 +22,7 @@
                 <div class="card-body text-light p-4">
                     <form asp-action="Edit" method="post">
                         <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="RowVersion" />
 
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
