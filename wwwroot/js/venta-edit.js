@@ -32,6 +32,7 @@
 
     const toggleFinanciado = document.getElementById('toggleFinanciado');
     const financiamientoCampos = document.getElementById('financiamientoCampos');
+    const tipoPagoSelect = document.getElementById('TipoPago');
     const productoSelect = document.getElementById('productoSelect');
     const precioInput = document.getElementById('precioInput');
     const cantidadInput = document.getElementById('cantidadInput');
@@ -42,10 +43,15 @@
     const subtotalHidden = document.getElementById('subtotalHidden');
     const ivaHidden = document.getElementById('ivaHidden');
 
+    let ultimoTipoPagoNoFinanciado = tipoPagoSelect?.value && tipoPagoSelect.value !== 'CreditoPersonal'
+        ? tipoPagoSelect.value
+        : 'Efectivo';
+
     function init() {
         inicializarFilasExistentes();
         calcularTotales();
         bindEventos();
+        sincronizarTipoPagoConFinanciado();
     }
 
     function bindEventos() {
@@ -58,8 +64,10 @@
             financiamientoCampos?.classList.toggle('d-none', !activo);
 
             if (activo) {
+                sincronizarTipoPagoConFinanciado();
                 recalcularFinanciamiento();
             } else {
+                restaurarTipoPagoNoFinanciado();
                 limpiarResumenFinanciamiento();
             }
         });
@@ -68,9 +76,21 @@
         if (toggleFinanciado && esFinanciadaHidden) {
             esFinanciadaHidden.value = toggleFinanciado.checked;
             if (toggleFinanciado.checked) {
+                sincronizarTipoPagoConFinanciado();
                 recalcularFinanciamiento();
             }
         }
+
+        tipoPagoSelect?.addEventListener('change', function () {
+            if (this.value !== 'CreditoPersonal' && toggleFinanciado?.checked) {
+                toggleFinanciado.checked = false;
+                financiamientoCampos?.classList.add('d-none');
+                restaurarTipoPagoNoFinanciado();
+                limpiarResumenFinanciamiento();
+            } else if (this.value === 'CreditoPersonal') {
+                sincronizarTipoPagoConFinanciado();
+            }
+        });
 
         ['anticipoInput', 'tasaMensualInput', 'cuotasFinanciacionInput', 'ingresoNetoInput', 'otrasDeudasInput', 'antiguedadLaboralInput']
             .forEach(function (id) {
@@ -202,6 +222,25 @@
         setText('lblMontoFinanciadoEstimado', '$0.00');
         setText('lblCuotaEstimada', '$0.00');
         actualizarSemaforo(null);
+    }
+
+    function restaurarTipoPagoNoFinanciado() {
+        if (!tipoPagoSelect) return;
+        if (tipoPagoSelect.value === 'CreditoPersonal') {
+            tipoPagoSelect.value = ultimoTipoPagoNoFinanciado || 'Efectivo';
+            tipoPagoSelect.dispatchEvent(new Event('change'));
+        }
+    }
+
+    function sincronizarTipoPagoConFinanciado() {
+        if (!toggleFinanciado || !tipoPagoSelect) return;
+        if (toggleFinanciado.checked) {
+            if (tipoPagoSelect.value !== 'CreditoPersonal') {
+                ultimoTipoPagoNoFinanciado = tipoPagoSelect.value || ultimoTipoPagoNoFinanciado;
+                tipoPagoSelect.value = 'CreditoPersonal';
+                tipoPagoSelect.dispatchEvent(new Event('change'));
+            }
+        }
     }
 
     function setValue(id, value) {
