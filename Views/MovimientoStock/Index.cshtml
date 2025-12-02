@@ -1,199 +1,165 @@
-﻿@model TheBuryProject.ViewModels.UmbralesListViewModel
+@using System.Linq
+@model TheBuryProject.ViewModels.MovimientoStockFilterViewModel
 @{
-    ViewData["Title"] = "Umbrales de Autorización";
+    ViewData["Title"] = "Movimientos de Stock";
+    var movimientos = Model?.Movimientos ?? Enumerable.Empty<TheBuryProject.ViewModels.MovimientoStockViewModel>();
 }
 
 <div class="container-fluid mt-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h2>🔐 Umbrales de Autorización</h2>
-            <p class="text-muted">Configure los límites por rol para diferentes operaciones</p>
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+        <div>
+            <p class="text-muted text-uppercase small mb-1">Inventario</p>
+            <h1 class="h4 mb-1">Movimientos de Stock</h1>
+            <p class="text-muted small mb-0">Filtra y revisa los ajustes, ingresos y salidas registrados.</p>
         </div>
-        <div class="col-auto">
-            @if (User.IsInRole("Admin"))
-            {
-                <a asp-action="CrearUmbral" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Nuevo Umbral
-                </a>
-            }
-            <a asp-action="Solicitudes" class="btn btn-outline-info">
-                <i class="bi bi-clipboard-check"></i> Ver Solicitudes
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo ajuste
             </a>
         </div>
     </div>
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
             @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
             @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
-    @if (!Model.Umbrales.Any())
-    {
-        <div class="alert alert-warning">
-            <i class="bi bi-exclamation-triangle"></i>
-            No hay umbrales configurados. Los usuarios Admin tienen permisos ilimitados por defecto.
-        </div>
-    }
-    else
-    {
-        <!-- Tabs por Rol -->
-        <ul class="nav nav-tabs mb-3" role="tablist">
-            @{
-                var roles = new[] { "Admin", "Gerente", "Vendedor", "Contador" };
-                var firstRole = true;
-            }
-            @foreach (var rol in roles)
-            {
-                var umbralRol = Model.UmbralesPorRol.ContainsKey(rol) ? Model.UmbralesPorRol[rol].Count : 0;
-                <li class="nav-item">
-                    <button class="nav-link @(firstRole ? "active" : "")"
-                            data-bs-toggle="tab"
-                            data-bs-target="#tab-@rol"
-                            type="button">
-                        @rol
-                        @if (umbralRol > 0)
-                        {
-                            <span class="badge bg-primary">@umbralRol</span>
-                        }
-                    </button>
-                </li>
-                firstRole = false;
-            }
-        </ul>
-
-        <!-- Contenido de Tabs -->
-        <div class="tab-content">
-            @{
-                firstRole = true;
-            }
-            @foreach (var rol in roles)
-            {
-                <div class="tab-pane fade @(firstRole ? "show active" : "")" id="tab-@rol">
-                    @if (Model.UmbralesPorRol.ContainsKey(rol) && Model.UmbralesPorRol[rol].Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Tipo de Umbral</th>
-                                        <th>Valor Máximo</th>
-                                        <th>Descripción</th>
-                                        <th>Estado</th>
-                                        <th>Última Modificación</th>
-                                        @if (User.IsInRole("Admin"))
-                                        {
-                                            <th>Acciones</th>
-                                        }
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var umbral in Model.UmbralesPorRol[rol])
-                                    {
-                                        <tr>
-                                            <td>
-                                                <strong>
-                                                    @umbral.TipoUmbral.ToString().Replace("DescuentoVenta", "Descuento en Venta")
-                                                    .Replace("MontoTotalVenta", "Monto Total de Venta")
-                                                    .Replace("MontoCredito", "Monto de Crédito")
-                                                    .Replace("DescuentoCompra", "Descuento en Compra")
-                                                </strong>
-                                            </td>
-                                            <td>
-                                                @if (umbral.TipoUmbral == TheBuryProject.Models.Entities.TipoUmbral.DescuentoVenta ||
-                                                                                umbral.TipoUmbral == TheBuryProject.Models.Entities.TipoUmbral.DescuentoCompra)
-                                                {
-                                                    <span class="badge bg-info">@umbral.ValorMaximo.ToString("N2")%</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-success">$@umbral.ValorMaximo.ToString("N2")</span>
-                                                }
-                                            </td>
-                                            <td>@(umbral.Descripcion ?? "-")</td>
-                                            <td>
-                                                @if (umbral.Activo)
-                                                {
-                                                    <span class="badge bg-success">Activo</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-secondary">Inactivo</span>
-                                                }
-                                            </td>
-                                            <td>
-                                                <small class="text-muted">
-                                                    @(umbral.UpdatedAt?.ToString("dd/MM/yyyy HH:mm") ?? umbral.CreatedAt.ToString("dd/MM/yyyy HH:mm"))
-                                                </small>
-                                            </td>
-                                            @if (User.IsInRole("Admin"))
-                                            {
-                                                <td>
-                                                    <a asp-action="EditarUmbral" asp-route-id="@umbral.Id"
-                                                       class="btn btn-sm btn-outline-primary">
-                                                        <i class="bi bi-pencil"></i> Editar
-                                                    </a>
-                                                    <form asp-action="EliminarUmbral" asp-route-id="@umbral.Id"
-                                                          method="post" class="d-inline"
-                                                          onsubmit="return confirm('¿Está seguro de eliminar este umbral?');">
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                            <i class="bi bi-trash"></i> Eliminar
-                                                        </button>
-                                                    </form>
-                                                </td>
-                                            }
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i>
-                            No hay umbrales configurados para el rol <strong>@rol</strong>.
-                            @if (User.IsInRole("Admin"))
-                            {
-                                <a asp-action="CrearUmbral" class="alert-link">Crear uno ahora</a>
-                            }
-                        </div>
-                    }
-                </div>
-                firstRole = false;
-            }
-        </div>
-    }
-
-    <!-- Información adicional -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">ℹ️ Información sobre Umbrales</h5>
-                </div>
-                <div class="card-body">
-                    <ul class="mb-0">
-                        <li><strong>Descuento en Venta:</strong> Porcentaje máximo de descuento que puede aplicar el rol en una venta.</li>
-                        <li><strong>Monto Total de Venta:</strong> Monto máximo que puede procesar el rol en una sola venta.</li>
-                        <li><strong>Monto de Crédito:</strong> Monto máximo de crédito que puede aprobar el rol.</li>
-                        <li><strong>Descuento en Compra:</strong> Porcentaje máximo de descuento que puede negociar en compras a proveedores.</li>
-                        <li><strong>Rol Admin:</strong> Siempre tiene permisos ilimitados, independientemente de la configuración.</li>
-                        <li><strong>Excepciones:</strong> Los usuarios pueden solicitar autorizaciones para exceder sus límites.</li>
-                    </ul>
-                </div>
+    <div class="card mb-4">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-funnel text-primary"></i>
+                <span class="fw-semibold">Filtros</span>
             </div>
+            <small class="text-muted">@Model?.TotalResultados resultado@(Model?.TotalResultados == 1 ? string.Empty : "s")</small>
+        </div>
+        <div class="card-body">
+            <form asp-action="Index" method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="ProductoId" class="form-label">Producto</label>
+                    <select asp-for="ProductoId" class="form-select" asp-items="ViewBag.Productos">
+                        <option value="">Todos los productos</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Tipo" class="form-label">Tipo de movimiento</label>
+                    <select asp-for="Tipo" class="form-select" asp-items="ViewBag.Tipos">
+                        <option value="">Todos los tipos</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="FechaDesde" class="form-label">Desde</label>
+                    <input asp-for="FechaDesde" type="date" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="FechaHasta" class="form-label">Hasta</label>
+                    <input asp-for="FechaHasta" type="date" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="OrderBy" class="form-label">Ordenar por</label>
+                    <select asp-for="OrderBy" class="form-select">
+                        <option value="">Fecha (recientes primero)</option>
+                        <option value="fecha">Fecha</option>
+                        <option value="producto">Producto</option>
+                        <option value="tipo">Tipo</option>
+                        <option value="cantidad">Cantidad</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="OrderDirection" class="form-label">Dirección</label>
+                    <select asp-for="OrderDirection" class="form-select">
+                        <option value="desc">Descendente</option>
+                        <option value="asc">Ascendente</option>
+                    </select>
+                </div>
+                <div class="col-12 d-flex gap-2 mt-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-clock-history text-primary"></i>
+                <span class="fw-semibold">Historial de movimientos</span>
+            </div>
+            <small class="text-muted">Actualizado al @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</small>
+        </div>
+
+        <div class="card-body p-0">
+            @if (!movimientos.Any())
+            {
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                    <div>No hay movimientos que coincidan con los filtros seleccionados.</div>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Producto</th>
+                                <th class="text-center">Tipo</th>
+                                <th class="text-end">Cantidad</th>
+                                <th class="text-end">Stock anterior</th>
+                                <th class="text-end">Stock nuevo</th>
+                                <th>Referencia</th>
+                                <th>Motivo</th>
+                                <th>Registrado por</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var movimiento in movimientos)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">@movimiento.Fecha.ToString("dd/MM/yyyy")</div>
+                                        <small class="text-muted">@movimiento.Fecha.ToString("HH:mm")</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">@movimiento.ProductoNombre</div>
+                                        <small class="text-muted">Código: @movimiento.ProductoCodigo</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-@(movimiento.Tipo == TheBuryProject.Models.Enums.TipoMovimiento.Entrada ? "success" : movimiento.Tipo == TheBuryProject.Models.Enums.TipoMovimiento.Salida ? "danger" : "info")">
+                                            @movimiento.Tipo
+                                        </span>
+                                    </td>
+                                    <td class="text-end">@movimiento.Cantidad.ToString("N2")</td>
+                                    <td class="text-end">@movimiento.StockAnterior.ToString("N2")</td>
+                                    <td class="text-end">@movimiento.StockNuevo.ToString("N2")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(movimiento.Referencia) ? "-" : movimiento.Referencia)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(movimiento.Motivo) ? "-" : movimiento.Motivo)</td>
+                                    <td>
+                                        <div class="fw-semibold">@movimiento.CreatedBy</div>
+                                        <small class="text-muted">Registrado el @movimiento.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </div>
 </div>

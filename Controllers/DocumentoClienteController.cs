@@ -13,18 +13,18 @@ namespace TheBuryProject.Controllers
     public class DocumentoClienteController : Controller
     {
         private readonly IDocumentoClienteService _documentoService;
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<DocumentoClienteController> _logger;
         private readonly IDocumentacionService _documentacionService;
 
         public DocumentoClienteController(
             IDocumentoClienteService documentoService,
-            AppDbContext context,
+            IDbContextFactory<AppDbContext> contextFactory,
             ILogger<DocumentoClienteController> logger,
             IDocumentacionService documentacionService)
         {
             _documentoService = documentoService;
-            _context = context;
+            _contextFactory = contextFactory;
             _logger = logger;
             _documentacionService = documentacionService;
         }
@@ -34,6 +34,8 @@ namespace TheBuryProject.Controllers
         {
             try
             {
+                await using var context = await _contextFactory.CreateDbContextAsync();
+
                 if (filtro == null)
                     filtro = new DocumentoClienteFilterViewModel();
 
@@ -52,7 +54,7 @@ namespace TheBuryProject.Controllers
 
                 if (filtro.UploadModel.ClienteId > 0)
                 {
-                    var cliente = await _context.Clientes
+                    var cliente = await context.Clientes
                         .Where(c => c.Id == filtro.UploadModel.ClienteId)
                         .Select(c => new
                         {
@@ -69,7 +71,7 @@ namespace TheBuryProject.Controllers
 
                 if (filtro.ReturnToVentaId.HasValue)
                 {
-                    var venta = await _context.Ventas.FindAsync(filtro.ReturnToVentaId.Value);
+                    var venta = await context.Ventas.FindAsync(filtro.ReturnToVentaId.Value);
                     if (venta != null)
                     {
                         ViewBag.DocumentacionPendiente =
@@ -77,7 +79,7 @@ namespace TheBuryProject.Controllers
                     }
                 }
 
-                await CargarViewBags(filtro.ClienteId);
+                await CargarViewBags(context, filtro.ClienteId);
 
                 return View(filtro);
             }
@@ -87,7 +89,8 @@ namespace TheBuryProject.Controllers
                 TempData["Error"] = $"Error al cargar los documentos: {ex.Message}";
 
                 var emptyModel = new DocumentoClienteFilterViewModel();
-                await CargarViewBags(null);
+                await using var context = await _contextFactory.CreateDbContextAsync();
+                await CargarViewBags(context, null);
                 return View(emptyModel);
             }
         }
@@ -95,6 +98,7 @@ namespace TheBuryProject.Controllers
         // GET: DocumentoCliente/Upload
         public async Task<IActionResult> Upload(int? clienteId, int? returnToVentaId, int? replaceId)
         {
+            await using var context = await _contextFactory.CreateDbContextAsync();
             var viewModel = new DocumentoClienteViewModel();
             var bloquearCliente = false;
 
@@ -104,7 +108,7 @@ namespace TheBuryProject.Controllers
             {
                 viewModel.ReturnToVentaId = returnToVentaId;
 
-                var venta = await _context.Ventas
+                var venta = await context.Ventas
                     .Include(v => v.Cliente)
                     .FirstOrDefaultAsync(v => v.Id == returnToVentaId.Value);
 
@@ -126,12 +130,12 @@ namespace TheBuryProject.Controllers
                     viewModel.DocumentoAReemplazarNombre = documento.NombreArchivo;
                     viewModel.ClienteId = documento.ClienteId;
                     viewModel.TipoDocumento = documento.TipoDocumento;
-                    await CargarViewBags(documento.ClienteId, false);
+                    await CargarViewBags(context, documento.ClienteId, false);
                 }
             }
 
             ViewBag.ClienteBloqueado = bloquearCliente;
-            await CargarViewBags(viewModel.ClienteId, bloquearCliente);
+            await CargarViewBags(context, viewModel.ClienteId, bloquearCliente);
 
             if (!string.IsNullOrWhiteSpace(viewModel.ClienteNombre))
             {
@@ -140,7 +144,7 @@ namespace TheBuryProject.Controllers
 
             if (viewModel.ClienteId > 0)
             {
-                var cliente = await _context.Clientes.FindAsync(viewModel.ClienteId);
+                var cliente = await context.Clientes.FindAsync(viewModel.ClienteId);
                 if (cliente != null)
                 {
                     viewModel.ClienteNombre = $"{cliente.Apellido}, {cliente.Nombre} - DNI: {cliente.NumeroDocumento}";
@@ -157,9 +161,11 @@ namespace TheBuryProject.Controllers
         {
             try
             {
+                await using var context = await _contextFactory.CreateDbContextAsync();
+
                 if (viewModel.ReturnToVentaId.HasValue)
                 {
-                    var venta = await _context.Ventas
+                    var venta = await context.Ventas
                         .Include(v => v.Cliente)
                         .FirstOrDefaultAsync(v => v.Id == viewModel.ReturnToVentaId.Value);
 
@@ -182,7 +188,7 @@ namespace TheBuryProject.Controllers
                 if (!ModelState.IsValid)
                 {
                     ViewBag.ClienteBloqueado = viewModel.ReturnToVentaId.HasValue;
-                    await CargarViewBags(viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
+                    await CargarViewBags(context, viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
 
                     // Si viene del inline upload, redirigir con error
                     if (returnToDetails)
@@ -247,7 +253,7 @@ namespace TheBuryProject.Controllers
 
                 ModelState.AddModelError("", "Error al subir documento: " + ex.Message);
                 ViewBag.ClienteBloqueado = viewModel.ReturnToVentaId.HasValue;
-                await CargarViewBags(viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
+                await CargarViewBags(context, viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
                 return View(viewModel);
             }
         }
@@ -388,9 +394,9 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        private async Task CargarViewBags(int? clienteIdSeleccionado = null, bool limitarAClienteSeleccionado = false)
+        private async Task CargarViewBags(AppDbContext context, int? clienteIdSeleccionado = null, bool limitarAClienteSeleccionado = false)
         {
-            var clientesQuery = _context.Clientes
+            var clientesQuery = context.Clientes
                 .Where(c => !c.IsDeleted && c.Activo);
 
             if (limitarAClienteSeleccionado && clienteIdSeleccionado.HasValue)

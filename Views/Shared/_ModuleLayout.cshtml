@@ -1,7 +1,15 @@
-@{
+@{ 
     Layout = "_Layout";
     var pageTitle = ViewData["PageTitle"]?.ToString() ?? ViewData["Title"]?.ToString();
     var pageSubtitle = ViewData["PageSubtitle"]?.ToString();
+}
+
+@section Styles {
+    @await RenderSectionAsync("Styles", required: false)
+}
+
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
 }
 
 <section class="container-fluid py-4 text-light">
@@ -36,6 +44,4 @@
     }
 
     @RenderBody()
-
-    @await RenderSectionAsync("Scripts", required: false)
 </section>

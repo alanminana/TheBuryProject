@@ -14,6 +14,7 @@
     const ivaHidden = document.getElementById('ivaHidden');
     const totalHidden = document.getElementById('totalHidden');
     const form = document.getElementById('ordenCompraForm');
+    const ivaRate = parseFloat(form?.dataset?.ivaRate || '0.21');
 
     const emptyRowTemplate = detallesBody ? detallesBody.innerHTML : '';
 
@@ -136,7 +137,7 @@
     function calcularTotales() {
         const subtotal = detalles.reduce((acc, d) => acc + d.subtotal, 0);
         const descuento = parseFloat(descuentoInput.value) || 0;
-        const iva = (subtotal - descuento) * 0.21;
+        const iva = (subtotal - descuento) * ivaRate;
         const total = subtotal - descuento + iva;
 
         subtotalDisplay.textContent = '$' + subtotal.toFixed(2);

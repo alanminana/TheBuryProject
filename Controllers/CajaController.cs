@@ -34,18 +34,12 @@ public class CajaController : Controller
 
     #region CRUD de Cajas
 
-    [Authorize(Roles = "SuperAdmin,Gerente")]
-    public async Task<IActionResult> Index()
+    [Authorize(Roles = "SuperAdmin,Gerente,Contador")]
+    public async Task<IActionResult> Index(int? cajaId = null, DateTime? fechaDesde = null, DateTime? fechaHasta = null)
     {
-        var cajas = await _cajaService.ObtenerTodasCajasAsync();
-        var aperturas = await _cajaService.ObtenerAperturasAbiertasAsync();
+        var viewModel = await BuildHistorialViewModelAsync(cajaId, fechaDesde, fechaHasta);
 
-        var viewModel = new CajasListViewModel
-        {
-            CajasActivas = cajas.Where(c => c.Activa).ToList(),
-            CajasInactivas = cajas.Where(c => !c.Activa).ToList(),
-            AperturasAbiertas = aperturas
-        };
+        await SetHistorialFiltersAsync(cajaId, fechaDesde, fechaHasta);
 
         return View(viewModel);
     }
@@ -349,29 +343,9 @@ public class CajaController : Controller
     [Authorize(Roles = "SuperAdmin,Gerente,Contador")]
     public async Task<IActionResult> Historial(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
     {
-        var cierres = await _cajaService.ObtenerHistorialCierresAsync(cajaId, fechaDesde, fechaHasta);
+        var viewModel = await BuildHistorialViewModelAsync(cajaId, fechaDesde, fechaHasta);
 
-        var totalDiferenciasPositivas = cierres.Where(c => c.Diferencia > 0).Sum(c => c.Diferencia);
-        var totalDiferenciasNegativas = cierres.Where(c => c.Diferencia < 0).Sum(c => c.Diferencia);
-        var cierresConDiferencia = cierres.Count(c => c.TieneDiferencia);
-        var porcentajeCierresExactos = cierres.Count > 0
-            ? ((cierres.Count - cierresConDiferencia) / (decimal)cierres.Count) * 100
-            : 0;
-
-        var viewModel = new HistorialCierresViewModel
-        {
-            Cierres = cierres,
-            TotalDiferenciasPositivas = totalDiferenciasPositivas,
-            TotalDiferenciasNegativas = totalDiferenciasNegativas,
-            CierresConDiferencia = cierresConDiferencia,
-            TotalCierres = cierres.Count,
-            PorcentajeCierresExactos = porcentajeCierresExactos
-        };
-
-        var cajas = await _cajaService.ObtenerTodasCajasAsync();
-        ViewBag.Cajas = new SelectList(cajas, "Id", "Nombre", cajaId);
-        ViewBag.FechaDesde = fechaDesde;
-        ViewBag.FechaHasta = fechaHasta;
+        await SetHistorialFiltersAsync(cajaId, fechaDesde, fechaHasta);
 
         return View(viewModel);
     }
@@ -385,6 +359,36 @@ public class CajaController : Controller
         var cajas = await _cajaService.ObtenerTodasCajasAsync();
         ViewBag.Cajas = new SelectList(cajas.Where(c => c.Activa), "Id", "Nombre", selectedId);
         return cajas;
+    }
+
+    private async Task SetHistorialFiltersAsync(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
+    {
+        var cajas = await _cajaService.ObtenerTodasCajasAsync();
+        ViewBag.Cajas = new SelectList(cajas, "Id", "Nombre", cajaId);
+        ViewBag.FechaDesde = fechaDesde;
+        ViewBag.FechaHasta = fechaHasta;
+    }
+
+    private async Task<HistorialCierresViewModel> BuildHistorialViewModelAsync(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
+    {
+        var cierres = await _cajaService.ObtenerHistorialCierresAsync(cajaId, fechaDesde, fechaHasta);
+
+        var totalDiferenciasPositivas = cierres.Where(c => c.Diferencia > 0).Sum(c => c.Diferencia);
+        var totalDiferenciasNegativas = cierres.Where(c => c.Diferencia < 0).Sum(c => c.Diferencia);
+        var cierresConDiferencia = cierres.Count(c => c.TieneDiferencia);
+        var porcentajeCierresExactos = cierres.Count > 0
+            ? ((cierres.Count - cierresConDiferencia) / (decimal)cierres.Count) * 100
+            : 0;
+
+        return new HistorialCierresViewModel
+        {
+            Cierres = cierres,
+            TotalDiferenciasPositivas = totalDiferenciasPositivas,
+            TotalDiferenciasNegativas = totalDiferenciasNegativas,
+            CierresConDiferencia = cierresConDiferencia,
+            TotalCierres = cierres.Count,
+            PorcentajeCierresExactos = porcentajeCierresExactos
+        };
     }
 
     private async Task TryPopulateMovimientoContextAsync(MovimientoCajaViewModel model)

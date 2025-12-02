@@ -47,6 +47,9 @@ namespace TheBuryProject.Services
             // Generar nombre completo
             cliente.NombreCompleto = $"{cliente.Apellido}, {cliente.Nombre}";
 
+            // Asegurar valores para columnas NOT NULL
+            cliente.TieneReciboSueldo = cliente.TieneReciboSueldo; // explicit assignment keeps EF from omitting the column
+
             _context.Clientes.Add(cliente);
             await _context.SaveChangesAsync();
 
