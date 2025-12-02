@@ -122,6 +122,69 @@
             </form>
         </div>
     </div>
+    <div class="d-none">
+        <template id="tpl-credito-evaluacion">
+            <div class="alert border-0 mb-3" data-resultado-alert>
+                <h5 class="alert-heading">
+                    <i class="bi me-2" data-resultado-icon></i>
+                    <span data-resultado-titulo></span>
+                </h5>
+                <p class="mb-0" data-resultado-motivo></p>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-12">
+                    <h6 class="text-muted mb-2">Puntaje: <span data-resultado-puntaje></span> / 100</h6>
+                    <div class="progress credit-progress-lg">
+                        <div class="progress-bar" role="progressbar" data-resultado-progress></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card bg-dark border-0 shadow-sm">
+                        <div class="card-body">
+                            <small class="text-secondary d-block">Ingresos estimados</small>
+                            <h5 class="text-light mb-0" data-resultado-ingresos>N/D</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-dark border-0 shadow-sm">
+                        <div class="card-body">
+                            <small class="text-secondary d-block">Relación cuota/ingreso</small>
+                            <h5 class="text-light mb-0" data-resultado-relacion>N/D</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-dark border-0 shadow-sm">
+                        <div class="card-body">
+                            <small class="text-secondary d-block">Documentación</small>
+                            <h5 class="text-light mb-0" data-resultado-documentacion>N/D</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template id="tpl-credito-loading">
+            <div class="text-center py-4">
+                <div class="spinner-border text-info" role="status">
+                    <span class="visually-hidden">Evaluando...</span>
+                </div>
+                <p class="text-muted mt-2">Evaluando solicitud...</p>
+            </div>
+        </template>
+
+        <template id="tpl-credito-error">
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span data-resultado-error>Error al evaluar</span>
+            </div>
+        </template>
+    </div>
 </section>
 @section Scripts {
     <script src="~/js/credito-create.js" asp-append-version="true"></script>

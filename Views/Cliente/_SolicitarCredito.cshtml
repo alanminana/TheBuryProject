@@ -167,7 +167,7 @@ else
         </h5>
     </div>
     <div class="card-body">
-        <form asp-controller="Cliente" asp-action="SolicitarCredito" method="post" id="formSolicitarCredito" data-capacidad-pago="@Model.EvaluacionCredito.CapacidadPagoMensual.ToString("0.00", CultureInfo.InvariantCulture)">
+        <form asp-controller="Cliente" asp-action="SolicitarCredito" method="post" id="formSolicitarCredito" data-capacidad-pago="@Model.EvaluacionCredito.CapacidadPagoMensual.ToString("0.00", CultureInfo.InvariantCulture)" data-calculo-credito-url="@Url.Action("CalcularCreditoPreview", "Cliente")">
             @Html.AntiForgeryToken()
             <input type="hidden" name="ClienteId" value="@Model.Cliente.Id" />
 

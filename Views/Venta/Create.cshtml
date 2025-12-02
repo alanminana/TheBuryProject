@@ -43,7 +43,9 @@
             <form asp-action="Create" method="post" id="formVenta"
                   data-get-tarjetas-url="@Url.Action("GetTarjetasActivas", "Venta")"
                   data-calcular-cuotas-url="@Url.Action("CalcularCuotasTarjeta", "VentaApi")"
-                  data-get-precio-producto-url="@Url.Action("GetPrecioProducto", "VentaApi")">
+                  data-get-precio-producto-url="@Url.Action("GetPrecioProducto", "VentaApi")"
+                  data-calcular-totales-url="@Url.Action("CalcularTotalesVenta", "VentaApi")"
+                  data-descuento-es-porcentaje="true">
                 @Html.AntiForgeryToken()
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
                 <input type="hidden" asp-for="Estado" />
@@ -264,5 +266,6 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/venta-common.js" asp-append-version="true"></script>
     <script src="~/js/venta-create.js" asp-append-version="true"></script>
 }
