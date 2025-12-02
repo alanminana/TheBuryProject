@@ -46,6 +46,7 @@ namespace TheBuryProject.Data
         public DbSet<Cuota> Cuotas { get; set; }
         public DbSet<Garante> Garantes { get; set; }
         public DbSet<DocumentoCliente> DocumentosCliente { get; set; }
+        public DbSet<EvaluacionCredito> EvaluacionesCredito { get; set; }
 
         // Ventas
         public DbSet<Venta> Ventas { get; set; }
@@ -104,6 +105,19 @@ namespace TheBuryProject.Data
                 entity.HasIndex(e => e.Codigo)
                     .IsUnique()
                     .HasFilter("IsDeleted = 0");
+
+                entity.Property(e => e.Codigo)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasDefaultValue(string.Empty);
+
+                entity.Property(e => e.Nombre)
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasDefaultValue(string.Empty);
+
+                entity.Property(e => e.Activo)
+                    .HasDefaultValue(true);
 
                 entity.HasOne(e => e.Parent)
                     .WithMany(e => e.Children)
@@ -223,6 +237,49 @@ namespace TheBuryProject.Data
 
                 entity.Property(e => e.RowVersion)
                     .IsRowVersion();
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            modelBuilder.Entity<EvaluacionCredito>(entity =>
+            {
+                entity.ToTable("EvaluacionesCredito");
+
+                entity.Property(e => e.MontoSolicitado)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.PuntajeRiesgoCliente)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.RelacionCuotaIngreso)
+                    .HasPrecision(18, 4);
+
+                entity.Property(e => e.PuntajeFinal)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Motivo)
+                    .HasMaxLength(1000);
+
+                entity.Property(e => e.Observaciones)
+                    .HasMaxLength(2000);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion();
+
+                entity.HasIndex(e => e.ClienteId);
+                entity.HasIndex(e => e.CreditoId);
+                entity.HasIndex(e => e.FechaEvaluacion);
+                entity.HasIndex(e => e.Resultado);
+
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Credito)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreditoId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
@@ -413,6 +470,10 @@ namespace TheBuryProject.Data
 
                 entity.Property(e => e.Sueldo)
                     .HasPrecision(18, 2);
+
+                entity.Property(e => e.TieneReciboSueldo)
+                    .IsRequired()
+                    .HasDefaultValue(false);
 
                 entity.Property(e => e.PuntajeRiesgo)
                     .HasPrecision(5, 2);

@@ -21,23 +21,19 @@ namespace TheBuryProject.Services
 
         public async Task<(IEnumerable<Categoria> categorias, IEnumerable<Marca> marcas)> GetCategoriasYMarcasAsync()
         {
-            var categoriasTask = _categoriaService.GetAllAsync();
-            var marcasTask = _marcaService.GetAllAsync();
+            var categorias = await _categoriaService.GetAllAsync();
+            var marcas = await _marcaService.GetAllAsync();
 
-            await Task.WhenAll(categoriasTask, marcasTask);
-
-            return (categoriasTask.Result, marcasTask.Result);
+            return (categorias, marcas);
         }
 
         public async Task<(IEnumerable<Categoria> categorias, IEnumerable<Marca> marcas, IEnumerable<Producto> productos)> GetCategoriasMarcasYProductosAsync()
         {
-            var categoriasTask = _categoriaService.GetAllAsync();
-            var marcasTask = _marcaService.GetAllAsync();
-            var productosTask = _productoService.GetAllAsync();
+            var categorias = await _categoriaService.GetAllAsync();
+            var marcas = await _marcaService.GetAllAsync();
+            var productos = await _productoService.GetAllAsync();
 
-            await Task.WhenAll(categoriasTask, marcasTask, productosTask);
-
-            return (categoriasTask.Result, marcasTask.Result, productosTask.Result);
+            return (categorias, marcas, productos);
         }
     }
 }
