@@ -28,7 +28,10 @@ namespace TheBuryProject.Helpers
             CreateMap<Producto, ProductoViewModel>()
                 .ForMember(d => d.CategoriaNombre, o => o.MapFrom(s => s.Categoria != null ? s.Categoria.Nombre : null))
                 .ForMember(d => d.MarcaNombre, o => o.MapFrom(s => s.Marca != null ? s.Marca.Nombre : null))
-                .ReverseMap();
+                // Evitar que AutoMapper intente crear entidades de navegación vacías al mapear desde el ViewModel
+                .ReverseMap()
+                .ForMember(d => d.Categoria, o => o.Ignore())
+                .ForMember(d => d.Marca, o => o.Ignore());
 
             // =======================
             // Proveedor
