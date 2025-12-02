@@ -9,6 +9,7 @@ using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
+using TheBuryProject.ViewModels.Requests;
 
 namespace TheBuryProject.Controllers
 {
@@ -303,6 +304,39 @@ namespace TheBuryProject.Controllers
                 _logger.LogError(ex, "Error al solicitar crédito para cliente {ClienteId}", model.ClienteId);
                 TempData["Error"] = $"Error al solicitar el crédito: {ex.Message}";
                 return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CalcularCreditoPreview([FromBody] CalcularCreditoPreviewRequest request)
+        {
+            try
+            {
+                if (request == null || request.MontoSolicitado <= 0 || request.CantidadCuotas < 1)
+                {
+                    return BadRequest(new { error = "Los datos de cálculo no son válidos" });
+                }
+
+                var calculos = CalcularParametrosCredito(
+                    request.MontoSolicitado,
+                    request.TasaInteres,
+                    request.CantidadCuotas);
+
+                var excedeCapacidad = request.CapacidadPagoMensual.HasValue &&
+                    calculos.CuotaMensual > request.CapacidadPagoMensual.Value;
+
+                return Json(new
+                {
+                    cuotaMensual = calculos.CuotaMensual,
+                    montoTotal = calculos.TotalAPagar,
+                    superaCapacidadPago = excedeCapacidad
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al calcular preview de crédito para monto {Monto} y {Cuotas} cuotas", request?.MontoSolicitado, request?.CantidadCuotas);
+                return StatusCode(500, new { error = "No se pudo calcular la cuota" });
             }
         }
 

@@ -1,217 +1,188 @@
-﻿/**
+/**
  * Sistema de Notificaciones - TheBuryProject
- * Maneja la carga y visualización de notificaciones en tiempo real
+ * Maneja la carga y visualización de notificaciones en tiempo real sin depender de jQuery
  */
 
 (function () {
     'use strict';
 
-    // Configuración
     const config = {
         apiUrl: '/api/Notificacion',
-        refreshInterval: 30000, // 30 segundos
+        hubUrl: '/hubs/notificaciones',
+        refreshInterval: 30000,
         maxNotificaciones: 10
     };
 
-    // Estado
     let intervalId = null;
+    let connection = null;
 
-    /**
-     * Inicializar sistema de notificaciones
-     */
     function init() {
-        cargarNotificaciones();
         configurarEventos();
-        iniciarActualizacionAutomatica();
+        cargarNotificaciones();
+        iniciarConexionTiempoReal();
     }
 
-    /**
-     * Cargar notificaciones desde el servidor
-     */
     function cargarNotificaciones() {
-        $.ajax({
-            url: `${config.apiUrl}?soloNoLeidas=false&limite=${config.maxNotificaciones}`,
-            method: 'GET',
-            success: function (notificaciones) {
+        const url = `${config.apiUrl}?soloNoLeidas=false&limite=${config.maxNotificaciones}`;
+        fetch(url)
+            .then((response) => response.ok ? response.json() : Promise.reject(response))
+            .then((notificaciones) => {
                 actualizarBadge(notificaciones);
                 renderizarNotificaciones(notificaciones);
-            },
-            error: function (xhr, status, error) {
+            })
+            .catch((error) => {
                 console.error('Error al cargar notificaciones:', error);
-                if (xhr.status === 401) {
-                    // Usuario no autenticado, detener polling
+                if (error.status === 401) {
                     detenerActualizacionAutomatica();
                 }
-            }
-        });
+            });
     }
 
-    /**
-     * Actualizar badge con cantidad de no leídas
-     */
     function actualizarBadge(notificaciones) {
-        const noLeidas = notificaciones.filter(n => !n.leida).length;
-        const badge = $('#notificacionesBadge');
+        const noLeidas = notificaciones.filter((n) => !n.leida).length;
+        const badge = document.getElementById('notificacionesBadge');
+        if (!badge) return;
 
         if (noLeidas > 0) {
-            badge.text(noLeidas > 99 ? '99+' : noLeidas);
-            badge.show();
+            badge.textContent = noLeidas > 99 ? '99+' : noLeidas;
+            badge.style.display = '';
         } else {
-            badge.hide();
+            badge.style.display = 'none';
         }
     }
 
-    /**
-     * Renderizar lista de notificaciones
-     */
     function renderizarNotificaciones(notificaciones) {
-        // Limpiar notificaciones existentes (elementos entre los dividers)
-        $('#notificacionesLista > li:not(.dropdown-header):not(:has(hr)):not(:has(#verTodasNotificaciones))').remove();
+        const lista = document.getElementById('notificacionesLista');
+        if (!lista) return;
 
-        const noNotificacionesMsg = $('#noNotificacionesMsg');
-        const primerDivider = $('#notificacionesLista > li:has(hr)').first();
+        lista.querySelectorAll('li').forEach((el) => {
+            const hasDivider = el.querySelector('hr') !== null;
+            const hasVerTodas = el.querySelector('#verTodasNotificaciones') !== null;
+            if (!el.classList.contains('dropdown-header') && !hasDivider && !hasVerTodas) {
+                el.remove();
+            }
+        });
 
-        if (notificaciones.length === 0) {
-            // Mostrar mensaje de no hay notificaciones
-            if (noNotificacionesMsg.length === 0) {
-                const html = `
-                    <li class="text-center py-3 text-muted" id="noNotificacionesMsg">
-                        <i class="bi bi-inbox fs-1"></i>
-                        <p class="mb-0">No hay notificaciones</p>
-                    </li>
+        const noNotificacionesMsg = document.getElementById('noNotificacionesMsg');
+        const primerDivider = Array.from(lista.querySelectorAll('li')).find((el) => el.querySelector('hr'));
+
+        if (!notificaciones.length) {
+            if (!noNotificacionesMsg) {
+                const html = document.createElement('li');
+                html.className = 'text-center py-3 text-muted';
+                html.id = 'noNotificacionesMsg';
+                html.innerHTML = `
+                    <i class="bi bi-inbox fs-1"></i>
+                    <p class="mb-0">No hay notificaciones</p>
                 `;
-                primerDivider.after(html);
+                primerDivider?.insertAdjacentElement('afterend', html);
             } else {
-                noNotificacionesMsg.show();
+                noNotificacionesMsg.style.display = '';
             }
             return;
         }
 
-        // Ocultar mensaje de no hay notificaciones
-        noNotificacionesMsg.hide();
+        if (noNotificacionesMsg) {
+            noNotificacionesMsg.style.display = 'none';
+        }
 
-        let html = '';
-        notificaciones.forEach(notif => {
+        const fragment = document.createDocumentFragment();
+        notificaciones.forEach((notif) => {
             const iconoClase = notif.icono || 'bi-bell';
             const bgClase = notif.leida ? '' : 'bg-primary bg-opacity-10';
             const boldClase = notif.leida ? '' : 'fw-bold';
 
-            html += `
-                <li>
-                    <a class="dropdown-item notificacion-item ${bgClase}"
-                       href="#"
-                       data-notif-id="${notif.id}"
-                       data-notif-url="${notif.url || '#'}"
-                       data-notif-leida="${notif.leida}">
-                        <div class="d-flex">
-                            <div class="flex-shrink-0 me-3">
-                                <i class="bi ${iconoClase} fs-4"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1 ${boldClase}">${escapeHtml(notif.titulo)}</h6>
-                                <p class="mb-1 small text-muted">${escapeHtml(notif.mensaje)}</p>
-                                <small class="text-muted">
-                                    <i class="bi bi-clock me-1"></i>${notif.tiempoTranscurrido}
-                                </small>
-                            </div>
-                            ${!notif.leida ? '<div class="flex-shrink-0"><span class="badge bg-primary">Nueva</span></div>' : ''}
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <a class="dropdown-item notificacion-item ${bgClase}"
+                   href="#"
+                   data-notif-id="${notif.id}"
+                   data-notif-url="${notif.url || '#'}"
+                   data-notif-leida="${notif.leida}">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0 me-3">
+                            <i class="bi ${iconoClase} fs-4"></i>
                         </div>
-                    </a>
-                </li>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 ${boldClase}">${escapeHtml(notif.titulo)}</h6>
+                            <p class="mb-1 small text-muted">${escapeHtml(notif.mensaje)}</p>
+                            <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>${notif.tiempoTranscurrido}
+                            </small>
+                        </div>
+                        ${!notif.leida ? '<div class="flex-shrink-0"><span class="badge bg-primary">Nueva</span></div>' : ''}
+                    </div>
+                </a>
             `;
+            fragment.appendChild(li);
         });
 
-        // Insertar después del primer divider
-        primerDivider.after(html);
+        primerDivider?.insertAdjacentElement('afterend', fragment);
     }
 
-    /**
-     * Configurar eventos del DOM
-     */
     function configurarEventos() {
-        // Click en notificación
-        $(document).on('click', '.notificacion-item', function (e) {
-            e.preventDefault();
-            const $item = $(this);
-            const id = $item.data('notif-id');
-            const url = $item.data('notif-url');
-            const leida = $item.data('notif-leida');
+        document.addEventListener('click', function (event) {
+            const item = event.target.closest('.notificacion-item');
+            if (item) {
+                event.preventDefault();
+                const id = item.dataset.notifId;
+                const url = item.dataset.notifUrl;
+                const leida = item.dataset.notifLeida === 'true';
 
-            // Marcar como leída si no lo está
-            if (!leida) {
-                marcarComoLeida(id, function () {
-                    // Después de marcar, redirigir si hay URL
+                const redirect = function () {
                     if (url && url !== '#') {
                         window.location.href = url;
                     }
-                });
-            } else {
-                // Ya está leída, redirigir directamente
-                if (url && url !== '#') {
-                    window.location.href = url;
+                };
+
+                if (!leida) {
+                    marcarComoLeida(id, redirect);
+                } else {
+                    redirect();
                 }
+                return;
+            }
+
+            if (event.target.closest('#marcarTodasLeidasBtn')) {
+                event.preventDefault();
+                marcarTodasComoLeidas();
+                return;
+            }
+
+            if (event.target.closest('#verTodasNotificaciones')) {
+                event.preventDefault();
+                cargarNotificaciones();
             }
         });
 
-        // Marcar todas como leídas
-        $('#marcarTodasLeidasBtn').on('click', function (e) {
-            e.preventDefault();
-            marcarTodasComoLeidas();
-        });
-
-        // Ver todas las notificaciones (por ahora solo recarga)
-        $('#verTodasNotificaciones').on('click', function (e) {
-            e.preventDefault();
-            cargarNotificaciones();
-            // TODO: Crear vista dedicada para ver todas las notificaciones
-        });
-
-        // Recargar al abrir el dropdown
-        $('#notificacionesDropdown').on('click', function () {
-            cargarNotificaciones();
-        });
+        document.getElementById('notificacionesDropdown')?.addEventListener('click', cargarNotificaciones);
     }
 
-    /**
-     * Marcar una notificación como leída
-     */
     function marcarComoLeida(id, callback) {
-        $.ajax({
-            url: `${config.apiUrl}/${id}/marcarLeida`,
-            method: 'POST',
-            success: function () {
+        fetch(`${config.apiUrl}/${id}/marcarLeida`, { method: 'POST' })
+            .then((response) => {
+                if (!response.ok) throw new Error('Error al marcar como leída');
                 cargarNotificaciones();
                 if (typeof callback === 'function') {
                     callback();
                 }
-            },
-            error: function (xhr, status, error) {
-                console.error('Error al marcar como leída:', error);
-            }
-        });
+            })
+            .catch((error) => console.error('Error al marcar como leída:', error));
     }
 
-    /**
-     * Marcar todas las notificaciones como leídas
-     */
     function marcarTodasComoLeidas() {
-        $.ajax({
-            url: `${config.apiUrl}/marcarTodasLeidas`,
-            method: 'POST',
-            success: function () {
+        fetch(`${config.apiUrl}/marcarTodasLeidas`, { method: 'POST' })
+            .then((response) => {
+                if (!response.ok) throw new Error('Error al marcar todas');
                 cargarNotificaciones();
                 mostrarMensaje('Todas las notificaciones marcadas como leídas', 'success');
-            },
-            error: function (xhr, status, error) {
+            })
+            .catch((error) => {
                 console.error('Error al marcar todas como leídas:', error);
                 mostrarMensaje('Error al marcar notificaciones', 'danger');
-            }
-        });
+            });
     }
 
-    /**
-     * Iniciar actualización automática
-     */
     function iniciarActualizacionAutomatica() {
         if (intervalId) {
             clearInterval(intervalId);
@@ -219,9 +190,6 @@
         intervalId = setInterval(cargarNotificaciones, config.refreshInterval);
     }
 
-    /**
-     * Detener actualización automática
-     */
     function detenerActualizacionAutomatica() {
         if (intervalId) {
             clearInterval(intervalId);
@@ -229,12 +197,45 @@
         }
     }
 
-    /**
-     * Mostrar mensaje toast (si existe implementación de toasts)
-     */
+    function iniciarConexionTiempoReal() {
+        if (typeof signalR === 'undefined') {
+            iniciarActualizacionAutomatica();
+            return;
+        }
+
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl(config.hubUrl)
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on('NotificacionesActualizadas', () => {
+            cargarNotificaciones();
+        });
+
+        connection.onreconnected(() => {
+            detenerActualizacionAutomatica();
+            cargarNotificaciones();
+        });
+
+        connection.onreconnecting(() => {
+            iniciarActualizacionAutomatica();
+        });
+
+        connection.onclose(() => {
+            iniciarActualizacionAutomatica();
+        });
+
+        connection.start()
+            .then(() => {
+                detenerActualizacionAutomatica();
+            })
+            .catch((error) => {
+                console.warn('SignalR no disponible, se mantiene el polling de notificaciones.', error);
+                iniciarActualizacionAutomatica();
+            });
+    }
+
     function mostrarMensaje(mensaje, tipo) {
-        // Implementación básica con alert
-        // TODO: Implementar sistema de toasts más elegante
         if (tipo === 'success') {
             console.log('✓ ' + mensaje);
         } else {
@@ -242,9 +243,6 @@
         }
     }
 
-    /**
-     * Escapar HTML para prevenir XSS
-     */
     function escapeHtml(text) {
         if (!text) return '';
         const map = {
@@ -257,14 +255,6 @@
         return text.replace(/[&<>"']/g, function (m) { return map[m]; });
     }
 
-    // Inicializar cuando el DOM esté listo
-    $(function () {
-        init();
-    });
-
-    // Detener polling al salir de la página
-    $(window).on('beforeunload', function () {
-        detenerActualizacionAutomatica();
-    });
-
+    document.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('beforeunload', detenerActualizacionAutomatica);
 })();

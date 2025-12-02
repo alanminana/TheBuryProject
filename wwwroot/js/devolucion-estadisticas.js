@@ -10,6 +10,9 @@ const parseData = (element, attribute) => {
     }
 };
 
+let motivosChart;
+let productosChart;
+
 const buildMotivosChart = (dataElement) => {
     const labels = parseData(dataElement, 'data-motivos-labels');
     const values = parseData(dataElement, 'data-motivos-values');
@@ -17,8 +20,12 @@ const buildMotivosChart = (dataElement) => {
 
     if (!canvas || !labels.length || !values.length || typeof Chart === 'undefined') return;
 
+    if (motivosChart) {
+        motivosChart.destroy();
+    }
+
     const context = canvas.getContext('2d');
-    new Chart(context, {
+    motivosChart = new Chart(context, {
         type: 'pie',
         data: {
             labels,
@@ -55,8 +62,12 @@ const buildProductosChart = (dataElement) => {
 
     if (!canvas || !labels.length || !values.length || typeof Chart === 'undefined') return;
 
+    if (productosChart) {
+        productosChart.destroy();
+    }
+
     const context = canvas.getContext('2d');
-    new Chart(context, {
+    productosChart = new Chart(context, {
         type: 'bar',
         data: {
             labels,
