@@ -72,6 +72,11 @@ namespace TheBuryProject.Models.Entities
         [StringLength(20)]
         public string? TelefonoLaboral { get; set; }
 
+        /// <summary>
+        /// Indica si el cliente presentó recibo de sueldo al momento del alta
+        /// </summary>
+        public bool TieneReciboSueldo { get; set; } = false;
+
         // Control de Riesgo
         public decimal PuntajeRiesgo { get; set; } = 5.0m; // 0 a 10 (5 = neutro)
 

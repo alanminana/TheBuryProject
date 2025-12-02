@@ -72,6 +72,11 @@ namespace TheBuryProject.Services
             {
                 // Validación: modelo debe tener DataAnnotations
                 // No repetir validación aquí
+                if (string.IsNullOrWhiteSpace(categoria.Nombre))
+                {
+                    throw new InvalidOperationException("El nombre de la categoría es obligatorio");
+                }
+
                 if (await ExistsCodigoAsync(categoria.Codigo))
                 {
                     throw new InvalidOperationException($"Ya existe una categoría con el código {categoria.Codigo}");
@@ -110,6 +115,11 @@ namespace TheBuryProject.Services
                 if (existing == null)
                 {
                     throw new InvalidOperationException($"No se encontró la categoría con Id {categoria.Id}");
+                }
+
+                if (string.IsNullOrWhiteSpace(categoria.Nombre))
+                {
+                    throw new InvalidOperationException("El nombre de la categoría es obligatorio");
                 }
 
                 // Validar código único (excluyendo el registro actual)

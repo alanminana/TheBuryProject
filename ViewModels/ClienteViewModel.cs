@@ -71,6 +71,11 @@ namespace TheBuryProject.ViewModels
         [StringLength(20)]
         public string? TelefonoLaboral { get; set; }
 
+        /// <summary>
+        /// Indica si el cliente presentó recibo de sueldo (compatibilidad con la entidad)
+        /// </summary>
+        public bool TieneReciboSueldo { get; set; } = false;
+
         [StringLength(50)]
         public string? TiempoTrabajo { get; set; }
 

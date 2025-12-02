@@ -1,36 +1,39 @@
-﻿@model TheBuryProject.ViewModels.CategoriaViewModel
+﻿@model TheBuryProject.ViewModels.ProductoViewModel
 @{
-    ViewData["Title"] = "Eliminar Categoría";
+    ViewData["Title"] = "Eliminar producto";
 }
 
 <section class="container-fluid py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <div class="mb-4">
+            <div class="mb-4 d-flex justify-content-between align-items-center">
                 <a asp-action="Index" class="link-light text-decoration-none">
                     <i class="bi bi-arrow-left me-2"></i>Volver al listado
                 </a>
+                <span class="badge bg-secondary text-uppercase">Productos</span>
             </div>
 
             <div class="card bg-dark border-0 shadow-sm">
-                <div class="card-header bg-danger border-0">
-                    <h4 class="fw-bold text-white mb-0">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Eliminar Categoría
+                <div class="card-header bg-danger border-0 text-light">
+                    <h4 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span>Eliminar producto</span>
                     </h4>
                 </div>
 
                 <div class="card-body p-4 text-light">
-                    <div class="alert alert-warning border-0 d-flex align-items-start" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill fs-3 me-3 flex-shrink-0"></i>
+                    <div class="alert alert-warning border-0 d-flex align-items-start gap-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill fs-3 flex-shrink-0"></i>
                         <div>
-                            <h5 class="fw-bold mb-2">¿Estás seguro que querés eliminar esta categoría?</h5>
-                            <p class="mb-0">Esta acción no se puede deshacer. La categoría será deshabilitada y no podrá usarse en nuevos productos.</p>
+                            <h5 class="fw-bold mb-2">¿Estás seguro que querés eliminar este producto?</h5>
+                            <p class="mb-1">Esta acción no se puede deshacer. El producto se deshabilitará y no podrá usarse en nuevas operaciones.</p>
+                            <p class="mb-0 text-secondary small">Las referencias históricas en movimientos y ventas se conservarán.</p>
                         </div>
                     </div>
 
                     <div class="card bg-body-secondary border-0 mt-4">
                         <div class="card-body p-4">
-                            <h6 class="text-secondary text-uppercase fw-semibold mb-3">Información de la Categoría</h6>
+                            <h6 class="text-secondary text-uppercase fw-semibold mb-3">Información del producto</h6>
 
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -39,22 +42,76 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <small class="text-secondary d-block">Control de Serie</small>
-                                    @if (Model.ControlSerieDefault)
+                                    <small class="text-secondary d-block">Estado</small>
+                                    @if (Model.Activo)
                                     {
-                                        <span class="badge bg-success fs-6 px-3 py-2">
-                                            <i class="bi bi-check-lg"></i> Sí
-                                        </span>
+                                        <span class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-check-lg"></i> Activo</span>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-secondary fs-6 px-3 py-2">No</span>
+                                        <span class="badge bg-secondary fs-6 px-3 py-2">Inactivo</span>
                                     }
                                 </div>
 
                                 <div class="col-12">
                                     <small class="text-secondary d-block mb-1">Nombre</small>
                                     <p class="fs-5 fw-semibold mb-0 text-white">@Model.Nombre</p>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <small class="text-secondary d-block">Categoría</small>
+                                    <p class="mb-0 text-light"><i class="bi bi-diagram-3 text-info me-1"></i>@Model.CategoriaNombre</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-secondary d-block">Marca</small>
+                                    <p class="mb-0 text-light"><i class="bi bi-tag text-info me-1"></i>@Model.MarcaNombre</p>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <small class="text-secondary d-block">Precio de compra</small>
+                                    <p class="fw-bold text-info mb-0">@Model.PrecioCompra.ToString("C2")</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-secondary d-block">Precio de venta</small>
+                                    <p class="fw-bold text-success mb-0">@Model.PrecioVenta.ToString("C2")</p>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <small class="text-secondary d-block">Stock actual</small>
+                                    <p class="fw-bold fs-5 mb-0">@Model.StockActual <span class="badge bg-dark">@Model.UnidadMedida</span></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-secondary d-block">Stock mínimo</small>
+                                    <p class="fw-bold fs-5 mb-0">@Model.StockMinimo <span class="badge bg-dark">@Model.UnidadMedida</span></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-secondary d-block">Estado de stock</small>
+                                    <p class="fw-bold mb-0">
+                                        @if (Model.EstadoStock == "Sin Stock")
+                                        {
+                                            <span class="text-danger"><i class="bi bi-exclamation-circle"></i> Sin Stock</span>
+                                        }
+                                        else if (Model.EstadoStock == "Stock Bajo")
+                                        {
+                                            <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> Stock Bajo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success"><i class="bi bi-check-circle"></i> Stock OK</span>
+                                        }
+                                    </p>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <small class="text-secondary d-block">Requiere número de serie</small>
+                                    @if (Model.RequiereNumeroSerie)
+                                    {
+                                        <span class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-check"></i> Sí</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary fs-6 px-3 py-2">No</span>
+                                    }
                                 </div>
 
                                 <div class="col-12">
@@ -66,22 +123,6 @@
                                     else
                                     {
                                         <p class="text-secondary fst-italic mb-0">Sin descripción</p>
-                                    }
-                                </div>
-
-                                <div class="col-12">
-                                    <small class="text-secondary d-block mb-1">Categoría Padre</small>
-                                    @if (!string.IsNullOrEmpty(Model.ParentNombre))
-                                    {
-                                        <span class="badge bg-secondary fs-6 px-3 py-2">
-                                            <i class="bi bi-diagram-3 me-1"></i>@Model.ParentNombre
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-info text-dark fs-6 px-3 py-2">
-                                            <i class="bi bi-star-fill me-1"></i>Categoría Raíz
-                                        </span>
                                     }
                                 </div>
                             </div>
