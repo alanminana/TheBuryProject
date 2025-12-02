@@ -46,7 +46,7 @@ namespace TheBuryProject.Data
         public DbSet<Cuota> Cuotas { get; set; }
         public DbSet<Garante> Garantes { get; set; }
         public DbSet<DocumentoCliente> DocumentosCliente { get; set; }
-        public DbSet<EvaluacionCredito> EvaluacionesCredito { get; set; }
+        public DbSet<EvaluacionCredito> EvaluacionesCredito { get; set; } = null!;
 
         // Ventas
         public DbSet<Venta> Ventas { get; set; }
