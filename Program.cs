@@ -14,11 +14,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpContextAccessor();
 
 // 2. Configuración de DbContext con SQL Server
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddDbContextFactory<AppDbContext>((serviceProvider, options) =>
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseSqlServer(connectionString);
+    // No necesitamos IHttpContextAccessor aquí, se inyecta automáticamente en el constructor
+});
+
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+{
+    options.UseSqlServer(connectionString);
+    // El factory creará contextos sin IHttpContextAccessor (pasará null)
+    // Esto es correcto para operaciones en background
 });
 
 // 3. Configuración de Identity
