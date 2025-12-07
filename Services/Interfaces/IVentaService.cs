@@ -1,5 +1,7 @@
 using TheBuryProject.Models.Entities;
 using TheBuryProject.ViewModels;
+using TheBuryProject.ViewModels.Requests;
+using TheBuryProject.ViewModels.Responses;
 
 namespace TheBuryProject.Services.Interfaces
 {
@@ -12,6 +14,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<bool> DeleteAsync(int id);
         Task<bool> ConfirmarVentaAsync(int id);
         Task<bool> CancelarVentaAsync(int id, string motivo);
+        Task AsociarCreditoAVentaAsync(int ventaId, int creditoId);
         Task<bool> FacturarVentaAsync(int id, FacturaViewModel facturaViewModel);
         Task<bool> ValidarStockAsync(int ventaId);
 
@@ -28,5 +31,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<DatosCreditoPersonalViewModel> CalcularCreditoPersonalAsync(int creditoId, decimal montoAFinanciar, int cuotas, DateTime fechaPrimeraCuota);
         Task<DatosCreditoPersonalViewModel?> ObtenerDatosCreditoVentaAsync(int ventaId);
         Task<bool> ValidarDisponibilidadCreditoAsync(int creditoId, decimal monto);
+
+        CalculoTotalesVentaResponse CalcularTotalesPreview(List<DetalleCalculoVentaRequest> detalles, decimal descuentoGeneral, bool descuentoEsPorcentaje);
     }
 }

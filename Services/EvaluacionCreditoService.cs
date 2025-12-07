@@ -170,9 +170,7 @@ namespace TheBuryProject.Services
                 docsEncontrados.Add("Recibo Sueldo");
             }
 
-            if (documentosVerificados.Any(d => d.TipoDocumento == TipoDocumentoCliente.ServicioLuz ||
-                                              d.TipoDocumento == TipoDocumentoCliente.ServicioGas ||
-                                              d.TipoDocumento == TipoDocumentoCliente.ServicioAgua))
+            if (documentosVerificados.Any(d => d.TipoDocumento == TipoDocumentoCliente.Servicio))
             {
                 docsImportantes++;
                 docsEncontrados.Add("Servicio");
@@ -365,7 +363,7 @@ namespace TheBuryProject.Services
                     FechaEvaluacion = DateTime.Now
                 };
 
-                _context.Set<EvaluacionCredito>().Add(entidad);
+                _context.EvaluacionesCredito.Add(entidad);
                 await _context.SaveChangesAsync();
 
                 evaluacion.Id = entidad.Id;
@@ -382,7 +380,7 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var evaluacion = await _context.Set<EvaluacionCredito>()
+                var evaluacion = await _context.EvaluacionesCredito
                     .Include(e => e.Cliente)
                     .Where(e => e.CreditoId == creditoId && !e.IsDeleted)
                     .OrderByDescending(e => e.FechaEvaluacion)
@@ -401,7 +399,7 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var evaluaciones = await _context.Set<EvaluacionCredito>()
+                var evaluaciones = await _context.EvaluacionesCredito
                     .Include(e => e.Credito)
                     .Where(e => e.ClienteId == clienteId && !e.IsDeleted)
                     .OrderByDescending(e => e.FechaEvaluacion)

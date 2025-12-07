@@ -1,6 +1,10 @@
 @model TheBuryProject.ViewModels.CreditoDetalleViewModel
-@{
+@{ 
     ViewData["Title"] = "Detalle de Línea de Crédito";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/credito.css" asp-append-version="true" />
 }
 
 <section class="container-fluid py-4 text-light">
@@ -146,7 +150,7 @@
                                 ? ((Model.Credito.MontoAprobado - Model.Credito.SaldoPendiente) / Model.Credito.MontoAprobado * 100)
                                 : 0;
                             }
-                            <div class="progress mt-1" style="height: 24px;">
+                            <div class="progress credit-progress mt-1">
                                 <div class="progress-bar @(porcentajeUtilizado > 80 ? "bg-danger" : porcentajeUtilizado > 50 ? "bg-warning text-dark" : "bg-success")"
                                      role="progressbar"
                                      style="width: @porcentajeUtilizado%"

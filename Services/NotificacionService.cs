@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
+using TheBuryProject.Hubs;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -13,15 +15,18 @@ namespace TheBuryProject.Services
         private readonly AppDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ILogger<NotificacionService> _logger;
+        private readonly IHubContext<NotificacionesHub> _hubContext;
 
         public NotificacionService(
             AppDbContext context,
             UserManager<IdentityUser> userManager,
-            ILogger<NotificacionService> logger)
+            ILogger<NotificacionService> logger,
+            IHubContext<NotificacionesHub> hubContext)
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         #region Crear Notificaciones
@@ -45,6 +50,8 @@ namespace TheBuryProject.Services
 
             _context.Notificaciones.Add(notificacion);
             await _context.SaveChangesAsync();
+
+            await NotificarActualizacionAsync(notificacion.UsuarioDestino);
 
             _logger.LogInformation($"Notificación creada para {model.UsuarioDestino}: {model.Titulo}");
 
@@ -175,6 +182,8 @@ namespace TheBuryProject.Services
                 notificacion.Leida = true;
                 notificacion.FechaLeida = DateTime.Now;
                 await _context.SaveChangesAsync();
+
+                await NotificarActualizacionAsync(usuario);
             }
         }
 
@@ -194,6 +203,8 @@ namespace TheBuryProject.Services
             {
                 await _context.SaveChangesAsync();
                 _logger.LogInformation($"Marcadas {notificaciones.Count} notificaciones como leídas para {usuario}");
+
+                await NotificarActualizacionAsync(usuario);
             }
         }
 
@@ -212,6 +223,8 @@ namespace TheBuryProject.Services
             {
                 notificacion.IsDeleted = true;
                 await _context.SaveChangesAsync();
+
+                await NotificarActualizacionAsync(usuario);
             }
         }
 
@@ -238,6 +251,16 @@ namespace TheBuryProject.Services
         #endregion
 
         #region Métodos Auxiliares
+
+        private Task NotificarActualizacionAsync(string usuario)
+        {
+            if (string.IsNullOrWhiteSpace(usuario))
+            {
+                return Task.CompletedTask;
+            }
+
+            return _hubContext.Clients.Group(usuario).SendAsync("NotificacionesActualizadas");
+        }
 
         private string ObtenerIconoPorTipo(TipoNotificacion tipo)
         {

@@ -67,7 +67,10 @@ namespace TheBuryProject.Controllers
         public async Task<IActionResult> Create()
         {
             await CargarCategoriasParaDropdown();
-            return View();
+            return View(new CategoriaViewModel
+            {
+                Activo = true
+            });
         }
 
         // POST: Categoria/Create
@@ -93,7 +96,8 @@ namespace TheBuryProject.Controllers
                         Nombre = viewModel.Nombre,
                         Descripcion = viewModel.Descripcion,
                         ParentId = viewModel.ParentId,
-                        ControlSerieDefault = viewModel.ControlSerieDefault
+                        ControlSerieDefault = viewModel.ControlSerieDefault,
+                        Activo = viewModel.Activo
                     };
 
                     await _categoriaService.CreateAsync(categoria);
@@ -134,7 +138,8 @@ namespace TheBuryProject.Controllers
                     Nombre = categoria.Nombre,
                     Descripcion = categoria.Descripcion,
                     ParentId = categoria.ParentId,
-                    ControlSerieDefault = categoria.ControlSerieDefault
+                    ControlSerieDefault = categoria.ControlSerieDefault,
+                    Activo = categoria.Activo
                 };
 
                 await CargarCategoriasParaDropdown(viewModel.ParentId, id.Value);
@@ -177,7 +182,8 @@ namespace TheBuryProject.Controllers
                         Nombre = viewModel.Nombre,
                         Descripcion = viewModel.Descripcion,
                         ParentId = viewModel.ParentId,
-                        ControlSerieDefault = viewModel.ControlSerieDefault
+                        ControlSerieDefault = viewModel.ControlSerieDefault,
+                        Activo = viewModel.Activo
                     };
 
                     await _categoriaService.UpdateAsync(categoria);

@@ -1,123 +1,185 @@
 ﻿@model TheBuryProject.ViewModels.CerrarCajaViewModel
+
 @{
     ViewData["Title"] = "Cerrar Caja";
 }
 
-<div class="container py-4">
+<div class="container-fluid px-0" data-monto-esperado="@Model.MontoEsperadoSistema.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+
+    <!-- Header de página -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Cajas</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <span>Cerrar caja · Arqueo</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Realiza el arqueo de caja, valida diferencias y deja registrado el cierre.
+            </p>
+        </div>
+
+        <a asp-action="DetallesApertura"
+           asp-route-id="@Model.AperturaCajaId"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver a la apertura
+        </a>
+    </div>
+
     <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-warning text-dark">
-                    <h4 class="mb-0"><i class="bi bi-lock"></i> Cerrar Caja - Arqueo</h4>
-                </div>
+        <div class="col-12 col-xxl-10">
+
+            <div class="card card-animate">
                 <div class="card-body">
+
                     <!-- Información de la apertura -->
                     <div class="alert alert-info mb-4">
-                        <h5><i class="bi bi-info-circle"></i> Información de Apertura</h5>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <strong>Caja:</strong> @Model.CajaNombre
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <h2 class="h6 mb-0">Información de apertura</h2>
+                        </div>
+                        <div class="row small">
+                            <div class="col-md-4 mb-1">
+                                <span class="text-muted">Caja</span><br />
+                                <strong>@Model.CajaNombre</strong>
                             </div>
-                            <div class="col-md-4">
-                                <strong>Usuario Apertura:</strong> @Model.UsuarioApertura
+                            <div class="col-md-4 mb-1">
+                                <span class="text-muted">Usuario apertura</span><br />
+                                <strong>@Model.UsuarioApertura</strong>
                             </div>
-                            <div class="col-md-4">
-                                <strong>Fecha Apertura:</strong> @Model.FechaApertura?.ToString("dd/MM/yyyy HH:mm")
+                            <div class="col-md-4 mb-1">
+                                <span class="text-muted">Fecha apertura</span><br />
+                                <strong>@Model.FechaApertura?.ToString("dd/MM/yyyy HH:mm")</strong>
                             </div>
                         </div>
                     </div>
 
                     <!-- Resumen del sistema -->
-                    <div class="row mb-4">
-                        <div class="col-md-3">
-                            <div class="card bg-light">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted">Monto Inicial</h6>
-                                    <h4 class="text-primary">@Model.MontoInicialSistema.ToString("C")</h4>
+                    <div class="row g-3 mb-4">
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 bg-dark bg-opacity-25 h-100">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="text-muted text-uppercase small mb-1">Monto inicial</h6>
+                                    <h4 class="mb-0 text-primary">
+                                        @Model.MontoInicialSistema.ToString("C")
+                                    </h4>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-light">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted">Total Ingresos</h6>
-                                    <h4 class="text-success">@Model.TotalIngresosSistema.ToString("C")</h4>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 bg-dark bg-opacity-25 h-100">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="text-muted text-uppercase small mb-1">Total ingresos</h6>
+                                    <h4 class="mb-0 text-success">
+                                        @Model.TotalIngresosSistema.ToString("C")
+                                    </h4>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-light">
-                                <div class="card-body text-center">
-                                    <h6 class="text-muted">Total Egresos</h6>
-                                    <h4 class="text-danger">@Model.TotalEgresosSistema.ToString("C")</h4>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 bg-dark bg-opacity-25 h-100">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="text-muted text-uppercase small mb-1">Total egresos</h6>
+                                    <h4 class="mb-0 text-danger">
+                                        @Model.TotalEgresosSistema.ToString("C")
+                                    </h4>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-success text-white">
-                                <div class="card-body text-center">
-                                    <h6>Monto Esperado</h6>
-                                    <h4>@Model.MontoEsperadoSistema.ToString("C")</h4>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 bg-success bg-opacity-25 h-100">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="text-muted text-uppercase small mb-1">Monto esperado</h6>
+                                    <h4 class="mb-0 text-success">
+                                        @Model.MontoEsperadoSistema.ToString("C")
+                                    </h4>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <form asp-action="Cerrar" method="post">
+                    <form asp-action="Cerrar" method="post" novalidate>
+                        @Html.AntiForgeryToken()
+
                         <input type="hidden" asp-for="AperturaCajaId" />
                         <input type="hidden" asp-for="MontoInicialSistema" />
                         <input type="hidden" asp-for="TotalIngresosSistema" />
                         <input type="hidden" asp-for="TotalEgresosSistema" />
                         <input type="hidden" asp-for="MontoEsperadoSistema" />
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-                        <h5 class="mb-3"><i class="bi bi-calculator"></i> Arqueo de Caja (Conteo Físico)</h5>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
 
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
+                        <h2 class="h6 mb-3 d-flex align-items-center gap-2">
+                            <i class="bi bi-calculator"></i>
+                            <span>Arqueo de caja (conteo físico)</span>
+                        </h2>
+
+                        <!-- Conteo físico -->
+                        <div class="row g-3">
+                            <div class="col-md-4">
                                 <label asp-for="EfectivoContado" class="form-label"></label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">$</span>
-                                    <input asp-for="EfectivoContado" type="number" step="0.01" class="form-control form-control-lg" placeholder="0.00" id="efectivoInput" />
+                                    <input asp-for="EfectivoContado"
+                                           type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control"
+                                           placeholder="0,00"
+                                           id="efectivoInput" />
                                 </div>
-                                <span asp-validation-for="EfectivoContado" class="text-danger"></span>
+                                <span asp-validation-for="EfectivoContado" class="text-danger small"></span>
                             </div>
 
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-4">
                                 <label asp-for="ChequesContados" class="form-label"></label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">$</span>
-                                    <input asp-for="ChequesContados" type="number" step="0.01" class="form-control form-control-lg" placeholder="0.00" id="chequesInput" />
+                                    <input asp-for="ChequesContados"
+                                           type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control"
+                                           placeholder="0,00"
+                                           id="chequesInput" />
                                 </div>
-                                <span asp-validation-for="ChequesContados" class="text-danger"></span>
+                                <span asp-validation-for="ChequesContados" class="text-danger small"></span>
                             </div>
 
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-4">
                                 <label asp-for="ValesContados" class="form-label"></label>
-                                <div class="input-group">
+                                <div class="input-group input-group-lg">
                                     <span class="input-group-text">$</span>
-                                    <input asp-for="ValesContados" type="number" step="0.01" class="form-control form-control-lg" placeholder="0.00" id="valesInput" />
+                                    <input asp-for="ValesContados"
+                                           type="number"
+                                           step="0.01"
+                                           min="0"
+                                           class="form-control"
+                                           placeholder="0,00"
+                                           id="valesInput" />
                                 </div>
-                                <span asp-validation-for="ValesContados" class="text-danger"></span>
+                                <span asp-validation-for="ValesContados" class="text-danger small"></span>
                             </div>
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-12">
-                                <div class="card bg-light">
+                        <!-- Totales y diferencia -->
+                        <div class="row mt-3 mb-3">
+                            <div class="col-12">
+                                <div class="card bg-dark bg-opacity-25">
                                     <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-4 text-center">
-                                                <h6 class="text-muted">Total Real</h6>
-                                                <h4 id="totalReal" class="text-primary">$0.00</h4>
+                                        <div class="row text-center g-3">
+                                            <div class="col-md-4">
+                                                <h6 class="text-muted text-uppercase small mb-1">Total real</h6>
+                                                <h4 id="totalReal" class="mb-0 text-primary">$0,00</h4>
                                             </div>
-                                            <div class="col-md-4 text-center">
-                                                <h6 class="text-muted">Monto Esperado</h6>
-                                                <h4 class="text-info">@Model.MontoEsperadoSistema.ToString("C")</h4>
+                                            <div class="col-md-4">
+                                                <h6 class="text-muted text-uppercase small mb-1">Monto esperado</h6>
+                                                <h4 class="mb-0 text-info">
+                                                    @Model.MontoEsperadoSistema.ToString("C")
+                                                </h4>
                                             </div>
-                                            <div class="col-md-4 text-center">
-                                                <h6 class="text-muted">Diferencia</h6>
-                                                <h4 id="diferencia" class="text-warning">$0.00</h4>
+                                            <div class="col-md-4">
+                                                <h6 class="text-muted text-uppercase small mb-1">Diferencia</h6>
+                                                <h4 id="diferencia" class="mb-0 text-warning">$0,00</h4>
                                             </div>
                                         </div>
                                     </div>
@@ -125,43 +187,63 @@
                             </div>
                         </div>
 
+                        <!-- Justificación diferencia -->
                         <div class="mb-3" id="justificacionDiv" style="display: none;">
                             <label asp-for="JustificacionDiferencia" class="form-label"></label>
-                            <textarea asp-for="JustificacionDiferencia" class="form-control" rows="3" placeholder="OBLIGATORIO: Justifique la diferencia encontrada..." id="justificacionInput"></textarea>
-                            <span asp-validation-for="JustificacionDiferencia" class="text-danger"></span>
+                            <textarea asp-for="JustificacionDiferencia"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="OBLIGATORIO: Justifique la diferencia encontrada..."
+                                      id="justificacionInput"></textarea>
+                            <span asp-validation-for="JustificacionDiferencia" class="text-danger small"></span>
                         </div>
 
+                        <!-- Detalle de arqueo -->
                         <div class="mb-3">
                             <label asp-for="DetalleArqueo" class="form-label"></label>
-                            <textarea asp-for="DetalleArqueo" class="form-control" rows="4" placeholder="Opcional: Detalle de billetes y monedas contados..."></textarea>
-                            <span asp-validation-for="DetalleArqueo" class="text-danger"></span>
-                            <small class="form-text text-muted">
+                            <textarea asp-for="DetalleArqueo"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Opcional: detalle de billetes y monedas contados..."></textarea>
+                            <span asp-validation-for="DetalleArqueo" class="text-danger small"></span>
+                            <div class="form-text">
                                 Ejemplo: 10 billetes de $1000, 5 billetes de $500, 20 monedas de $10...
-                            </small>
+                            </div>
                         </div>
 
+                        <!-- Observaciones cierre -->
                         <div class="mb-3">
                             <label asp-for="ObservacionesCierre" class="form-label"></label>
-                            <textarea asp-for="ObservacionesCierre" class="form-control" rows="2" placeholder="Observaciones del cierre..."></textarea>
-                            <span asp-validation-for="ObservacionesCierre" class="text-danger"></span>
+                            <textarea asp-for="ObservacionesCierre"
+                                      class="form-control"
+                                      rows="2"
+                                      placeholder="Observaciones del cierre..."></textarea>
+                            <span asp-validation-for="ObservacionesCierre" class="text-danger small"></span>
                         </div>
 
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <strong>Atención:</strong> Verifique cuidadosamente el arqueo. Si hay diferencia, debe justificarla obligatoriamente.
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            <strong>Atención.</strong>
+                            Verifica cuidadosamente el arqueo. Si hay diferencia, debes justificarla obligatoriamente.
                         </div>
 
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a asp-action="DetallesApertura" asp-route-id="@Model.AperturaCajaId" class="btn btn-secondary">
-                                <i class="bi bi-x-circle"></i> Cancelar
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="DetallesApertura"
+                               asp-route-id="@Model.AperturaCajaId"
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-warning" id="btnCerrar">
-                                <i class="bi bi-lock"></i> Cerrar Caja
+                                <i class="bi bi-lock me-1"></i>Cerrar caja
                             </button>
                         </div>
+
                     </form>
+
                 </div>
             </div>
+
         </div>
     </div>
 </div>
@@ -170,34 +252,6 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-    <script>
-        const montoEsperado = @Model.MontoEsperadoSistema;
 
-        function calcularDiferencia() {
-            const efectivo = parseFloat(document.getElementById('efectivoInput').value) || 0;
-            const cheques = parseFloat(document.getElementById('chequesInput').value) || 0;
-            const vales = parseFloat(document.getElementById('valesInput').value) || 0;
-
-            const totalReal = efectivo + cheques + vales;
-            const diferencia = totalReal - montoEsperado;
-
-            document.getElementById('totalReal').textContent = '$' + totalReal.toFixed(2);
-            document.getElementById('diferencia').textContent = '$' + diferencia.toFixed(2);
-
-            const diferenciaElement = document.getElementById('diferencia');
-            if (Math.abs(diferencia) > 0.01) {
-                diferenciaElement.className = diferencia > 0 ? 'text-success' : 'text-danger';
-                document.getElementById('justificacionDiv').style.display = 'block';
-                document.getElementById('justificacionInput').required = true;
-            } else {
-                diferenciaElement.className = 'text-success';
-                document.getElementById('justificacionDiv').style.display = 'none';
-                document.getElementById('justificacionInput').required = false;
-            }
-        }
-
-        document.getElementById('efectivoInput').addEventListener('input', calcularDiferencia);
-        document.getElementById('chequesInput').addEventListener('input', calcularDiferencia);
-        document.getElementById('valesInput').addEventListener('input', calcularDiferencia);
-    </script>
+    <script src="~/js/caja-cerrar.js" asp-append-version="true"></script>
 }

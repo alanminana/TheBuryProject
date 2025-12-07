@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
+using TheBuryProject.Models.Constants;
+using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
@@ -20,20 +22,23 @@ namespace TheBuryProject.Controllers
     {
         private readonly ICreditoService _creditoService;
         private readonly IEvaluacionCreditoService _evaluacionService;
-        private readonly AppDbContext _context;
+        private readonly IFinancialCalculationService _financialService;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly IMapper _mapper;
         private readonly ILogger<CreditoController> _logger;
 
         public CreditoController(
             ICreditoService creditoService,
             IEvaluacionCreditoService evaluacionService,
-            AppDbContext context,
+            IFinancialCalculationService financialService,
+            IDbContextFactory<AppDbContext> contextFactory,
             IMapper mapper,
             ILogger<CreditoController> logger)
         {
             _creditoService = creditoService;
             _evaluacionService = evaluacionService;
-            _context = context;
+            _financialService = financialService;
+            _contextFactory = contextFactory;
             _mapper = mapper;
             _logger = logger;
         }
@@ -83,6 +88,211 @@ namespace TheBuryProject.Controllers
                 return RedirectToAction(nameof(Index));
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> ConfigurarVenta(int id, int? ventaId)
+        {
+            var credito = await _creditoService.GetByIdAsync(id);
+            if (credito == null)
+            {
+                TempData["Error"] = "Crédito no encontrado";
+                return RedirectToAction(nameof(Index));
+            }
+
+            decimal montoVenta = credito.MontoAprobado;
+
+            if (montoVenta <= 0)
+            {
+                montoVenta = credito.MontoSolicitado;
+            }
+
+            if (ventaId.HasValue)
+            {
+                await using var context = await _contextFactory.CreateDbContextAsync();
+
+                var venta = await context.Ventas
+                    .Include(v => v.Detalles)
+                    .FirstOrDefaultAsync(v => v.Id == ventaId.Value);
+
+                if (venta != null)
+                {
+                    // Prioriza el total guardado; si no existe, recalcula desde el detalle
+                    montoVenta = venta.Total;
+
+                    if (montoVenta <= 0 && venta.Detalles != null && venta.Detalles.Any())
+                    {
+                        var subtotal = venta.Detalles.Sum(d =>
+                            d.Subtotal > 0
+                                ? d.Subtotal
+                                : Math.Max(0, (d.Cantidad * d.PrecioUnitario) - d.Descuento));
+
+                        var subtotalConDescuento = subtotal - venta.Descuento;
+                        var iva = venta.IVA > 0 ? venta.IVA : subtotalConDescuento * VentaConstants.IVA_RATE;
+                        montoVenta = subtotalConDescuento + iva;
+                    }
+                    if (montoVenta <= 0)
+                    {
+                        // Último recurso: traer los detalles directamente y recalcular cuando la navegación no trae datos
+                        var detallesPersistidos = await context.VentaDetalles
+                            .Where(d => d.VentaId == venta.Id && !d.IsDeleted)
+                            .ToListAsync();
+
+                        if (detallesPersistidos.Any())
+                        {
+                            var subtotalPersistido = detallesPersistidos.Sum(d =>
+                                d.Subtotal > 0
+                                    ? d.Subtotal
+                                    : Math.Max(0, (d.Cantidad * d.PrecioUnitario) - d.Descuento));
+
+                            var subtotalConDescuento = subtotalPersistido - venta.Descuento;
+                            var iva = venta.IVA > 0 ? venta.IVA : subtotalConDescuento * VentaConstants.IVA_RATE;
+                            montoVenta = subtotalConDescuento + iva;
+                        }
+                    }
+
+                }
+            }
+
+            var modelo = new ConfiguracionCreditoVentaViewModel
+            {
+                CreditoId = credito.Id,
+                VentaId = ventaId,
+                ClienteNombre = credito.ClienteNombre ?? string.Empty,
+                NumeroCredito = credito.Numero,
+                Monto = montoVenta,
+                Anticipo = 0,
+                MontoFinanciado = montoVenta,
+                CantidadCuotas = credito.CantidadCuotas > 0 ? credito.CantidadCuotas : 0,
+                TasaMensual = credito.TasaInteres > 0 ? credito.TasaInteres : 0,
+                GastosAdministrativos = 0,
+                FechaPrimeraCuota = credito.FechaPrimeraCuota
+            };
+
+            return View(modelo);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfigurarVenta(ConfiguracionCreditoVentaViewModel modelo)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(modelo);
+            }
+
+            var credito = await _creditoService.GetByIdAsync(modelo.CreditoId);
+            if (credito == null)
+            {
+                TempData["Error"] = "Crédito no encontrado";
+                return RedirectToAction(nameof(Index));
+            }
+
+            credito.CantidadCuotas = modelo.CantidadCuotas;
+            credito.TasaInteres = modelo.TasaMensual;
+            credito.FechaPrimeraCuota = modelo.FechaPrimeraCuota;
+            credito.MontoAprobado = Math.Max(0, modelo.Monto - modelo.Anticipo);
+            credito.MontoSolicitado = credito.MontoAprobado;
+            credito.SaldoPendiente = credito.MontoAprobado;
+            credito.Estado = EstadoCredito.Solicitado;
+
+            if (modelo.GastosAdministrativos > 0)
+            {
+                credito.Observaciones = string.IsNullOrWhiteSpace(credito.Observaciones)
+                    ? $"Gastos administrativos declarados: ${modelo.GastosAdministrativos:N2}"
+                    : $"{credito.Observaciones} | Gastos administrativos: ${modelo.GastosAdministrativos:N2}";
+            }
+
+            await _creditoService.UpdateAsync(credito);
+
+            TempData["Success"] = "Crédito configurado y listo para aprobación.";
+            return RedirectToAction(nameof(Details), new { id = credito.Id });
+        }
+
+        [HttpGet]
+        public IActionResult SimularPlanVenta(
+            decimal totalVenta,
+            decimal anticipo,
+            int cuotas,
+            decimal tasaMensual,
+            decimal gastosAdministrativos,
+            string? fechaPrimeraCuota)
+        {
+            try
+            {
+                if (totalVenta <= 0)
+                    return BadRequest(new { error = "El monto total de la venta debe ser mayor a cero." });
+
+                if (anticipo < 0)
+                    return BadRequest(new { error = "El anticipo no puede ser negativo." });
+
+                if (cuotas <= 0)
+                    return BadRequest(new { error = "Ingresá una cantidad de cuotas mayor a cero." });
+
+                if (tasaMensual < 0)
+                    return BadRequest(new { error = "La tasa mensual no puede ser negativa." });
+
+                if (gastosAdministrativos < 0)
+                    return BadRequest(new { error = "Los gastos administrativos no pueden ser negativos." });
+
+                var fecha = DateTime.TryParse(fechaPrimeraCuota, out var parsed)
+                    ? parsed
+                    : DateTime.Today.AddMonths(1);
+
+                var montoFinanciado = _financialService.ComputeFinancedAmount(totalVenta, anticipo);
+                var tasaDecimal = tasaMensual / 100;
+                var cuota = _financialService.ComputePmt(tasaDecimal, cuotas, montoFinanciado);
+                var interesTotal = _financialService.CalcularInteresTotal(montoFinanciado, tasaDecimal, cuotas);
+                var totalCuotas = cuota * cuotas;
+                var totalPlan = totalCuotas + gastosAdministrativos;
+
+                var semaforo = CalcularSemaforo(cuota, montoFinanciado);
+
+                return Json(new
+                {
+                    montoFinanciado,
+                    cuotaEstimada = cuota,
+                    tasaAplicada = tasaMensual,
+                    interesTotal,
+                    totalAPagar = totalCuotas,
+                    gastosAdministrativos,
+                    totalPlan,
+                    fechaPrimerPago = fecha.ToString("yyyy-MM-dd"),
+                    semaforoEstado = semaforo.Estado,
+                    semaforoMensaje = semaforo.Mensaje,
+                    mostrarMsgIngreso = semaforo.MostrarIngreso,
+                    mostrarMsgAntiguedad = semaforo.MostrarAntiguedad
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al simular plan de crédito");
+                return StatusCode(500, new { error = "Ocurrió un error al calcular el plan de crédito." });
+            }
+        }
+
+        private static SemaforoPrecalificacion CalcularSemaforo(decimal cuota, decimal montoFinanciado)
+        {
+            if (montoFinanciado <= 0 || cuota <= 0)
+            {
+                return new SemaforoPrecalificacion("sinDatos", "Completa los datos para precalificar.", false, false);
+            }
+
+            var ratio = cuota / montoFinanciado;
+
+            if (ratio <= 0.08m)
+            {
+                return new SemaforoPrecalificacion("verde", "Condiciones preliminares saludables.", false, false);
+            }
+
+            if (ratio <= 0.15m)
+            {
+                return new SemaforoPrecalificacion("amarillo", "Revisar ingresos declarados.", true, false);
+            }
+
+            return new SemaforoPrecalificacion("rojo", "Las condiciones requieren ajustes.", true, true);
+        }
+
+        private record SemaforoPrecalificacion(string Estado, string Mensaje, bool MostrarIngreso, bool MostrarAntiguedad);
 
         // GET: Credito/Create
         public async Task<IActionResult> Create()
@@ -504,7 +714,9 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                var cuotas = await _context.Cuotas
+                await using var context = await _contextFactory.CreateDbContextAsync();
+
+                var cuotas = await context.Cuotas
                     .Include(c => c.Credito)
                         .ThenInclude(cr => cr.Cliente)
                     .Where(c => c.Estado == Models.Enums.EstadoCuota.Vencida ||
@@ -545,7 +757,9 @@ namespace TheBuryProject.Controllers
         {
             _logger.LogInformation("Cargando ViewBags...");
 
-            var clientes = await _context.Clientes
+            await using var context = await _contextFactory.CreateDbContextAsync();
+
+            var clientes = await context.Clientes
                 .Where(c => !c.IsDeleted && c.Activo)
                 .OrderBy(c => c.Apellido)
                 .ThenBy(c => c.Nombre)
@@ -559,7 +773,7 @@ namespace TheBuryProject.Controllers
             _logger.LogInformation("Clientes cargados: {Count}", clientes.Count);
             ViewBag.Clientes = new SelectList(clientes, "Id", "NombreCompleto", clienteIdSeleccionado);
 
-            var garantes = await _context.Clientes
+            var garantes = await context.Clientes
                 .Where(c => !c.IsDeleted && c.Activo)
                 .OrderBy(c => c.Apellido)
                 .ThenBy(c => c.Nombre)

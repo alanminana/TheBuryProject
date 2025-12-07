@@ -9,6 +9,7 @@ using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
+using TheBuryProject.ViewModels.Requests;
 
 namespace TheBuryProject.Controllers
 {
@@ -19,7 +20,8 @@ namespace TheBuryProject.Controllers
         private readonly IDocumentoClienteService _documentoService;
         private readonly ICreditoService _creditoService;
         private readonly IEvaluacionCreditoService _evaluacionService;
-        private readonly AppDbContext _context;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
+        private readonly IFinancialCalculationService _financialService;
         private readonly IMapper _mapper;
         private readonly ILogger<ClienteController> _logger;
 
@@ -28,7 +30,8 @@ namespace TheBuryProject.Controllers
             IDocumentoClienteService documentoService,
             ICreditoService creditoService,
             IEvaluacionCreditoService evaluacionService,
-            AppDbContext context,
+            IDbContextFactory<AppDbContext> contextFactory,
+            IFinancialCalculationService financialService,
             IMapper mapper,
             ILogger<ClienteController> logger)
         {
@@ -36,7 +39,8 @@ namespace TheBuryProject.Controllers
             _documentoService = documentoService;
             _creditoService = creditoService;
             _evaluacionService = evaluacionService;
-            _context = context;
+            _contextFactory = contextFactory;
+            _financialService = financialService;
             _mapper = mapper;
             _logger = logger;
         }
@@ -242,38 +246,40 @@ namespace TheBuryProject.Controllers
         {
             try
             {
+                await using var context = await _contextFactory.CreateDbContextAsync();
+
                 if (!ModelState.IsValid)
                 {
                     TempData["Error"] = "Por favor complete todos los campos requeridos";
                     return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
                 }
 
-                var cliente = await _context.Clientes.FindAsync(model.ClienteId);
+                var cliente = await context.Clientes.FindAsync(model.ClienteId);
                 if (!ClienteValidationHelper.ClienteExiste(cliente))
                     return RedirectToAction(nameof(Index));
 
                 // Procesar garante
-                int? garanteId = await ProcesarGarante(model);
+                int? garanteId = await ProcesarGarante(context, model);
 
                 // Calcular parámetros del crédito
-                var calculos = ClienteControllerHelper.CalcularParametrosCredito(
+                var calculos = CalcularParametrosCredito(
                     model.MontoSolicitado, model.TasaInteres, model.CantidadCuotas);
 
                 // Generar número de crédito
-                var numeroCredito = await GenerarNumeroCreditoAsync(cliente!.NumeroDocumento);
+                var numeroCredito = await GenerarNumeroCreditoAsync(context, cliente!.NumeroDocumento);
 
                 // ✅ USAR TRANSACCIÓN EXPLÍCITA
-                using (var transaction = await _context.Database.BeginTransactionAsync())
+                using (var transaction = await context.Database.BeginTransactionAsync())
                 {
                     try
                     {
                         // Crear crédito
                         var credito = CrearCredito(model, cliente!, garanteId, calculos, numeroCredito);
-                        _context.Creditos.Add(credito);
-                        await _context.SaveChangesAsync();
+                        context.Creditos.Add(credito);
+                        await context.SaveChangesAsync();
 
                         // Generar cuotas
-                        await GenerarCuotasAsync(credito, model, calculos.TasaMensualDecimal);
+                        await GenerarCuotasAsync(context, credito, model, calculos.TasaMensualDecimal);
 
                         // Confirmar transacción
                         await transaction.CommitAsync();
@@ -303,7 +309,67 @@ namespace TheBuryProject.Controllers
             }
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CalcularCreditoPreview([FromBody] CalcularCreditoPreviewRequest request)
+        {
+            try
+            {
+                if (request == null || request.MontoSolicitado <= 0 || request.CantidadCuotas < 1)
+                {
+                    return BadRequest(new { error = "Los datos de cálculo no son válidos" });
+                }
+
+                var calculos = CalcularParametrosCredito(
+                    request.MontoSolicitado,
+                    request.TasaInteres,
+                    request.CantidadCuotas);
+
+                var excedeCapacidad = request.CapacidadPagoMensual.HasValue &&
+                    calculos.CuotaMensual > request.CapacidadPagoMensual.Value;
+
+                return Json(new
+                {
+                    cuotaMensual = calculos.CuotaMensual,
+                    montoTotal = calculos.TotalAPagar,
+                    superaCapacidadPago = excedeCapacidad
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al calcular preview de crédito para monto {Monto} y {Cuotas} cuotas", request?.MontoSolicitado, request?.CantidadCuotas);
+                return StatusCode(500, new { error = "No se pudo calcular la cuota" });
+            }
+        }
+
         #region Métodos Privados
+
+        private CreditoCalculos CalcularParametrosCredito(decimal montoSolicitado, decimal tasaInteres, int cantidadCuotas)
+        {
+            var tasaMensualDecimal = tasaInteres / 100;
+            var cuotaMensual = _financialService.CalcularCuotaSistemaFrances(
+                montoSolicitado,
+                tasaMensualDecimal,
+                cantidadCuotas);
+
+            var totalAPagar = _financialService.CalcularTotalConInteres(
+                montoSolicitado,
+                tasaMensualDecimal,
+                cantidadCuotas);
+
+            var cftea = _financialService.CalcularCFTEA(
+                totalAPagar,
+                montoSolicitado,
+                cantidadCuotas);
+
+            return new CreditoCalculos
+            {
+                TasaMensualDecimal = tasaMensualDecimal,
+                CuotaMensual = cuotaMensual,
+                TotalAPagar = totalAPagar,
+                CFTEA = cftea
+            };
+        }
 
         /// <summary>
         /// Construye el ViewModel de detalle con toda la información del cliente
@@ -332,7 +398,7 @@ namespace TheBuryProject.Controllers
         /// <summary>
         /// Procesa la información del garante (crea o vincula)
         /// </summary>
-        private async Task<int?> ProcesarGarante(SolicitudCreditoViewModel model)
+        private async Task<int?> ProcesarGarante(AppDbContext context, SolicitudCreditoViewModel model)
         {
             int? garanteId = model.GaranteId;
 
@@ -351,15 +417,15 @@ namespace TheBuryProject.Controllers
                     IsDeleted = false
                 };
 
-                _context.Garantes.Add(garante);
-                await _context.SaveChangesAsync();
+                context.Garantes.Add(garante);
+                await context.SaveChangesAsync();
                 garanteId = garante.Id;
 
-                var cliente = await _context.Clientes.FindAsync(model.ClienteId);
+                var cliente = await context.Clientes.FindAsync(model.ClienteId);
                 if (cliente != null)
                 {
                     cliente.GaranteId = garanteId;
-                    _context.Clientes.Update(cliente);
+                    context.Clientes.Update(cliente);
                 }
             }
 
@@ -369,10 +435,10 @@ namespace TheBuryProject.Controllers
         /// <summary>
         /// Genera un número único para el crédito
         /// </summary>
-        private async Task<string> GenerarNumeroCreditoAsync(string numeroDocumento)
+        private async Task<string> GenerarNumeroCreditoAsync(AppDbContext context, string numeroDocumento)
         {
             var numeroCreditoBase = $"CRE-{DateTime.UtcNow:yyyyMMdd}-{numeroDocumento}";
-            var creditosExistentes = await _context.Creditos
+            var creditosExistentes = await context.Creditos
                 .Where(c => c.Numero.StartsWith(numeroCreditoBase))
                 .CountAsync();
             return $"{numeroCreditoBase}-{creditosExistentes + 1:D3}";
@@ -385,7 +451,7 @@ namespace TheBuryProject.Controllers
             SolicitudCreditoViewModel model,
             Cliente cliente,
             int? garanteId,
-            ClienteControllerHelper.CreditoCalculos calculos,
+            CreditoCalculos calculos,
             string numeroCredito)
         {
             return new Credito
@@ -419,7 +485,7 @@ namespace TheBuryProject.Controllers
         /// <summary>
         /// Genera las cuotas para un crédito
         /// </summary>
-        private async Task GenerarCuotasAsync(Credito credito, SolicitudCreditoViewModel model, decimal tasaMensualDecimal)
+        private async Task GenerarCuotasAsync(AppDbContext context, Credito credito, SolicitudCreditoViewModel model, decimal tasaMensualDecimal)
         {
             var fechaVencimiento = credito.FechaPrimeraCuota ?? DateTime.UtcNow.AddMonths(1);
             var cuotas = new List<Cuota>();
@@ -453,8 +519,8 @@ namespace TheBuryProject.Controllers
                 fechaVencimiento = fechaVencimiento.AddMonths(1);
             }
 
-            _context.Cuotas.AddRange(cuotas);
-            await _context.SaveChangesAsync();
+            context.Cuotas.AddRange(cuotas);
+            await context.SaveChangesAsync();
         }
 
         /// <summary>
@@ -512,6 +578,14 @@ namespace TheBuryProject.Controllers
                 evaluacion.AlertasYRecomendaciones.Add("❌ Error al evaluar capacidad crediticia");
                 return Task.FromResult(evaluacion);
             }
+        }
+
+        private class CreditoCalculos
+        {
+            public decimal TasaMensualDecimal { get; init; }
+            public decimal CuotaMensual { get; init; }
+            public decimal TotalAPagar { get; init; }
+            public decimal CFTEA { get; init; }
         }
 
         #endregion

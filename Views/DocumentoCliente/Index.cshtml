@@ -1,4 +1,5 @@
 @model TheBuryProject.ViewModels.DocumentoClienteFilterViewModel
+@using TheBuryProject.ViewModels
 @{
     Layout = "_ModuleLayout";
     ViewData["Title"] = "Documentos de Clientes";
@@ -7,9 +8,14 @@
 }
 
 @section PageActions {
-    <a asp-action="Upload" class="btn btn-info text-dark fw-semibold shadow-sm">
+    <button type="button"
+            class="btn btn-info text-dark fw-semibold shadow-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#uploadDocumentoModal"
+            data-return-to-venta-id="@Model.ReturnToVentaId"
+            data-cliente-id="@Model.ClienteId">
         <i class="bi bi-upload me-2"></i>Subir Documento
-    </a>
+    </button>
 }
 
 @section PageFilters {
@@ -28,6 +34,10 @@
         <div class="collapse show" id="filtrosCollapse">
             <div class="card-body">
                 <form asp-action="Index" method="get">
+                    @if (Model.ReturnToVentaId.HasValue)
+                    {
+                        <input type="hidden" name="ReturnToVentaId" value="@Model.ReturnToVentaId" />
+                    }
                     <div class="row g-3">
 
                         <div class="col-md-3">
@@ -104,6 +114,31 @@
     </div>
 }
 
+@if (Model.ReturnToVentaId.HasValue)
+{
+    <div class="alert alert-warning d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Falta documentación obligatoria para continuar con el crédito de la venta @Model.ReturnToVentaId.
+            @if (ViewBag.DocumentacionPendiente is DocumentacionClienteEstadoViewModel estadoDocs && !estadoDocs.Completa)
+            {
+                <div class="mt-1 small">
+                    <strong>Documentos faltantes:</strong>
+                    <span class="badge bg-light text-dark">@string.Join(", ", estadoDocs.Faltantes)</span>
+                </div>
+            }
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-light" asp-controller="Venta" asp-action="ValidarDocumentacionCredito" asp-route-ventaId="@Model.ReturnToVentaId">
+                Validar y continuar
+            </a>
+            <a class="btn btn-outline-light" asp-controller="Venta" asp-action="Details" asp-route-id="@Model.ReturnToVentaId">
+                Volver a la venta
+            </a>
+        </div>
+    </div>
+}
+
 @if (Model.TotalResultados > 0)
 {
     <div class="alert alert-info border-0 shadow-sm mb-3">
@@ -168,17 +203,23 @@
                                         <a asp-action="Descargar" asp-route-id="@doc.Id" class="btn btn-outline-success">
                                             <i class="bi bi-download"></i>
                                         </a>
-
-                                        @if (doc.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
-                                        {
-                                            <form asp-action="Delete" asp-route-id="@doc.Id" method="post"
-                                                  onsubmit="return confirm('¿Está seguro de eliminar este documento?')">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-outline-danger">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        }
+                                        <button type="button"
+                                                class="btn btn-warning text-dark"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#uploadDocumentoModal"
+                                                data-cliente-id="@doc.ClienteId"
+                                                data-replace-id="@doc.Id"
+                                                data-replace-name="@doc.NombreArchivo"
+                                                data-return-to-venta-id="@Model.ReturnToVentaId">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </button>
+                                        <form asp-action="Delete" asp-route-id="@doc.Id" method="post"
+                                              onsubmit="return confirm('¿Está seguro de eliminar este documento?')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -190,7 +231,26 @@
                             <td colspan="8" class="text-center py-5">
                                 <i class="bi bi-inbox display-5 text-secondary d-block mb-3"></i>
                                 <p class="text-secondary mb-2">No hay documentos disponibles</p>
-                                <a asp-action="Upload" class="btn btn-info text-dark">Subir Documento</a>
+                                @if (Model.ReturnToVentaId.HasValue)
+                                {
+                                    <button type="button"
+                                            class="btn btn-info text-dark"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#uploadDocumentoModal"
+                                            data-return-to-venta-id="@Model.ReturnToVentaId"
+                                            data-cliente-id="@Model.ClienteId">
+                                        Subir Documento
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button"
+                                            class="btn btn-info text-dark"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#uploadDocumentoModal">
+                                        Subir Documento
+                                    </button>
+                                }
                             </td>
                         </tr>
                     }
@@ -248,4 +308,53 @@
         </div>
 
     </div>
+}
+
+<!-- Modal de carga de documentos -->
+<div class="modal fade" id="uploadDocumentoModal" tabindex="-1" aria-labelledby="uploadDocumentoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="uploadDocumentoModalLabel">
+                    <i class="bi bi-upload me-2"></i>Subir o reemplazar documento
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info border-0 shadow-sm">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Formatos permitidos:</strong> PDF, JPG, PNG, DOC, DOCX (máximo 5 MB)
+                </div>
+                <div class="alert alert-warning border-0 shadow-sm d-none" data-reemplazo-alert>
+                    <i class="bi bi-arrow-repeat me-2"></i>
+                    <span data-reemplazo-text></span>
+                </div>
+                <form id="uploadDocumentoForm"
+                      asp-action="Upload"
+                      method="post"
+                      enctype="multipart/form-data"
+                      data-documentos-url="@Url.Action("GetDocumentosByCliente", "DocumentoCliente")"
+                      data-documento-seleccionado="@Model.UploadModel.DocumentoAReemplazarId"
+                      data-default-cliente-id="@Model.UploadModel.ClienteId"
+                      data-default-return-to-venta-id="@Model.UploadModel.ReturnToVentaId">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ReturnToVentaId" value="@Model.UploadModel.ReturnToVentaId" />
+                    <partial name="~/Views/Shared/Documento/_DocumentoAdjuntoForm.cshtml" model="Model.UploadModel" />
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-info text-dark fw-semibold">
+                            <i class="bi bi-upload me-2"></i>Subir Documento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/documento-cliente-upload.js" asp-append-version="true"></script>
+    <script src="~/js/documento-cliente-modal.js" asp-append-version="true"></script>
 }

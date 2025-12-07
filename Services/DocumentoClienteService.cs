@@ -1,6 +1,9 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using TheBuryProject.Data;
 using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
@@ -77,6 +80,20 @@ namespace TheBuryProject.Services
                     throw new Exception(errorMessage);
                 }
 
+                DocumentoCliente? documentoAnterior = null;
+                if (viewModel.ReemplazarExistente && viewModel.DocumentoAReemplazarId.HasValue)
+                {
+                    documentoAnterior = await _context.Set<DocumentoCliente>()
+                        .FirstOrDefaultAsync(d => d.Id == viewModel.DocumentoAReemplazarId.Value
+                            && d.ClienteId == viewModel.ClienteId
+                            && !d.IsDeleted);
+
+                    if (documentoAnterior == null)
+                    {
+                        throw new Exception("El documento a reemplazar no existe o pertenece a otro cliente");
+                    }
+                }
+
                 // Crear carpeta si no existe
                 var uploadPath = Path.Combine(_environment.WebRootPath, UPLOAD_FOLDER);
                 if (!Directory.Exists(uploadPath))
@@ -118,7 +135,23 @@ namespace TheBuryProject.Services
                 };
 
                 _context.Set<DocumentoCliente>().Add(documento);
+
+                if (documentoAnterior != null)
+                {
+                    documentoAnterior.IsDeleted = true;
+                }
+
                 await _context.SaveChangesAsync();
+
+                if (documentoAnterior != null && !string.IsNullOrWhiteSpace(documentoAnterior.RutaArchivo))
+                {
+                    var rutaAnteriorCompleta = Path.Combine(_environment.WebRootPath, documentoAnterior.RutaArchivo);
+                    if (File.Exists(rutaAnteriorCompleta))
+                    {
+                        File.Delete(rutaAnteriorCompleta);
+                        _logger.LogInformation("Archivo anterior eliminado: {Ruta}", rutaAnteriorCompleta);
+                    }
+                }
 
                 viewModel.Id = documento.Id;
                 viewModel.NombreArchivo = documento.NombreArchivo;
@@ -136,6 +169,42 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al subir documento");
                 throw;
             }
+        }
+
+        public async Task<DocumentacionClienteEstadoViewModel> ValidarDocumentacionObligatoriaAsync(
+            int clienteId,
+            IEnumerable<TipoDocumentoCliente>? requeridos = null)
+        {
+            var tiposRequeridos = requeridos?.ToList() ?? new List<TipoDocumentoCliente>
+            {
+                TipoDocumentoCliente.DNI,
+                TipoDocumentoCliente.ReciboSueldo,
+                TipoDocumentoCliente.Servicio
+            };
+
+            var documentosCliente = await _context.Set<DocumentoCliente>()
+                .Where(d => d.ClienteId == clienteId && !d.IsDeleted)
+                .ToListAsync();
+
+            var faltantes = new List<TipoDocumentoCliente>();
+
+            foreach (var tipo in tiposRequeridos)
+            {
+                var tieneDocumento = documentosCliente.Any(d =>
+                    d.TipoDocumento == tipo &&
+                    d.Estado == EstadoDocumento.Verificado);
+
+                if (!tieneDocumento)
+                {
+                    faltantes.Add(tipo);
+                }
+            }
+
+            return new DocumentacionClienteEstadoViewModel
+            {
+                Completa = !faltantes.Any(),
+                Faltantes = faltantes
+            };
         }
 
         public async Task<bool> VerificarAsync(int id, string verificadoPor, string? observaciones = null)

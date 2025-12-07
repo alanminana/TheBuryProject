@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -13,6 +14,8 @@ namespace TheBuryProject.Controllers
         private readonly IProductoService _productoService;
         private readonly ILogger<AlertaStockController> _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
+
+        private string CurrentUserName => _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "Sistema";
 
         public AlertaStockController(
             IAlertaStockService alertaStockService,
@@ -129,27 +132,13 @@ namespace TheBuryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Resolver(int id, string? observaciones)
         {
-            try
-            {
-                var usuario = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "Sistema";
-                var exito = await _alertaStockService.ResolverAlertaAsync(id, usuario, observaciones);
-
-                if (exito)
-                {
-                    TempData["Success"] = "La alerta se resolvió exitosamente";
-                }
-                else
-                {
-                    TempData["Error"] = "No se pudo resolver la alerta";
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al resolver alerta {AlertaId}", id);
-                TempData["Error"] = "Error al resolver la alerta";
-            }
-
-            return RedirectToAction(nameof(Index));
+            return await ProcesarAccionAlerta(
+                id,
+                observaciones,
+                _alertaStockService.ResolverAlertaAsync,
+                "La alerta se resolvió exitosamente",
+                "No se pudo resolver la alerta",
+                "resolver");
         }
 
         // POST: AlertaStock/Ignorar/5
@@ -157,27 +146,13 @@ namespace TheBuryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Ignorar(int id, string? observaciones)
         {
-            try
-            {
-                var usuario = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "Sistema";
-                var exito = await _alertaStockService.IgnorarAlertaAsync(id, usuario, observaciones);
-
-                if (exito)
-                {
-                    TempData["Success"] = "La alerta se ignoró exitosamente";
-                }
-                else
-                {
-                    TempData["Error"] = "No se pudo ignorar la alerta";
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al ignorar alerta {AlertaId}", id);
-                TempData["Error"] = "Error al ignorar la alerta";
-            }
-
-            return RedirectToAction(nameof(Index));
+            return await ProcesarAccionAlerta(
+                id,
+                observaciones,
+                _alertaStockService.IgnorarAlertaAsync,
+                "La alerta se ignoró exitosamente",
+                "No se pudo ignorar la alerta",
+                "ignorar");
         }
 
         // POST: AlertaStock/GenerarAlertas
@@ -230,6 +205,29 @@ namespace TheBuryProject.Controllers
                 TempData["Error"] = "Error al cargar las alertas del producto";
                 return RedirectToAction("Index", "Producto");
             }
+        }
+
+        private async Task<IActionResult> ProcesarAccionAlerta(
+            int id,
+            string? observaciones,
+            Func<int, string, string?, Task<bool>> accion,
+            string mensajeExito,
+            string mensajeError,
+            string accionLog)
+        {
+            try
+            {
+                var exito = await accion(id, CurrentUserName, observaciones);
+
+                TempData[exito ? "Success" : "Error"] = exito ? mensajeExito : mensajeError;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al {Accion} alerta {AlertaId}", accionLog, id);
+                TempData["Error"] = $"Error al {accionLog} la alerta";
+            }
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }

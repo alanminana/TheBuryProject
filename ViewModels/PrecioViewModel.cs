@@ -65,7 +65,7 @@ public class CrearListaPrecioViewModel
     [Display(Name = "Cantidad de Cuotas")]
     public int? CantidadCuotas { get; set; }
 
-    [StringLength(50)]
+    [StringLength(20, ErrorMessage = "La regla de redondeo no puede exceder 20 caracteres")]
     [Display(Name = "Regla de Redondeo")]
     public string? ReglaRedondeo { get; set; }
 

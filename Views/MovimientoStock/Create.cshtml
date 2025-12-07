@@ -36,7 +36,7 @@
                         <!-- Producto -->
                         <div class="mb-4">
                             <label asp-for="ProductoId" class="form-label fw-semibold"></label>
-                            <select asp-for="ProductoId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Productos" id="productoSelect">
+                            <select asp-for="ProductoId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Productos" id="productoSelect" data-producto-info-url="@Url.Action("GetProductoInfo", "MovimientoStock")">
                                 <option value="">Seleccione un producto...</option>
                             </select>
                             <span asp-validation-for="ProductoId" class="text-danger"></span>
@@ -117,54 +117,5 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
-    <script>
-        let stockActual = 0;
-
-        $('#productoSelect').on('change', async function () {
-            const id = $(this).val();
-            if (!id) { $('#productoInfo').hide(); stockActual = 0; return; }
-
-            try {
-                const r = await fetch(`/MovimientoStock/GetProductoInfo/${id}`);
-                const d = await r.json();
-                $('#productoCodigo').text(d.codigo || '-');
-                $('#productoNombre').text(d.nombre || '-');
-                $('#stockActual').text(d.stockActual ?? 0);
-                stockActual = parseFloat(d.stockActual) || 0;
-                $('#productoInfo').show();
-                calcularStock();
-            } catch {
-                $('#productoInfo').hide();
-            }
-        });
-
-        $('#tipoSelect, #cantidadInput').on('change keyup', calcularStock);
-
-        function calcularStock() {
-            const tipo = $('#tipoSelect').val();
-            const cantidad = parseFloat($('#cantidadInput').val()) || 0;
-            if (!tipo || cantidad === 0) { $('#stockResultado').text(''); return; }
-
-            let nuevo = 0, msg = '', cls = '';
-            switch (tipo) {
-                case '0': nuevo = stockActual + cantidad;
-                          msg = `Stock resultante: ${nuevo.toFixed(2)} (actual: ${stockActual} + ${cantidad})`;
-                          cls = 'text-success'; break;
-                case '1': nuevo = stockActual - cantidad;
-                          if (nuevo < 0) { msg = `⚠️ Stock insuficiente (actual: ${stockActual})`; cls = 'text-danger'; }
-                          else { msg = `Stock resultante: ${nuevo.toFixed(2)} (actual: ${stockActual} - ${cantidad})`; cls = 'text-warning'; }
-                          break;
-                case '2': nuevo = cantidad;
-                          const diff = cantidad - stockActual;
-                          msg = `Nuevo stock: ${nuevo.toFixed(2)} (dif: ${diff >= 0 ? '+' : ''}${diff.toFixed(2)})`;
-                          cls = 'text-info'; break;
-            }
-            $('#stockResultado').text(msg).removeClass().addClass('form-text ' + cls);
-        }
-
-        $(function () {
-            const idInit = $('#productoSelect').val();
-            if (idInit) $('#productoSelect').trigger('change');
-        });
-    </script>
+    <script src="~/js/movimiento-stock-create.js" asp-append-version="true"></script>
 }

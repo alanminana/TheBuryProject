@@ -31,11 +31,8 @@ namespace TheBuryProject.ViewModels
         {
             TipoDocumentoCliente.DNI => "DNI",
             TipoDocumentoCliente.ReciboSueldo => "Recibo de Sueldo",
-            TipoDocumentoCliente.ServicioLuz => "Servicio de Luz",
-            TipoDocumentoCliente.ServicioGas => "Servicio de Gas",
-            TipoDocumentoCliente.ServicioAgua => "Servicio de Agua",
+            TipoDocumentoCliente.Servicio => "Servicio",
             TipoDocumentoCliente.ConstanciaCUIL => "Constancia CUIL",
-            TipoDocumentoCliente.DeclaracionJurada => "Declaraci�n Jurada",
             TipoDocumentoCliente.Veraz => "Veraz",
             TipoDocumentoCliente.Otro => "Otro",
             _ => "Desconocido"
@@ -106,7 +103,15 @@ namespace TheBuryProject.ViewModels
         // Para filtros
         public bool? SoloPendientes { get; set; }
         public bool? SoloVencidos { get; set; }
+
+        // Flujo de retorno a venta con crédito
+        public int? ReturnToVentaId { get; set; }
+
+        // Gestión avanzada
+        public int? DocumentoAReemplazarId { get; set; }
+        public bool ReemplazarExistente { get; set; }
+        public string? DocumentoAReemplazarNombre { get; set; }
     }
 
-    
+
 }

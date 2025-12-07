@@ -7,6 +7,8 @@ using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.Services.Validators;
 using TheBuryProject.ViewModels;
+using TheBuryProject.ViewModels.Requests;
+using TheBuryProject.ViewModels.Responses;
 
 namespace TheBuryProject.Services
 {
@@ -104,6 +106,8 @@ namespace TheBuryProject.Services
                 var venta = _mapper.Map<Venta>(viewModel);
 
                 venta.Numero = await _numberGenerator.GenerarNumeroAsync(viewModel.Estado);
+
+                AgregarDetalles(venta, viewModel.Detalles);
 
                 CalcularTotales(venta);
 
@@ -207,6 +211,16 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al confirmar venta {Id}", id);
                 throw;
             }
+        }
+
+        public async Task AsociarCreditoAVentaAsync(int ventaId, int creditoId)
+        {
+            var venta = await _context.Ventas.FindAsync(ventaId);
+            if (venta == null)
+                throw new InvalidOperationException(VentaConstants.ErrorMessages.VENTA_NO_ENCONTRADA);
+
+            venta.CreditoId = creditoId;
+            await _context.SaveChangesAsync();
         }
 
         public async Task<bool> CancelarVentaAsync(int id, string motivo)
@@ -537,6 +551,11 @@ namespace TheBuryProject.Services
             return credito.SaldoPendiente >= monto;
         }
 
+        public CalculoTotalesVentaResponse CalcularTotalesPreview(List<DetalleCalculoVentaRequest> detalles, decimal descuentoGeneral, bool descuentoEsPorcentaje)
+        {
+            return CalcularTotalesInterno(detalles, descuentoGeneral, descuentoEsPorcentaje);
+        }
+
         #endregion
 
         #region MÃ©todos Auxiliares - Cheques
@@ -601,10 +620,54 @@ namespace TheBuryProject.Services
 
         private void CalcularTotales(Venta venta)
         {
-            venta.Subtotal = venta.Detalles.Sum(d => d.Subtotal);
-            var subtotalConDescuento = venta.Subtotal - venta.Descuento;
-            venta.IVA = subtotalConDescuento * VentaConstants.IVA_RATE;
-            venta.Total = subtotalConDescuento + venta.IVA;
+            var detallesList = venta.Detalles.ToList();
+
+            var detalleRequests = detallesList
+                .Select(d => new DetalleCalculoVentaRequest
+                {
+                    ProductoId = d.ProductoId,
+                    Cantidad = d.Cantidad,
+                    PrecioUnitario = d.PrecioUnitario,
+                    Descuento = d.Descuento
+                })
+                .ToList();
+
+            var resultado = CalcularTotalesInterno(detalleRequests, venta.Descuento, false);
+
+            for (var i = 0; i < detallesList.Count; i++)
+            {
+                var detalle = detallesList[i];
+                var request = detalleRequests[i];
+                var subtotalDetalle = Math.Max(0, (request.PrecioUnitario * request.Cantidad) - request.Descuento);
+                detalle.Subtotal = subtotalDetalle;
+            }
+
+            venta.Subtotal = resultado.Subtotal;
+            venta.IVA = resultado.IVA;
+            venta.Total = resultado.Total;
+        }
+
+        private CalculoTotalesVentaResponse CalcularTotalesInterno(IEnumerable<DetalleCalculoVentaRequest> detalles, decimal descuentoGeneral, bool descuentoEsPorcentaje)
+        {
+            var subtotal = detalles
+                .Select(d => Math.Max(0, (d.PrecioUnitario * d.Cantidad) - d.Descuento))
+                .Sum();
+
+            var descuentoCalculado = descuentoEsPorcentaje
+                ? subtotal * (descuentoGeneral / 100)
+                : descuentoGeneral;
+
+            var subtotalConDescuento = Math.Max(0, subtotal - descuentoCalculado);
+            var iva = subtotalConDescuento * VentaConstants.IVA_RATE;
+            var total = subtotalConDescuento + iva;
+
+            return new CalculoTotalesVentaResponse
+            {
+                Subtotal = subtotal,
+                DescuentoGeneralAplicado = descuentoCalculado,
+                IVA = iva,
+                Total = total
+            };
         }
 
         private void ActualizarDatosVenta(Venta venta, VentaViewModel viewModel)
@@ -626,6 +689,16 @@ namespace TheBuryProject.Services
             {
                 var detalle = _mapper.Map<VentaDetalle>(detalleVM);
                 detalle.VentaId = venta.Id;
+                venta.Detalles.Add(detalle);
+            }
+        }
+
+        private void AgregarDetalles(Venta venta, List<VentaDetalleViewModel> detallesVM)
+        {
+            foreach (var detalleVM in detallesVM)
+            {
+                var detalle = _mapper.Map<VentaDetalle>(detalleVM);
+                detalle.Venta = venta;
                 venta.Detalles.Add(detalle);
             }
         }

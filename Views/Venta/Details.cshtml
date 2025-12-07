@@ -1,209 +1,213 @@
-﻿@model TheBuryProject.ViewModels.VentaViewModel
+@model TheBuryProject.ViewModels.VentaViewModel
 
 @{
     ViewData["Title"] = "Detalles de Venta";
-
-    var puedeEditar = Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Cotizacion ||
-                      Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Presupuesto;
-    var puedeConfirmar = Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Presupuesto &&
-                         (!Model.RequiereAutorizacion || Model.EstadoAutorizacion == TheBuryProject.Models.Enums.EstadoAutorizacionVenta.Autorizada);
-    var puedeFacturar = Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Confirmada &&
-                        (!Model.RequiereAutorizacion || Model.EstadoAutorizacion == TheBuryProject.Models.Enums.EstadoAutorizacionVenta.Autorizada);
-    var puedeCancelar = Model.Estado != TheBuryProject.Models.Enums.EstadoVenta.Cancelada;
-    var puedeAutorizar = Model.EstadoAutorizacion == TheBuryProject.Models.Enums.EstadoAutorizacionVenta.PendienteAutorizacion;
 }
 
-<section class="container-fluid px-0">
-    <div class="col-lg-12 mx-auto">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0"><i class="bi bi-file-earmark-text text-info me-2"></i> Detalles de Venta</h2>
-            <a asp-action="Index" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver al Listado
-            </a>
+@section Styles {
+    <link rel="stylesheet" href="~/css/venta.css" asp-append-version="true" />
+}
+
+<section class="container-fluid py-4 text-light venta-section">
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <h2 class="mb-1"><i class="bi bi-file-earmark-text text-info me-2"></i> Detalles de Venta</h2>
+                    <p class="mb-0 text-muted">Número <strong>@Model.Numero</strong> | Cliente: @Model.ClienteNombre</p>
+                </div>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver al Listado
+                </a>
+            </div>
         </div>
 
-        <!-- Alertas -->
-        @foreach (var tipo in new[] { "Success", "Warning", "Error" })
-        {
-            if (TempData[tipo] != null)
+        <div class="col-12">
+            @foreach (var tipo in new[] { "Success", "Warning", "Error" })
             {
-                var clase = tipo == "Success" ? "alert-success"
-                           : tipo == "Warning" ? "alert-warning"
-                           : "alert-danger";
+                if (TempData[tipo] != null)
+                {
+                    var clase = tipo == "Success" ? "alert-success"
+                               : tipo == "Warning" ? "alert-warning"
+                               : "alert-danger";
 
-                <div class="alert @clase alert-dismissible fade show">
-                    <i class="bi @(tipo == "Success" ? "bi-check-circle" : tipo == "Warning" ? "bi-exclamation-triangle" : "bi-x-circle")"></i>
-                    @TempData[tipo]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <div class="alert @clase alert-dismissible fade show">
+                        <i class="bi @(tipo == "Success" ? "bi-check-circle" : tipo == "Warning" ? "bi-exclamation-triangle" : "bi-x-circle")"></i>
+                        @TempData[tipo]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+            }
+
+            @if (Model.DebeAlertarAutorizacionPendiente)
+            {
+                <div class="alert alert-warning d-flex align-items-center gap-2">
+                    <i class="bi bi-shield-exclamation"></i>
+                    <div>Pendiente de autorización: excede el límite de crédito del cliente.</div>
                 </div>
             }
-        }
 
-        @if (Model.RequiereAutorizacion && Model.EstadoAutorizacion == TheBuryProject.Models.Enums.EstadoAutorizacionVenta.PendienteAutorizacion)
-        {
-            <div class="alert alert-warning">
-                <i class="bi bi-shield-exclamation"></i>
-                Pendiente de autorización: excede el límite de crédito del cliente.
-            </div>
-        }
-
-        @if (Model.EstadoAutorizacion == TheBuryProject.Models.Enums.EstadoAutorizacionVenta.Rechazada)
-        {
-            <div class="alert alert-danger">
-                <i class="bi bi-x-circle"></i>
-                Venta rechazada por <strong>@Model.UsuarioAutoriza</strong> el @Model.FechaAutorizacion?.ToString("dd/MM/yyyy HH:mm").
-                @if (!string.IsNullOrEmpty(Model.MotivoRechazo))
-                {
-                    <br />
-                    <strong>Motivo:</strong> @Model.MotivoRechazo
-                }
-            </div>
-        }
-
-        <!-- Información General -->
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-surface-soft border-bottom border-dark-subtle d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-primary"><i class="bi bi-info-circle me-2"></i> Información General</h5>
-                <span class="badge 
-                    @(Model.Estado switch {
-                        TheBuryProject.Models.Enums.EstadoVenta.Cotizacion => "bg-light text-dark",
-                        TheBuryProject.Models.Enums.EstadoVenta.Presupuesto => "bg-info",
-                        TheBuryProject.Models.Enums.EstadoVenta.Confirmada => "bg-success",
-                        TheBuryProject.Models.Enums.EstadoVenta.Facturada => "bg-warning text-dark",
-                        TheBuryProject.Models.Enums.EstadoVenta.Entregada => "bg-secondary",
-                        TheBuryProject.Models.Enums.EstadoVenta.Cancelada => "bg-danger",
-                        _ => "bg-secondary"
-                    })">
-                    @Model.Estado
-                </span>
-            </div>
-
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <table class="table table-sm mb-0">
-                            <tr><th>Número:</th><td><strong>@Model.Numero</strong></td></tr>
-                            <tr><th>Cliente:</th><td>@Model.ClienteNombre</td></tr>
-                            <tr><th>Documento:</th><td>@Model.ClienteDocumento</td></tr>
-                            <tr><th>Fecha Venta:</th><td>@Model.FechaVenta.ToString("dd/MM/yyyy")</td></tr>
-                            <tr><th>Tipo Pago:</th><td><span class="badge bg-secondary">@Model.TipoPago</span></td></tr>
-                        </table>
-                    </div>
-                    <div class="col-md-6">
-                        <table class="table table-sm mb-0">
-                            @if (!string.IsNullOrEmpty(Model.VendedorNombre))
-                            { <tr><th>Vendedor:</th><td>@Model.VendedorNombre</td></tr> }
-                            @if (Model.FechaConfirmacion.HasValue)
-                            { <tr><th>Confirmada:</th><td>@Model.FechaConfirmacion.Value.ToString("dd/MM/yyyy HH:mm")</td></tr> }
-                            @if (Model.FechaFacturacion.HasValue)
-                            { <tr><th>Facturada:</th><td>@Model.FechaFacturacion.Value.ToString("dd/MM/yyyy HH:mm")</td></tr> }
-                            @if (Model.FechaCancelacion.HasValue)
-                            { <tr><th>Cancelada:</th><td>@Model.FechaCancelacion.Value.ToString("dd/MM/yyyy HH:mm")</td></tr> }
-                            <tr><th>Creada:</th><td>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td></tr>
-                        </table>
+            @if (Model.FueRechazada)
+            {
+                <div class="alert alert-danger d-flex align-items-start gap-2">
+                    <i class="bi bi-x-circle"></i>
+                    <div>
+                        Venta rechazada por <strong>@Model.UsuarioAutoriza</strong> el @Model.FechaAutorizacion?.ToString("dd/MM/yyyy HH:mm").
+                        @if (!string.IsNullOrEmpty(Model.MotivoRechazo))
+                        {
+                            <br />
+                            <strong>Motivo:</strong> @Model.MotivoRechazo
+                        }
                     </div>
                 </div>
+            }
+        </div>
 
-                @if (!string.IsNullOrEmpty(Model.Observaciones))
-                {
-                    <div class="alert alert-info mt-3 mb-0"><strong>Observaciones:</strong> @Model.Observaciones</div>
-                }
+        <div class="col-12">
+            <div class="card bg-dark border-0 shadow-sm mb-4">
+                <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i> Información General</h5>
+                    <span class="@Model.EstadoBadgeClass">@Model.EstadoDisplay</span>
+                </div>
 
-                @if (!string.IsNullOrEmpty(Model.MotivoCancelacion))
-                {
-                    <div class="alert alert-danger mt-3 mb-0"><strong>Motivo de Cancelación:</strong> @Model.MotivoCancelacion</div>
-                }
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <tbody>
+                                    <tr><th class="text-muted">Número</th><td class="text-light fw-semibold">@Model.Numero</td></tr>
+                                    <tr><th class="text-muted">Cliente</th><td>@Model.ClienteNombre</td></tr>
+                                    <tr><th class="text-muted">Documento</th><td>@Model.ClienteDocumento</td></tr>
+                                    <tr><th class="text-muted">Fecha Venta</th><td>@Model.FechaVenta.ToString("dd/MM/yyyy")</td></tr>
+                                    <tr><th class="text-muted">Tipo Pago</th><td><span class="badge bg-secondary">@Model.TipoPago</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <tbody>
+                                    @if (!string.IsNullOrEmpty(Model.VendedorNombre))
+                                    { <tr><th class="text-muted">Vendedor</th><td>@Model.VendedorNombre</td></tr> }
+                                    @if (Model.FechaConfirmacion.HasValue)
+                                    { <tr><th class="text-muted">Confirmada</th><td>@Model.FechaConfirmacion.Value.ToString("dd/MM/yyyy HH:mm")</td></tr> }
+                                    @if (Model.FechaFacturacion.HasValue)
+                                    { <tr><th class="text-muted">Facturada</th><td>@Model.FechaFacturacion.Value.ToString("dd/MM/yyyy HH:mm")</td></tr> }
+                                    @if (Model.FechaCancelacion.HasValue)
+                                    { <tr><th class="text-muted">Cancelada</th><td>@Model.FechaCancelacion.Value.ToString("dd/MM/yyyy HH:mm")</td></tr> }
+                                    <tr><th class="text-muted">Creada</th><td>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Observaciones))
+                    {
+                        <div class="alert alert-info mt-3 mb-0"><strong>Observaciones:</strong> @Model.Observaciones</div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.MotivoCancelacion))
+                    {
+                        <div class="alert alert-danger mt-3 mb-0"><strong>Motivo de Cancelación:</strong> @Model.MotivoCancelacion</div>
+                    }
+                </div>
             </div>
         </div>
 
-        <!-- Productos -->
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
-                <h5 class="mb-0 text-success"><i class="bi bi-box-seam me-2"></i> Productos</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Código</th>
-                                <th>Producto</th>
-                                <th class="text-center">Cantidad</th>
-                                <th class="text-end">Precio Unit.</th>
-                                <th class="text-end">Descuento</th>
-                                <th class="text-end">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var detalle in Model.Detalles)
-                            {
+        <div class="col-12">
+            <div class="card bg-dark border-0 shadow-sm mb-4">
+                <div class="card-header bg-secondary text-light">
+                    <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i> Productos</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle mb-0">
+                            <thead class="table-secondary text-dark">
                                 <tr>
-                                    <td>@detalle.ProductoCodigo</td>
-                                    <td>@detalle.ProductoNombre</td>
-                                    <td class="text-center">@detalle.Cantidad</td>
-                                    <td class="text-end">@detalle.PrecioUnitario.ToString("C2")</td>
-                                    <td class="text-end">@detalle.Descuento.ToString("C2")</td>
-                                    <td class="text-end fw-semibold">@detalle.Subtotal.ToString("C2")</td>
+                                    <th>Código</th>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio Unit.</th>
+                                    <th class="text-end">Descuento</th>
+                                    <th class="text-end">Subtotal</th>
                                 </tr>
-                            }
-                        </tbody>
-                        <tfoot class="table-light">
-                            <tr><td colspan="5" class="text-end fw-semibold">Subtotal:</td><td class="text-end">@Model.Subtotal.ToString("C2")</td></tr>
-                            @if (Model.Descuento > 0)
-                            { <tr><td colspan="5" class="text-end fw-semibold">Descuento:</td><td class="text-end text-danger">-@Model.Descuento.ToString("C2")</td></tr> }
-                            <tr><td colspan="5" class="text-end fw-semibold">IVA (21%):</td><td class="text-end">@Model.IVA.ToString("C2")</td></tr>
-                            <tr class="table-success">
-                                <td colspan="5" class="text-end fs-5">TOTAL:</td>
-                                <td class="text-end fs-5 fw-bold">@Model.Total.ToString("C2")</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var detalle in Model.Detalles)
+                                {
+                                    <tr>
+                                        <td>@detalle.ProductoCodigo</td>
+                                        <td>@detalle.ProductoNombre</td>
+                                        <td class="text-center">@detalle.Cantidad</td>
+                                        <td class="text-end">@detalle.PrecioUnitario.ToString("C2")</td>
+                                        <td class="text-end">@detalle.Descuento.ToString("C2")</td>
+                                        <td class="text-end fw-semibold">@detalle.Subtotal.ToString("C2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-secondary text-dark">
+                                <tr><td colspan="5" class="text-end fw-semibold">Subtotal:</td><td class="text-end">@Model.Subtotal.ToString("C2")</td></tr>
+                                @if (Model.Descuento > 0)
+                                { <tr><td colspan="5" class="text-end fw-semibold">Descuento:</td><td class="text-end text-danger">-@Model.Descuento.ToString("C2")</td></tr> }
+                                <tr><td colspan="5" class="text-end fw-semibold">IVA (21%):</td><td class="text-end">@Model.IVA.ToString("C2")</td></tr>
+                                <tr class="table-success">
+                                    <td colspan="5" class="text-end fs-5">TOTAL:</td>
+                                    <td class="text-end fs-5 fw-bold">@Model.Total.ToString("C2")</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Acciones -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0"><i class="bi bi-gear"></i> Acciones</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-flex flex-wrap gap-2">
-                    @if (puedeEditar)
-                    { <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning"><i class="bi bi-pencil"></i> Editar</a> }
+        <div class="col-12">
+            <div class="card bg-dark border-0 shadow-sm">
+                <div class="card-header bg-dark border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-gear"></i> Acciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        @if (Model.PuedeEditar)
+                        {
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning"><i class="bi bi-pencil"></i> Editar</a>
+                        }
 
-                    @if (puedeAutorizar)
-                    {
-                        <a asp-action="Autorizar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-check-lg"></i> Autorizar</a>
-                        <a asp-action="Rechazar" asp-route-id="@Model.Id" class="btn btn-danger"><i class="bi bi-x-lg"></i> Rechazar</a>
-                    }
+                        @if (Model.PuedeAutorizar)
+                        {
+                            <a asp-action="Autorizar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-check-lg"></i> Autorizar</a>
+                            <a asp-action="Rechazar" asp-route-id="@Model.Id" class="btn btn-danger"><i class="bi bi-x-lg"></i> Rechazar</a>
+                        }
 
-                    @if (puedeConfirmar)
-                    {
-                        <form asp-action="Confirmar" asp-route-id="@Model.Id" method="post" class="d-inline"
-                              onsubmit="return confirm('¿Confirmar esta venta? Se descontará el stock.');">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> Confirmar</button>
-                        </form>
-                    }
+                        @if (Model.PuedeConfirmar)
+                        {
+                            <form asp-action="Confirmar" asp-route-id="@Model.Id" method="post" class="d-inline" onsubmit="return confirm('¿Confirmar esta venta? Se descontará el stock.');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> Confirmar</button>
+                            </form>
+                        }
 
-                    @if (puedeFacturar)
-                    { <a asp-action="Facturar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-receipt"></i> Facturar</a> }
+                        @if (Model.PuedeFacturar)
+                        {
+                            <a asp-action="Facturar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-receipt"></i> Facturar</a>
+                        }
 
-                    @if (Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Confirmada ||
-                         Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Facturada ||
-                         Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Entregada)
-                    {
-                        <a asp-controller="Devolucion" asp-action="Create" asp-route-ventaId="@Model.Id" class="btn btn-outline-warning">
-                            <i class="bi bi-arrow-return-left"></i> Crear Devolución
-                        </a>
-                    }
+                        @if (Model.PuedeCrearDevolucion)
+                        {
+                            <a asp-controller="Devolucion" asp-action="Create" asp-route-ventaId="@Model.Id" class="btn btn-outline-warning">
+                                <i class="bi bi-arrow-return-left"></i> Crear Devolución
+                            </a>
+                        }
 
-                    @if (puedeCancelar)
-                    { <a asp-action="Cancelar" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar</a> }
+                        @if (Model.PuedeCancelar)
+                        {
+                            <a asp-action="Cancelar" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar</a>
+                        }
 
-                    @if (puedeEditar)
-                    { <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</a> }
+                        @if (Model.PuedeEditar)
+                        {
+                            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</a>
+                        }
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,60 +1,70 @@
 ﻿@model TheBuryProject.ViewModels.AlertaStockEstadisticasViewModel
+
 @{
     ViewData["Title"] = "Estadísticas de Alertas";
 }
 
-<div class="container-fluid">
-    <div class="row mb-3">
-        <div class="col">
-            <h2>📊 Estadísticas de Alertas de Stock</h2>
-            <p class="text-muted">Dashboard de análisis y métricas de gestión de stock</p>
+<div class="container-fluid px-0">
+
+    <!-- Header de página -->
+    <div class="d-flex align-items-start justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Alertas de stock</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <span>Estadísticas de alertas</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Dashboard de análisis y métricas de la gestión de stock.
+            </p>
         </div>
-        <div class="col-auto">
-            <a asp-action="Index" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Volver
             </a>
-            <form asp-action="GenerarAlertas" method="post" style="display:inline;">
+
+            <form asp-action="GenerarAlertas" method="post" class="d-inline-block">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-arrow-clockwise"></i> Actualizar Datos
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar datos
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- Resumen General -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card border-warning">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Total de Alertas</h6>
+    <!-- Resumen general -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card card-animate border-warning">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted text-uppercase small mb-1">Total de alertas</h6>
                     <h2 class="mb-0">@Model.TotalAlertas</h2>
                     <small class="text-muted">Todas las alertas</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-danger">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Alertas Pendientes</h6>
+        <div class="col-6 col-md-3">
+            <div class="card card-animate border-danger">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted text-uppercase small mb-1">Pendientes</h6>
                     <h2 class="mb-0 text-danger">@Model.AlertasPendientes</h2>
                     <small class="text-muted">Requieren atención</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-success">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Alertas Resueltas</h6>
+        <div class="col-6 col-md-3">
+            <div class="card card-animate border-success">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted text-uppercase small mb-1">Resueltas</h6>
                     <h2 class="mb-0 text-success">@Model.AlertasResueltas</h2>
                     <small class="text-muted">Gestionadas</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-secondary">
-                <div class="card-body text-center">
-                    <h6 class="text-muted">Alertas Ignoradas</h6>
+        <div class="col-6 col-md-3">
+            <div class="card card-animate border-secondary">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted text-uppercase small mb-1">Ignoradas</h6>
                     <h2 class="mb-0 text-secondary">@Model.AlertasIgnoradas</h2>
                     <small class="text-muted">Descartadas</small>
                 </div>
@@ -62,66 +72,80 @@
         </div>
     </div>
 
-    <!-- Alertas por Prioridad -->
-    <div class="row mb-4">
+    <!-- Alertas por prioridad -->
+    <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card border-danger">
+            <div class="card card-animate border-danger h-100">
                 <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-exclamation-octagon-fill"></i> Prioridad Crítica
-                    </h5>
+                    <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-octagon-fill"></i>
+                        <span>Prioridad crítica</span>
+                    </h2>
                 </div>
                 <div class="card-body text-center">
-                    <h1 class="display-4 text-danger">@Model.AlertasCriticas</h1>
+                    <h1 class="display-5 text-danger mb-1">@Model.AlertasCriticas</h1>
                     <p class="text-muted mb-0">Requieren acción inmediata</p>
+
                     @if (Model.AlertasCriticas > 0)
                     {
                         <hr />
-                        <a asp-action="Index" asp-route-Prioridad="@((int)TheBuryProject.Models.Enums.PrioridadAlerta.Critica)" asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
+                        <a asp-action="Index"
+                           asp-route-Prioridad="@((int)TheBuryProject.Models.Enums.PrioridadAlerta.Critica)"
+                           asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
                            class="btn btn-danger btn-sm">
-                            Ver Alertas Críticas
+                            Ver alertas críticas
                         </a>
                     }
                 </div>
             </div>
         </div>
+
         <div class="col-md-4">
-            <div class="card border-warning">
+            <div class="card card-animate border-warning h-100">
                 <div class="card-header bg-warning">
-                    <h5 class="mb-0">
-                        <i class="bi bi-exclamation-triangle-fill"></i> Prioridad Alta
-                    </h5>
+                    <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span>Prioridad alta</span>
+                    </h2>
                 </div>
                 <div class="card-body text-center">
-                    <h1 class="display-4 text-warning">@Model.AlertasAltas</h1>
+                    <h1 class="display-5 text-warning mb-1">@Model.AlertasAltas</h1>
                     <p class="text-muted mb-0">Atención prioritaria</p>
+
                     @if (Model.AlertasAltas > 0)
                     {
                         <hr />
-                        <a asp-action="Index" asp-route-Prioridad="@((int)TheBuryProject.Models.Enums.PrioridadAlerta.Alta)" asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
+                        <a asp-action="Index"
+                           asp-route-Prioridad="@((int)TheBuryProject.Models.Enums.PrioridadAlerta.Alta)"
+                           asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
                            class="btn btn-warning btn-sm">
-                            Ver Alertas Altas
+                            Ver alertas altas
                         </a>
                     }
                 </div>
             </div>
         </div>
+
         <div class="col-md-4">
-            <div class="card border-info">
+            <div class="card card-animate border-info h-100">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-info-circle-fill"></i> Prioridad Media
-                    </h5>
+                    <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>Prioridad media</span>
+                    </h2>
                 </div>
                 <div class="card-body text-center">
-                    <h1 class="display-4 text-info">@Model.AlertasMedias</h1>
+                    <h1 class="display-5 text-info mb-1">@Model.AlertasMedias</h1>
                     <p class="text-muted mb-0">Monitoreo regular</p>
+
                     @if (Model.AlertasMedias > 0)
                     {
                         <hr />
-                        <a asp-action="Index" asp-route-Prioridad="@((int)TheBuryProject.Models.Enums.PrioridadAlerta.Media)" asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
+                        <a asp-action="Index"
+                           asp-route-Prioridad="@((int)TheBuryProject.Models.Enums.PrioridadAlerta.Media)"
+                           asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
                            class="btn btn-info btn-sm">
-                            Ver Alertas Medias
+                            Ver alertas medias
                         </a>
                     }
                 </div>
@@ -129,70 +153,82 @@
         </div>
     </div>
 
-    <!-- Alertas por Tipo -->
+    <!-- Alertas por tipo -->
     <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
+        <div class="col-12">
+            <div class="card card-animate">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-bar-chart"></i> Distribución por Tipo de Alerta
-                    </h5>
+                    <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Distribución por tipo de alerta</span>
+                    </h2>
                 </div>
                 <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <i class="bi bi-exclamation-octagon text-danger" style="font-size: 3rem;"></i>
+                    <div class="row text-center g-4">
+                        <div class="col-6 col-md-3">
+                            <div class="mb-2">
+                                <i class="bi bi-exclamation-octagon text-danger" style="font-size: 2.6rem;"></i>
                             </div>
-                            <h3 class="text-danger">@Model.AlertasStockAgotado</h3>
-                            <p class="text-muted">Stock Agotado</p>
+                            <h3 class="text-danger mb-1">@Model.AlertasStockAgotado</h3>
+                            <p class="text-muted mb-2">Stock agotado</p>
                             @if (Model.AlertasStockAgotado > 0)
                             {
-                                <a asp-action="Index" asp-route-Tipo="@((int)TheBuryProject.Models.Enums.TipoAlertaStock.StockAgotado)" asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
+                                <a asp-action="Index"
+                                   asp-route-Tipo="@((int)TheBuryProject.Models.Enums.TipoAlertaStock.StockAgotado)"
+                                   asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
                                    class="btn btn-sm btn-outline-danger">
-                                    Ver Detalles
+                                    Ver detalles
                                 </a>
                             }
                         </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+
+                        <div class="col-6 col-md-3">
+                            <div class="mb-2">
+                                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2.6rem;"></i>
                             </div>
-                            <h3 class="text-warning">@Model.AlertasStockCritico</h3>
-                            <p class="text-muted">Stock Crítico</p>
+                            <h3 class="text-warning mb-1">@Model.AlertasStockCritico</h3>
+                            <p class="text-muted mb-2">Stock crítico</p>
                             @if (Model.AlertasStockCritico > 0)
                             {
-                                <a asp-action="Index" asp-route-Tipo="@((int)TheBuryProject.Models.Enums.TipoAlertaStock.StockCritico)" asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
+                                <a asp-action="Index"
+                                   asp-route-Tipo="@((int)TheBuryProject.Models.Enums.TipoAlertaStock.StockCritico)"
+                                   asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
                                    class="btn btn-sm btn-outline-warning">
-                                    Ver Detalles
+                                    Ver detalles
                                 </a>
                             }
                         </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <i class="bi bi-exclamation-circle text-info" style="font-size: 3rem;"></i>
+
+                        <div class="col-6 col-md-3">
+                            <div class="mb-2">
+                                <i class="bi bi-exclamation-circle text-info" style="font-size: 2.6rem;"></i>
                             </div>
-                            <h3 class="text-info">@Model.AlertasStockBajo</h3>
-                            <p class="text-muted">Stock Bajo</p>
+                            <h3 class="text-info mb-1">@Model.AlertasStockBajo</h3>
+                            <p class="text-muted mb-2">Stock bajo</p>
                             @if (Model.AlertasStockBajo > 0)
                             {
-                                <a asp-action="Index" asp-route-Tipo="@((int)TheBuryProject.Models.Enums.TipoAlertaStock.StockBajo)" asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
+                                <a asp-action="Index"
+                                   asp-route-Tipo="@((int)TheBuryProject.Models.Enums.TipoAlertaStock.StockBajo)"
+                                   asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
                                    class="btn btn-sm btn-outline-info">
-                                    Ver Detalles
+                                    Ver detalles
                                 </a>
                             }
                         </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <i class="bi bi-clock-history text-secondary" style="font-size: 3rem;"></i>
+
+                        <div class="col-6 col-md-3">
+                            <div class="mb-2">
+                                <i class="bi bi-clock-history text-secondary" style="font-size: 2.6rem;"></i>
                             </div>
-                            <h3 class="text-secondary">@Model.AlertasSinMovimiento</h3>
-                            <p class="text-muted">Sin Movimiento</p>
+                            <h3 class="text-secondary mb-1">@Model.AlertasSinMovimiento</h3>
+                            <p class="text-muted mb-2">Sin movimiento</p>
                             @if (Model.AlertasSinMovimiento > 0)
                             {
-                                <a asp-action="Index" asp-route-Tipo="@((int)TheBuryProject.Models.Enums.TipoAlertaStock.ProductoSinMovimiento)" asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
+                                <a asp-action="Index"
+                                   asp-route-Tipo="@((int)TheBuryProject.Models.Enums.TipoAlertaStock.ProductoSinMovimiento)"
+                                   asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
                                    class="btn btn-sm btn-outline-secondary">
-                                    Ver Detalles
+                                    Ver detalles
                                 </a>
                             }
                         </div>
@@ -202,63 +238,78 @@
         </div>
     </div>
 
-    <!-- Alertas Urgentes y Vencidas -->
-    <div class="row mb-4">
+    <!-- Alertas urgentes y vencidas -->
+    <div class="row g-3 mb-4">
         <div class="col-md-6">
-            <div class="card border-danger">
+            <div class="card card-animate border-danger h-100">
                 <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-bell-fill"></i> Alertas Urgentes
-                    </h5>
+                    <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-bell-fill"></i>
+                        <span>Alertas urgentes</span>
+                    </h2>
                 </div>
                 <div class="card-body">
-                    <h2 class="text-center text-danger display-3">@Model.AlertasUrgentes</h2>
-                    <p class="text-center text-muted">Notificaciones que requieren acción inmediata</p>
+                    <h2 class="text-center text-danger display-5 mb-1">@Model.AlertasUrgentes</h2>
+                    <p class="text-center text-muted mb-3">
+                        Notificaciones que requieren acción inmediata.
+                    </p>
+
                     @if (Model.AlertasUrgentes > 0)
                     {
                         <div class="alert alert-danger">
-                            <i class="bi bi-exclamation-triangle-fill"></i>
-                            <strong>¡Atención!</strong> Hay alertas urgentes que requieren gestión inmediata.
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            <strong>Atención.</strong> Hay alertas urgentes pendientes de gestión.
                         </div>
-                        <a asp-action="Index" asp-route-SoloUrgentes="true" asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
+                        <a asp-action="Index"
+                           asp-route-SoloUrgentes="true"
+                           asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
                            class="btn btn-danger w-100">
-                            <i class="bi bi-bell"></i> Ver Alertas Urgentes
+                            <i class="bi bi-bell me-1"></i>Ver alertas urgentes
                         </a>
                     }
                     else
                     {
-                        <div class="alert alert-success mb-0">
-                            <i class="bi bi-check-circle-fill"></i> No hay alertas urgentes pendientes.
+                        <div class="alert alert-success mb-0 text-center">
+                            <i class="bi bi-check-circle-fill me-1"></i>
+                            No hay alertas urgentes pendientes.
                         </div>
                     }
                 </div>
             </div>
         </div>
+
         <div class="col-md-6">
-            <div class="card border-warning">
+            <div class="card card-animate border-warning h-100">
                 <div class="card-header bg-warning">
-                    <h5 class="mb-0">
-                        <i class="bi bi-clock-history"></i> Alertas Vencidas
-                    </h5>
+                    <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Alertas vencidas</span>
+                    </h2>
                 </div>
                 <div class="card-body">
-                    <h2 class="text-center text-warning display-3">@Model.AlertasVencidas</h2>
-                    <p class="text-center text-muted">Alertas con más de 7 días sin resolver</p>
+                    <h2 class="text-center text-warning display-5 mb-1">@Model.AlertasVencidas</h2>
+                    <p class="text-center text-muted mb-3">
+                        Alertas con más de 7 días sin resolver.
+                    </p>
+
                     @if (Model.AlertasVencidas > 0)
                     {
                         <div class="alert alert-warning">
-                            <i class="bi bi-clock"></i>
-                            <strong>Importante:</strong> Hay alertas que llevan demasiado tiempo sin resolverse.
+                            <i class="bi bi-clock me-1"></i>
+                            <strong>Importante.</strong> Hay alertas que llevan demasiado tiempo sin resolverse.
                         </div>
-                        <a asp-action="Index" asp-route-SoloVencidas="true" asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
+                        <a asp-action="Index"
+                           asp-route-SoloVencidas="true"
+                           asp-route-Estado="@((int)TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)"
                            class="btn btn-warning w-100">
-                            <i class="bi bi-clock-history"></i> Ver Alertas Vencidas
+                            <i class="bi bi-clock-history me-1"></i>Ver alertas vencidas
                         </a>
                     }
                     else
                     {
-                        <div class="alert alert-success mb-0">
-                            <i class="bi bi-check-circle-fill"></i> No hay alertas vencidas.
+                        <div class="alert alert-success mb-0 text-center">
+                            <i class="bi bi-check-circle-fill me-1"></i>
+                            No hay alertas vencidas.
                         </div>
                     }
                 </div>
@@ -266,32 +317,37 @@
         </div>
     </div>
 
-    <!-- Métricas de Rendimiento -->
+    <!-- Métricas de rendimiento -->
     <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
+        <div class="col-12">
+            <div class="card card-animate">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-speedometer2"></i> Métricas de Rendimiento
-                    </h5>
+                    <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Métricas de rendimiento</span>
+                    </h2>
                 </div>
                 <div class="card-body">
-                    <div class="row text-center">
+                    <div class="row text-center g-3">
                         <div class="col-md-4">
-                            <h6 class="text-muted">Promedio de Días para Resolver</h6>
-                            <h2 class="text-success">@Model.PromedioResolucionDias.ToString("N1")</h2>
+                            <h6 class="text-muted text-uppercase small mb-1">Promedio de días para resolver</h6>
+                            <h2 class="text-success mb-0">
+                                @Model.PromedioResolucionDias.ToString("N1")
+                            </h2>
                             <small class="text-muted">días</small>
                         </div>
                         <div class="col-md-4">
-                            <h6 class="text-muted">Tasa de Resolución</h6>
-                            <h2 class="@(Model.TasaResolucionPorcentaje >= 80 ? "text-success" : Model.TasaResolucionPorcentaje >= 50 ? "text-warning" : "text-danger")">
+                            <h6 class="text-muted text-uppercase small mb-1">Tasa de resolución</h6>
+                            <h2 class="mb-0 @(Model.TasaResolucionPorcentaje >= 80 ? "text-success" : Model.TasaResolucionPorcentaje >= 50 ? "text-warning" : "text-danger")">
                                 @Model.TasaResolucionPorcentaje.ToString("N1")%
                             </h2>
                             <small class="text-muted">alertas resueltas</small>
                         </div>
                         <div class="col-md-4">
-                            <h6 class="text-muted">Productos Afectados</h6>
-                            <h2 class="text-info">@Model.ProductosAfectados</h2>
+                            <h6 class="text-muted text-uppercase small mb-1">Productos afectados</h6>
+                            <h2 class="text-info mb-0">
+                                @Model.ProductosAfectados
+                            </h2>
                             <small class="text-muted">productos distintos</small>
                         </div>
                     </div>
@@ -300,35 +356,36 @@
         </div>
     </div>
 
-    <!-- Accesos Rápidos -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
+    <!-- Accesos rápidos -->
+    <div class="row mb-2">
+        <div class="col-12">
+            <div class="card card-animate">
                 <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-link"></i> Accesos Rápidos
-                    </h5>
+                    <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-link"></i>
+                        <span>Accesos rápidos</span>
+                    </h2>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 mb-2">
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3">
                             <a asp-action="Pendientes" class="btn btn-warning w-100">
-                                <i class="bi bi-exclamation-triangle"></i> Ver Pendientes
+                                <i class="bi bi-exclamation-triangle me-1"></i>Ver pendientes
                             </a>
                         </div>
-                        <div class="col-md-3 mb-2">
+                        <div class="col-6 col-md-3">
                             <a asp-action="Criticos" class="btn btn-danger w-100">
-                                <i class="bi bi-exclamation-octagon"></i> Productos Críticos
+                                <i class="bi bi-exclamation-octagon me-1"></i>Productos críticos
                             </a>
                         </div>
-                        <div class="col-md-3 mb-2">
+                        <div class="col-6 col-md-3">
                             <a asp-action="Index" class="btn btn-primary w-100">
-                                <i class="bi bi-list"></i> Todas las Alertas
+                                <i class="bi bi-list me-1"></i>Todas las alertas
                             </a>
                         </div>
-                        <div class="col-md-3 mb-2">
+                        <div class="col-6 col-md-3">
                             <a asp-controller="Producto" asp-action="Index" class="btn btn-secondary w-100">
-                                <i class="bi bi-box"></i> Gestión de Productos
+                                <i class="bi bi-box me-1"></i>Gestión de productos
                             </a>
                         </div>
                     </div>
@@ -336,4 +393,5 @@
             </div>
         </div>
     </div>
+
 </div>

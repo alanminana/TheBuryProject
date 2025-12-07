@@ -27,7 +27,8 @@
                     <h5 class="mb-0">📝 Proponer Nuevos Precios</h5>
                 </div>
                 <div class="card-body">
-                    <form id="formSimular">
+                    <form id="formSimular" data-simular-url="@Url.Action("Simular")">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" id="productoId" value="@Model.ProductoId" />
 
                         <div class="mb-3">
@@ -111,113 +112,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        document.getElementById('formSimular').addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const productoId = document.getElementById('productoId').value;
-            const precioCompraNuevo = parseFloat(document.getElementById('precioCompraNuevo').value);
-            const precioVentaNuevo = parseFloat(document.getElementById('precioVentaNuevo').value);
-
-            try {
-                const response = await fetch('@Url.Action("Simular")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                    },
-                    body: JSON.stringify({
-                        productoId: parseInt(productoId),
-                        precioCompraPropuesto: precioCompraNuevo,
-                        precioVentaPropuesto: precioVentaNuevo
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    mostrarResultado(result.data);
-                } else {
-                    alert('Error: ' + result.message);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error al realizar la simulación');
-            }
-        });
-
-        function mostrarResultado(data) {
-            // Mostrar tarjeta de resultados
-            document.getElementById('resultadoCard').style.display = 'block';
-
-            // Construir HTML de resultados
-            let html = `
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <h6 class="text-muted">Cambio en Compra</h6>
-                        <h3 class="${data.porcentajeCambioCompra >= 0 ? 'text-danger' : 'text-success'}">
-                            ${data.porcentajeCambioCompra >= 0 ? '↑' : '↓'} ${Math.abs(data.porcentajeCambioCompra).toFixed(2)}%
-                        </h3>
-                        <p class="mb-0">
-                            ${data.diferenciaCompra >= 0 ? '+' : ''}$${data.diferenciaCompra.toFixed(2)}
-                        </p>
-                    </div>
-                    <div class="col-6">
-                        <h6 class="text-muted">Cambio en Venta</h6>
-                        <h3 class="${data.porcentajeCambioVenta >= 0 ? 'text-success' : 'text-danger'}">
-                            ${data.porcentajeCambioVenta >= 0 ? '↑' : '↓'} ${Math.abs(data.porcentajeCambioVenta).toFixed(2)}%
-                        </h3>
-                        <p class="mb-0">
-                            ${data.diferenciaVenta >= 0 ? '+' : ''}$${data.diferenciaVenta.toFixed(2)}
-                        </p>
-                    </div>
-                </div>
-
-                <hr />
-
-                <div class="row">
-                    <div class="col-6">
-                        <h6 class="text-muted">Margen Actual</h6>
-                        <h4>${data.margenActual.toFixed(2)}%</h4>
-                    </div>
-                    <div class="col-6">
-                        <h6 class="text-muted">Margen Propuesto</h6>
-                        <h4 class="${data.margenPropuesto >= data.margenActual ? 'text-success' : 'text-danger'}">
-                            ${data.margenPropuesto.toFixed(2)}%
-                        </h4>
-                    </div>
-                </div>
-
-                <div class="mt-3">
-                    <h6 class="text-muted">Diferencia de Margen</h6>
-                    <h3 class="${data.diferenciaMargen >= 0 ? 'text-success' : 'text-danger'}">
-                        ${data.diferenciaMargen >= 0 ? '+' : ''}${data.diferenciaMargen.toFixed(2)}%
-                    </h3>
-                </div>
-            `;
-
-            document.getElementById('resultadoContenido').innerHTML = html;
-
-            // Mostrar alertas si existen
-            if (data.alertas && data.alertas.length > 0) {
-                document.getElementById('alertasCard').style.display = 'block';
-
-                let alertasHtml = '<ul class="list-unstyled mb-0">';
-                data.alertas.forEach(alerta => {
-                    alertasHtml += `<li class="mb-2"><i class="bi bi-exclamation-circle"></i> ${alerta}</li>`;
-                });
-                alertasHtml += '</ul>';
-
-                if (data.recomendacion) {
-                    alertasHtml += `<hr /><div class="alert ${data.esRecomendable ? 'alert-success' : 'alert-danger'} mb-0 mt-3">${data.recomendacion}</div>`;
-                }
-
-                document.getElementById('alertasContenido').innerHTML = alertasHtml;
-            } else {
-                document.getElementById('alertasCard').style.display = 'none';
-            }
-        }
-    </script>
+    <script src="~/js/precio-historico-simular.js" asp-append-version="true"></script>
 }
-
-@Html.AntiForgeryToken()

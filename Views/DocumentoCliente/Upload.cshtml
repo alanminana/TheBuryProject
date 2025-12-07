@@ -7,9 +7,21 @@
 }
 
 @section PageActions {
-    <a asp-action="Index" class="btn btn-outline-light me-2">
-        <i class="bi bi-arrow-left"></i> Volver
-    </a>
+    @if (Model.ReturnToVentaId.HasValue)
+    {
+        <a asp-action="Index"
+           asp-route-returnToVentaId="@Model.ReturnToVentaId"
+           asp-route-clienteId="@Model.ClienteId"
+           class="btn btn-outline-light me-2">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    }
+    else
+    {
+        <a asp-action="Index" class="btn btn-outline-light me-2">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    }
 }
 
 <div class="alert alert-info border-0 shadow-sm">
@@ -17,18 +29,45 @@
     <strong>Formatos permitidos:</strong> PDF, JPG, PNG, DOC, DOCX (máximo 5 MB)
 </div>
 
+@if (Model.ReemplazarExistente && !string.IsNullOrWhiteSpace(Model.DocumentoAReemplazarNombre))
+{
+    <div class="alert alert-warning border-0 shadow-sm">
+        <i class="bi bi-arrow-repeat me-2"></i>Se reemplazará el archivo <strong>@Model.DocumentoAReemplazarNombre</strong>.
+    </div>
+}
+
 <div class="card bg-dark border-0 shadow-sm">
     <div class="card-body">
-        <form asp-action="Upload" method="post" enctype="multipart/form-data">
+        <form asp-action="Upload"
+              method="post"
+              enctype="multipart/form-data"
+              data-documentos-url="@Url.Action("GetDocumentosByCliente", "DocumentoCliente")"
+              data-documento-seleccionado="@Model.DocumentoAReemplazarId">
+            @if (Model.ReturnToVentaId.HasValue)
+            {
+                <input type="hidden" name="ReturnToVentaId" value="@Model.ReturnToVentaId" />
+            }
             <partial name="~/Views/Shared/Documento/_DocumentoAdjuntoForm.cshtml" model="Model" />
 
             <div class="d-flex gap-2 mt-4">
                 <button type="submit" class="btn btn-info text-dark fw-semibold">
                     <i class="bi bi-upload me-2"></i>Subir Documento
                 </button>
-                <a asp-action="Index" class="btn btn-outline-light">
-                    Cancelar
-                </a>
+                @if (Model.ReturnToVentaId.HasValue)
+                {
+                    <a asp-action="Index"
+                       asp-route-returnToVentaId="@Model.ReturnToVentaId"
+                       asp-route-clienteId="@Model.ClienteId"
+                       class="btn btn-outline-light">
+                        Cancelar
+                    </a>
+                }
+                else
+                {
+                    <a asp-action="Index" class="btn btn-outline-light">
+                        Cancelar
+                    </a>
+                }
             </div>
         </form>
     </div>
@@ -36,4 +75,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/documento-cliente-upload.js" asp-append-version="true"></script>
 }

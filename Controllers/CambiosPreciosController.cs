@@ -14,9 +14,17 @@ namespace TheBuryProject.Controllers;
 /// Workflow: Simulación → Autorización → Aplicación → Reversión
 /// </summary>
 [Authorize]
-[PermisoRequerido(Modulo = "precios", Accion = "view")]
+[PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionVer)]
 public class CambiosPreciosController : Controller
 {
+    private const string ModuloPrecios = "precios";
+    private const string AccionVer = "view";
+    private const string AccionSimular = "simulate";
+    private const string AccionAprobar = "approve";
+    private const string AccionAplicar = "apply";
+    private const string AccionRevertir = "revert";
+    private const string AccionHistorial = "history";
+
     private readonly IPrecioService _precioService;
     private readonly IProductoService _productoService;
     private readonly ICategoriaService _categoriaService;
@@ -44,6 +52,7 @@ public class CambiosPreciosController : Controller
     /// <summary>
     /// Lista todos los batches de cambios con filtros
     /// </summary>
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionVer)]
     public async Task<IActionResult> Index(EstadoBatch? estado = null, int page = 1, int pageSize = 20)
     {
         try
@@ -102,7 +111,7 @@ public class CambiosPreciosController : Controller
     /// Muestra el formulario para simular un cambio masivo de precios
     /// </summary>
     [HttpGet]
-    [PermisoRequerido(Modulo = "precios", Accion = "simulate")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionSimular)]
     public async Task<IActionResult> Simular()
     {
         try
@@ -132,7 +141,7 @@ public class CambiosPreciosController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [PermisoRequerido(Modulo = "precios", Accion = "simulate")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionSimular)]
     public async Task<IActionResult> Simular(SimularCambioMasivoViewModel viewModel)
     {
         if (!ModelState.IsValid)
@@ -252,7 +261,7 @@ public class CambiosPreciosController : Controller
     /// Muestra el formulario para autorizar (aprobar/rechazar) un batch
     /// </summary>
     [HttpGet]
-    [PermisoRequerido(Modulo = "precios", Accion = "authorize")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionAprobar)]
     public async Task<IActionResult> Autorizar(int id)
     {
         try
@@ -297,7 +306,7 @@ public class CambiosPreciosController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [PermisoRequerido(Modulo = "precios", Accion = "authorize")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionAprobar)]
     public async Task<IActionResult> Aprobar(int id, string? notas)
     {
         try
@@ -321,7 +330,7 @@ public class CambiosPreciosController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [PermisoRequerido(Modulo = "precios", Accion = "authorize")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionAprobar)]
     public async Task<IActionResult> Rechazar(int id, string motivo)
     {
         if (string.IsNullOrWhiteSpace(motivo))
@@ -351,7 +360,7 @@ public class CambiosPreciosController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [PermisoRequerido(Modulo = "precios", Accion = "update")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionAprobar)]
     public async Task<IActionResult> Cancelar(int id, string? motivo)
     {
         try
@@ -378,7 +387,7 @@ public class CambiosPreciosController : Controller
     /// Muestra el formulario para aplicar un batch aprobado
     /// </summary>
     [HttpGet]
-    [PermisoRequerido(Modulo = "precios", Accion = "apply")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionAplicar)]
     public async Task<IActionResult> Aplicar(int id)
     {
         try
@@ -421,7 +430,7 @@ public class CambiosPreciosController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [PermisoRequerido(Modulo = "precios", Accion = "apply")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionAplicar)]
     public async Task<IActionResult> AplicarConfirmed(int id, DateTime? fechaVigencia)
     {
         try
@@ -448,7 +457,7 @@ public class CambiosPreciosController : Controller
     /// Muestra el formulario para revertir un batch aplicado
     /// </summary>
     [HttpGet]
-    [PermisoRequerido(Modulo = "precios", Accion = "revert")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionRevertir)]
     public async Task<IActionResult> Revertir(int id)
     {
         try
@@ -491,7 +500,7 @@ public class CambiosPreciosController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [PermisoRequerido(Modulo = "precios", Accion = "revert")]
+    [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionRevertir)]
     public async Task<IActionResult> RevertirConfirmed(int id, string motivo)
     {
         if (string.IsNullOrWhiteSpace(motivo))

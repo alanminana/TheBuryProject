@@ -2,6 +2,7 @@
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
+using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.Services
 {
@@ -45,6 +46,9 @@ namespace TheBuryProject.Services
 
             // Generar nombre completo
             cliente.NombreCompleto = $"{cliente.Apellido}, {cliente.Nombre}";
+
+            // Asegurar valores para columnas NOT NULL
+            cliente.TieneReciboSueldo = cliente.TieneReciboSueldo; // explicit assignment keeps EF from omitting the column
 
             _context.Clientes.Add(cliente);
             await _context.SaveChangesAsync();
@@ -96,8 +100,8 @@ namespace TheBuryProject.Services
 
             // Validar que no tenga créditos activos
             var tieneCreditosActivos = await _context.Creditos
-         .AnyAsync(c => c.ClienteId == id &&
-    c.Estado == Models.Enums.EstadoCredito.Activo);
+                .AnyAsync(c => c.ClienteId == id &&
+                               c.Estado == EstadoCredito.Activo);
             if (tieneCreditosActivos)
             {
                 throw new InvalidOperationException(
@@ -152,7 +156,7 @@ namespace TheBuryProject.Services
             if (conCreditosActivos.HasValue && conCreditosActivos.Value)
             {
                 query = query.Where(c => c.Creditos.Any(cr =>
-     cr.Estado == Models.Enums.EstadoCredito.Activo));
+ cr.Estado == EstadoCredito.Activo));
             }
 
             if (puntajeMinimo.HasValue)

@@ -13,30 +13,23 @@ namespace TheBuryProject.Controllers
     [Authorize(Roles = "SuperAdmin,Contador")]
     public class ProveedorController : Controller
     {
-        private readonly AppDbContext _context; // Agregar esta línea al inicio de la clase
-
         private readonly IProveedorService _proveedorService;
         private readonly ILogger<ProveedorController> _logger;
         private readonly IMapper _mapper;
-        private readonly ICategoriaService _categoriaService;
-        private readonly IMarcaService _marcaService;
-        private readonly IProductoService _productoService;
+        private readonly ICatalogLookupService _catalogLookupService;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
         public ProveedorController(
             IProveedorService proveedorService,
-            ICategoriaService categoriaService,
-            IMarcaService marcaService,
-            IProductoService productoService,
+            ICatalogLookupService catalogLookupService,
             ILogger<ProveedorController> logger,
             IMapper mapper,
-            AppDbContext context)
+            IDbContextFactory<AppDbContext> contextFactory)
         {
             _proveedorService = proveedorService;
-            _categoriaService = categoriaService;
-            _marcaService = marcaService;
-            _productoService = productoService;
+            _catalogLookupService = catalogLookupService;
             _logger = logger;
             _mapper = mapper;
-            _context = context;
+            _contextFactory = contextFactory;
         }
 
         // GET: Proveedor
@@ -289,7 +282,9 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogInformation("=== OBTENER PRODUCTOS PROVEEDOR {Id} ===", id);
 
-                var productosProveedor = await _context.ProveedorProductos
+                await using var context = await _contextFactory.CreateDbContextAsync();
+
+                var productosProveedor = await context.ProveedorProductos
                     .Include(pp => pp.Producto)
                     .Where(pp => pp.ProveedorId == id && pp.IsDeleted == false)
                     .ToListAsync();
@@ -332,8 +327,10 @@ namespace TheBuryProject.Controllers
         [HttpGet]
         public async Task<IActionResult> DiagnosticoProveedor(int id)
         {
-            var proveedor = await _context.Proveedores.FindAsync(id);
-            var productosProveedor = await _context.ProveedorProductos
+            await using var context = await _contextFactory.CreateDbContextAsync();
+
+            var proveedor = await context.Proveedores.FindAsync(id);
+            var productosProveedor = await context.ProveedorProductos
                 .Include(pp => pp.Producto)
                 .Where(pp => pp.ProveedorId == id)
                 .ToListAsync();
@@ -363,7 +360,7 @@ namespace TheBuryProject.Controllers
         }
         private async Task CargarAsociacionesAsync(ProveedorViewModel viewModel)
         {
-            var categorias = await _categoriaService.GetAllAsync();
+            var (categorias, marcas, productos) = await _catalogLookupService.GetCategoriasMarcasYProductosAsync();
             viewModel.CategoriasDisponibles = categorias
                 .OrderBy(c => c.Nombre)
                 .Select(c => new SelectListItem
@@ -374,7 +371,6 @@ namespace TheBuryProject.Controllers
                 })
                 .ToList();
 
-            var marcas = await _marcaService.GetAllAsync();
             viewModel.MarcasDisponibles = marcas
                 .OrderBy(m => m.Nombre)
                 .Select(m => new SelectListItem
@@ -385,7 +381,6 @@ namespace TheBuryProject.Controllers
                 })
                 .ToList();
 
-            var productos = await _productoService.GetAllAsync();
             viewModel.ProductosDisponibles = productos
                 .OrderBy(p => p.Nombre)
                 .Select(p => new SelectListItem

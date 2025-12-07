@@ -86,6 +86,113 @@ namespace TheBuryProject.ViewModels
         public DatosChequeViewModel? DatosCheque { get; set; }
         public DatosCreditoPersonalViewModel? DatosCreditoPersonal { get; set; }  // NUEVO
 
+        // Datos de financiamiento
+        [Display(Name = "Venta financiada")]
+        public bool EsFinanciada { get; set; }
+
+        [Display(Name = "Anticipo"), DataType(DataType.Currency)]
+        [Range(0, double.MaxValue, ErrorMessage = "El anticipo no puede ser negativo")]
+        public decimal? Anticipo { get; set; }
+
+        [Display(Name = "Tasa mensual (%)")]
+        [Range(0, 100, ErrorMessage = "La tasa debe estar entre 0% y 100%")]
+        public decimal? TasaInteresMensualFinanciacion { get; set; }
+
+        [Display(Name = "Cantidad de cuotas")]
+        [Range(1, 120, ErrorMessage = "Las cuotas deben estar entre 1 y 120")]
+        public int? CantidadCuotasFinanciacion { get; set; }
+
+        [Display(Name = "Monto financiado estimado"), DataType(DataType.Currency)]
+        public decimal? MontoFinanciadoEstimado { get; set; }
+
+        [Display(Name = "Cuota estimada"), DataType(DataType.Currency)]
+        public decimal? CuotaEstimada { get; set; }
+
+        [Display(Name = "Ingreso neto declarado"), DataType(DataType.Currency)]
+        public decimal? IngresoNetoDeclarado { get; set; }
+
+        [Display(Name = "Otras deudas declaradas"), DataType(DataType.Currency)]
+        public decimal? EndeudamientoDeclarado { get; set; }
+
+        [Display(Name = "Antigüedad laboral (meses)")]
+        public int? AntiguedadLaboralMeses { get; set; }
+
         public DateTime CreatedAt { get; set; }
+
+        #region Presentación
+
+        public string EstadoDisplay => Estado switch
+        {
+            EstadoVenta.Cotizacion => "Cotización",
+            EstadoVenta.Presupuesto => "Presupuesto",
+            EstadoVenta.Confirmada => "Confirmada",
+            EstadoVenta.Facturada => "Facturada",
+            EstadoVenta.Entregada => "Entregada",
+            EstadoVenta.Cancelada => "Cancelada",
+            _ => Estado.ToString()
+        };
+
+        public string EstadoBadgeClass => Estado switch
+        {
+            EstadoVenta.Cotizacion => "badge bg-secondary",
+            EstadoVenta.Presupuesto => "badge bg-info text-dark",
+            EstadoVenta.Confirmada => "badge bg-primary",
+            EstadoVenta.Facturada => "badge bg-success",
+            EstadoVenta.Entregada => "badge bg-dark text-light",
+            EstadoVenta.Cancelada => "badge bg-danger",
+            _ => "badge bg-secondary"
+        };
+
+        public string EstadoAutorizacionDisplay => EstadoAutorizacion switch
+        {
+            EstadoAutorizacionVenta.NoRequiere => "No Requiere",
+            EstadoAutorizacionVenta.PendienteAutorizacion => "Pendiente",
+            EstadoAutorizacionVenta.Autorizada => "Autorizada",
+            EstadoAutorizacionVenta.Rechazada => "Rechazada",
+            _ => EstadoAutorizacion.ToString()
+        };
+
+        public string EstadoAutorizacionBadgeClass => EstadoAutorizacion switch
+        {
+            EstadoAutorizacionVenta.NoRequiere => "badge bg-dark text-light",
+            EstadoAutorizacionVenta.PendienteAutorizacion => "badge bg-warning text-dark",
+            EstadoAutorizacionVenta.Autorizada => "badge bg-success",
+            EstadoAutorizacionVenta.Rechazada => "badge bg-danger",
+            _ => "badge bg-secondary"
+        };
+
+        public string EstadoAutorizacionIconClass => EstadoAutorizacion switch
+        {
+            EstadoAutorizacionVenta.PendienteAutorizacion => "bi bi-hourglass-split",
+            EstadoAutorizacionVenta.Autorizada => "bi bi-check-circle",
+            EstadoAutorizacionVenta.Rechazada => "bi bi-x-circle",
+            _ => string.Empty
+        };
+
+        #endregion
+
+        #region Permisos de acción
+
+        public bool PuedeEditar => Estado == EstadoVenta.Cotizacion || Estado == EstadoVenta.Presupuesto;
+
+        public bool PuedeConfirmar =>
+            Estado == EstadoVenta.Presupuesto && (!RequiereAutorizacion || EstadoAutorizacion == EstadoAutorizacionVenta.Autorizada);
+
+        public bool PuedeFacturar =>
+            Estado == EstadoVenta.Confirmada && (!RequiereAutorizacion || EstadoAutorizacion == EstadoAutorizacionVenta.Autorizada);
+
+        public bool PuedeCancelar => Estado != EstadoVenta.Cancelada;
+
+        public bool PuedeAutorizar => EstadoAutorizacion == EstadoAutorizacionVenta.PendienteAutorizacion;
+
+        public bool PuedeCrearDevolucion =>
+            Estado == EstadoVenta.Confirmada || Estado == EstadoVenta.Facturada || Estado == EstadoVenta.Entregada;
+
+        public bool DebeAlertarAutorizacionPendiente =>
+            RequiereAutorizacion && EstadoAutorizacion == EstadoAutorizacionVenta.PendienteAutorizacion;
+
+        public bool FueRechazada => EstadoAutorizacion == EstadoAutorizacionVenta.Rechazada;
+
+        #endregion
     }
 }

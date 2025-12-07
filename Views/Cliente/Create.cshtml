@@ -16,18 +16,38 @@
 
 <div class="row justify-content-center">
     <div class="col-lg-10">
-        <form asp-action="Create" method="post" class="needs-validation" novalidate>
-            <partial name="~/Views/Shared/Cliente/_ClienteFormFields.cshtml" model="Model" />
-
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
-                    <i class="bi bi-x-circle"></i> Cancelar
-                </a>
-                <button type="submit" class="btn btn-success btn-lg px-4">
-                    <i class="bi bi-check-circle"></i> Crear Cliente
-                </button>
+        <div class="card bg-dark border-0 shadow-sm">
+            <div class="card-header bg-secondary">
+                <h5 class="mb-0 text-light">
+                    <i class="bi bi-person-plus me-2"></i>Datos del Nuevo Cliente
+                </h5>
             </div>
-        </form>
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="alert alert-danger d-none"
+                         role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Por favor, corregí los errores antes de continuar.
+                    </div>
+
+                    <partial name="~/Views/Shared/Cliente/_ClienteFormFields.cshtml" model="Model" />
+
+                    <hr class="border-secondary mt-4" />
+
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
+                            <i class="bi bi-x-circle me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg px-4">
+                            <i class="bi bi-check-circle me-2"></i>Crear Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 

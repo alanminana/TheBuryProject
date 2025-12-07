@@ -141,7 +141,8 @@ namespace TheBuryProject.Services
                 // Generar número de crédito
                 viewModel.Numero = await GenerarNumeroCreditoAsync();
                 viewModel.PuntajeRiesgoInicial = cliente.PuntajeRiesgo;
-                viewModel.Estado = EstadoCredito.Solicitado;
+                if (viewModel.Estado == 0)
+                    viewModel.Estado = EstadoCredito.Solicitado;
                 viewModel.FechaSolicitud = DateTime.Now;
 
                 // CAMBIO IMPORTANTE: No calculamos cuotas ni totales
@@ -170,6 +171,23 @@ namespace TheBuryProject.Services
                 throw;
             }
         }
+        public async Task<CreditoViewModel> CreatePendienteConfiguracionAsync(int clienteId, decimal montoTotal)
+        {
+            var creditoVm = new CreditoViewModel
+            {
+                ClienteId = clienteId,
+                MontoSolicitado = montoTotal,
+                MontoAprobado = montoTotal,
+                SaldoPendiente = montoTotal,
+                TasaInteres = 0,
+                CantidadCuotas = 0,
+                Estado = EstadoCredito.PendienteConfiguracion,
+                FechaSolicitud = DateTime.Now
+            };
+
+            return await CreateAsync(creditoVm);
+        }
+
         public async Task<bool> UpdateAsync(CreditoViewModel viewModel)
         {
             try

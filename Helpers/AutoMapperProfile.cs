@@ -27,12 +27,11 @@ namespace TheBuryProject.Helpers
             // =======================
             CreateMap<Producto, ProductoViewModel>()
                 .ForMember(d => d.CategoriaNombre, o => o.MapFrom(s => s.Categoria != null ? s.Categoria.Nombre : null))
-                .ForMember(d => d.MarcaNombre, o => o.MapFrom(s => s.Marca != null ? s.Marca.Nombre : null));
-            CreateMap<Producto, ProductoViewModel>()
-    .ForMember(dest => dest.CategoriaNombre, opt => opt.MapFrom(src => src.Categoria.Nombre))
-    .ForMember(dest => dest.MarcaNombre, opt => opt.MapFrom(src => src.Marca.Nombre))
-    .ReverseMap();
-            CreateMap<ProductoViewModel, Producto>();
+                .ForMember(d => d.MarcaNombre, o => o.MapFrom(s => s.Marca != null ? s.Marca.Nombre : null))
+                // Evitar que AutoMapper intente crear entidades de navegación vacías al mapear desde el ViewModel
+                .ReverseMap()
+                .ForMember(d => d.Categoria, o => o.Ignore())
+                .ForMember(d => d.Marca, o => o.Ignore());
 
             // =======================
             // Proveedor
@@ -185,8 +184,9 @@ namespace TheBuryProject.Helpers
             // Mappings para Ventas
             // =======================
             CreateMap<Venta, VentaViewModel>()
-                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src => $"{src.Cliente.Apellido}, {src.Cliente.Nombre}"))
-                .ForMember(dest => dest.ClienteDocumento, opt => opt.MapFrom(src => src.Cliente.NumeroDocumento))
+                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
+                    src.Cliente != null ? $"{src.Cliente.Apellido}, {src.Cliente.Nombre}" : string.Empty))
+                .ForMember(dest => dest.ClienteDocumento, opt => opt.MapFrom(src => src.Cliente != null ? src.Cliente.NumeroDocumento : string.Empty))
                 .ForMember(dest => dest.CreditoNumero, opt => opt.MapFrom(src => src.Credito != null ? src.Credito.Numero : null))
                 .ForMember(dest => dest.Detalles, opt => opt.MapFrom(src => src.Detalles))
                 .ForMember(dest => dest.Facturas, opt => opt.MapFrom(src => src.Facturas));
@@ -209,6 +209,7 @@ namespace TheBuryProject.Helpers
             CreateMap<Factura, FacturaViewModel>();
 
             CreateMap<FacturaViewModel, Factura>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.Venta, opt => opt.Ignore());
 
             // =======================

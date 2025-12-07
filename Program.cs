@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Extensions;
 using TheBuryProject.Helpers;
+using TheBuryProject.Hubs;
 using TheBuryProject.Services;
 using TheBuryProject.Services.Interfaces;
 
@@ -11,6 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 1. Configuración de DbContext con SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // 2. Configuración de Identity
@@ -53,6 +56,7 @@ builder.Services.AddVentaServices();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();
+builder.Services.AddScoped<ICatalogLookupService, CatalogLookupService>();
 builder.Services.AddScoped<IPrecioHistoricoService, PrecioHistoricoService>();
 builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();
@@ -78,6 +82,10 @@ builder.Services.AddScoped<IAutorizacionService, AutorizacionService>();
 builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 builder.Services.AddScoped<ICajaService, CajaService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
+builder.Services.AddScoped<IDocumentacionService, DocumentacionService>();
+
+// 4.6 SignalR
+builder.Services.AddSignalR();
 
 // 4.6 Servicios en background
 builder.Services.AddHostedService<MoraBackgroundService>();
@@ -116,7 +124,10 @@ app.MapControllerRoute(
 // 10. Mapeo de Razor Pages (para Identity UI)
 app.MapRazorPages();
 
-// 11. Inicializar base de datos (roles y usuario admin)
+// 11. Hubs de SignalR
+app.MapHub<NotificacionesHub>("/hubs/notificaciones");
+
+// 12. Inicializar base de datos (roles y usuario admin)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
