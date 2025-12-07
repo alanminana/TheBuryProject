@@ -1,0 +1,421 @@
+@using TheBuryProject.Models.Entities
+@using TheBuryProject.ViewModels
+@model DevolucionDetallesViewModel
+@{
+    ViewData["Title"] = $"Devolución {Model.Devolucion.NumeroDevolucion}";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2><i class="bi bi-arrow-return-left me-2"></i>Devolución @Model.Devolucion.NumeroDevolucion</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Devoluciones</a></li>
+                    <li class="breadcrumb-item active">Detalles</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- Información Principal -->
+        <div class="col-md-8">
+            <!-- Datos de la Devolución -->
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información de la Devolución</h5>
+                    @switch (Model.Devolucion.Estado)
+                    {
+                        case EstadoDevolucion.Pendiente:
+                            <span class="badge bg-warning fs-6">Pendiente</span>
+                            break;
+                        case EstadoDevolucion.EnRevision:
+                            <span class="badge bg-info fs-6">En Revisión</span>
+                            break;
+                        case EstadoDevolucion.Aprobada:
+                            <span class="badge bg-success fs-6">Aprobada</span>
+                            break;
+                        case EstadoDevolucion.Rechazada:
+                            <span class="badge bg-danger fs-6">Rechazada</span>
+                            break;
+                        case EstadoDevolucion.Completada:
+                            <span class="badge bg-dark fs-6">Completada</span>
+                            break;
+                        default:
+                            <span class="badge bg-secondary fs-6">@Model.Devolucion.Estado</span>
+                            break;
+                    }
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Número:</strong> @Model.Devolucion.NumeroDevolucion</p>
+                            <p><strong>Fecha:</strong> @Model.Devolucion.FechaDevolucion.ToString("dd/MM/yyyy HH:mm")</p>
+                            <p><strong>Cliente:</strong> @(Model.Devolucion.Cliente?.NombreCompleto ?? "N/A")</p>
+                            <p><strong>Venta:</strong> @(Model.Devolucion.Venta?.Numero ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Motivo:</strong> <span class="badge bg-secondary">@Model.Devolucion.Motivo</span></p>
+                            <p><strong>Total:</strong> <span class="fs-5 text-primary">$@Model.Devolucion.TotalDevolucion.ToString("N2")</span></p>
+                            @if (Model.Devolucion.AprobadoPor != null)
+                            {
+                                <p><strong>Aprobado por:</strong> @Model.Devolucion.AprobadoPor</p>
+                                <p><strong>Fecha Aprobación:</strong> @Model.Devolucion.FechaAprobacion?.ToString("dd/MM/yyyy HH:mm")</p>
+                            }
+                        </div>
+                    </div>
+                    <hr />
+                    <p><strong>Descripción:</strong></p>
+                    <p class="bg-light p-3 rounded">@Model.Devolucion.Descripcion</p>
+                    @if (!string.IsNullOrEmpty(Model.Devolucion.ObservacionesInternas))
+                    {
+                        <p><strong>Observaciones Internas:</strong></p>
+                        <p class="bg-warning-subtle p-3 rounded">@Model.Devolucion.ObservacionesInternas</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Productos Devueltos -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>Productos Devueltos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Unit.</th>
+                                    <th>Subtotal</th>
+                                    <th>Estado</th>
+                                    <th>Accesorios</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var detalle in Model.Detalles)
+                                {
+                                    <tr>
+                                        <td>@(detalle.Producto?.Nombre ?? "Producto")</td>
+                                        <td>@detalle.Cantidad</td>
+                                        <td>$@detalle.PrecioUnitario.ToString("N2")</td>
+                                        <td><strong>$@detalle.Subtotal.ToString("N2")</strong></td>
+                                        <td>
+                                            @switch (detalle.EstadoProducto)
+                                            {
+                                                case EstadoProductoDevuelto.Nuevo:
+                                                    <span class="badge bg-success">Nuevo</span>
+                                                    break;
+                                                case EstadoProductoDevuelto.UsadoBuenEstado:
+                                                    <span class="badge bg-info">Usado - Buen Estado</span>
+                                                    break;
+                                                case EstadoProductoDevuelto.UsadoConDetalles:
+                                                    <span class="badge bg-warning">Con Detalles</span>
+                                                    break;
+                                                case EstadoProductoDevuelto.Defectuoso:
+                                                    <span class="badge bg-danger">Defectuoso</span>
+                                                    break;
+                                                case EstadoProductoDevuelto.Danado:
+                                                    <span class="badge bg-dark">Dañado</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (detalle.AccesoriosCompletos)
+                                            {
+                                                <span class="text-success"><i class="bi bi-check-circle"></i> Completos</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-warning" title="@detalle.AccesoriosFaltantes">
+                                                    <i class="bi bi-exclamation-triangle"></i> Incompletos
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @switch (detalle.AccionRecomendada)
+                                            {
+                                                case AccionProducto.ReintegrarStock:
+                                                    <span class="badge bg-success">Reintegrar Stock</span>
+                                                    break;
+                                                case AccionProducto.Cuarentena:
+                                                    <span class="badge bg-warning">Cuarentena</span>
+                                                    break;
+                                                case AccionProducto.Reparacion:
+                                                    <span class="badge bg-info">Reparación</span>
+                                                    break;
+                                                case AccionProducto.DevolverProveedor:
+                                                    <span class="badge bg-primary">RMA Proveedor</span>
+                                                    break;
+                                                case AccionProducto.Descarte:
+                                                    <span class="badge bg-danger">Descarte</span>
+                                                    break;
+                                            }
+                                        </td>
+                                    </tr>
+                                    @if (!string.IsNullOrEmpty(detalle.ObservacionesTecnicas))
+                                    {
+                                        <tr>
+                                            <td colspan="7" class="bg-light">
+                                                <small><strong>Observaciones:</strong> @detalle.ObservacionesTecnicas</small>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                    <td colspan="4"><strong class="fs-5 text-primary">$@Model.Devolucion.TotalDevolucion.ToString("N2")</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Lateral -->
+        <div class="col-md-4">
+            <!-- Acciones -->
+            @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente"))
+            {
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Acciones</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.Devolucion.Estado == EstadoDevolucion.Pendiente || Model.Devolucion.Estado == EstadoDevolucion.EnRevision)
+                        {
+                            <form asp-action="Aprobar" asp-route-id="@Model.Devolucion.Id" method="post" class="mb-2">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Aprobar esta devolución? Se generará una nota de crédito.');">
+                                    <i class="bi bi-check-circle me-1"></i>Aprobar Devolución
+                                </button>
+                            </form>
+
+                            <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#modalRechazar">
+                                <i class="bi bi-x-circle me-1"></i>Rechazar Devolución
+                            </button>
+                        }
+
+                        @if (Model.Devolucion.Estado == EstadoDevolucion.Aprobada)
+                        {
+                            <form asp-action="Completar" asp-route-id="@Model.Devolucion.Id" method="post" class="mb-2">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-primary w-100" onclick="return confirm('¿Completar esta devolución? Se procesará el stock según las acciones definidas.');">
+                                    <i class="bi bi-check2-all me-1"></i>Completar Devolución
+                                </button>
+                            </form>
+
+                            @if (!Model.Devolucion.RequiereRMA)
+                            {
+                                <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#modalCrearRMA">
+                                    <i class="bi bi-truck me-1"></i>Crear RMA
+                                </button>
+                            }
+                        }
+
+                        @if (Model.Devolucion.Estado == EstadoDevolucion.Completada || Model.Devolucion.Estado == EstadoDevolucion.Rechazada)
+                        {
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Esta devolución ya fue @(Model.Devolucion.Estado == EstadoDevolucion.Completada ? "completada" : "rechazada").
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Nota de Crédito -->
+            @if (Model.NotaCredito != null)
+            {
+                <div class="card mb-3 border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Nota de Crédito</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Número:</strong> @Model.NotaCredito.NumeroNotaCredito</p>
+                        <p><strong>Fecha:</strong> @Model.NotaCredito.FechaEmision.ToString("dd/MM/yyyy")</p>
+                        <p><strong>Monto Total:</strong> $@Model.NotaCredito.MontoTotal.ToString("N2")</p>
+                        <p><strong>Utilizado:</strong> $@Model.NotaCredito.MontoUtilizado.ToString("N2")</p>
+                        <p><strong>Disponible:</strong> <span class="fs-5 text-success">$@Model.NotaCredito.MontoDisponible.ToString("N2")</span></p>
+                        <p>
+                            <strong>Estado:</strong>
+                            @switch (Model.NotaCredito.Estado)
+                            {
+                                case EstadoNotaCredito.Vigente:
+                                    <span class="badge bg-success">Vigente</span>
+                                    break;
+                                case EstadoNotaCredito.UtilizadaParcialmente:
+                                    <span class="badge bg-info">Parcialmente Utilizada</span>
+                                    break;
+                                case EstadoNotaCredito.UtilizadaTotalmente:
+                                    <span class="badge bg-secondary">Utilizada</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary">@Model.NotaCredito.Estado</span>
+                                    break;
+                            }
+                        </p>
+                        @if (Model.NotaCredito.FechaVencimiento.HasValue)
+                        {
+                            <p><strong>Vence:</strong> @Model.NotaCredito.FechaVencimiento.Value.ToString("dd/MM/yyyy")</p>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- RMA -->
+            @if (Model.RMA != null)
+            {
+                <div class="card mb-3 border-warning">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0"><i class="bi bi-truck me-2"></i>RMA</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Número:</strong> @Model.RMA.NumeroRMA</p>
+                        <p><strong>Proveedor:</strong> @(Model.RMA.Proveedor?.RazonSocial ?? "N/A")</p>
+                        <p><strong>Fecha Solicitud:</strong> @Model.RMA.FechaSolicitud.ToString("dd/MM/yyyy")</p>
+                        <p>
+                            <strong>Estado:</strong>
+                            @switch (Model.RMA.Estado)
+                            {
+                                case EstadoRMA.Pendiente:
+                                    <span class="badge bg-warning">Pendiente</span>
+                                    break;
+                                case EstadoRMA.AprobadoProveedor:
+                                    <span class="badge bg-info">Aprobado</span>
+                                    break;
+                                case EstadoRMA.EnTransito:
+                                    <span class="badge bg-primary">En Tránsito</span>
+                                    break;
+                                case EstadoRMA.RecibidoProveedor:
+                                    <span class="badge bg-secondary">Recibido</span>
+                                    break;
+                                case EstadoRMA.Resuelto:
+                                    <span class="badge bg-success">Resuelto</span>
+                                    break;
+                                case EstadoRMA.Rechazado:
+                                    <span class="badge bg-danger">Rechazado</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary">@Model.RMA.Estado</span>
+                                    break;
+                            }
+                        </p>
+                        @if (!string.IsNullOrEmpty(Model.RMA.NumeroRMAProveedor))
+                        {
+                            <p><strong>RMA Proveedor:</strong> @Model.RMA.NumeroRMAProveedor</p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.RMA.NumeroGuiaEnvio))
+                        {
+                            <p><strong>Guía Envío:</strong> @Model.RMA.NumeroGuiaEnvio</p>
+                        }
+                        <p><strong>Motivo:</strong></p>
+                        <p class="bg-light p-2 rounded small">@Model.RMA.MotivoSolicitud</p>
+                    </div>
+                </div>
+            }
+
+            <!-- Info de Venta Original -->
+            @if (Model.Devolucion.Venta != null)
+            {
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Venta Original</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Número:</strong> @Model.Devolucion.Venta.Numero</p>
+                        <p><strong>Fecha:</strong> @Model.Devolucion.Venta.FechaVenta.ToString("dd/MM/yyyy")</p>
+                        <p><strong>Total:</strong> $@Model.Devolucion.Venta.Total.ToString("N2")</p>
+                        <a asp-controller="Venta" asp-action="Detalles" asp-route-id="@Model.Devolucion.VentaId" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-eye me-1"></i>Ver Venta
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Rechazar -->
+<div class="modal fade" id="modalRechazar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Rechazar" asp-route-id="@Model.Devolucion.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Rechazar Devolución</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="motivo" class="form-label">Motivo del Rechazo</label>
+                        <textarea name="motivo" id="motivo" class="form-control" rows="4" required placeholder="Indique el motivo por el cual se rechaza esta devolución..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Rechazar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear RMA -->
+<div class="modal fade" id="modalCrearRMA" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="CrearRMA" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="devolucionId" value="@Model.Devolucion.Id" />
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Crear RMA</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="proveedorId" class="form-label">Proveedor</label>
+                        <select name="proveedorId" id="proveedorId" class="form-select" required asp-items="ViewBag.Proveedores">
+                            <option value="">-- Seleccione un proveedor --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="motivoSolicitud" class="form-label">Motivo de Solicitud</label>
+                        <textarea name="motivoSolicitud" id="motivoSolicitud" class="form-control" rows="4" required placeholder="Describa el motivo de la solicitud de RMA al proveedor..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">Crear RMA</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
