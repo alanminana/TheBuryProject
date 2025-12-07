@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TheBuryProject.Migrations
 {
     /// <inheritdoc />
-    public partial class EnsureClienteTieneReciboSueldoDefault : Migration
+    public partial class EnsureClienteTieneReciboSueldoDefaultSeedUpdate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

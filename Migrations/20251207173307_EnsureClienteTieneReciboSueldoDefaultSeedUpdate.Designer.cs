@@ -12,8 +12,8 @@ using TheBuryProject.Data;
 namespace TheBuryProject.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251207173307_EnsureClienteTieneReciboSueldoDefault")]
-    partial class EnsureClienteTieneReciboSueldoDefault
+    [Migration("20251207173307_EnsureClienteTieneReciboSueldoDefaultSeedUpdate")]
+    partial class EnsureClienteTieneReciboSueldoDefaultSeedUpdate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
