@@ -208,6 +208,7 @@ namespace TheBuryProject.Helpers
             CreateMap<Factura, FacturaViewModel>();
 
             CreateMap<FacturaViewModel, Factura>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.Venta, opt => opt.Ignore());
 
             // =======================
