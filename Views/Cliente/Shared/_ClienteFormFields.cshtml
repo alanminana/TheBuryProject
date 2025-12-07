@@ -1,9 +1,12 @@
 @model TheBuryProject.ViewModels.ClienteViewModel
 
-@{
+@{ 
     // Este partial se usa tanto en Create como en Edit
     var esEdicion = Model.Id > 0;
 }
+
+<!-- Valor explícito para columnas NOT NULL -->
+<input type="hidden" asp-for="TieneReciboSueldo" value="false" />
 
 <!-- Datos Personales -->
 <fieldset class="mb-4">
