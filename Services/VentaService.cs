@@ -334,11 +334,9 @@ namespace TheBuryProject.Services
 
         public async Task<bool> AutorizarVentaAsync(int id, string usuarioAutoriza, string motivo)
         {
-            var venta = await _context.Ventas.FindAsync(id);
+            var venta = await ObtenerVentaPendienteAutorizacionAsync(id);
             if (venta == null)
                 return false;
-
-            _validator.ValidarEstadoAutorizacion(venta, EstadoAutorizacionVenta.PendienteAutorizacion);
 
             venta.EstadoAutorizacion = EstadoAutorizacionVenta.Autorizada;
             venta.UsuarioAutoriza = usuarioAutoriza;
@@ -353,11 +351,9 @@ namespace TheBuryProject.Services
 
         public async Task<bool> RechazarVentaAsync(int id, string usuarioAutoriza, string motivo)
         {
-            var venta = await _context.Ventas.FindAsync(id);
+            var venta = await ObtenerVentaPendienteAutorizacionAsync(id);
             if (venta == null)
                 return false;
-
-            _validator.ValidarEstadoAutorizacion(venta, EstadoAutorizacionVenta.PendienteAutorizacion);
 
             venta.EstadoAutorizacion = EstadoAutorizacionVenta.Rechazada;
             venta.UsuarioAutoriza = usuarioAutoriza;
@@ -616,6 +612,16 @@ namespace TheBuryProject.Services
                 .Include(v => v.Cliente)
                 .Include(v => v.VentaCreditoCuotas)
                 .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
+        }
+
+        private async Task<Venta?> ObtenerVentaPendienteAutorizacionAsync(int id)
+        {
+            var venta = await _context.Ventas.FindAsync(id);
+            if (venta == null)
+                return null;
+
+            _validator.ValidarEstadoAutorizacion(venta, EstadoAutorizacionVenta.PendienteAutorizacion);
+            return venta;
         }
 
         private void CalcularTotales(Venta venta)
