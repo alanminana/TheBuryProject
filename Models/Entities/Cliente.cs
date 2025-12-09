@@ -4,8 +4,8 @@ using TheBuryProject.Models.Base;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Representa un cliente del sistema que puede solicitar créditos
-    /// La documentación se gestiona en la tabla DocumentoCliente (no en booleanos)
+    /// Representa un cliente del sistema que puede solicitar créditos.
+    /// La documentación se gestiona en la tabla DocumentoCliente (no en booleanos de esta entidad).
     /// </summary>
     public class Cliente : BaseEntity
     {
@@ -73,7 +73,8 @@ namespace TheBuryProject.Models.Entities
         public string? TelefonoLaboral { get; set; }
 
         /// <summary>
-        /// Indica si el cliente presentó recibo de sueldo al momento del alta
+        /// Indica si el cliente presentó recibo de sueldo al momento del alta.
+        /// Esta columna SÍ existe en la base y se sigue usando.
         /// </summary>
         public bool TieneReciboSueldo { get; set; } = false;
 

@@ -164,9 +164,9 @@ public class CerrarCajaViewModel
 /// </summary>
 public class CajasListViewModel
 {
-    public List<Caja> CajasActivas { get; set; } = new();
-    public List<Caja> CajasInactivas { get; set; } = new();
-    public List<AperturaCaja> AperturasAbiertas { get; set; } = new();
+    public IList<AperturaCaja> AperturasAbiertas { get; set; } = new List<AperturaCaja>();
+    public IList<Caja> CajasActivas { get; set; } = new List<Caja>();
+    public IList<Caja> CajasInactivas { get; set; } = new List<Caja>();
 }
 
 /// <summary>
