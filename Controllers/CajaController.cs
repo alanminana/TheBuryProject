@@ -366,7 +366,7 @@ namespace TheBuryProject.Controllers
         [Authorize(Roles = "SuperAdmin,Gerente,Contador")]
         public async Task<IActionResult> Historial(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
         {
-            var viewModel = await BuildHistorialViewModelAsync(cajaId, fechaDesde, fechaHasta);
+            var viewModel = await _cajaService.ObtenerEstadisticasCierresAsync(cajaId, fechaDesde, fechaHasta);
 
             await SetHistorialFiltersAsync(cajaId, fechaDesde, fechaHasta);
 
@@ -390,31 +390,6 @@ namespace TheBuryProject.Controllers
             ViewBag.Cajas = new SelectList(cajas, "Id", "Nombre", cajaId);
             ViewBag.FechaDesde = fechaDesde;
             ViewBag.FechaHasta = fechaHasta;
-        }
-
-        private async Task<HistorialCierresViewModel> BuildHistorialViewModelAsync(
-            int? cajaId,
-            DateTime? fechaDesde,
-            DateTime? fechaHasta)
-        {
-            var cierres = await _cajaService.ObtenerHistorialCierresAsync(cajaId, fechaDesde, fechaHasta);
-
-            var totalDiferenciasPositivas = cierres.Where(c => c.Diferencia > 0).Sum(c => c.Diferencia);
-            var totalDiferenciasNegativas = cierres.Where(c => c.Diferencia < 0).Sum(c => c.Diferencia);
-            var cierresConDiferencia = cierres.Count(c => c.TieneDiferencia);
-            var porcentajeCierresExactos = cierres.Count > 0
-                ? ((cierres.Count - cierresConDiferencia) / (decimal)cierres.Count) * 100
-                : 0;
-
-            return new HistorialCierresViewModel
-            {
-                Cierres = cierres,
-                TotalDiferenciasPositivas = totalDiferenciasPositivas,
-                TotalDiferenciasNegativas = totalDiferenciasNegativas,
-                CierresConDiferencia = cierresConDiferencia,
-                TotalCierres = cierres.Count,
-                PorcentajeCierresExactos = porcentajeCierresExactos
-            };
         }
 
         private async Task TryPopulateMovimientoContextAsync(MovimientoCajaViewModel model)
