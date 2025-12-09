@@ -159,10 +159,10 @@ namespace TheBuryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload(DocumentoClienteViewModel viewModel, bool returnToDetails = false)
         {
+            await using var context = await _contextFactory.CreateDbContextAsync();
+
             try
             {
-                await using var context = await _contextFactory.CreateDbContextAsync();
-
                 if (viewModel.ReturnToVentaId.HasValue)
                 {
                     var venta = await context.Ventas
