@@ -42,7 +42,7 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
             return;
         }
 
-        var serviceProvider = httpContext.RequestServices;
+        var serviceProvider = context.HttpContext.RequestServices;
         var env = serviceProvider.GetService<IWebHostEnvironment>();
         var logger = serviceProvider.GetService<ILogger<PermisoRequeridoAttribute>>();
         var configuration = serviceProvider.GetService<IConfiguration>();
