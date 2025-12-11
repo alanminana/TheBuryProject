@@ -71,14 +71,14 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
         // Construir el claim value requerido
         var claimValue = $"{Modulo}.{Accion}";
 
-        // Verificar si el usuario tiene el claim de permiso
+        // Verificar si el usuario tiene el claim de permiso requerido
         var hasPermission = user.HasClaim(c => c.Type == "Permission" && c.Value == claimValue);
 
         if (!hasPermission)
         {
             // Registrar intento de acceso no autorizado
             logger?.LogWarning(
-                "Acceso denegado: Usuario {Username} intentó acceder a {Path} sin permiso {Permission}",
+                "Acceso denegado: Usuario {Username} intentó acceder a {Path} sin claim Permission requerido {Permission}",
                 user.Identity?.Name ?? "Desconocido",
                 requestPath,
                 claimValue
@@ -86,6 +86,7 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
 
             // Retornar 403 Forbidden
             context.Result = new ForbidResult();
+            return;
         }
     }
 }
