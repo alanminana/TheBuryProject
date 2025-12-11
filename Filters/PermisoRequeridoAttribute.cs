@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using TheBuryProject.Models.Constants;
 
 namespace TheBuryProject.Filters;
@@ -29,7 +32,8 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
-        var user = context.HttpContext.User;
+        var httpContext = context.HttpContext;
+        var user = httpContext.User;
 
         // Verificar si el usuario está autenticado
         if (!user.Identity?.IsAuthenticated ?? true)
@@ -38,15 +42,30 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
             return;
         }
 
-        // TEMPORAL: En desarrollo, permitir acceso si está autenticado
-        var env = context.HttpContext.RequestServices.GetService<IWebHostEnvironment>();
-        if (env?.IsDevelopment() == true)
+        var serviceProvider = httpContext.RequestServices;
+        var env = serviceProvider.GetService<IWebHostEnvironment>();
+        var logger = serviceProvider.GetService<ILogger<PermisoRequeridoAttribute>>();
+        var configuration = serviceProvider.GetService<IConfiguration>();
+        var requestPath = httpContext.Request.Path;
+
+        // Permitir omitir permisos solo cuando la configuración lo habilite explícitamente en desarrollo
+        var skipPermissionsInDevelopment =
+            env != null &&
+            env.IsDevelopment() &&
+            configuration?.GetValue<bool>("Seguridad:OmitirPermisosEnDev") == true;
+
+        if (skipPermissionsInDevelopment)
         {
+            logger?.LogWarning(
+                "Permisos omitidos en entorno de desarrollo para {Username} al acceder a {Path}",
+                user.Identity?.Name ?? "Desconocido",
+                requestPath);
+
             return; // Permitir acceso en desarrollo
         }
 
         // Si AllowSuperAdmin está habilitado y el usuario es SuperAdmin, permitir
-        if (AllowSuperAdmin && user.IsInRole(TheBuryProject.Models.Constants.Roles.SuperAdmin))
+        if (AllowSuperAdmin && user.IsInRole(Roles.SuperAdmin))
         {
             return;
         }
@@ -60,13 +79,10 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
         if (!hasPermission)
         {
             // Registrar intento de acceso no autorizado
-            var logger = context.HttpContext.RequestServices
-                .GetService<ILogger<PermisoRequeridoAttribute>>();
-
             logger?.LogWarning(
                 "Acceso denegado: Usuario {Username} intentó acceder a {Path} sin permiso {Permission}",
                 user.Identity?.Name ?? "Desconocido",
-                context.HttpContext.Request.Path,
+                requestPath,
                 claimValue
             );
 
