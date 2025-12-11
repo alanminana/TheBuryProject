@@ -62,7 +62,7 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
             return; // Permitir acceso en desarrollo
         }
 
-        // Si AllowSuperAdmin está habilitado y el usuario es SuperAdmin, permitir
+        // Bypass de SuperAdmin (después del bypass en Development, antes de validar claims)
         if (AllowSuperAdmin && user.IsInRole(Roles.SuperAdmin))
         {
             return;
