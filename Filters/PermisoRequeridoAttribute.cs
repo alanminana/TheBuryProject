@@ -50,7 +50,7 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
 
         // Permitir omitir permisos solo cuando la configuración lo habilite explícitamente en desarrollo
         var skipPermissionsInDevelopment = env?.IsDevelopment() == true
-            && (configuration?.GetValue<bool>("Seguridad:OmitirPermisosEnDev") ?? false);
+            && configuration?.GetValue<bool>("Seguridad:OmitirPermisosEnDev") == true;
 
         if (skipPermissionsInDevelopment)
         {
