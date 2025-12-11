@@ -1,0 +1,188 @@
+@model TheBuryProject.ViewModels.ClienteDetalleViewModel
+
+@{
+    var tieneCreditos = Model.CreditosActivos?.Any() == true;
+    var creditosActivos = Model.CreditosActivos?.Where(c => 
+        c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Activo || 
+        c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Aprobado).ToList() ?? new List<TheBuryProject.ViewModels.CreditoViewModel>();
+    var creditosFinalizados = Model.CreditosActivos?.Where(c => 
+        c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Finalizado ||
+        c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Cancelado ||
+        c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Rechazado).ToList() ?? new List<TheBuryProject.ViewModels.CreditoViewModel>();
+}
+
+@if (tieneCreditos)
+{
+    <!-- Créditos Activos -->
+    @if (creditosActivos.Any())
+    {
+        <div class="mb-4">
+            <h6 class="text-secondary fw-semibold mb-3">
+                <i class="bi bi-lightning-charge text-success me-2"></i>Créditos Activos
+            </h6>
+            
+            <div class="row g-3">
+                @foreach (var credito in creditosActivos)
+                {
+                    var porcentajeUtilizado = credito.MontoAprobado > 0 
+                        ? ((credito.MontoAprobado - credito.SaldoPendiente) / credito.MontoAprobado * 100) 
+                        : 0;
+                    
+                    <div class="col-md-6">
+                        <div class="card bg-body-secondary border-0 h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <span class="badge bg-primary mb-1">@credito.Numero</span>
+                                        <h5 class="mb-0">@credito.MontoAprobado.ToString("C0")</h5>
+                                    </div>
+                                    <span class="badge @(credito.Estado == TheBuryProject.Models.Enums.EstadoCredito.Activo ? "bg-success" : "bg-info")">
+                                        @credito.Estado
+                                    </span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between small text-secondary mb-1">
+                                        <span>Utilizado</span>
+                                        <span>@porcentajeUtilizado.ToString("F0")%</span>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar @(porcentajeUtilizado > 80 ? "bg-danger" : porcentajeUtilizado > 50 ? "bg-warning" : "bg-success")" 
+                                             style="width: @porcentajeUtilizado%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between text-secondary small">
+                                    <span>Disponible: <strong class="text-success">@credito.SaldoPendiente.ToString("C0")</strong></span>
+                                    <span>Tasa: @credito.TasaInteres.ToString("F1")%</span>
+                                </div>
+                                
+                                <div class="mt-3 pt-3 border-top border-secondary">
+                                    <a asp-controller="Credito" asp-action="Details" asp-route-id="@credito.Id" 
+                                       class="btn btn-sm btn-outline-info w-100">
+                                        <i class="bi bi-eye me-1"></i>Ver Detalle
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Historial de Créditos -->
+    @if (creditosFinalizados.Any())
+    {
+        <div class="mt-4">
+            <h6 class="text-secondary fw-semibold mb-3">
+                <i class="bi bi-clock-history me-2"></i>Historial
+            </h6>
+            
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead>
+                        <tr class="text-secondary small">
+                            <th>Número</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var credito in creditosFinalizados.OrderByDescending(c => c.FechaSolicitud))
+                        {
+                            <tr>
+                                <td class="fw-medium">@credito.Numero</td>
+                                <td>@credito.MontoAprobado.ToString("C0")</td>
+                                <td>
+                                    @switch (credito.Estado)
+                                    {
+                                        case TheBuryProject.Models.Enums.EstadoCredito.Finalizado:
+                                            <span class="badge bg-secondary">Finalizado</span>
+                                            break;
+                                        case TheBuryProject.Models.Enums.EstadoCredito.Cancelado:
+                                            <span class="badge bg-warning text-dark">Cancelado</span>
+                                            break;
+                                        case TheBuryProject.Models.Enums.EstadoCredito.Rechazado:
+                                            <span class="badge bg-danger">Rechazado</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-dark">@credito.Estado</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="text-secondary">
+                                    @(credito.FechaAprobacion?.ToString("dd/MM/yyyy") ?? credito.FechaSolicitud.ToString("dd/MM/yyyy"))
+                                </td>
+                                <td class="text-end">
+                                    <a asp-controller="Credito" asp-action="Details" asp-route-id="@credito.Id" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <!-- Sin créditos -->
+    <div class="text-center py-5">
+        <i class="bi bi-credit-card-2-front text-secondary" style="font-size: 3rem;"></i>
+        <p class="text-secondary mt-3 mb-2">El cliente no tiene créditos registrados</p>
+        
+        @if (Model.EvaluacionCredito.CumpleRequisitos || Model.EvaluacionCredito.PuedeAprobarConExcepcion)
+        {
+            <p class="text-secondary small mb-4">
+                Capacidad de crédito disponible: <strong class="text-success">@Model.EvaluacionCredito.MontoMaximoDisponible.ToString("C0")</strong>
+            </p>
+            
+            @if (Model.EvaluacionCredito.TieneDocumentosCompletos)
+            {
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#solicitarCreditoModal">
+                    <i class="bi bi-cash-coin me-2"></i>Solicitar Primer Crédito
+                </button>
+            }
+            else
+            {
+                <a href="#documentos" class="btn btn-warning" onclick="$('[data-bs-target=\'#documentos\']').tab('show')">
+                    <i class="bi bi-folder me-2"></i>Completar Documentación
+                </a>
+            }
+        }
+        else
+        {
+            <p class="text-danger small">
+                <i class="bi bi-exclamation-circle me-1"></i>
+                No cumple requisitos mínimos para crédito
+            </p>
+        }
+    </div>
+}
+
+<!-- Resumen de actividad -->
+@if (tieneCreditos)
+{
+    <div class="mt-4 pt-4 border-top border-secondary">
+        <div class="row text-center">
+            <div class="col-4">
+                <small class="text-secondary d-block">Total Otorgado</small>
+                <strong class="text-light">@((Model.CreditosActivos?.Sum(c => c.MontoAprobado) ?? 0).ToString("C0"))</strong>
+            </div>
+            <div class="col-4">
+                <small class="text-secondary d-block">Créditos Totales</small>
+                <strong class="text-light">@(Model.CreditosActivos?.Count ?? 0)</strong>
+            </div>
+            <div class="col-4">
+                <small class="text-secondary d-block">Activos</small>
+                <strong class="text-info">@creditosActivos.Count</strong>
+            </div>
+        </div>
+    </div>
+}

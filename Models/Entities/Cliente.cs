@@ -86,7 +86,12 @@ namespace TheBuryProject.Models.Entities
 
         [StringLength(500)]
         public string? Observaciones { get; set; }
-
+        public bool TieneReciboSueldo { get; set; } = false;
+        public bool TieneImpuesto { get; set; } = false;
+        public bool TieneServicioAgua { get; set; } = false;
+        public bool TieneServicioGas { get; set; } = false;
+        public bool TieneServicioLuz { get; set; } = false;
+        public bool TieneVeraz { get; set; } = false;
         // Garante asociado (si el cliente tiene un garante asignado)
         public int? GaranteId { get; set; }
 

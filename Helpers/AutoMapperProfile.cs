@@ -140,7 +140,8 @@ namespace TheBuryProject.Helpers
                     s.GaranteCliente != null ? s.GaranteCliente.Telefono : s.Telefono ?? string.Empty))
                 .ForMember(d => d.Email, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Email : null))
                 .ForMember(d => d.Domicilio, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Domicilio : s.Domicilio))
-                .ForMember(d => d.PuntajeRiesgo, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.PuntajeRiesgo :0))
+                .ForMember(d => d.PuntajeRiesgo, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.PuntajeRiesgo :
+ 0))
                 .ForMember(d => d.Sueldo, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Sueldo : (decimal?)null));
 
             CreateMap<Cliente, ClienteViewModel>()

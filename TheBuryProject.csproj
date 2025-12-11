@@ -6,6 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Content Remove="Views\Cliente\Shared\_ClienteFormFields.cshtml" />
+    <Content Remove="Views\Cliente\Shared\_CreditosCliente.cshtml" />
+  </ItemGroup>
+
 
   <ItemGroup>
     <Folder Include="wwwroot\Uploads\documentos-clientes\" />
@@ -14,6 +19,8 @@
 
   <ItemGroup>
     <None Include="Models\Entities\AlertaStock.cs" />
+    <None Include="Views\Cliente\Shared\_ClienteFormFields.cshtml" />
+    <None Include="Views\Cliente\Shared\_CreditosCliente.cshtml" />
     <None Include="Views\Cliente\_DocumentacionCliente.cshtml" />
     <None Include="Views\Cliente\_SolicitarCredito.cshtml" />
   </ItemGroup>

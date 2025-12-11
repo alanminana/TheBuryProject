@@ -6,116 +6,84 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TheBuryProject.Migrations
 {
     /// <inheritdoc />
-    public partial class AgregarColumnasListaPrecio : Migration
+    public partial class EnsureClienteTieneReciboSueldoDefaultSeedUpdate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<decimal>(
-                name: "MargenMinimoPorcentaje",
-                table: "ListasPrecios",
-                type: "decimal(18,2)",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "Notas",
-                table: "ListasPrecios",
-                type: "nvarchar(1000)",
-                maxLength: 1000,
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "ReglaRedondeo",
-                table: "ListasPrecios",
-                type: "nvarchar(20)",
-                maxLength: 20,
-                nullable: true);
-
             migrationBuilder.UpdateData(
                 table: "Categorias",
                 keyColumn: "Id",
                 keyValue: 1,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 13, 14, 51, 38, 341, DateTimeKind.Utc).AddTicks(9623));
+                value: new DateTime(2025, 12, 7, 17, 33, 6, 964, DateTimeKind.Utc).AddTicks(2702));
 
             migrationBuilder.UpdateData(
                 table: "Categorias",
                 keyColumn: "Id",
                 keyValue: 2,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 13, 14, 51, 38, 341, DateTimeKind.Utc).AddTicks(9628));
+                value: new DateTime(2025, 12, 7, 17, 33, 6, 964, DateTimeKind.Utc).AddTicks(2705));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 1,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 13, 14, 51, 38, 350, DateTimeKind.Utc).AddTicks(9335));
+                value: new DateTime(2025, 12, 7, 17, 33, 6, 969, DateTimeKind.Utc).AddTicks(5420));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 2,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 13, 14, 51, 38, 350, DateTimeKind.Utc).AddTicks(9342));
+                value: new DateTime(2025, 12, 7, 17, 33, 6, 969, DateTimeKind.Utc).AddTicks(5423));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 3,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 13, 14, 51, 38, 350, DateTimeKind.Utc).AddTicks(9347));
+                value: new DateTime(2025, 12, 7, 17, 33, 6, 969, DateTimeKind.Utc).AddTicks(5426));
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "MargenMinimoPorcentaje",
-                table: "ListasPrecios");
-
-            migrationBuilder.DropColumn(
-                name: "Notas",
-                table: "ListasPrecios");
-
-            migrationBuilder.DropColumn(
-                name: "ReglaRedondeo",
-                table: "ListasPrecios");
-
             migrationBuilder.UpdateData(
                 table: "Categorias",
                 keyColumn: "Id",
                 keyValue: 1,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 13, 7, 1, 30, 382, DateTimeKind.Utc).AddTicks(808));
+                value: new DateTime(2025, 12, 7, 17, 29, 27, 827, DateTimeKind.Utc).AddTicks(5556));
 
             migrationBuilder.UpdateData(
                 table: "Categorias",
                 keyColumn: "Id",
                 keyValue: 2,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 13, 7, 1, 30, 382, DateTimeKind.Utc).AddTicks(812));
+                value: new DateTime(2025, 12, 7, 17, 29, 27, 827, DateTimeKind.Utc).AddTicks(5560));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 1,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4753));
+                value: new DateTime(2025, 12, 7, 17, 29, 27, 832, DateTimeKind.Utc).AddTicks(8797));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 2,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4755));
+                value: new DateTime(2025, 12, 7, 17, 29, 27, 832, DateTimeKind.Utc).AddTicks(8801));
 
             migrationBuilder.UpdateData(
                 table: "Marcas",
                 keyColumn: "Id",
                 keyValue: 3,
                 column: "CreatedAt",
-                value: new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4758));
+                value: new DateTime(2025, 12, 7, 17, 29, 27, 832, DateTimeKind.Utc).AddTicks(8803));
         }
     }
 }
