@@ -48,6 +48,9 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
         var configuration = serviceProvider.GetService<IConfiguration>();
         var requestPath = httpContext.Request.Path;
 
+        // Seguridad:OmitirPermisosEnDev controla el comportamiento en Development:
+        // - true: se omiten permisos (solo se requiere login)
+        // - false o clave ausente: se validan permisos igual que en Producción
         // Permitir omitir permisos solo cuando la configuración lo habilite explícitamente en desarrollo
         var skipPermissionsInDevelopment = env?.IsDevelopment() is true
             && configuration?.GetValue<bool>("Seguridad:OmitirPermisosEnDev") is true;
