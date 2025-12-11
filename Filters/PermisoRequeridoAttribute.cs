@@ -35,8 +35,8 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
         var httpContext = context.HttpContext;
         var user = httpContext.User;
 
-        // Verificar si el usuario está autenticado
-        if (!user.Identity?.IsAuthenticated ?? true)
+        // Primera validación: el usuario debe estar autenticado antes de cualquier lógica de permisos
+        if (user?.Identity?.IsAuthenticated != true)
         {
             context.Result = new ChallengeResult();
             return;
@@ -55,14 +55,14 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
         if (skipPermissionsInDevelopment)
         {
             logger?.LogWarning(
-                "Permisos omitidos en entorno de desarrollo para {Username} al acceder a {Path}",
+                "Permisos omitidos en Development porque Seguridad:OmitirPermisosEnDev=true para {Username} al acceder a {Path}",
                 user.Identity?.Name ?? "Desconocido",
                 requestPath);
 
             return; // Permitir acceso en desarrollo
         }
 
-        // Si AllowSuperAdmin está habilitado y el usuario es SuperAdmin, permitir
+        // Bypass de SuperAdmin (después del bypass en Development, antes de validar claims)
         if (AllowSuperAdmin && user.IsInRole(Roles.SuperAdmin))
         {
             return;
