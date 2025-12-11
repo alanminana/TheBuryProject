@@ -28,7 +28,7 @@ public class ApplicationUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<
     /// <summary>
     /// Agrega los permisos efectivos del usuario como claims.
     /// </summary>
-    protected override async Task<ClaimsPrincipal> CreateAsync(IdentityUser user)
+    public override async Task<ClaimsPrincipal> CreateAsync(IdentityUser user)
     {
         var principal = await base.CreateAsync(user);
         if (principal.Identity is not ClaimsIdentity identity)
