@@ -1,209 +1,218 @@
-﻿@model TheBuryProject.ViewModels.ClienteDetalleViewModel
+@model TheBuryProject.ViewModels.ClienteDetalleViewModel
 
 @{
-    ViewData["Title"] = "Detalles del Cliente";
+    ViewData["Title"] = Model.Cliente.NombreCompleto;
+    
+    // Determinar estado general del cliente para el workflow
+    var tieneDocumentosCompletos = Model.EvaluacionCredito.TieneDocumentosCompletos;
+    var puedesolicitarCredito = Model.EvaluacionCredito.CumpleRequisitos || Model.EvaluacionCredito.PuedeAprobarConExcepcion;
+    var scoreClass = Model.EvaluacionCredito.ScoreCrediticio >= 700 ? "success" 
+                   : Model.EvaluacionCredito.ScoreCrediticio >= 500 ? "warning" 
+                   : "danger";
 }
 
-<div class="container-fluid py-4 text-light">
-    <div class="row">
-        <div class="col-12">
-            <!-- Encabezado -->
-            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                <div>
-                    <h2 class="fw-bold mb-1">
-                        <i class="bi bi-person text-primary"></i> @Model.Cliente.NombreCompleto
-                    </h2>
-                    <div class="d-flex flex-wrap gap-2">
-                        <span class="badge @(Model.Cliente.Activo ? "bg-success" : "bg-secondary")">
-                            <i class="bi @(Model.Cliente.Activo ? "bi-check-circle" : "bi-x-circle")"></i>
-                            @(Model.Cliente.Activo ? "Activo" : "Inactivo")
-                        </span>
-                        @if (!string.IsNullOrEmpty(Model.Cliente.TipoDocumento) && !string.IsNullOrEmpty(Model.Cliente.NumeroDocumento))
-                        {
-                            <span class="badge bg-info text-dark">
-                                <i class="bi bi-card-text"></i>
-                                @Model.Cliente.TipoDocumento: @Model.Cliente.NumeroDocumento
-                            </span>
-                        }
-                    </div>
-                </div>
+<section class="container-fluid py-4 text-light">
+    
+    <!-- Header del Cliente -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-person-circle text-info me-2"></i>@Model.Cliente.NombreCompleto
+            </h2>
+            <div class="d-flex gap-3 text-secondary">
+                <span><i class="bi bi-card-text me-1"></i>@Model.Cliente.TipoDocumento: @Model.Cliente.NumeroDocumento</span>
+                @if (!string.IsNullOrEmpty(Model.Cliente.Telefono))
+                {
+                    <span><i class="bi bi-telephone me-1"></i>@Model.Cliente.Telefono</span>
+                }
+                <span class="badge @(Model.Cliente.Activo ? "bg-success" : "bg-secondary")">
+                    @(Model.Cliente.Activo ? "Activo" : "Inactivo")
+                </span>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Cliente.Id" class="btn btn-outline-warning">
+                <i class="bi bi-pencil me-1"></i>Editar
+            </a>
+            <a asp-action="Index" class="btn btn-outline-light">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+    </div>
 
-                <div class="d-flex gap-2 flex-wrap">
-                    @if (Model.Cliente.Activo)
-                    {
-                        <a asp-controller="Credito"
-                           asp-action="Create"
-                           asp-route-clienteId="@Model.Cliente.Id"
-                           class="btn btn-success">
-                            <i class="bi bi-cash-coin"></i> Solicitar Crédito
-                        </a>
-                    }
-                    <a asp-action="Edit"
-                       asp-route-id="@Model.Cliente.Id"
-                       class="btn btn-warning">
-                        <i class="bi bi-pencil"></i> Editar
-                    </a>
-                    <a asp-action="Index" class="btn btn-outline-light">
-                        <i class="bi bi-arrow-left"></i> Volver
-                    </a>
+    <!-- Alertas -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Panel de Estado Crediticio (siempre visible) -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-dark border-@scoreClass h-100">
+                <div class="card-body text-center py-3">
+                    <small class="text-secondary d-block mb-1">Score Crediticio</small>
+                    <h2 class="fw-bold text-@scoreClass mb-0">@Model.EvaluacionCredito.ScoreCrediticio</h2>
+                    <small class="text-secondary">@Model.EvaluacionCredito.NivelRiesgo</small>
                 </div>
             </div>
-
-            <!-- Alertas -->
-            @if (TempData["Success"] != null)
-            {
-                <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-                    <i class="bi bi-check-circle"></i> @TempData["Success"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-0 h-100">
+                <div class="card-body text-center py-3">
+                    <small class="text-secondary d-block mb-1">Crédito Disponible</small>
+                    <h2 class="fw-bold text-success mb-0">@Model.EvaluacionCredito.MontoMaximoDisponible.ToString("C0")</h2>
+                    <small class="text-secondary">máximo</small>
                 </div>
-            }
-            @if (TempData["Error"] != null)
-            {
-                <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-                    <i class="bi bi-exclamation-triangle"></i> @TempData["Error"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark border-0 h-100">
+                <div class="card-body text-center py-3">
+                    <small class="text-secondary d-block mb-1">Endeudamiento</small>
+                    <h2 class="fw-bold @(Model.EvaluacionCredito.PorcentajeEndeudamiento < 40 ? "text-success" : Model.EvaluacionCredito.PorcentajeEndeudamiento < 60 ? "text-warning" : "text-danger") mb-0">
+                        @Model.EvaluacionCredito.PorcentajeEndeudamiento.ToString("F0")%
+                    </h2>
+                    <small class="text-secondary">de ingresos</small>
                 </div>
-            }
-
-            <!-- Tabs -->
-            <div class="card bg-dark border-0 shadow-sm">
-                <div class="card-header border-secondary border-1 border-bottom-0 bg-dark px-0">
-                    <ul class="nav nav-tabs card-header-tabs px-3" id="clienteTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link @(Model.TabActivo == "informacion" || string.IsNullOrEmpty(Model.TabActivo) ? "active" : "")"
-                                    id="tab-informacion"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#informacion"
-                                    type="button"
-                                    role="tab">
-                                <i class="bi bi-person-vcard me-1"></i> Información
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link @(Model.TabActivo == "documentos" ? "active" : "")"
-                                    id="tab-documentos"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#documentos"
-                                    type="button"
-                                    role="tab">
-                                <i class="bi bi-file-earmark-text me-1"></i> Documentos
-                                @if (Model.Documentos?.Any() == true)
-                                {
-                                    <span class="badge bg-info text-dark ms-1">@Model.Documentos.Count</span>
-                                }
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link @(Model.TabActivo == "creditos" ? "active" : "")"
-                                    id="tab-creditos"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#creditos"
-                                    type="button"
-                                    role="tab">
-                                <i class="bi bi-cash-coin me-1"></i> Créditos
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link @(Model.TabActivo == "evaluacion" ? "active" : "")"
-                                    id="tab-evaluacion"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#evaluacion"
-                                    type="button"
-                                    role="tab">
-                                <i class="bi bi-bar-chart-line me-1"></i> Evaluación Crediticia
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="card-body">
-                    <div class="tab-content" id="clienteTabsContent">
-                        <!-- Información -->
-                        <div class="tab-pane fade @(Model.TabActivo == "informacion" || string.IsNullOrEmpty(Model.TabActivo) ? "show active" : "")"
-                             id="informacion"
-                             role="tabpanel"
-                             aria-labelledby="tab-informacion">
-                            <partial name="_InformacionCliente" model="Model.Cliente" />
-                        </div>
-
-                        <!-- Documentos -->
-                        <div class="tab-pane fade @(Model.TabActivo == "documentos" ? "show active" : "")"
-                             id="documentos"
-                             role="tabpanel"
-                             aria-labelledby="tab-documentos">
-                            <partial name="_DocumentacionCliente" model="Model" />
-                        </div>
-
-                        <!-- Créditos -->
-                        <div class="tab-pane fade @(Model.TabActivo == "creditos" ? "show active" : "")"
-                             id="creditos"
-                             role="tabpanel"
-                             aria-labelledby="tab-creditos">
-                            <div class="card bg-dark border-0 shadow-sm mb-0">
-                                <div class="card-header bg-secondary text-white">
-                                    <h5 class="mb-0">
-                                        <i class="bi bi-cash-coin me-1"></i> Créditos Activos
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    @if (Model.CreditosActivos?.Any() == true)
-                                    {
-                                        <div class="table-responsive">
-                                            <table class="table table-dark table-hover align-middle mb-0">
-                                                <thead class="table-secondary text-dark">
-                                                    <tr>
-                                                        <th>Monto Aprobado</th>
-                                                        <th>Estado</th>
-                                                        <th>Fecha</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach (var c in Model.CreditosActivos)
-                                                    {
-                                                        <tr>
-                                                            <td class="fw-semibold">@c.MontoAprobado.ToString("C")</td>
-                                                            <td>@c.Estado</td>
-                                                            <td>@(c.FechaAprobacion?.ToShortDateString() ?? c.FechaSolicitud.ToShortDateString())</td>
-                                                        </tr>
-                                                    }
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="text-center py-4">
-                                            <i class="bi bi-inbox display-5 text-secondary d-block mb-2"></i>
-                                            <p class="text-secondary mb-1">No tiene créditos activos.</p>
-                                            @if (Model.Cliente.Activo)
-                                            {
-                                                <a asp-controller="Credito"
-                                                   asp-action="Create"
-                                                   asp-route-clienteId="@Model.Cliente.Id"
-                                                   class="btn btn-success btn-sm mt-2">
-                                                    <i class="bi bi-cash-coin me-1"></i> Solicitar crédito
-                                                </a>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Evaluación Crediticia / Solicitud -->
-                        <div class="tab-pane fade @(Model.TabActivo == "evaluacion" ? "show active" : "")"
-                             id="evaluacion"
-                             role="tabpanel"
-                             aria-labelledby="tab-evaluacion">
-                            <partial name="_SolicitarCredito" model="Model" />
-                        </div>
-                    </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark @(tieneDocumentosCompletos ? "border-success" : "border-warning") h-100">
+                <div class="card-body text-center py-3">
+                    <small class="text-secondary d-block mb-1">Documentación</small>
+                    @if (tieneDocumentosCompletos)
+                    {
+                        <h2 class="fw-bold text-success mb-0"><i class="bi bi-check-circle-fill"></i></h2>
+                        <small class="text-success">Completa</small>
+                    }
+                    else
+                    {
+                        <h2 class="fw-bold text-warning mb-0"><i class="bi bi-exclamation-triangle-fill"></i></h2>
+                        <small class="text-warning">Incompleta</small>
+                    }
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- Call to Action principal -->
+    @if (Model.Cliente.Activo)
+    {
+        <div class="mb-4">
+            @if (puedesolicitarCredito && tieneDocumentosCompletos)
+            {
+                <button type="button" class="btn btn-success btn-lg px-4" data-bs-toggle="modal" data-bs-target="#solicitarCreditoModal">
+                    <i class="bi bi-cash-coin me-2"></i>Solicitar Crédito
+                </button>
+            }
+            else if (puedesolicitarCredito && !tieneDocumentosCompletos)
+            {
+                <div class="alert alert-warning border-0 d-inline-flex align-items-center mb-0 py-2 px-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span>Complete la <a href="#documentos" class="alert-link" data-bs-toggle="tab">documentación</a> para solicitar crédito</span>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-danger border-0 d-inline-flex align-items-center mb-0 py-2 px-3">
+                    <i class="bi bi-x-circle me-2"></i>
+                    <span>El cliente no cumple los requisitos mínimos para crédito</span>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Tabs de navegación -->
+    <ul class="nav nav-tabs border-0 mb-0" id="clienteTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link @(Model.TabActivo == "resumen" || Model.TabActivo == "informacion" ? "active" : "")" 
+                    id="resumen-tab" data-bs-toggle="tab" data-bs-target="#resumen" type="button">
+                <i class="bi bi-person-vcard me-1"></i>Resumen
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(Model.TabActivo == "documentos" ? "active" : "") @(!tieneDocumentosCompletos ? "text-warning" : "")" 
+                    id="documentos-tab" data-bs-toggle="tab" data-bs-target="#documentos" type="button">
+                <i class="bi bi-folder me-1"></i>Documentos
+                @if (!tieneDocumentosCompletos)
+                {
+                    <span class="badge bg-warning text-dark ms-1">!</span>
+                }
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(Model.TabActivo == "creditos" ? "active" : "")" 
+                    id="creditos-tab" data-bs-toggle="tab" data-bs-target="#creditos" type="button">
+                <i class="bi bi-credit-card me-1"></i>Créditos
+                @if (Model.CreditosActivos?.Count > 0)
+                {
+                    <span class="badge bg-info ms-1">@Model.CreditosActivos.Count</span>
+                }
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenido de Tabs -->
+    <div class="tab-content bg-dark rounded-bottom shadow-sm">
+        
+        <!-- Tab Resumen -->
+        <div class="tab-pane fade @(Model.TabActivo == "resumen" || Model.TabActivo == "informacion" ? "show active" : "")" 
+             id="resumen" role="tabpanel">
+            <div class="p-4">
+                <partial name="~/Views/Cliente/_ResumenCliente.cshtml" model="Model" />
+            </div>
+        </div>
+
+        <!-- Tab Documentos -->
+        <div class="tab-pane fade @(Model.TabActivo == "documentos" ? "show active" : "")" 
+             id="documentos" role="tabpanel">
+            <div class="p-4">
+                <partial name="~/Views/Cliente/_DocumentosCliente.cshtml" model="Model" />
+            </div>
+        </div>
+
+        <!-- Tab Créditos -->
+        <div class="tab-pane fade @(Model.TabActivo == "creditos" ? "show active" : "")" 
+             id="creditos" role="tabpanel">
+            <div class="p-4">
+                <partial name="~/Views/Cliente/_CreditosCliente.cshtml" model="Model" />
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modal Solicitar Crédito -->
+<partial name="~/Views/Cliente/_ModalSolicitarCredito.cshtml" model="Model" />
 
 @section Scripts {
-    <script src="~/js/cliente-details.js" asp-append-version="true"></script>
+    <script>
+        // Mantener la pestaña activa en la URL para navegación
+        document.querySelectorAll('#clienteTabs button').forEach(function(tab) {
+            tab.addEventListener('shown.bs.tab', function(e) {
+                const tabId = e.target.getAttribute('data-bs-target').replace('#', '');
+                history.replaceState(null, null, '?tab=' + tabId);
+            });
+        });
+
+        // Activar tab desde URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam) {
+            const tabButton = document.querySelector(`[data-bs-target="#${tabParam}"]`);
+            if (tabButton) {
+                new bootstrap.Tab(tabButton).show();
+            }
+        }
+    </script>
 }

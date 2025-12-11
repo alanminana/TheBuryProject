@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using TheBuryProject.Data;
 using TheBuryProject.Extensions;
 using TheBuryProject.Helpers;
