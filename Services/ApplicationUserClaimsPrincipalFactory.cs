@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
@@ -28,23 +27,22 @@ public class ApplicationUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<
     /// <summary>
     /// Agrega los permisos efectivos del usuario como claims.
     /// </summary>
-    protected override async Task<ClaimsPrincipal> CreateAsync(IdentityUser user)
+    public override async Task<ClaimsPrincipal> CreateAsync(IdentityUser user)
     {
         var principal = await base.CreateAsync(user);
-        if (principal.Identity is not ClaimsIdentity identity)
-        {
-            return principal;
-        }
-
-        var existingPermissions = identity
-            .FindAll("Permission")
-            .Select(c => c.Value)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var identity = (ClaimsIdentity)principal.Identity!;
 
         var permisos = await _rolService.GetUserEffectivePermissionsAsync(user.Id);
-        foreach (var permiso in permisos.Where(p => !string.IsNullOrWhiteSpace(p)))
+
+        // Opcional: deduplicar Permission claims que ya vengan de los roles
+        var existentes = identity.Claims
+            .Where(c => c.Type == "Permission")
+            .Select(c => c.Value)
+            .ToHashSet();
+
+        foreach (var permiso in permisos)
         {
-            if (existingPermissions.Add(permiso))
+            if (!existentes.Contains(permiso))
             {
                 identity.AddClaim(new Claim("Permission", permiso));
             }
