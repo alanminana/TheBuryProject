@@ -4,7 +4,7 @@ using TheBuryProject.ViewModels;
 namespace TheBuryProject.Services.Interfaces
 {
     /// <summary>
-    /// Servicio centralizado para gestión de cajas, aperturas, movimientos y cierres
+    /// Servicio centralizado para gestin de cajas, aperturas, movimientos y cierres
     /// </summary>
     public interface ICajaService
     {
@@ -48,7 +48,7 @@ namespace TheBuryProject.Services.Interfaces
 
         #endregion
 
-        #region Reportes y Estadísticas
+        #region Reportes y Estadsticas
 
         Task<DetallesAperturaViewModel> ObtenerDetallesAperturaAsync(int aperturaId);
         Task<ReporteCajaViewModel> GenerarReporteCajaAsync(
@@ -56,6 +56,7 @@ namespace TheBuryProject.Services.Interfaces
             DateTime fechaHasta,
             int? cajaId = null);
         Task<HistorialCierresViewModel> ObtenerEstadisticasCierresAsync(
+            int? cajaId = null,
             DateTime? fechaDesde = null,
             DateTime? fechaHasta = null);
 

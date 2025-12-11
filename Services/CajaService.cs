@@ -560,13 +560,7 @@ namespace TheBuryProject.Services
 
                 var movimientos = await ObtenerMovimientosDeAperturaAsync(aperturaId);
 
-                var totalIngresos = movimientos
-                    .Where(m => m.Tipo == TipoMovimientoCaja.Ingreso)
-                    .Sum(m => m.Monto);
-
-                var totalEgresos = movimientos
-                    .Where(m => m.Tipo == TipoMovimientoCaja.Egreso)
-                    .Sum(m => m.Monto);
+                var (totalIngresos, totalEgresos) = CalcularTotalesMovimientos(movimientos);
 
                 var saldoActual = apertura.MontoInicial + totalIngresos - totalEgresos;
 
@@ -643,12 +637,13 @@ namespace TheBuryProject.Services
         }
 
         public async Task<HistorialCierresViewModel> ObtenerEstadisticasCierresAsync(
+            int? cajaId = null,
             DateTime? fechaDesde = null,
             DateTime? fechaHasta = null)
         {
             try
             {
-                var cierres = await ObtenerHistorialCierresAsync(null, fechaDesde, fechaHasta);
+                var cierres = await ObtenerHistorialCierresAsync(cajaId, fechaDesde, fechaHasta);
 
                 var totalCierres = cierres.Count;
                 var cierresConDiferencia = cierres.Count(c => c.TieneDiferencia);
@@ -689,7 +684,11 @@ namespace TheBuryProject.Services
         private async Task<(decimal Ingresos, decimal Egresos)> ObtenerTotalesMovimientosAsync(int aperturaId)
         {
             var movimientos = await ObtenerMovimientosDeAperturaAsync(aperturaId);
+            return CalcularTotalesMovimientos(movimientos);
+        }
 
+        private static (decimal Ingresos, decimal Egresos) CalcularTotalesMovimientos(IEnumerable<MovimientoCaja> movimientos)
+        {
             var ingresos = movimientos
                 .Where(m => m.Tipo == TipoMovimientoCaja.Ingreso)
                 .Sum(m => m.Monto);
