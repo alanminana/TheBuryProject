@@ -55,7 +55,7 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
         if (skipPermissionsInDevelopment)
         {
             logger?.LogWarning(
-                "Permisos omitidos en entorno de desarrollo para {Username} al acceder a {Path}",
+                "Permisos omitidos en Development porque Seguridad:OmitirPermisosEnDev=true para {Username} al acceder a {Path}",
                 user.Identity?.Name ?? "Desconocido",
                 requestPath);
 
