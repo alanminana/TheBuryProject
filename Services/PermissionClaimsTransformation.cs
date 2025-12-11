@@ -35,7 +35,8 @@ public class PermissionClaimsTransformation : IClaimsTransformation
         var existingPermissions = identity
             .FindAll(c => c.Type == "Permission")
             .Select(c => c.Value)
-            .ToHashSet();
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
@@ -44,9 +45,9 @@ public class PermissionClaimsTransformation : IClaimsTransformation
         }
 
         var effectivePermissions = await _rolService.GetUserEffectivePermissionsAsync(user.Id);
-        foreach (var permiso in effectivePermissions)
+        foreach (var permiso in effectivePermissions.Where(p => !string.IsNullOrWhiteSpace(p)))
         {
-            if (!existingPermissions.Contains(permiso))
+            if (existingPermissions.Add(permiso))
             {
                 identity.AddClaim(new Claim("Permission", permiso));
             }
