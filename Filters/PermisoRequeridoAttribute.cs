@@ -26,7 +26,7 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
     public string Accion { get; set; } = string.Empty;
 
     /// <summary>
-    /// Si es true, permite acceso a SuperAdmin sin verificar el permiso específico
+    /// Si es true, permite acceso a <see cref="Roles.SuperAdmin"/> sin verificar el permiso específico
     /// </summary>
     public bool AllowSuperAdmin { get; set; } = true;
 
@@ -48,6 +48,9 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
         var configuration = serviceProvider.GetService<IConfiguration>();
         var requestPath = httpContext.Request.Path;
 
+        // Seguridad:OmitirPermisosEnDev controla el comportamiento en Development:
+        // - true: se omiten permisos (solo se requiere login)
+        // - false o clave ausente: se validan permisos igual que en Producción
         // Permitir omitir permisos solo cuando la configuración lo habilite explícitamente en desarrollo
         var skipPermissionsInDevelopment = env?.IsDevelopment() is true
             && configuration?.GetValue<bool>("Seguridad:OmitirPermisosEnDev") is true;
@@ -62,7 +65,7 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
             return; // Permitir acceso en desarrollo
         }
 
-        // Bypass de SuperAdmin (después del bypass en Development, antes de validar claims)
+        // Bypass de Roles.SuperAdmin (después del bypass en Development, antes de validar claims)
         if (AllowSuperAdmin && user.IsInRole(Roles.SuperAdmin))
         {
             return;
