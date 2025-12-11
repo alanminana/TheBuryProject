@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
@@ -29,12 +31,23 @@ public class ApplicationUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<
     protected override async Task<ClaimsPrincipal> CreateAsync(IdentityUser user)
     {
         var principal = await base.CreateAsync(user);
-        var identity = (ClaimsIdentity)principal.Identity!;
+        if (principal.Identity is not ClaimsIdentity identity)
+        {
+            return principal;
+        }
+
+        var existingPermissions = identity
+            .FindAll("Permission")
+            .Select(c => c.Value)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var permisos = await _rolService.GetUserEffectivePermissionsAsync(user.Id);
-        foreach (var permiso in permisos)
+        foreach (var permiso in permisos.Where(p => !string.IsNullOrWhiteSpace(p)))
         {
-            identity.AddClaim(new Claim("Permission", permiso));
+            if (existingPermissions.Add(permiso))
+            {
+                identity.AddClaim(new Claim("Permission", permiso));
+            }
         }
 
         return principal;
