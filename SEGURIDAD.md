@@ -2,7 +2,7 @@
 
 ## Bypass en entorno de desarrollo
 
-Para habilitar temporalmente el acceso sin validar permisos en entornos de desarrollo, utiliza la clave de configuración:
+Para habilitar temporalmente el acceso sin validar permisos en entornos de desarrollo, utiliza la clave de configuración. Mantener el valor por defecto (`false`) permite probar la matriz de permisos incluso en `Development`:
 
 ```json
 "Seguridad": {
