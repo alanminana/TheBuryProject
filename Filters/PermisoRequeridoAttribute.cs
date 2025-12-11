@@ -26,7 +26,7 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
     public string Accion { get; set; } = string.Empty;
 
     /// <summary>
-    /// Si es true, permite acceso a SuperAdmin sin verificar el permiso específico
+    /// Si es true, permite acceso a <see cref="Roles.SuperAdmin"/> sin verificar el permiso específico
     /// </summary>
     public bool AllowSuperAdmin { get; set; } = true;
 
@@ -62,7 +62,7 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
             return; // Permitir acceso en desarrollo
         }
 
-        // Bypass de SuperAdmin (después del bypass en Development, antes de validar claims)
+        // Bypass de Roles.SuperAdmin (después del bypass en Development, antes de validar claims)
         if (AllowSuperAdmin && user.IsInRole(Roles.SuperAdmin))
         {
             return;
