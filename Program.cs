@@ -22,6 +22,8 @@ builder.Services.AddDbContextFactory<AppDbContext>((serviceProvider, options) =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+builder.Services.AddScoped<AppDbContext>(sp =>
+    sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
 
 // 3. Configuración de Identity
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
