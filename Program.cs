@@ -55,7 +55,10 @@ builder.Services.AddSingleton<IMapper>(sp =>
 
 // 5. Registro de servicios (Dependency Injection)
 
-// 5.1 Servicios auxiliares de ventas (registra: CurrentUserService, FinancialCalculationService, VentaValidator, VentaNumberGenerator)
+// 5.0 Servicios transversales
+builder.Services.AddCoreServices();
+
+// 5.1 Servicios auxiliares de ventas (registra: FinancialCalculationService, VentaValidator, VentaNumberGenerator)
 builder.Services.AddVentaServices();
 
 // 5.2 Servicios principales
