@@ -254,7 +254,7 @@ public class DevolucionController : Controller
         try
         {
             var usuario = await _userManager.GetUserAsync(User);
-            await _devolucionService.AprobarDevolucionAsync(id, usuario?.UserName ?? "Admin");
+            await _devolucionService.AprobarDevolucionAsync(id, usuario?.UserName ?? Roles.Administrador);
             TempData["Success"] = "Devolución aprobada exitosamente. Se generó una nota de crédito.";
         }
         catch (Exception ex)

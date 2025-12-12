@@ -273,7 +273,7 @@ public class AutorizacionController : Controller
         {
             var usuario = await _userManager.GetUserAsync(User);
             var roles = await _userManager.GetRolesAsync(usuario!);
-            var rol = roles.FirstOrDefault() ?? Roles.Vendedor;
+            var rol = roles.FirstOrDefault(r => Roles.GetAllRoles().Contains(r)) ?? Roles.Vendedor;
 
             var solicitud = new SolicitudAutorizacion
             {
