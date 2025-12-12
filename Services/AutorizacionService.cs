@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 
@@ -44,6 +45,11 @@ public class AutorizacionService : IAutorizacionService
 
     public async Task<UmbralAutorizacion> CrearUmbralAsync(UmbralAutorizacion umbral)
     {
+        if (!Roles.GetAllRoles().Contains(umbral.Rol))
+        {
+            throw new InvalidOperationException($"El rol {umbral.Rol} no es válido para umbrales de autorización.");
+        }
+
         // Verificar si ya existe un umbral para ese rol y tipo
         var existente = await _context.UmbralesAutorizacion
             .FirstOrDefaultAsync(u => u.Rol == umbral.Rol &&
@@ -117,10 +123,15 @@ public class AutorizacionService : IAutorizacionService
     private async Task<(bool Permitido, decimal ValorPermitido, string Mensaje)> ValidarUmbralAsync(
         string rol, TipoUmbral tipoUmbral, decimal valor, string descripcionOperacion)
     {
-        // Admin siempre tiene permisos ilimitados
-        if (rol == "Admin")
+        // Roles administrativos siempre tienen permisos ilimitados
+        if (Roles.IsAdminRole(rol))
         {
-            return (true, decimal.MaxValue, "Autorizado - Rol Admin");
+            return (true, decimal.MaxValue, "Autorizado - Rol administrativo");
+        }
+
+        if (!Roles.GetAllRoles().Contains(rol))
+        {
+            return (false, 0, $"El rol {rol} no es válido para validar umbrales.");
         }
 
         // Buscar umbral configurado para el rol
