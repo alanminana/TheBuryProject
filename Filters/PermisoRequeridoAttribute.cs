@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -75,7 +76,9 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
         var claimValue = $"{Modulo}.{Accion}";
 
         // Verificar si el usuario tiene el claim de permiso requerido
-        var hasPermission = user.HasClaim(c => c.Type == "Permission" && c.Value == claimValue);
+        var hasPermission = user.HasClaim(c =>
+            c.Type == "Permission" &&
+            string.Equals(c.Value, claimValue, StringComparison.OrdinalIgnoreCase));
 
         if (!hasPermission)
         {
