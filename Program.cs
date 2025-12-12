@@ -7,6 +7,7 @@ using TheBuryProject.Data;
 using TheBuryProject.Extensions;
 using TheBuryProject.Helpers;
 using TheBuryProject.Hubs;
+using TheBuryProject.Middleware;
 using TheBuryProject.Services;
 using TheBuryProject.Services.Interfaces;
 
@@ -119,6 +120,7 @@ app.UseRouting();
 
 // 9. Autenticación y autorización
 app.UseAuthentication();
+app.UseMiddleware<AuditMiddleware>();
 app.UseAuthorization();
 
 // 10. Mapeo de rutas

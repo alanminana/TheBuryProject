@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Filters;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
@@ -11,7 +12,7 @@ namespace TheBuryProject.Controllers;
 /// <summary>
 /// Controller para gestión de acciones del sistema RBAC
 /// </summary>
-[Authorize(Roles = "SuperAdmin,Administrador")]
+[Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
 [PermisoRequerido(Modulo = "acciones", Accion = "view")]
 public class AccionesController : Controller
 {

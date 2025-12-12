@@ -1,5 +1,6 @@
 @using TheBuryProject.Models.Entities
 @using TheBuryProject.ViewModels
+@using TheBuryProject.Models.Constants
 @model DevolucionDetallesViewModel
 @{
     ViewData["Title"] = $"Devolución {Model.Devolucion.NumeroDevolucion}";
@@ -202,7 +203,7 @@
         <!-- Panel Lateral -->
         <div class="col-md-4">
             <!-- Acciones -->
-            @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente"))
+            @if (User.IsInRole(Roles.SuperAdmin) || User.IsInRole(Roles.Gerente))
             {
                 <div class="card mb-3">
                     <div class="card-header bg-primary text-white">

@@ -1,4 +1,5 @@
 ﻿@model TheBuryProject.ViewModels.SolicitudesListViewModel
+@using TheBuryProject.Models.Constants
 
 @{
     ViewData["Title"] = "Solicitudes de Autorización";
@@ -145,7 +146,7 @@
                                         <th>Valor solicitado</th>
                                         <th>Valor permitido</th>
                                         <th>Justificación</th>
-                                        @if (User.IsInRole("Admin") || User.IsInRole("Gerente"))
+                                        @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Gerente))
                                         {
                                             <th class="text-end">Acciones</th>
                                         }
@@ -183,7 +184,7 @@
                                                                                                 : solicitud.Justificacion)
                                         </small>
                                     </td>
-                                    @if (User.IsInRole("Admin") || User.IsInRole("Gerente"))
+                                    @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Gerente))
                                             {
                                                 <td class="text-end">
                                                     <div class="btn-group btn-group-sm" role="group">
