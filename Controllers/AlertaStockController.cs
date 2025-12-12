@@ -1,13 +1,14 @@
 ﻿using System;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public class AlertaStockController : Controller
     {
         private readonly IAlertaStockService _alertaStockService;

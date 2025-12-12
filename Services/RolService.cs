@@ -45,7 +45,7 @@ public class RolService : IRolService
         return await _roleManager.FindByNameAsync(roleName);
     }
 
-    public async Task<IdentityResult> CreateRoleAsync(string roleName, string? description = null)
+    public async Task<IdentityResult> CreateRoleAsync(string roleName)
     {
         var role = new IdentityRole(roleName);
         return await _roleManager.CreateAsync(role);

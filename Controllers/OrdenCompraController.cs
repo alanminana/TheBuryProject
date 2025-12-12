@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Filters;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -10,7 +11,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Contador")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Contador)]
     [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionVer)]
     public class OrdenCompraController : Controller
     {

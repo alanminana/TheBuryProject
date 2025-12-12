@@ -30,7 +30,7 @@ public interface IRolService
     /// <summary>
     /// Crea un nuevo rol
     /// </summary>
-    Task<IdentityResult> CreateRoleAsync(string roleName, string? description = null);
+    Task<IdentityResult> CreateRoleAsync(string roleName);
 
     /// <summary>
     /// Actualiza el nombre de un rol

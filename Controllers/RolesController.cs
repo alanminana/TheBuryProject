@@ -129,7 +129,7 @@ public class RolesController : Controller
 
         try
         {
-            var result = await _rolService.CreateRoleAsync(model.Nombre, model.Descripcion);
+            var result = await _rolService.CreateRoleAsync(model.Nombre);
 
             if (result.Succeeded)
             {
