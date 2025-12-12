@@ -7,6 +7,7 @@ using TheBuryProject.Data;
 using TheBuryProject.Extensions;
 using TheBuryProject.Helpers;
 using TheBuryProject.Hubs;
+using TheBuryProject.Middleware;
 using TheBuryProject.Services;
 using TheBuryProject.Services.Interfaces;
 
@@ -54,7 +55,10 @@ builder.Services.AddSingleton<IMapper>(sp =>
 
 // 5. Registro de servicios (Dependency Injection)
 
-// 5.1 Servicios auxiliares de ventas (registra: CurrentUserService, FinancialCalculationService, VentaValidator, VentaNumberGenerator)
+// 5.0 Servicios transversales
+builder.Services.AddCoreServices();
+
+// 5.1 Servicios auxiliares de ventas (registra: FinancialCalculationService, VentaValidator, VentaNumberGenerator)
 builder.Services.AddVentaServices();
 
 // 5.2 Servicios principales
@@ -119,6 +123,7 @@ app.UseRouting();
 
 // 9. Autenticación y autorización
 app.UseAuthentication();
+app.UseMiddleware<AuditMiddleware>();
 app.UseAuthorization();
 
 // 10. Mapeo de rutas
