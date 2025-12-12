@@ -1,6 +1,7 @@
 using System;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
@@ -72,8 +73,22 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
             return;
         }
 
-        // Construir el claim value requerido
-        var claimValue = $"{Modulo}.{Accion}";
+        // Normalizar valores de módulo y acción (evitar problemas de espacios/case)
+        var normalizedModulo = (Modulo ?? string.Empty).Trim();
+        var normalizedAccion = (Accion ?? string.Empty).Trim();
+
+        if (string.IsNullOrEmpty(normalizedModulo) || string.IsNullOrEmpty(normalizedAccion))
+        {
+            logger?.LogError(
+                "PermisoRequeridoAttribute configurado sin Modulo o Accion en {Path}",
+                requestPath);
+
+            context.Result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            return;
+        }
+
+        // Construir el claim value requerido (canonizado)
+        var claimValue = $"{normalizedModulo.ToLowerInvariant()}.{normalizedAccion.ToLowerInvariant()}";
 
         // Verificar si el usuario tiene el claim de permiso requerido
         var hasPermission = user.HasClaim(c =>
