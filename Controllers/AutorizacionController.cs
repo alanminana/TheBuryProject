@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using TheBuryProject.Filters;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
@@ -31,6 +32,7 @@ public class AutorizacionController : Controller
     /// Lista de todos los umbrales configurados
     /// </summary>
     [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     public async Task<IActionResult> Index()
     {
         var umbrales = await _autorizacionService.ObtenerTodosUmbralesAsync();
@@ -50,6 +52,7 @@ public class AutorizacionController : Controller
     /// Formulario para crear nuevo umbral
     /// </summary>
     [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpGet]
     public IActionResult CrearUmbral()
     {
@@ -61,6 +64,7 @@ public class AutorizacionController : Controller
     /// Procesar creación de umbral
     /// </summary>
     [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearUmbral(UmbralAutorizacionViewModel model)
@@ -98,6 +102,7 @@ public class AutorizacionController : Controller
     /// Formulario para editar umbral
     /// </summary>
     [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpGet]
     public async Task<IActionResult> EditarUmbral(int id)
     {
@@ -126,6 +131,7 @@ public class AutorizacionController : Controller
     /// Procesar edición de umbral
     /// </summary>
     [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarUmbral(UmbralAutorizacionViewModel model)
@@ -162,6 +168,7 @@ public class AutorizacionController : Controller
     /// Eliminar umbral
     /// </summary>
     [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EliminarUmbral(int id)
@@ -187,6 +194,7 @@ public class AutorizacionController : Controller
     /// Lista de solicitudes de autorización
     /// </summary>
     [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
     public async Task<IActionResult> Solicitudes()
     {
         var usuario = await _userManager.GetUserAsync(User);
@@ -209,6 +217,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Ver detalles de una solicitud
     /// </summary>
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
     public async Task<IActionResult> DetallesSolicitud(int id)
     {
         var solicitud = await _autorizacionService.ObtenerSolicitudAsync(id);
@@ -241,6 +250,7 @@ public class AutorizacionController : Controller
     /// Formulario para crear nueva solicitud
     /// </summary>
     [HttpGet]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
     public IActionResult CrearSolicitud()
     {
         return View(new CrearSolicitudAutorizacionViewModel());
@@ -251,6 +261,7 @@ public class AutorizacionController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
     public async Task<IActionResult> CrearSolicitud(CrearSolicitudAutorizacionViewModel model)
     {
         if (!ModelState.IsValid)
@@ -262,7 +273,7 @@ public class AutorizacionController : Controller
         {
             var usuario = await _userManager.GetUserAsync(User);
             var roles = await _userManager.GetRolesAsync(usuario!);
-            var rol = roles.FirstOrDefault() ?? Roles.Vendedor;
+            var rol = roles.FirstOrDefault(r => Roles.GetAllRoles().Contains(r)) ?? Roles.Vendedor;
 
             var solicitud = new SolicitudAutorizacion
             {
@@ -291,6 +302,7 @@ public class AutorizacionController : Controller
     /// Aprobar solicitud
     /// </summary>
     [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Aprobar)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AprobarSolicitud(int id, string? comentario)
@@ -313,6 +325,7 @@ public class AutorizacionController : Controller
     /// Rechazar solicitud
     /// </summary>
     [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Rechazar)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RechazarSolicitud(int id, string comentario)
@@ -342,6 +355,7 @@ public class AutorizacionController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
     public async Task<IActionResult> CancelarSolicitud(int id)
     {
         try
