@@ -246,20 +246,35 @@ public static class RolesPermisosSeeder
             }),
 
             // CONFIGURACIÓN
-            ("Configuración", "configuracion", "Configuración", "bi-gear", 90, new List<(string, string, int)>
+            ("Acciones", "acciones", "Configuración", "bi-list-check", 90, new List<(string, string, int)>
+            {
+                ("Ver", "view", 1),
+                ("Crear", "create", 2),
+                ("Editar", "update", 3),
+                ("Eliminar", "delete", 4)
+            }),
+            ("Módulos", "modulos", "Configuración", "bi-diagram-3", 91, new List<(string, string, int)>
+            {
+                ("Ver", "view", 1),
+                ("Crear", "create", 2),
+                ("Editar", "update", 3),
+                ("Eliminar", "delete", 4)
+            }),
+            ("Configuración", "configuracion", "Configuración", "bi-gear", 92, new List<(string, string, int)>
             {
                 ("Ver", "view", 1),
                 ("Editar", "update", 2)
             }),
-            ("Usuarios", "usuarios", "Configuración", "bi-person", 91, new List<(string, string, int)>
+            ("Usuarios", "usuarios", "Configuración", "bi-person", 93, new List<(string, string, int)>
             {
                 ("Ver", "view", 1),
                 ("Crear", "create", 2),
                 ("Editar", "update", 3),
                 ("Eliminar", "delete", 4),
-                ("Asignar Roles", "assignroles", 5)
+                ("Asignar Roles", "assignroles", 5),
+                ("Resetear Contraseña", "resetpassword", 6)
             }),
-            ("Roles", "roles", "Configuración", "bi-shield", 92, new List<(string, string, int)>
+            ("Roles", "roles", "Configuración", "bi-shield", 94, new List<(string, string, int)>
             {
                 ("Ver", "view", 1),
                 ("Crear", "create", 2),
