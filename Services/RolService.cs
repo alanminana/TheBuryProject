@@ -122,6 +122,7 @@ public class RolService : IRolService
             {
                 existente.IsDeleted = false;
                 await _context.SaveChangesAsync();
+                await SyncRoleClaimsAsync(roleId);
             }
             return existente;
         }
