@@ -1,4 +1,5 @@
 ﻿@model List<RolViewModel>
+@using TheBuryProject.Models.Constants
 
 @{
     ViewData["Title"] = "Gestión de Roles";
@@ -92,7 +93,7 @@
                                                title="Editar">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            @if (rol.Nombre != "SuperAdmin")
+                                            @if (rol.Nombre != Roles.SuperAdmin)
                                             {
                                                 <a asp-action="Delete" asp-route-id="@rol.Id"
                                                    class="btn btn-sm btn-outline-danger"
@@ -114,14 +115,14 @@
                             <i class="bi bi-info-circle me-2"></i>
                             <strong>Roles del Sistema:</strong>
                             <ul class="mb-0 mt-2">
-                                <li><strong>SuperAdmin:</strong> Todos los permisos sin restricción</li>
-                                <li><strong>Administrador:</strong> Gestión completa excepto configuración crítica</li>
-                                <li><strong>Gerente:</strong> Ventas, compras, reportes y autorizaciones</li>
-                                <li><strong>Vendedor:</strong> Ventas, cotizaciones y gestión de clientes</li>
-                                <li><strong>Cajero:</strong> Cobros y movimientos de caja</li>
-                                <li><strong>Repositor:</strong> Gestión de stock y movimientos</li>
-                                <li><strong>Técnico:</strong> Devoluciones, garantías y RMAs</li>
-                                <li><strong>Contador:</strong> Consultas y reportes (solo lectura)</li>
+                                <li><strong>@Roles.SuperAdmin:</strong> Todos los permisos sin restricción</li>
+                                <li><strong>@Roles.Administrador:</strong> Gestión completa excepto configuración crítica</li>
+                                <li><strong>@Roles.Gerente:</strong> Ventas, compras, reportes y autorizaciones</li>
+                                <li><strong>@Roles.Vendedor:</strong> Ventas, cotizaciones y gestión de clientes</li>
+                                <li><strong>@Roles.Cajero:</strong> Cobros y movimientos de caja</li>
+                                <li><strong>@Roles.Repositor:</strong> Gestión de stock y movimientos</li>
+                                <li><strong>@Roles.Tecnico:</strong> Devoluciones, garantías y RMAs</li>
+                                <li><strong>@Roles.Contador:</strong> Consultas y reportes (solo lectura)</li>
                             </ul>
                         </div>
                     </div>

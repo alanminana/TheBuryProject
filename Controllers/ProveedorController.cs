@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
@@ -10,7 +11,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Contador")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Contador)]
     public class ProveedorController : Controller
     {
         private readonly IProveedorService _proveedorService;

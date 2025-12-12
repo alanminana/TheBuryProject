@@ -31,13 +31,6 @@ public class PermissionClaimsTransformation : IClaimsTransformation
             return principal;
         }
 
-        // Evitar duplicados si los claims ya fueron agregados (por ejemplo, vía fábrica personalizada)
-        var existingPermissions = identity
-            .FindAll(c => c.Type == "Permission")
-            .Select(c => c.Value)
-            .Where(v => !string.IsNullOrWhiteSpace(v))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
         {
@@ -45,9 +38,32 @@ public class PermissionClaimsTransformation : IClaimsTransformation
         }
 
         var effectivePermissions = await _rolService.GetUserEffectivePermissionsAsync(user.Id);
-        foreach (var permiso in effectivePermissions.Where(p => !string.IsNullOrWhiteSpace(p)))
+        var normalizedEffectivePermissions = effectivePermissions
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Quitar permisos que ya no correspondan según la evaluación actual
+        var existingPermissionClaims = identity
+            .FindAll(c => c.Type == "Permission")
+            .ToList();
+
+        foreach (var claim in existingPermissionClaims)
         {
-            if (existingPermissions.Add(permiso))
+            if (!normalizedEffectivePermissions.Contains(claim.Value))
+            {
+                identity.RemoveClaim(claim);
+            }
+        }
+
+        // Agregar los permisos faltantes que sí correspondan
+        var currentPermissions = identity
+            .FindAll(c => c.Type == "Permission")
+            .Select(c => c.Value)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var permiso in normalizedEffectivePermissions)
+        {
+            if (currentPermissions.Add(permiso))
             {
                 identity.AddClaim(new Claim("Permission", permiso));
             }
