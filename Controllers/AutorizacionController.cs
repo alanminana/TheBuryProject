@@ -30,7 +30,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Lista de todos los umbrales configurados
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public async Task<IActionResult> Index()
     {
         var umbrales = await _autorizacionService.ObtenerTodosUmbralesAsync();
@@ -53,7 +53,7 @@ public class AutorizacionController : Controller
     [HttpGet]
     public IActionResult CrearUmbral()
     {
-        ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+        ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
         return View(new UmbralAutorizacionViewModel());
     }
 
@@ -67,7 +67,7 @@ public class AutorizacionController : Controller
     {
         if (!ModelState.IsValid)
         {
-            ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+            ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
             return View(model);
         }
 
@@ -89,7 +89,7 @@ public class AutorizacionController : Controller
         catch (InvalidOperationException ex)
         {
             ModelState.AddModelError("", ex.Message);
-            ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+            ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
             return View(model);
         }
     }
@@ -118,7 +118,7 @@ public class AutorizacionController : Controller
             Activo = umbral.Activo
         };
 
-        ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+        ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
         return View(viewModel);
     }
 
@@ -132,7 +132,7 @@ public class AutorizacionController : Controller
     {
         if (!ModelState.IsValid)
         {
-            ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+            ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
             return View(model);
         }
 
@@ -153,7 +153,7 @@ public class AutorizacionController : Controller
         catch (Exception ex)
         {
             ModelState.AddModelError("", ex.Message);
-            ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+            ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
             return View(model);
         }
     }
@@ -186,7 +186,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Lista de solicitudes de autorización
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public async Task<IActionResult> Solicitudes()
     {
         var usuario = await _userManager.GetUserAsync(User);
@@ -262,7 +262,7 @@ public class AutorizacionController : Controller
         {
             var usuario = await _userManager.GetUserAsync(User);
             var roles = await _userManager.GetRolesAsync(usuario!);
-            var rol = roles.FirstOrDefault() ?? "Vendedor";
+            var rol = roles.FirstOrDefault() ?? Roles.Vendedor;
 
             var solicitud = new SolicitudAutorizacion
             {
@@ -290,7 +290,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Aprobar solicitud
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AprobarSolicitud(int id, string? comentario)
@@ -298,7 +298,7 @@ public class AutorizacionController : Controller
         try
         {
             var usuario = await _userManager.GetUserAsync(User);
-            await _autorizacionService.AprobarSolicitudAsync(id, usuario?.UserName ?? "Admin", comentario);
+            await _autorizacionService.AprobarSolicitudAsync(id, usuario?.UserName ?? Roles.Administrador, comentario);
             TempData["Success"] = "Solicitud aprobada exitosamente";
         }
         catch (Exception ex)
@@ -312,7 +312,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Rechazar solicitud
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RechazarSolicitud(int id, string comentario)
@@ -326,7 +326,7 @@ public class AutorizacionController : Controller
         try
         {
             var usuario = await _userManager.GetUserAsync(User);
-            await _autorizacionService.RechazarSolicitudAsync(id, usuario?.UserName ?? "Admin", comentario);
+            await _autorizacionService.RechazarSolicitudAsync(id, usuario?.UserName ?? Roles.Administrador, comentario);
             TempData["Success"] = "Solicitud rechazada";
         }
         catch (Exception ex)

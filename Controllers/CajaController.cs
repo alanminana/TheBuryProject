@@ -39,7 +39,7 @@ namespace TheBuryProject.Controllers
         /// <summary>
         /// Módulo principal de cajas: muestra cajas activas/inactivas y aperturas abiertas
         /// </summary>
-        [Authorize(Roles = "SuperAdmin,Gerente,Contador")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Contador)]
         public async Task<IActionResult> Index()
         {
             var cajas = await _cajaService.ObtenerTodasCajasAsync();
@@ -55,7 +55,7 @@ namespace TheBuryProject.Controllers
             return View(viewModel); // Views/Caja/Index.cshtml (CajasListViewModel)
         }
 
-        [Authorize(Roles = "SuperAdmin,Gerente")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public IActionResult Create()
         {
             return View();
@@ -63,7 +63,7 @@ namespace TheBuryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SuperAdmin,Gerente")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> Create(CajaViewModel model)
         {
             if (!ModelState.IsValid)
@@ -85,7 +85,7 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        [Authorize(Roles = "SuperAdmin,Gerente")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> Edit(int id)
         {
             var caja = await _cajaService.ObtenerCajaPorIdAsync(id);
@@ -103,7 +103,7 @@ namespace TheBuryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SuperAdmin,Gerente")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> Edit(int id, CajaViewModel model)
         {
             if (!ModelState.IsValid)
@@ -148,7 +148,7 @@ namespace TheBuryProject.Controllers
 
         #region Apertura de Caja
 
-        [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
         public async Task<IActionResult> Abrir(int? cajaId)
         {
             var cajas = await SetCajasActivasSelectListAsync(cajaId);
@@ -170,7 +170,7 @@ namespace TheBuryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
         public async Task<IActionResult> Abrir(AbrirCajaViewModel model)
         {
             if (!ModelState.IsValid)
@@ -208,7 +208,7 @@ namespace TheBuryProject.Controllers
 
         #region Movimientos
 
-        [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
         public async Task<IActionResult> RegistrarMovimiento(int aperturaId)
         {
             var apertura = await _cajaService.ObtenerAperturaPorIdAsync(aperturaId);
@@ -232,7 +232,7 @@ namespace TheBuryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
         public async Task<IActionResult> RegistrarMovimiento(MovimientoCajaViewModel model)
         {
             if (!ModelState.IsValid)
@@ -262,7 +262,7 @@ namespace TheBuryProject.Controllers
 
         #region Cierre de Caja
 
-        [Authorize(Roles = "SuperAdmin,Gerente")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> Cerrar(int aperturaId)
         {
             try
@@ -294,7 +294,7 @@ namespace TheBuryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SuperAdmin,Gerente")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> Cerrar(CerrarCajaViewModel model)
         {
             if (!ModelState.IsValid)
@@ -332,7 +332,7 @@ namespace TheBuryProject.Controllers
 
         #region Detalles y Reportes
 
-        [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
         public async Task<IActionResult> DetallesApertura(int id)
         {
             try
@@ -348,7 +348,7 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        [Authorize(Roles = "SuperAdmin,Gerente")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> DetallesCierre(int id)
         {
             var cierre = await _cajaService.ObtenerCierrePorIdAsync(id);
@@ -364,7 +364,7 @@ namespace TheBuryProject.Controllers
         /// <summary>
         /// Historial de cierres de caja con filtros
         /// </summary>
-        [Authorize(Roles = "SuperAdmin,Gerente,Contador")]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Contador)]
         public async Task<IActionResult> Historial(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
         {
             var viewModel = await _cajaService.ObtenerEstadisticasCierresAsync(cajaId, fechaDesde, fechaHasta);
