@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
@@ -9,7 +10,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public class CategoriaController : Controller
     {
         private readonly ICategoriaService _categoriaService;

@@ -17,7 +17,7 @@ namespace TheBuryProject.Controllers
 {
     [AllowAnonymous]
 
-    //[Authorize(Roles = "Admin,Gerente")]
+    //[Authorize(Roles = Roles.Administrador + "," + Roles.Gerente)]
     public class CreditoController : Controller
     {
         private readonly ICreditoService _creditoService;

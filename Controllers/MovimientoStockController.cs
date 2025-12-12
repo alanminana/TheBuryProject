@@ -7,13 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public class MovimientoStockController : Controller
     {
         private readonly IMovimientoStockService _movimientoStockService;
