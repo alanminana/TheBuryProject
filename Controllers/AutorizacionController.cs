@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
@@ -48,7 +49,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Formulario para crear nuevo umbral
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
     [HttpGet]
     public IActionResult CrearUmbral()
     {
@@ -59,7 +60,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Procesar creación de umbral
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearUmbral(UmbralAutorizacionViewModel model)
@@ -96,7 +97,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Formulario para editar umbral
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
     [HttpGet]
     public async Task<IActionResult> EditarUmbral(int id)
     {
@@ -124,7 +125,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Procesar edición de umbral
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarUmbral(UmbralAutorizacionViewModel model)
@@ -160,7 +161,7 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Eliminar umbral
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EliminarUmbral(int id)
