@@ -18,6 +18,9 @@ builder.Services.AddHttpContextAccessor();
 
 // 2. Configuración de DbContext con SQL Server
 
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddDbContextFactory<AppDbContext>((serviceProvider, options) =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
@@ -40,7 +43,6 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 })
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<AppDbContext>();
-builder.Services.AddScoped<IUserClaimsPrincipalFactory<IdentityUser>, ApplicationUserClaimsPrincipalFactory>();
 builder.Services.AddScoped<IClaimsTransformation, PermissionClaimsTransformation>();
 
 // 4. Configuración de AutoMapper
