@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TheBuryProject.Filters;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
@@ -10,7 +11,7 @@ namespace TheBuryProject.Controllers;
 /// <summary>
 /// Controller para gestión de usuarios del sistema
 /// </summary>
-[Authorize(Roles = "SuperAdmin,Administrador")]
+[Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
 [PermisoRequerido(Modulo = "usuarios", Accion = "view")]
 public class UsuariosController : Controller
 {

@@ -1,4 +1,5 @@
 ﻿@model TheBuryProject.ViewModels.UmbralesListViewModel
+@using TheBuryProject.Models.Constants
 
 @{
     ViewData["Title"] = "Umbrales de Autorización";
@@ -19,7 +20,7 @@
         </div>
 
         <div class="d-flex flex-wrap gap-2">
-            @if (User.IsInRole("Admin"))
+            @if (User.IsInRole(Roles.Administrador))
             {
                 <a asp-action="CrearUmbral" class="btn btn-primary btn-sm">
                     <i class="bi bi-plus-circle me-1"></i>Nuevo umbral
@@ -67,7 +68,7 @@
 
                 <ul class="nav nav-tabs mb-3" role="tablist">
                     @{
-                        var roles = new[] { "Admin", "Gerente", "Vendedor", "Contador" };
+                        var roles = new[] { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
                         var firstRole = true;
                     }
                     @foreach (var rol in roles)
@@ -114,7 +115,7 @@
                                                 <th>Descripción</th>
                                                 <th>Estado</th>
                                                 <th>Última modificación</th>
-                                                @if (User.IsInRole("Admin"))
+                                                @if (User.IsInRole(Roles.Administrador))
                                                 {
                                                     <th class="text-end">Acciones</th>
                                                 }
@@ -167,7 +168,7 @@
                                                                                                     ?? umbral.CreatedAt.ToString("dd/MM/yyyy HH:mm"))
                                         </small>
                                     </td>
-                                    @if (User.IsInRole("Admin"))
+                                    @if (User.IsInRole(Roles.Administrador))
                                                     {
                                                         <td class="text-end">
                                                             <div class="btn-group btn-group-sm" role="group">
@@ -203,7 +204,7 @@
                                 <div class="alert alert-info mb-0">
                                     <i class="bi bi-info-circle me-1"></i>
                                     No hay umbrales configurados para el rol <strong>@rol</strong>.
-                                    @if (User.IsInRole("Admin"))
+                                    @if (User.IsInRole(Roles.Administrador))
                                     {
                                         <a asp-action="CrearUmbral" class="alert-link ms-1">Crear uno ahora</a>
                                     }

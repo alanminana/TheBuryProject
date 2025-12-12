@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data.Seeds;
+using TheBuryProject.Models.Constants;
 
 namespace TheBuryProject.Data
 {
@@ -73,7 +74,7 @@ namespace TheBuryProject.Data
                     logger.LogInformation("Usuario administrador creado: {Email}", adminEmail);
 
                     // Asignar rol SuperAdmin
-                    await userManager.AddToRoleAsync(adminUser, "SuperAdmin");
+                    await userManager.AddToRoleAsync(adminUser, Roles.SuperAdmin);
                     logger.LogInformation("Rol 'SuperAdmin' asignado al usuario {Email}", adminEmail);
 
                     logger.LogWarning("Credenciales de administrador por defecto:");
@@ -92,9 +93,9 @@ namespace TheBuryProject.Data
                 logger.LogInformation("Usuario administrador ya existe: {Email}", adminEmail);
 
                 // Verificar que tenga el rol SuperAdmin
-                if (!await userManager.IsInRoleAsync(adminUser, "SuperAdmin"))
+                if (!await userManager.IsInRoleAsync(adminUser, Roles.SuperAdmin))
                 {
-                    await userManager.AddToRoleAsync(adminUser, "SuperAdmin");
+                    await userManager.AddToRoleAsync(adminUser, Roles.SuperAdmin);
                     logger.LogInformation("Rol 'SuperAdmin' asignado al usuario existente {Email}", adminEmail);
                 }
             }
@@ -112,13 +113,13 @@ namespace TheBuryProject.Data
 
             var testUsers = new[]
             {
-                new { Email = "administrador@thebury.com", Password = "Admin123!", Role = "Administrador" },
-                new { Email = "gerente@thebury.com", Password = "Gerente123!", Role = "Gerente" },
-                new { Email = "vendedor@thebury.com", Password = "Vendedor123!", Role = "Vendedor" },
-                new { Email = "cajero@thebury.com", Password = "Cajero123!", Role = "Cajero" },
-                new { Email = "repositor@thebury.com", Password = "Repositor123!", Role = "Repositor" },
-                new { Email = "tecnico@thebury.com", Password = "Tecnico123!", Role = "Tecnico" },
-                new { Email = "contador@thebury.com", Password = "Contador123!", Role = "Contador" }
+                new { Email = "administrador@thebury.com", Password = "Admin123!", Role = Roles.Administrador },
+                new { Email = "gerente@thebury.com", Password = "Gerente123!", Role = Roles.Gerente },
+                new { Email = "vendedor@thebury.com", Password = "Vendedor123!", Role = Roles.Vendedor },
+                new { Email = "cajero@thebury.com", Password = "Cajero123!", Role = Roles.Cajero },
+                new { Email = "repositor@thebury.com", Password = "Repositor123!", Role = Roles.Repositor },
+                new { Email = "tecnico@thebury.com", Password = "Tecnico123!", Role = Roles.Tecnico },
+                new { Email = "contador@thebury.com", Password = "Contador123!", Role = Roles.Contador }
             };
 
             foreach (var testUser in testUsers)
