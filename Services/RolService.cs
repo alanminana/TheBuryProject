@@ -290,25 +290,17 @@ public class RolService : IRolService
         return await _userManager.IsInRoleAsync(user, roleName);
     }
 
-    public async Task<List<string>> GetUserEffectivePermissionsAsync(string userId)
+    public Task<List<string>> GetUserEffectivePermissionsAsync(string userId)
     {
-        var userRoles = await GetUserRolesAsync(userId);
-        var permissions = new HashSet<string>();
-
-        foreach (var roleName in userRoles)
-        {
-            var role = await _roleManager.FindByNameAsync(roleName);
-            if (role != null)
-            {
-                var permisos = await GetPermissionsForRoleAsync(role.Id);
-                foreach (var permiso in permisos)
-                {
-                    permissions.Add(permiso.ClaimValue);
-                }
-            }
-        }
-
-        return permissions.ToList();
+        return _context.UserRoles
+            .Where(ur => ur.UserId == userId)
+            .Join(
+                _context.RolPermisos.Where(rp => !rp.IsDeleted),
+                ur => ur.RoleId,
+                rp => rp.RoleId,
+                (ur, rp) => rp.ClaimValue)
+            .Distinct()
+            .ToListAsync();
     }
 
     #endregion
