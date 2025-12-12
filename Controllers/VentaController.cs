@@ -8,7 +8,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
     public class VentaController : Controller
     {
         private readonly IVentaService _ventaService;
@@ -521,7 +521,7 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                var usuarioAutoriza = User.Identity?.Name ?? "Administrador";
+                var usuarioAutoriza = User.Identity?.Name ?? Roles.Administrador;
 
                 var resultado = await _ventaService.AutorizarVentaAsync(id, usuarioAutoriza, motivo);
                 if (resultado)
@@ -583,7 +583,7 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Rechazar), new { id });
                 }
 
-                var usuarioAutoriza = User.Identity?.Name ?? "Administrador";
+                var usuarioAutoriza = User.Identity?.Name ?? Roles.Administrador;
 
                 var resultado = await _ventaService.RechazarVentaAsync(id, usuarioAutoriza, motivo);
                 if (resultado)
