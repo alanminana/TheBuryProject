@@ -112,6 +112,7 @@ public class RolService : IRolService
     {
         // Verificar si ya existe
         var existente = await _context.RolPermisos
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(rp => rp.RoleId == roleId &&
                                       rp.ModuloId == moduloId &&
                                       rp.AccionId == accionId);
