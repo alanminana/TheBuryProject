@@ -222,12 +222,12 @@ public static class RolesPermisosSeeder
             }),
 
             // AUTORIZACIONES
-            ("Autorizaciones", "autorizaciones", "Autorizaciones", "bi-check2-circle", 70, new List<(string, string, int)>
+            ("Autorizaciones", AutorizacionesConstants.Modulo, "Autorizaciones", "bi-check2-circle", 70, new List<(string, string, int)>
             {
-                ("Ver", "view", 1),
-                ("Aprobar", "approve", 2),
-                ("Rechazar", "reject", 3),
-                ("Gestionar Umbrales", "managethresholds", 4)
+                ("Ver", AutorizacionesConstants.Acciones.Ver, 1),
+                ("Aprobar", AutorizacionesConstants.Acciones.Aprobar, 2),
+                ("Rechazar", AutorizacionesConstants.Acciones.Rechazar, 3),
+                ("Gestionar Umbrales", AutorizacionesConstants.Acciones.GestionarUmbrales, 4)
             }),
 
             // REPORTES
@@ -346,7 +346,7 @@ public static class RolesPermisosSeeder
         var gerenteRole = roles.FirstOrDefault(r => r.Name == Models.Constants.Roles.Gerente);
         if (gerenteRole != null)
         {
-            var modulosGerente = new[] { "ventas", "cotizaciones", "creditos", "cobranzas", "clientes", "evaluacioncredito", "proveedores", "ordenescompra", "stock", "movimientos", "devoluciones", "garantias", "rmas", "notascredito", "autorizaciones", "reportes", "dashboard" };
+            var modulosGerente = new[] { "ventas", "cotizaciones", "creditos", "cobranzas", "clientes", "evaluacioncredito", "proveedores", "ordenescompra", "stock", "movimientos", "devoluciones", "garantias", "rmas", "notascredito", AutorizacionesConstants.Modulo, "reportes", "dashboard" };
             await AsignarPermisosModulosAsync(context, gerenteRole.Id, modulos, modulosGerente);
         }
 
