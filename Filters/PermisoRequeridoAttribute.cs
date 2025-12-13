@@ -6,13 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using TheBuryProject.Models.Constants;
+using RoleConstants = TheBuryProject.Models.Constants.Roles;
 
 namespace TheBuryProject.Filters;
 
 /// <summary>
 /// Attribute para requerir un permiso específico (claims-based)
-/// Uso: [PermisoRequerido(Modulo = "Ventas", Accion = "create")]
+/// Uso: [PermisoRequerido(Modulo = "ventas", Accion = "create")]
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
 public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilter
@@ -28,7 +28,7 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
     public string Accion { get; set; } = string.Empty;
 
     /// <summary>
-    /// Si es true, permite acceso a <see cref="Roles.SuperAdmin"/> sin verificar el permiso específico
+    /// Si es true, permite acceso a <see cref="RoleConstants.SuperAdmin"/> sin verificar el permiso específico.
     /// </summary>
     public bool AllowSuperAdmin { get; set; } = true;
 
@@ -44,18 +44,16 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
             return;
         }
 
-        var serviceProvider = context.HttpContext.RequestServices;
-        var env = serviceProvider.GetService<IWebHostEnvironment>();
-        var logger = serviceProvider.GetService<ILogger<PermisoRequeridoAttribute>>();
-        var configuration = serviceProvider.GetService<IConfiguration>();
+        var services = httpContext.RequestServices;
+        var env = services.GetService(typeof(IWebHostEnvironment)) as IWebHostEnvironment;
+        var logger = services.GetService(typeof(ILogger<PermisoRequeridoAttribute>)) as ILogger<PermisoRequeridoAttribute>;
+        var configuration = services.GetService(typeof(IConfiguration)) as IConfiguration;
         var requestPath = httpContext.Request.Path;
 
-        // Seguridad:OmitirPermisosEnDev controla el comportamiento en Development:
-        // - true: se omiten permisos (solo se requiere login)
-        // - false o clave ausente: se validan permisos igual que en Producción
         // Permitir omitir permisos solo cuando la configuración lo habilite explícitamente en desarrollo
-        var skipPermissionsInDevelopment = env?.IsDevelopment() is true
-            && configuration?.GetValue<bool>("Seguridad:OmitirPermisosEnDev") is true;
+        var skipPermissionsInDevelopment =
+            env?.IsDevelopment() is true &&
+            configuration?.GetValue<bool>("Seguridad:OmitirPermisosEnDev") is true;
 
         if (skipPermissionsInDevelopment)
         {
@@ -67,45 +65,33 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
             return; // Permitir acceso en desarrollo
         }
 
-        // Bypass de Roles.SuperAdmin (después del bypass en Development, antes de validar claims)
-        if (AllowSuperAdmin && user.IsInRole(Roles.SuperAdmin))
+        // Bypass de SuperAdmin (evita colisión con AuthorizeAttribute.Roles)
+        if (AllowSuperAdmin && user.IsInRole(RoleConstants.SuperAdmin))
         {
             return;
         }
 
-        // Normalizar valores de módulo y acción (evitar problemas de espacios/case)
+        // Normalizar valores de módulo y acción
         var normalizedModulo = (Modulo ?? string.Empty).Trim();
         var normalizedAccion = (Accion ?? string.Empty).Trim();
 
-        if (string.IsNullOrEmpty(normalizedModulo) || string.IsNullOrEmpty(normalizedAccion))
+        if (string.IsNullOrWhiteSpace(normalizedModulo) || string.IsNullOrWhiteSpace(normalizedAccion))
         {
-            logger?.LogError(
-                "PermisoRequeridoAttribute configurado sin Modulo o Accion en {Path}",
-                requestPath);
-
+            logger?.LogError("PermisoRequeridoAttribute configurado sin Modulo o Accion en {Path}", requestPath);
             context.Result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
             return;
         }
 
-        // Construir el claim value requerido (canonizado)
+        // Claim canonizado
         var claimValue = $"{normalizedModulo.ToLowerInvariant()}.{normalizedAccion.ToLowerInvariant()}";
 
-        // Verificar si el usuario tiene el claim de permiso requerido
+        // Comparación robusta
         var hasPermission = user.HasClaim(c =>
             c.Type == "Permission" &&
             string.Equals(c.Value, claimValue, StringComparison.OrdinalIgnoreCase));
 
         if (!hasPermission)
         {
-            // Registrar intento de acceso no autorizado
-            logger?.LogWarning(
-                "Acceso denegado: Usuario {Username} intentó acceder a {Path} sin claim Permission requerido {Permission}",
-                user.Identity?.Name ?? "Desconocido",
-                requestPath,
-                claimValue
-            );
-
-            // Retornar 403 Forbidden
             context.Result = new ForbidResult();
             return;
         }

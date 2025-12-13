@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿// Services/RolService.cs
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
@@ -28,39 +31,35 @@ public class RolService : IRolService
         _context = context;
     }
 
+    private static string Canon(string value) => (value ?? string.Empty).Trim().ToLowerInvariant();
+
+    private static string CanonClaim(string moduloClave, string accionClave)
+        => $"{Canon(moduloClave)}.{Canon(accionClave)}";
+
     #region Gestión de Roles
 
     public async Task<List<IdentityRole>> GetAllRolesAsync()
     {
-        return await _roleManager.Roles.OrderBy(r => r.Name).ToListAsync();
+        return await _roleManager.Roles
+            .OrderBy(r => r.Name)
+            .ToListAsync();
     }
 
-    public async Task<IdentityRole?> GetRoleByIdAsync(string roleId)
-    {
-        return await _roleManager.FindByIdAsync(roleId);
-    }
+    public Task<IdentityRole?> GetRoleByIdAsync(string roleId) => _roleManager.FindByIdAsync(roleId);
 
-    public async Task<IdentityRole?> GetRoleByNameAsync(string roleName)
-    {
-        return await _roleManager.FindByNameAsync(roleName);
-    }
+    public Task<IdentityRole?> GetRoleByNameAsync(string roleName) => _roleManager.FindByNameAsync(roleName);
 
-    public async Task<IdentityResult> CreateRoleAsync(string roleName)
-    {
-        var role = new IdentityRole(roleName);
-        return await _roleManager.CreateAsync(role);
-    }
+    public Task<IdentityResult> CreateRoleAsync(string roleName)
+        => _roleManager.CreateAsync(new IdentityRole(roleName));
 
     public async Task<IdentityResult> UpdateRoleAsync(string roleId, string newRoleName)
     {
         var role = await _roleManager.FindByIdAsync(roleId);
         if (role == null)
-        {
             return IdentityResult.Failed(new IdentityError { Description = "Rol no encontrado" });
-        }
 
         role.Name = newRoleName;
-        role.NormalizedName = newRoleName.ToUpper();
+        role.NormalizedName = newRoleName.ToUpperInvariant();
         return await _roleManager.UpdateAsync(role);
     }
 
@@ -68,11 +67,8 @@ public class RolService : IRolService
     {
         var role = await _roleManager.FindByIdAsync(roleId);
         if (role == null)
-        {
             return IdentityResult.Failed(new IdentityError { Description = "Rol no encontrado" });
-        }
 
-        // Verificar que no haya usuarios con este rol
         var usersInRole = await _userManager.GetUsersInRoleAsync(role.Name!);
         if (usersInRole.Any())
         {
@@ -82,16 +78,11 @@ public class RolService : IRolService
             });
         }
 
-        // Eliminar permisos asociados
         await ClearPermissionsForRoleAsync(roleId);
-
         return await _roleManager.DeleteAsync(role);
     }
 
-    public async Task<bool> RoleExistsAsync(string roleName)
-    {
-        return await _roleManager.RoleExistsAsync(roleName);
-    }
+    public Task<bool> RoleExistsAsync(string roleName) => _roleManager.RoleExistsAsync(roleName);
 
     #endregion
 
@@ -110,45 +101,61 @@ public class RolService : IRolService
 
     public async Task<RolPermiso> AssignPermissionToRoleAsync(string roleId, int moduloId, int accionId)
     {
-        // Verificar si ya existe
-        var existente = await _context.RolPermisos
+        // Traer TODOS (activos + soft-deleted) para evitar duplicados históricos por QueryFilter
+        var existentes = await _context.RolPermisos
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(rp => rp.RoleId == roleId &&
-                                      rp.ModuloId == moduloId &&
-                                      rp.AccionId == accionId);
+            .Where(rp => rp.RoleId == roleId && rp.ModuloId == moduloId && rp.AccionId == accionId)
+            .ToListAsync();
 
-        if (existente != null)
+        // Validar módulo/acción (y obtener claves canonizadas)
+        var modulo = await _context.ModulosSistema
+            .FirstOrDefaultAsync(m => m.Id == moduloId && !m.IsDeleted);
+
+        var accion = await _context.AccionesModulo
+            .FirstOrDefaultAsync(a => a.Id == accionId && !a.IsDeleted);
+
+        if (modulo == null || accion == null)
+            throw new InvalidOperationException("Módulo o acción no encontrados o eliminados");
+
+        var claimValue = CanonClaim(modulo.Clave, accion.Clave);
+
+        // Si ya hay activo, asegurar ClaimValue canonizado (por datos legacy) y devolver
+        var activo = existentes.FirstOrDefault(rp => !rp.IsDeleted);
+        if (activo != null)
         {
-            if (existente.IsDeleted)
+            if (!string.Equals(Canon(activo.ClaimValue), claimValue, StringComparison.Ordinal))
             {
-                existente.IsDeleted = false;
+                activo.ClaimValue = claimValue;
                 await _context.SaveChangesAsync();
                 await SyncRoleClaimsAsync(roleId);
             }
-            return existente;
+            return activo;
         }
 
-        // Obtener módulo y acción
-        var modulo = await _context.ModulosSistema.FindAsync(moduloId);
-        var accion = await _context.AccionesModulo.FindAsync(accionId);
-
-        if (modulo == null || accion == null)
+        // Si hay soft-deleted, revivir
+        var revivable = existentes.FirstOrDefault();
+        if (revivable != null)
         {
-            throw new InvalidOperationException("Módulo o acción no encontrados");
+            revivable.IsDeleted = false;
+            revivable.ClaimValue = claimValue;
+
+            await _context.SaveChangesAsync();
+            await SyncRoleClaimsAsync(roleId);
+            return revivable;
         }
 
+        // Crear nuevo
         var rolPermiso = new RolPermiso
         {
             RoleId = roleId,
             ModuloId = moduloId,
             AccionId = accionId,
-            ClaimValue = $"{modulo.Clave}.{accion.Clave}"
+            ClaimValue = claimValue,
+            IsDeleted = false
         };
 
         _context.RolPermisos.Add(rolPermiso);
         await _context.SaveChangesAsync();
-
-        // Sincronizar claims
         await SyncRoleClaimsAsync(roleId);
 
         return rolPermiso;
@@ -167,9 +174,7 @@ public class RolService : IRolService
         permiso.IsDeleted = true;
         await _context.SaveChangesAsync();
 
-        // Sincronizar claims
         await SyncRoleClaimsAsync(roleId);
-
         return true;
     }
 
@@ -180,20 +185,18 @@ public class RolService : IRolService
             .ToListAsync();
 
         foreach (var permiso in permisos)
-        {
             permiso.IsDeleted = true;
-        }
 
         await _context.SaveChangesAsync();
-
-        // Sincronizar claims
         await SyncRoleClaimsAsync(roleId);
     }
 
-    public async Task<bool> RoleHasPermissionAsync(string roleId, string moduloClave, string accionClave)
+    public Task<bool> RoleHasPermissionAsync(string roleId, string moduloClave, string accionClave)
     {
-        var claimValue = $"{moduloClave}.{accionClave}";
-        return await _context.RolPermisos
+        var claimValue = CanonClaim(moduloClave, accionClave);
+
+        return _context.RolPermisos
+            .AsNoTracking()
             .AnyAsync(rp => rp.RoleId == roleId &&
                            rp.ClaimValue == claimValue &&
                            !rp.IsDeleted);
@@ -201,13 +204,10 @@ public class RolService : IRolService
 
     public async Task<List<RolPermiso>> AssignMultiplePermissionsAsync(string roleId, List<(int moduloId, int accionId)> permisos)
     {
-        var result = new List<RolPermiso>();
+        var result = new List<RolPermiso>(permisos.Count);
 
         foreach (var (moduloId, accionId) in permisos)
-        {
-            var permiso = await AssignPermissionToRoleAsync(roleId, moduloId, accionId);
-            result.Add(permiso);
-        }
+            result.Add(await AssignPermissionToRoleAsync(roleId, moduloId, accionId));
 
         return result;
     }
@@ -217,30 +217,28 @@ public class RolService : IRolService
         var role = await _roleManager.FindByIdAsync(roleId);
         if (role == null) return;
 
-        // Obtener claims actuales del rol
         var currentClaims = await _roleManager.GetClaimsAsync(role);
-
-        // Obtener permisos actuales de la BD
         var permisos = await GetPermissionsForRoleAsync(roleId);
-        var permisoClaims = permisos.Select(p => p.ClaimValue).ToHashSet();
 
-        // Eliminar claims que ya no existen en permisos
+        var permisoClaims = permisos
+            .Select(p => Canon(p.ClaimValue))
+            .ToHashSet(StringComparer.Ordinal);
+
         foreach (var claim in currentClaims.Where(c => c.Type == "Permission"))
         {
-            if (!permisoClaims.Contains(claim.Value))
-            {
+            if (!permisoClaims.Contains(Canon(claim.Value)))
                 await _roleManager.RemoveClaimAsync(role, claim);
-            }
         }
 
-        // Agregar claims que faltan
-        var existingClaimValues = currentClaims.Where(c => c.Type == "Permission").Select(c => c.Value).ToHashSet();
-        foreach (var claimValue in permisoClaims)
+        var existingClaimValues = currentClaims
+            .Where(c => c.Type == "Permission")
+            .Select(c => Canon(c.Value))
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var cv in permisoClaims)
         {
-            if (!existingClaimValues.Contains(claimValue))
-            {
-                await _roleManager.AddClaimAsync(role, new Claim("Permission", claimValue));
-            }
+            if (!existingClaimValues.Contains(cv))
+                await _roleManager.AddClaimAsync(role, new Claim("Permission", cv));
         }
     }
 
@@ -249,17 +247,13 @@ public class RolService : IRolService
     #region Gestión de Usuarios en Roles
 
     public async Task<List<IdentityUser>> GetUsersInRoleAsync(string roleName)
-    {
-        return (await _userManager.GetUsersInRoleAsync(roleName)).ToList();
-    }
+        => (await _userManager.GetUsersInRoleAsync(roleName)).ToList();
 
     public async Task<IdentityResult> AssignRoleToUserAsync(string userId, string roleName)
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
-        {
             return IdentityResult.Failed(new IdentityError { Description = "Usuario no encontrado" });
-        }
 
         return await _userManager.AddToRoleAsync(user, roleName);
     }
@@ -268,9 +262,7 @@ public class RolService : IRolService
     {
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
-        {
             return IdentityResult.Failed(new IdentityError { Description = "Usuario no encontrado" });
-        }
 
         return await _userManager.RemoveFromRoleAsync(user, roleName);
     }
@@ -291,17 +283,26 @@ public class RolService : IRolService
         return await _userManager.IsInRoleAsync(user, roleName);
     }
 
-    public Task<List<string>> GetUserEffectivePermissionsAsync(string userId)
+    // MEJOR OPCIÓN: 1 query a DB + normalización en memoria (evita romper IQueryable con métodos no traducibles)
+    public async Task<List<string>> GetUserEffectivePermissionsAsync(string userId)
     {
-        return _context.UserRoles
+        var raw = await _context.UserRoles
+            .AsNoTracking()
             .Where(ur => ur.UserId == userId)
             .Join(
-                _context.RolPermisos.Where(rp => !rp.IsDeleted),
+                _context.RolPermisos.AsNoTracking().Where(rp => !rp.IsDeleted),
                 ur => ur.RoleId,
                 rp => rp.RoleId,
-                (ur, rp) => rp.ClaimValue)
+                (ur, rp) => rp.ClaimValue
+            )
             .Distinct()
             .ToListAsync();
+
+        return raw
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(Canon)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
     }
 
     #endregion
@@ -326,9 +327,11 @@ public class RolService : IRolService
 
     public async Task<ModuloSistema?> GetModuloByClaveAsync(string clave)
     {
+        var claveNorm = Canon(clave);
+
         return await _context.ModulosSistema
             .Include(m => m.Acciones)
-            .FirstOrDefaultAsync(m => m.Clave == clave && !m.IsDeleted);
+            .FirstOrDefaultAsync(m => m.Clave == claveNorm && !m.IsDeleted);
     }
 
     public async Task<List<AccionModulo>> GetAccionesForModuloAsync(int moduloId)
@@ -348,6 +351,7 @@ public class RolService : IRolService
 
     public async Task<ModuloSistema> CreateModuloAsync(ModuloSistema modulo)
     {
+        modulo.Clave = Canon(modulo.Clave);
         _context.ModulosSistema.Add(modulo);
         await _context.SaveChangesAsync();
         return modulo;
@@ -358,13 +362,10 @@ public class RolService : IRolService
         var existing = await _context.ModulosSistema
             .FirstOrDefaultAsync(m => m.Id == modulo.Id && !m.IsDeleted);
 
-        if (existing == null)
-        {
-            return false;
-        }
+        if (existing == null) return false;
 
         existing.Nombre = modulo.Nombre;
-        existing.Clave = modulo.Clave;
+        existing.Clave = Canon(modulo.Clave);
         existing.Descripcion = modulo.Descripcion;
         existing.Categoria = modulo.Categoria;
         existing.Icono = modulo.Icono;
@@ -379,6 +380,7 @@ public class RolService : IRolService
 
     public async Task<AccionModulo> CreateAccionAsync(AccionModulo accion)
     {
+        accion.Clave = Canon(accion.Clave);
         _context.AccionesModulo.Add(accion);
         await _context.SaveChangesAsync();
         return accion;
@@ -389,13 +391,10 @@ public class RolService : IRolService
         var existing = await _context.AccionesModulo
             .FirstOrDefaultAsync(a => a.Id == accion.Id && !a.IsDeleted);
 
-        if (existing == null)
-        {
-            return false;
-        }
+        if (existing == null) return false;
 
         existing.Nombre = accion.Nombre;
-        existing.Clave = accion.Clave;
+        existing.Clave = Canon(accion.Clave);
         existing.Descripcion = accion.Descripcion;
         existing.ModuloId = accion.ModuloId;
         existing.Activa = accion.Activa;
@@ -414,10 +413,13 @@ public class RolService : IRolService
             .Include(a => a.Permisos)
             .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
 
-        if (accion == null)
-        {
-            return false;
-        }
+        if (accion == null) return false;
+
+        var affectedRoleIds = accion.Permisos
+            .Where(p => !p.IsDeleted)
+            .Select(p => p.RoleId)
+            .Distinct()
+            .ToList();
 
         accion.IsDeleted = true;
         accion.UpdatedAt = DateTime.UtcNow;
@@ -431,6 +433,10 @@ public class RolService : IRolService
         }
 
         await _context.SaveChangesAsync();
+
+        foreach (var roleId in affectedRoleIds)
+            await SyncRoleClaimsAsync(roleId);
+
         return true;
     }
 
@@ -441,10 +447,14 @@ public class RolService : IRolService
             .ThenInclude(a => a.Permisos)
             .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
 
-        if (modulo == null)
-        {
-            return false;
-        }
+        if (modulo == null) return false;
+
+        var affectedRoleIds = modulo.Acciones
+            .SelectMany(a => a.Permisos)
+            .Where(p => !p.IsDeleted)
+            .Select(p => p.RoleId)
+            .Distinct()
+            .ToList();
 
         modulo.IsDeleted = true;
         modulo.UpdatedAt = DateTime.UtcNow;
@@ -465,6 +475,10 @@ public class RolService : IRolService
         }
 
         await _context.SaveChangesAsync();
+
+        foreach (var roleId in affectedRoleIds)
+            await SyncRoleClaimsAsync(roleId);
+
         return true;
     }
 
