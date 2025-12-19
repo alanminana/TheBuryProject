@@ -42,7 +42,6 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 .AddEntityFrameworkStores<AppDbContext>();
 
 // Claims (factory + transformation)
-builder.Services.AddScoped<IUserClaimsPrincipalFactory<IdentityUser>, ApplicationUserClaimsPrincipalFactory>();
 builder.Services.AddScoped<IClaimsTransformation, PermissionClaimsTransformation>();
 
 // 4. AutoMapper

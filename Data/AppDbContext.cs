@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Models.Base;
 using TheBuryProject.Models.Entities;
@@ -13,6 +14,10 @@ namespace TheBuryProject.Data
     {
         private readonly IHttpContextAccessor? _httpContextAccessor;
 
+        // FIX (Punto 6): Seed determinístico (evita DateTime.UtcNow en HasData)
+        private static readonly DateTime SeedCreatedAtUtc =
+            new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
         public AppDbContext(
             DbContextOptions<AppDbContext> options,
             IHttpContextAccessor? httpContextAccessor = null)
@@ -20,6 +25,7 @@ namespace TheBuryProject.Data
         {
             _httpContextAccessor = httpContextAccessor;
         }
+
         // DbSets - Cada uno representa una tabla en la base de datos
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<Marca> Marcas { get; set; }
@@ -35,6 +41,10 @@ namespace TheBuryProject.Data
         // Órdenes de Compra
         public DbSet<OrdenCompra> OrdenesCompra { get; set; }
         public DbSet<OrdenCompraDetalle> OrdenCompraDetalles { get; set; }
+        // Alias por compatibilidad. Mantener un único DbSet real por entidad.
+        // Preferir OrdenCompraDetalles.
+        [System.Obsolete("Use OrdenCompraDetalles")]
+        public DbSet<OrdenCompraDetalle> OrdenesCompraDetalles => OrdenCompraDetalles;
         public DbSet<MovimientoStock> MovimientosStock { get; set; }
 
         // Cheques
@@ -117,7 +127,8 @@ namespace TheBuryProject.Data
                     .HasDefaultValue(string.Empty);
 
                 entity.Property(e => e.Activo)
-                    .HasDefaultValue(true);
+                    .HasDefaultValue(true)
+                    .ValueGeneratedNever();
 
                 entity.HasOne(e => e.Parent)
                     .WithMany(e => e.Children)
@@ -129,6 +140,7 @@ namespace TheBuryProject.Data
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
+
             // Configuración para VentaCreditoCuota
             modelBuilder.Entity<VentaCreditoCuota>(entity =>
             {
@@ -158,6 +170,7 @@ namespace TheBuryProject.Data
                     .HasForeignKey(e => e.CreditoId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
+
             // Configuración de Marca
             modelBuilder.Entity<Marca>(entity =>
             {
@@ -521,8 +534,9 @@ namespace TheBuryProject.Data
                     .IsRowVersion();
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
+
                 entity.Property(e => e.CFTEA)
-    .HasPrecision(5, 2);
+                    .HasPrecision(5, 2);
 
                 entity.Property(e => e.TotalAPagar)
                     .HasPrecision(18, 2);
@@ -574,6 +588,7 @@ namespace TheBuryProject.Data
 
                 entity.HasQueryFilter(e => !e.IsDeleted);
             });
+
             // Configuración de Cuota
             modelBuilder.Entity<Cuota>(entity =>
             {
@@ -1030,6 +1045,8 @@ namespace TheBuryProject.Data
         /// </summary>
         private void SeedData(ModelBuilder modelBuilder)
         {
+            var seedUtc = SeedCreatedAtUtc;
+
             modelBuilder.Entity<Categoria>().HasData(
                 new Categoria
                 {
@@ -1039,8 +1056,9 @@ namespace TheBuryProject.Data
                     Descripcion = "Productos electrónicos",
                     ControlSerieDefault = true,
                     Activo = true,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
+                    CreatedAt = seedUtc,   // FIX
+                    CreatedBy = "System",
+                    IsDeleted = false
                 },
                 new Categoria
                 {
@@ -1050,10 +1068,12 @@ namespace TheBuryProject.Data
                     Descripcion = "Heladeras, freezers y aire acondicionado",
                     ControlSerieDefault = true,
                     Activo = true,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
+                    CreatedAt = seedUtc,   // FIX
+                    CreatedBy = "System",
+                    IsDeleted = false
                 }
             );
+
             // Configuración para ConfiguracionPago
             modelBuilder.Entity<ConfiguracionPago>(entity =>
             {
@@ -1209,7 +1229,15 @@ namespace TheBuryProject.Data
                 entity.Property(e => e.CantidadSugeridaReposicion)
                     .HasPrecision(18, 2);
 
-                entity.HasIndex(e => e.ProductoId);
+                entity.HasIndex(e => e.ProductoId)
+                    .HasDatabaseName("IX_AlertasStock_ProductoId");
+
+                // Enforce: a lo sumo 1 alerta "activa" (no resuelta) por producto.
+                // Definición de "activa": IsDeleted = 0 AND FechaResolucion IS NULL.
+                entity.HasIndex(e => e.ProductoId)
+                    .HasDatabaseName("UX_AlertasStock_Producto_Activa")
+                    .IsUnique()
+                    .HasFilter("[IsDeleted] = 0 AND [FechaResolucion] IS NULL");
                 entity.HasIndex(e => e.FechaAlerta);
                 entity.HasIndex(e => e.Tipo);
                 entity.HasIndex(e => e.Prioridad);
@@ -1656,8 +1684,9 @@ namespace TheBuryProject.Data
                     Descripcion = "Electrónica y electrodomésticos",
                     PaisOrigen = "Corea del Sur",
                     Activo = true,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
+                    CreatedAt = seedUtc,   // FIX
+                    CreatedBy = "System",
+                    IsDeleted = false
                 },
                 new Marca
                 {
@@ -1667,8 +1696,9 @@ namespace TheBuryProject.Data
                     Descripcion = "Electrónica y electrodomésticos",
                     PaisOrigen = "Corea del Sur",
                     Activo = true,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
+                    CreatedAt = seedUtc,   // FIX
+                    CreatedBy = "System",
+                    IsDeleted = false
                 },
                 new Marca
                 {
@@ -1678,8 +1708,9 @@ namespace TheBuryProject.Data
                     Descripcion = "Electrodomésticos",
                     PaisOrigen = "Estados Unidos",
                     Activo = true,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System"
+                    CreatedAt = seedUtc,   // FIX
+                    CreatedBy = "System",
+                    IsDeleted = false
                 }
             );
         }

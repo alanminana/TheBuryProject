@@ -51,7 +51,6 @@ namespace TheBuryProject.Services
 
             _logger.LogInformation("Orden encontrada: {Numero}", orden.Numero);
             _logger.LogInformation("Proveedor: {Proveedor}", orden.Proveedor?.RazonSocial ?? "NULL");
-            _logger.LogInformation("Detalles Count: {Count}", orden.Detalles?.Count ?? 0);
 
             var detalles = orden.Detalles ?? new List<OrdenCompraDetalle>();
             _logger.LogInformation("Detalles Count: {Count}", detalles.Count);
@@ -158,7 +157,8 @@ namespace TheBuryProject.Services
 
             foreach (var detalle in detallesAEliminar)
             {
-                _context.OrdenCompraDetalles.Remove(detalle);
+                // FIX: no depende de un DbSet "OrdenCompraDetalles"
+                _context.Set<OrdenCompraDetalle>().Remove(detalle);
             }
 
             foreach (var detalleNuevo in ordenCompra.Detalles)

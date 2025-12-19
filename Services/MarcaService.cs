@@ -357,7 +357,10 @@ namespace TheBuryProject.Services
             var shouldCloseConnection = await EnsureConnectionOpenAsync();
             try
             {
-                var query = _context.Marcas.AsQueryable();
+                var query = _context.Marcas
+                    .Include(m => m.Parent)
+                    .AsNoTracking()
+                    .AsQueryable();
 
                 // Búsqueda por texto
                 if (!string.IsNullOrWhiteSpace(searchTerm))

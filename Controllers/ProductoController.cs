@@ -52,7 +52,7 @@ namespace TheBuryProject.Controllers
                     orderDirection
                 );
 
-                var viewModels = _mapper.Map<IEnumerable<ProductoViewModel>>(productos);
+                var viewModels = _mapper.Map<List<ProductoViewModel>>(productos);
 
                 // Crear ViewModel de filtros
                 var filterViewModel = new ProductoFilterViewModel
@@ -65,7 +65,7 @@ namespace TheBuryProject.Controllers
                     OrderBy = orderBy,
                     OrderDirection = orderDirection,
                     Productos = viewModels,
-                    TotalResultados = viewModels.Count()
+                    TotalResultados = viewModels.Count
                 };
 
                 // Cargar dropdowns para filtros
@@ -148,10 +148,10 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
-                    // Verificar que el c�digo no exista
+                    // Verificar que el código no exista
                     if (await _productoService.ExistsCodigoAsync(viewModel.Codigo))
                     {
-                        ModelState.AddModelError("Codigo", "Ya existe un producto con este c�digo");
+                        ModelState.AddModelError("Codigo", "Ya existe un producto con este código");
                         await CargarDropdownsAsync(viewModel.CategoriaId, viewModel.MarcaId);
                         return View(viewModel);
                     }
@@ -164,7 +164,7 @@ namespace TheBuryProject.Controllers
                 }
                 catch (InvalidOperationException ex)
                 {
-                    _logger.LogWarning(ex, "Error de validaci�n al crear producto");
+                    _logger.LogWarning(ex, "Error de validación al crear producto");
                     ModelState.AddModelError("", ex.Message);
                 }
                 catch (Exception ex)
@@ -192,7 +192,7 @@ namespace TheBuryProject.Controllers
 
                 // ✅ USAR AUTOMAPPER en lugar de mapeo manual
                 var viewModel = _mapper.Map<ProductoViewModel>(producto);
-                
+
                 await CargarDropdownsAsync(viewModel.CategoriaId, viewModel.MarcaId);
                 return View(viewModel);
             }
@@ -218,10 +218,10 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
-                    // Verificar que el c�digo no exista en otro producto
+                    // Verificar que el código no exista en otro producto
                     if (await _productoService.ExistsCodigoAsync(viewModel.Codigo, id))
                     {
-                        ModelState.AddModelError("Codigo", "Ya existe otro producto con este c�digo");
+                        ModelState.AddModelError("Codigo", "Ya existe otro producto con este código");
                         await CargarDropdownsAsync(viewModel.CategoriaId, viewModel.MarcaId);
                         return View(viewModel);
                     }
@@ -234,7 +234,7 @@ namespace TheBuryProject.Controllers
                 }
                 catch (InvalidOperationException ex)
                 {
-                    _logger.LogWarning(ex, "Error de validaci�n al actualizar producto {Id}", id);
+                    _logger.LogWarning(ex, "Error de validación al actualizar producto {Id}", id);
                     ModelState.AddModelError("", ex.Message);
                 }
                 catch (Exception ex)
@@ -291,7 +291,7 @@ namespace TheBuryProject.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogWarning(ex, "Error de validaci�n al eliminar producto {Id}", id);
+                _logger.LogWarning(ex, "Error de validación al eliminar producto {Id}", id);
                 TempData["Error"] = ex.Message;
             }
             catch (Exception ex)

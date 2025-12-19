@@ -3,6 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
 using TheBuryProject.Data;
 using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
@@ -45,7 +50,6 @@ namespace TheBuryProject.Controllers
             _logger = logger;
         }
 
-        // GET: Cliente
         public async Task<IActionResult> Index(ClienteFilterViewModel filter)
         {
             try
@@ -59,11 +63,11 @@ namespace TheBuryProject.Controllers
                     orderBy: filter.OrderBy,
                     orderDirection: filter.OrderDirection);
 
-                var viewModels = _mapper.Map<IEnumerable<ClienteViewModel>>(clientes);
-                ClienteHelper.AplicarEdadAMultiples(viewModels);
+                // FIX punto 4.2: no recalcular Edad acá (AutoMapperProfile ya la calcula).
+                var viewModels = _mapper.Map<List<ClienteViewModel>>(clientes);
 
                 filter.Clientes = viewModels;
-                filter.TotalResultados = viewModels.Count();
+                filter.TotalResultados = viewModels.Count;
 
                 CargarDropdowns();
                 return View(filter);
@@ -76,7 +80,6 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        // GET: Cliente/Details/5
         public async Task<IActionResult> Details(int id, string? tab)
         {
             try
@@ -96,14 +99,12 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        // GET: Cliente/Create
         public IActionResult Create()
         {
             CargarDropdowns();
             return View(new ClienteViewModel());
         }
 
-        // POST: Cliente/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ClienteViewModel viewModel)
@@ -137,7 +138,6 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        // GET: Cliente/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -158,7 +158,6 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        // POST: Cliente/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ClienteViewModel viewModel)
@@ -195,7 +194,6 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        // GET: Cliente/Delete/5
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -215,7 +213,6 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        // POST: Cliente/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -239,74 +236,86 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        // POST: Cliente/SolicitarCredito
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SolicitarCredito(SolicitudCreditoViewModel model)
         {
-            try
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Por favor complete todos los campos requeridos";
+                return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
+            }
+
+            var calculos = CalcularParametrosCredito(model.MontoSolicitado, model.TasaInteres, model.CantidadCuotas);
+
+            const int maxIntentos = 3;
+
+            for (var intento = 1; intento <= maxIntentos; intento++)
             {
                 await using var context = await _contextFactory.CreateDbContextAsync();
-
-                if (!ModelState.IsValid)
-                {
-                    TempData["Error"] = "Por favor complete todos los campos requeridos";
-                    return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
-                }
 
                 var cliente = await context.Clientes.FindAsync(model.ClienteId);
                 if (!ClienteValidationHelper.ClienteExiste(cliente))
                     return RedirectToAction(nameof(Index));
 
-                // Procesar garante
-                int? garanteId = await ProcesarGarante(context, model);
+                var evaluacionActual = await ObtenerEvaluacionActualAsync(cliente!);
+                var requiereGarante = evaluacionActual.RequiereGarante;
+                var puntajeRiesgoInicial = CalcularPuntajeRiesgoInicial(evaluacionActual);
 
-                // Calcular parámetros del crédito
-                var calculos = CalcularParametrosCredito(
-                    model.MontoSolicitado, model.TasaInteres, model.CantidadCuotas);
-
-                // Generar número de crédito
-                var numeroCredito = await GenerarNumeroCreditoAsync(context, cliente!.NumeroDocumento);
-
-                // ✅ USAR TRANSACCIÓN EXPLÍCITA
-                using (var transaction = await context.Database.BeginTransactionAsync())
+                var noAportoGarante = !model.GaranteId.HasValue && string.IsNullOrWhiteSpace(model.GaranteDocumento);
+                if (requiereGarante && noAportoGarante)
                 {
-                    try
-                    {
-                        // Crear crédito
-                        var credito = CrearCredito(model, cliente!, garanteId, calculos, numeroCredito);
-                        context.Creditos.Add(credito);
-                        await context.SaveChangesAsync();
+                    TempData["Error"] = "La evaluación crediticia requiere un garante para continuar.";
+                    return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
+                }
 
-                        // Generar cuotas
-                        await GenerarCuotasAsync(context, credito, model, calculos.TasaMensualDecimal);
+                await using var tx = await context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
 
-                        // Confirmar transacción
-                        await transaction.CommitAsync();
+                try
+                {
+                    int? garanteId = await ProcesarGaranteAsync(context, cliente!, model);
 
-                        _logger.LogInformation(
-                            "Crédito {Numero} creado exitosamente para cliente {ClienteId}. Monto: {Monto}, Cuotas: {Cuotas}",
-                            numeroCredito, model.ClienteId, model.MontoSolicitado, model.CantidadCuotas);
+                    var numeroCredito = await GenerarNumeroCreditoAsync(context, cliente!.NumeroDocumento);
 
-                        TempData["Success"] = $"Crédito {numeroCredito} solicitado exitosamente. " +
-                            $"Monto: {model.MontoSolicitado:C}, {model.CantidadCuotas} cuotas de {calculos.CuotaMensual:C}";
-                        return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "creditos" });
-                    }
-                    catch (Exception ex)
-                    {
-                        // Si algo falla, rollback automático
-                        await transaction.RollbackAsync();
-                        _logger.LogError(ex, "Error durante transacción de crédito para cliente {ClienteId}", model.ClienteId);
-                        throw;
-                    }
+                    var credito = CrearCredito(
+                        model,
+                        cliente!,
+                        garanteId,
+                        calculos,
+                        numeroCredito,
+                        requiereGarante,
+                        puntajeRiesgoInicial);
+
+                    context.Creditos.Add(credito);
+                    await context.SaveChangesAsync();
+
+                    await GenerarCuotasAsync(context, credito, model, calculos.TasaMensualDecimal);
+
+                    await tx.CommitAsync();
+
+                    TempData["Success"] =
+                        $"Crédito {numeroCredito} solicitado exitosamente. " +
+                        $"Monto: {model.MontoSolicitado:C}, {model.CantidadCuotas} cuotas de {calculos.CuotaMensual:C}";
+
+                    return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "creditos" });
+                }
+                catch (DbUpdateException ex) when (intento < maxIntentos && EsPosibleColisionNumeroCredito(ex))
+                {
+                    await tx.RollbackAsync();
+                    _logger.LogWarning(ex, "Posible colisión de NumeroCredito. Reintentando intento {Intento}/{Max}.", intento, maxIntentos);
+                    continue;
+                }
+                catch (Exception ex)
+                {
+                    await tx.RollbackAsync();
+                    _logger.LogError(ex, "Error al solicitar crédito para cliente {ClienteId}", model.ClienteId);
+                    TempData["Error"] = $"Error al solicitar el crédito: {ex.Message}";
+                    return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al solicitar crédito para cliente {ClienteId}", model.ClienteId);
-                TempData["Error"] = $"Error al solicitar el crédito: {ex.Message}";
-                return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
-            }
+
+            TempData["Error"] = "No se pudo generar un número de crédito único (reintentos agotados).";
+            return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
         }
 
         [HttpPost]
@@ -316,17 +325,12 @@ namespace TheBuryProject.Controllers
             try
             {
                 if (request == null || request.MontoSolicitado <= 0 || request.CantidadCuotas < 1)
-                {
                     return BadRequest(new { error = "Los datos de cálculo no son válidos" });
-                }
 
-                var calculos = CalcularParametrosCredito(
-                    request.MontoSolicitado,
-                    request.TasaInteres,
-                    request.CantidadCuotas);
+                var calculos = CalcularParametrosCredito(request.MontoSolicitado, request.TasaInteres, request.CantidadCuotas);
 
                 var excedeCapacidad = request.CapacidadPagoMensual.HasValue &&
-                    calculos.CuotaMensual > request.CapacidadPagoMensual.Value;
+                                      calculos.CuotaMensual > request.CapacidadPagoMensual.Value;
 
                 return Json(new
                 {
@@ -346,7 +350,8 @@ namespace TheBuryProject.Controllers
 
         private CreditoCalculos CalcularParametrosCredito(decimal montoSolicitado, decimal tasaInteres, int cantidadCuotas)
         {
-            var tasaMensualDecimal = tasaInteres / 100;
+            var tasaMensualDecimal = tasaInteres / 100m;
+
             var cuotaMensual = _financialService.CalcularCuotaSistemaFrances(
                 montoSolicitado,
                 tasaMensualDecimal,
@@ -371,9 +376,6 @@ namespace TheBuryProject.Controllers
             };
         }
 
-        /// <summary>
-        /// Construye el ViewModel de detalle con toda la información del cliente
-        /// </summary>
         private async Task<ClienteDetalleViewModel> ConstructDetalleViewModel(Cliente cliente, string? tab)
         {
             var detalleViewModel = new ClienteDetalleViewModel
@@ -382,7 +384,7 @@ namespace TheBuryProject.Controllers
                 Cliente = _mapper.Map<ClienteViewModel>(cliente)
             };
 
-            detalleViewModel.Cliente.Edad = ClienteHelper.CalcularEdad(detalleViewModel.Cliente.FechaNacimiento);
+            // FIX punto 4.2: no recalcular Edad acá (AutoMapperProfile ya la calcula).
             detalleViewModel.Documentos = await _documentoService.GetByClienteIdAsync(cliente.Id);
 
             var creditos = await _creditoService.GetByClienteIdAsync(cliente.Id);
@@ -395,65 +397,108 @@ namespace TheBuryProject.Controllers
             return detalleViewModel;
         }
 
-        /// <summary>
-        /// Procesa la información del garante (crea o vincula)
-        /// </summary>
-        private async Task<int?> ProcesarGarante(AppDbContext context, SolicitudCreditoViewModel model)
+        private async Task<int?> ProcesarGaranteAsync(AppDbContext context, Cliente cliente, SolicitudCreditoViewModel model)
         {
-            int? garanteId = model.GaranteId;
-
-            if (model.GaranteId == null && !string.IsNullOrEmpty(model.GaranteDocumento))
+            if (model.GaranteId.HasValue)
             {
-                var garante = new Garante
-                {
-                    ClienteId = model.ClienteId,
-                    TipoDocumento = "DNI",
-                    NumeroDocumento = model.GaranteDocumento,
-                    Nombre = model.GaranteNombre,
-                    Telefono = model.GaranteTelefono,
-                    Relacion = "Garante",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    IsDeleted = false
-                };
-
-                context.Garantes.Add(garante);
-                await context.SaveChangesAsync();
-                garanteId = garante.Id;
-
-                var cliente = await context.Clientes.FindAsync(model.ClienteId);
-                if (cliente != null)
-                {
-                    cliente.GaranteId = garanteId;
-                    context.Clientes.Update(cliente);
-                }
+                cliente.GaranteId = model.GaranteId.Value;
+                return model.GaranteId.Value;
             }
 
-            return garanteId;
+            if (string.IsNullOrWhiteSpace(model.GaranteDocumento))
+                return null;
+
+            var garante = new Garante
+            {
+                ClienteId = model.ClienteId,
+                TipoDocumento = "DNI",
+                NumeroDocumento = model.GaranteDocumento,
+                Nombre = model.GaranteNombre,
+                Telefono = model.GaranteTelefono,
+                Relacion = "Garante",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                IsDeleted = false
+            };
+
+            context.Garantes.Add(garante);
+            await context.SaveChangesAsync();
+
+            cliente.GaranteId = garante.Id;
+
+            return garante.Id;
         }
 
-        /// <summary>
-        /// Genera un número único para el crédito
-        /// </summary>
+        private async Task<EvaluacionCreditoResult> ObtenerEvaluacionActualAsync(Cliente cliente)
+        {
+            var detalle = new ClienteDetalleViewModel
+            {
+                Cliente = _mapper.Map<ClienteViewModel>(cliente),
+                Documentos = await _documentoService.GetByClienteIdAsync(cliente.Id)
+            };
+
+            var creditos = await _creditoService.GetByClienteIdAsync(cliente.Id);
+            detalle.CreditosActivos = creditos.Where(c => c.Estado == EstadoCredito.Activo).ToList();
+
+            return await EvaluarCapacidadCrediticia(cliente.Id, detalle);
+        }
+
+        private static decimal CalcularPuntajeRiesgoInicial(EvaluacionCreditoResult eval)
+        {
+            return eval.NivelRiesgo switch
+            {
+                "Bajo" => 2.0m,
+                "Medio" => 5.0m,
+                "Alto" => 8.0m,
+                _ => 5.0m
+            };
+        }
+
         private async Task<string> GenerarNumeroCreditoAsync(AppDbContext context, string numeroDocumento)
         {
-            var numeroCreditoBase = $"CRE-{DateTime.UtcNow:yyyyMMdd}-{numeroDocumento}";
-            var creditosExistentes = await context.Creditos
-                .Where(c => c.Numero.StartsWith(numeroCreditoBase))
-                .CountAsync();
-            return $"{numeroCreditoBase}-{creditosExistentes + 1:D3}";
+            var baseKey = $"CRE-{DateTime.UtcNow:yyyyMMdd}-{numeroDocumento}";
+            var prefix = baseKey + "-";
+
+            var ultimo = await context.Creditos
+                .AsNoTracking()
+                .Where(c => c.Numero.StartsWith(prefix))
+                .OrderByDescending(c => c.Numero)
+                .Select(c => c.Numero)
+                .FirstOrDefaultAsync();
+
+            var next = 1;
+
+            if (!string.IsNullOrWhiteSpace(ultimo))
+            {
+                var idx = ultimo.LastIndexOf('-');
+                if (idx >= 0 && idx < ultimo.Length - 1 && int.TryParse(ultimo[(idx + 1)..], out var n))
+                    next = n + 1;
+            }
+
+            return $"{baseKey}-{next:D3}";
         }
 
-        /// <summary>
-        /// Crea una instancia de Credito con todos los parámetros calculados
-        /// </summary>
+        private static bool EsPosibleColisionNumeroCredito(DbUpdateException ex)
+        {
+            var msg = ex.GetBaseException().Message;
+
+            return msg.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase)
+                   || msg.Contains("duplicate", StringComparison.OrdinalIgnoreCase)
+                   || msg.Contains("IX_Creditos_Numero", StringComparison.OrdinalIgnoreCase)
+                   || (msg.Contains("Creditos", StringComparison.OrdinalIgnoreCase) && msg.Contains("Numero", StringComparison.OrdinalIgnoreCase));
+        }
+
         private Credito CrearCredito(
             SolicitudCreditoViewModel model,
             Cliente cliente,
             int? garanteId,
             CreditoCalculos calculos,
-            string numeroCredito)
+            string numeroCredito,
+            bool requiereGarante,
+            decimal puntajeRiesgoInicial)
         {
+            var ahora = DateTime.UtcNow;
+
             return new Credito
             {
                 ClienteId = model.ClienteId,
@@ -467,39 +512,38 @@ namespace TheBuryProject.Controllers
                 TotalAPagar = calculos.TotalAPagar,
                 SaldoPendiente = calculos.TotalAPagar,
                 Estado = model.AprobarConExcepcion ? EstadoCredito.Solicitado : EstadoCredito.Aprobado,
-                FechaSolicitud = DateTime.UtcNow,
-                FechaAprobacion = DateTime.UtcNow,
-                FechaPrimeraCuota = DateTime.UtcNow.AddMonths(1),
+                FechaSolicitud = ahora,
+                FechaAprobacion = model.AprobarConExcepcion ? null : ahora,
+                FechaPrimeraCuota = model.AprobarConExcepcion ? null : ahora.AddMonths(1),
+                PuntajeRiesgoInicial = puntajeRiesgoInicial,
                 GaranteId = garanteId,
-                RequiereGarante = garanteId.HasValue,
+                RequiereGarante = requiereGarante,
                 AprobadoPor = model.AprobarConExcepcion ? model.AutorizadoPor : "Sistema",
                 Observaciones = model.AprobarConExcepcion
                     ? $"APROBADO CON EXCEPCIÓN: {model.MotivoExcepcion}\n{model.Observaciones}"
                     : model.Observaciones,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
+                CreatedAt = ahora,
+                UpdatedAt = ahora,
                 IsDeleted = false
             };
         }
 
-        /// <summary>
-        /// Genera las cuotas para un crédito
-        /// </summary>
         private async Task GenerarCuotasAsync(AppDbContext context, Credito credito, SolicitudCreditoViewModel model, decimal tasaMensualDecimal)
         {
-            var fechaVencimiento = credito.FechaPrimeraCuota ?? DateTime.UtcNow.AddMonths(1);
-            var cuotas = new List<Cuota>();
+            if (credito.Estado != EstadoCredito.Aprobado || !credito.FechaPrimeraCuota.HasValue)
+                return;
+
+            var fechaVencimiento = credito.FechaPrimeraCuota.Value;
+            var cuotas = new List<Cuota>(model.CantidadCuotas);
+
+            var saldo = model.MontoSolicitado;
 
             for (int i = 1; i <= model.CantidadCuotas; i++)
             {
-                decimal saldoPendienteAnterior = i == 1
-                    ? model.MontoSolicitado
-                    : model.MontoSolicitado - cuotas.Take(i - 1).Sum(c => c.MontoCapital);
+                var montoInteres = saldo * tasaMensualDecimal;
+                var montoCapital = credito.MontoCuota - montoInteres;
 
-                decimal montoInteres = saldoPendienteAnterior * tasaMensualDecimal;
-                decimal montoCapital = credito.MontoCuota - montoInteres;
-
-                var cuota = new Cuota
+                cuotas.Add(new Cuota
                 {
                     CreditoId = credito.Id,
                     NumeroCuota = i,
@@ -513,9 +557,9 @@ namespace TheBuryProject.Controllers
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     IsDeleted = false
-                };
+                });
 
-                cuotas.Add(cuota);
+                saldo -= montoCapital;
                 fechaVencimiento = fechaVencimiento.AddMonths(1);
             }
 
@@ -523,9 +567,6 @@ namespace TheBuryProject.Controllers
             await context.SaveChangesAsync();
         }
 
-        /// <summary>
-        /// Carga los dropdowns comunes en ViewBag
-        /// </summary>
         private void CargarDropdowns()
         {
             ViewBag.TiposDocumento = new SelectList(DropdownConstants.TiposDocumento);
@@ -534,50 +575,52 @@ namespace TheBuryProject.Controllers
             ViewBag.Provincias = new SelectList(DropdownConstants.Provincias);
         }
 
-        /// <summary>
-        /// Evalúa la capacidad crediticia del cliente
-        /// </summary>
-        private Task<EvaluacionCreditoResult> EvaluarCapacidadCrediticia(int clienteId, ClienteDetalleViewModel modelo)
+        private async Task<EvaluacionCreditoResult> EvaluarCapacidadCrediticia(int clienteId, ClienteDetalleViewModel modelo)
         {
             var evaluacion = new EvaluacionCreditoResult();
 
             try
             {
-                // 1. Validar documentación
                 var tiposDocumentosVerificados = modelo.Documentos
                     .Where(d => d.Estado == EstadoDocumento.Verificado)
                     .Select(d => d.TipoDocumentoNombre)
                     .ToList();
 
-                // ✅ USAR HELPER - NO REPETIR LÓGICA
                 evaluacion.TieneDocumentosCompletos = ClienteControllerHelper.VerificaDocumentosRequeridos(tiposDocumentosVerificados);
                 evaluacion.DocumentosFaltantes = ClienteControllerHelper.ObtenerDocumentosFaltantes(tiposDocumentosVerificados);
 
-                // 2. Calcular capacidad financiera
                 EvaluacionCrediticiaHelper.CalcularCapacidadFinanciera(evaluacion, modelo);
 
-                // 3. Score crediticio
-                // ✅ USAR HELPER - NO REPETIR
                 evaluacion.ScoreCrediticio = CreditoScoringHelper.CalcularScoreCrediticio(modelo);
                 evaluacion.NivelRiesgo = ClienteControllerHelper.DeterminarNivelRiesgo(evaluacion.ScoreCrediticio);
 
-                // 4-6. Requisitos y garante
                 evaluacion.RequiereGarante = EvaluacionCrediticiaHelper.DeterminarRequiereGarante(evaluacion);
-                evaluacion.TieneGarante = modelo.Cliente.CreditosActivos > 0;
-                evaluacion.CumpleRequisitos = EvaluacionCrediticiaHelper.VerificaCumplimientoRequisitos(evaluacion);
+                evaluacion.TieneGarante = await ClienteTieneGaranteAsync(clienteId);
 
-                // 7-8. Alertas y excepciones
+                evaluacion.CumpleRequisitos = EvaluacionCrediticiaHelper.VerificaCumplimientoRequisitos(evaluacion);
                 evaluacion.PuedeAprobarConExcepcion = EvaluacionCrediticiaHelper.DeterminarPuedeAprobarConExcepcion(evaluacion);
+
                 ClienteControllerHelper.GenerarAlertasYRecomendaciones(evaluacion);
 
-                return Task.FromResult(evaluacion);
+                return evaluacion;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al evaluar capacidad crediticia del cliente {ClienteId}", clienteId);
-                evaluacion.AlertasYRecomendaciones.Add("❌ Error al evaluar capacidad crediticia");
-                return Task.FromResult(evaluacion);
+                evaluacion.AlertasYRecomendaciones.Add("Error al evaluar capacidad crediticia");
+                return evaluacion;
             }
+        }
+
+        private async Task<bool> ClienteTieneGaranteAsync(int clienteId)
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync();
+
+            return await context.Set<Cliente>()
+                .AsNoTracking()
+                .Where(c => c.Id == clienteId)
+                .Select(c => c.GaranteId != null)
+                .FirstOrDefaultAsync();
         }
 
         private class CreditoCalculos

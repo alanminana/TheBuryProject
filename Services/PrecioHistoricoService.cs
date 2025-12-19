@@ -272,6 +272,7 @@ namespace TheBuryProject.Services
             {
                 var minimo = filtro.PorcentajeMinimoAumento.Value;
                 query = query.Where(p =>
+                    p.PrecioVentaAnterior != 0 &&
                     ((p.PrecioVentaNuevo - p.PrecioVentaAnterior) / p.PrecioVentaAnterior) * 100 >= minimo);
             }
 
@@ -312,13 +313,13 @@ namespace TheBuryProject.Services
 
                 PrecioCompraActual = producto.PrecioCompra,
                 PrecioVentaActual = producto.PrecioVenta,
-                MargenActual = producto.PrecioVenta == 0 ? 0 :
-                    ((producto.PrecioVenta - producto.PrecioCompra) / producto.PrecioVenta) * 100,
+                MargenActual = producto.PrecioCompra == 0 ? 0 :
+                    ((producto.PrecioVenta - producto.PrecioCompra) / producto.PrecioCompra) * 100,
 
                 PrecioCompraPropuesto = precioCompraNuevo,
                 PrecioVentaPropuesto = precioVentaNuevo,
-                MargenPropuesto = precioVentaNuevo == 0 ? 0 :
-                    ((precioVentaNuevo - precioCompraNuevo) / precioVentaNuevo) * 100,
+                MargenPropuesto = precioCompraNuevo == 0 ? 0 :
+                    ((precioVentaNuevo - precioCompraNuevo) / precioCompraNuevo) * 100,
 
                 DiferenciaCompra = precioCompraNuevo - producto.PrecioCompra,
                 DiferenciaVenta = precioVentaNuevo - producto.PrecioVenta,

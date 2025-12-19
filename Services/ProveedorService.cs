@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// ProveedorService.cs
+using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
+using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 
 namespace TheBuryProject.Services
@@ -21,13 +23,17 @@ namespace TheBuryProject.Services
             try
             {
                 return await _context.Proveedores
-                    .Where(p => !p.IsDeleted)
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(p => p.ProveedorProductos)
                         .ThenInclude(pp => pp.Producto)
                     .Include(p => p.ProveedorMarcas)
                         .ThenInclude(pm => pm.Marca)
                     .Include(p => p.ProveedorCategorias)
                         .ThenInclude(pc => pc.Categoria)
+                    // Necesario para los campos calculados del ProveedorViewModel (AutoMapperProfile)
+                    .Include(p => p.OrdenesCompra)
+                    .Include(p => p.Cheques)
                     .OrderBy(p => p.RazonSocial)
                     .ToListAsync();
             }
@@ -43,12 +49,17 @@ namespace TheBuryProject.Services
             try
             {
                 return await _context.Proveedores
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(p => p.ProveedorProductos)
                         .ThenInclude(pp => pp.Producto)
                     .Include(p => p.ProveedorMarcas)
                         .ThenInclude(pm => pm.Marca)
                     .Include(p => p.ProveedorCategorias)
                         .ThenInclude(pc => pc.Categoria)
+                    // Necesario para los campos calculados del ProveedorViewModel (AutoMapperProfile)
+                    .Include(p => p.OrdenesCompra)
+                    .Include(p => p.Cheques)
                     .FirstOrDefaultAsync(p => p.Id == id);
             }
             catch (Exception ex)
@@ -62,48 +73,28 @@ namespace TheBuryProject.Services
         {
             try
             {
+                if (proveedor == null) throw new ArgumentNullException(nameof(proveedor));
+
                 // Validar CUIT único
                 if (await ExistsCuitAsync(proveedor.Cuit))
                 {
                     throw new InvalidOperationException($"Ya existe un proveedor con el CUIT {proveedor.Cuit}");
                 }
 
-                // ⭐ DEBUG - Ver qué viene en las asociaciones
-                _logger.LogInformation("=== CREAR PROVEEDOR DEBUG ===");
-                _logger.LogInformation("Productos recibidos: {Count}", proveedor.ProveedorProductos.Count);
-                _logger.LogInformation("Marcas recibidas: {Count}", proveedor.ProveedorMarcas.Count);
-                _logger.LogInformation("Categorías recibidas: {Count}", proveedor.ProveedorCategorias.Count);
-
-                // Asegurar que las referencias al proveedor estén correctas
-                foreach (var pp in proveedor.ProveedorProductos)
-                {
-                    pp.Proveedor = proveedor;
-                    _logger.LogInformation("Producto ID: {ProductoId}", pp.ProductoId);
-                }
-
-                foreach (var pm in proveedor.ProveedorMarcas)
-                {
-                    pm.Proveedor = proveedor;
-                }
-
-                foreach (var pc in proveedor.ProveedorCategorias)
-                {
-                    pc.Proveedor = proveedor;
-                }
+                // Normalizar / deduplicar asociaciones para evitar duplicados (índices únicos)
+                PrepareAssociationsForCreate(proveedor);
 
                 _context.Proveedores.Add(proveedor);
                 await _context.SaveChangesAsync();
 
-                // ⭐ DEBUG - Verificar después de guardar
-                var proveedorGuardado = await _context.Proveedores
-                    .Include(p => p.ProveedorProductos)
-                    .FirstOrDefaultAsync(p => p.Id == proveedor.Id);
-
-                _logger.LogInformation("Productos guardados en DB: {Count}", proveedorGuardado?.ProveedorProductos.Count ?? 0);
-                _logger.LogInformation("=== FIN DEBUG ===");
-
-                _logger.LogInformation("Proveedor creado: {Id} - {RazonSocial} con {ProductosCount} productos, {MarcasCount} marcas, {CategoriasCount} categorías",
-                    proveedor.Id, proveedor.RazonSocial, proveedor.ProveedorProductos.Count, proveedor.ProveedorMarcas.Count, proveedor.ProveedorCategorias.Count);
+                _logger.LogInformation(
+                    "Proveedor creado: {Id} - {RazonSocial} con {ProductosCount} productos, {MarcasCount} marcas, {CategoriasCount} categorías",
+                    proveedor.Id,
+                    proveedor.RazonSocial,
+                    proveedor.ProveedorProductos.Count,
+                    proveedor.ProveedorMarcas.Count,
+                    proveedor.ProveedorCategorias.Count
+                );
             }
             catch (Exception ex)
             {
@@ -116,6 +107,8 @@ namespace TheBuryProject.Services
         {
             try
             {
+                if (proveedor == null) throw new ArgumentNullException(nameof(proveedor));
+
                 // Validar CUIT único (excluyendo el registro actual)
                 if (await ExistsCuitAsync(proveedor.Cuit, proveedor.Id))
                 {
@@ -133,32 +126,25 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException("Proveedor no encontrado");
                 }
 
-                // Actualizar propiedades básicas
+                // Actualizar propiedades básicas sin pisar auditoría/concurrencia (si existen)
                 _context.Entry(existingProveedor).CurrentValues.SetValues(proveedor);
 
-                // Actualizar asociaciones de productos
-                existingProveedor.ProveedorProductos.Clear();
-                foreach (var pp in proveedor.ProveedorProductos)
-                {
-                    pp.ProveedorId = proveedor.Id;
-                    existingProveedor.ProveedorProductos.Add(pp);
-                }
+                var entry = _context.Entry(existingProveedor);
+                MarkNotModifiedIfExists(entry, "CreatedAt");
+                MarkNotModifiedIfExists(entry, "CreatedBy");
+                MarkNotModifiedIfExists(entry, "RowVersion");
+                MarkNotModifiedIfExists(entry, "IsDeleted");
 
-                // Actualizar asociaciones de marcas
-                existingProveedor.ProveedorMarcas.Clear();
-                foreach (var pm in proveedor.ProveedorMarcas)
-                {
-                    pm.ProveedorId = proveedor.Id;
-                    existingProveedor.ProveedorMarcas.Add(pm);
-                }
+                // Reemplazar asociaciones (hard delete de relaciones para evitar inconsistencias con índices únicos)
+                _context.RemoveRange(existingProveedor.ProveedorProductos);
+                _context.RemoveRange(existingProveedor.ProveedorMarcas);
+                _context.RemoveRange(existingProveedor.ProveedorCategorias);
 
-                // Actualizar asociaciones de categorías
-                existingProveedor.ProveedorCategorias.Clear();
-                foreach (var pc in proveedor.ProveedorCategorias)
-                {
-                    pc.ProveedorId = proveedor.Id;
-                    existingProveedor.ProveedorCategorias.Add(pc);
-                }
+                PrepareAssociationsForUpdate(existingProveedor.Id, proveedor);
+
+                existingProveedor.ProveedorProductos = proveedor.ProveedorProductos;
+                existingProveedor.ProveedorMarcas = proveedor.ProveedorMarcas;
+                existingProveedor.ProveedorCategorias = proveedor.ProveedorCategorias;
 
                 await _context.SaveChangesAsync();
 
@@ -166,7 +152,7 @@ namespace TheBuryProject.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar proveedor {Id}", proveedor.Id);
+                _logger.LogError(ex, "Error al actualizar proveedor {Id}", proveedor?.Id);
                 throw;
             }
         }
@@ -175,7 +161,8 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var proveedor = await _context.Proveedores.FindAsync(id);
+                // Respetar query filters (soft delete): si ya está eliminado, no debería aparecer
+                var proveedor = await _context.Proveedores.FirstOrDefaultAsync(p => p.Id == id);
                 if (proveedor == null)
                 {
                     return false;
@@ -186,6 +173,19 @@ namespace TheBuryProject.Services
                 if (tieneOrdenes)
                 {
                     throw new InvalidOperationException("No se puede eliminar el proveedor porque tiene órdenes de compra asociadas");
+                }
+
+                // Verificar si tiene cheques vigentes asociados (alineado a AutoMapperProfile)
+                var tieneChequesVigentes = await _context.Cheques.AnyAsync(c =>
+                    c.ProveedorId == id &&
+                    c.Estado != EstadoCheque.Cobrado &&
+                    c.Estado != EstadoCheque.Rechazado &&
+                    c.Estado != EstadoCheque.Anulado
+                );
+
+                if (tieneChequesVigentes)
+                {
+                    throw new InvalidOperationException("No se puede eliminar el proveedor porque tiene cheques vigentes asociados");
                 }
 
                 // Soft delete
@@ -231,12 +231,17 @@ namespace TheBuryProject.Services
             try
             {
                 var query = _context.Proveedores
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(p => p.ProveedorProductos)
                         .ThenInclude(pp => pp.Producto)
                     .Include(p => p.ProveedorMarcas)
                         .ThenInclude(pm => pm.Marca)
                     .Include(p => p.ProveedorCategorias)
                         .ThenInclude(pc => pc.Categoria)
+                    // Necesario para los campos calculados del ProveedorViewModel (AutoMapperProfile)
+                    .Include(p => p.OrdenesCompra)
+                    .Include(p => p.Cheques)
                     .AsQueryable();
 
                 // Búsqueda por texto
@@ -282,6 +287,53 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al buscar proveedores con filtros");
                 throw;
             }
+        }
+
+        private static void MarkNotModifiedIfExists(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry, string propertyName)
+        {
+            var prop = entry.Metadata.FindProperty(propertyName);
+            if (prop != null)
+            {
+                entry.Property(propertyName).IsModified = false;
+            }
+        }
+
+        private static void PrepareAssociationsForCreate(Proveedor proveedor)
+        {
+            // Deduplicar por ID y asegurar navegación al proveedor
+            var productoIds = proveedor.ProveedorProductos.Select(x => x.ProductoId).Distinct().ToList();
+            proveedor.ProveedorProductos = productoIds
+                .Select(id => new ProveedorProducto { ProductoId = id, Proveedor = proveedor })
+                .ToList();
+
+            var marcaIds = proveedor.ProveedorMarcas.Select(x => x.MarcaId).Distinct().ToList();
+            proveedor.ProveedorMarcas = marcaIds
+                .Select(id => new ProveedorMarca { MarcaId = id, Proveedor = proveedor })
+                .ToList();
+
+            var categoriaIds = proveedor.ProveedorCategorias.Select(x => x.CategoriaId).Distinct().ToList();
+            proveedor.ProveedorCategorias = categoriaIds
+                .Select(id => new ProveedorCategoria { CategoriaId = id, Proveedor = proveedor })
+                .ToList();
+        }
+
+        private static void PrepareAssociationsForUpdate(int proveedorId, Proveedor proveedor)
+        {
+            // Deduplicar por ID y setear FK (sin setear navegación para evitar efectos colaterales)
+            var productoIds = proveedor.ProveedorProductos.Select(x => x.ProductoId).Distinct().ToList();
+            proveedor.ProveedorProductos = productoIds
+                .Select(id => new ProveedorProducto { ProveedorId = proveedorId, ProductoId = id })
+                .ToList();
+
+            var marcaIds = proveedor.ProveedorMarcas.Select(x => x.MarcaId).Distinct().ToList();
+            proveedor.ProveedorMarcas = marcaIds
+                .Select(id => new ProveedorMarca { ProveedorId = proveedorId, MarcaId = id })
+                .ToList();
+
+            var categoriaIds = proveedor.ProveedorCategorias.Select(x => x.CategoriaId).Distinct().ToList();
+            proveedor.ProveedorCategorias = categoriaIds
+                .Select(id => new ProveedorCategoria { ProveedorId = proveedorId, CategoriaId = id })
+                .ToList();
         }
     }
 }

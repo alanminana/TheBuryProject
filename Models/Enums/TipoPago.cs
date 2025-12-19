@@ -9,6 +9,7 @@ namespace TheBuryProject.Models.Enums
         Cheque = 4,
         CreditoPersonal = 5,  // CAMBIADO: antes era "Credito"
         MercadoPago = 6,
-        CuentaCorriente = 7
+        CuentaCorriente = 7,
+        Tarjeta = 8
     }
 }

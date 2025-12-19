@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using TheBuryProject.Data;
 using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
@@ -37,7 +39,6 @@ namespace TheBuryProject.Services
         {
             var documentos = await _context.Set<DocumentoCliente>()
                 .Include(d => d.Cliente)
-                .Where(d => !d.IsDeleted)
                 .OrderByDescending(d => d.FechaSubida)
                 .ToListAsync();
 
@@ -48,7 +49,7 @@ namespace TheBuryProject.Services
         {
             var documento = await _context.Set<DocumentoCliente>()
                 .Include(d => d.Cliente)
-                .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+                .FirstOrDefaultAsync(d => d.Id == id);
 
             return documento != null ? _mapper.Map<DocumentoClienteViewModel>(documento) : null;
         }
@@ -57,7 +58,7 @@ namespace TheBuryProject.Services
         {
             var documentos = await _context.Set<DocumentoCliente>()
                 .Include(d => d.Cliente)
-                .Where(d => d.ClienteId == clienteId && !d.IsDeleted)
+                .Where(d => d.ClienteId == clienteId)
                 .OrderByDescending(d => d.FechaSubida)
                 .ToListAsync();
 
@@ -69,49 +70,35 @@ namespace TheBuryProject.Services
             try
             {
                 if (viewModel.Archivo == null || viewModel.Archivo.Length == 0)
-                {
                     throw new Exception("Debe seleccionar un archivo");
-                }
 
-                // CAMBIO: Usar helper de validación mejorado
                 var (isValid, errorMessage) = DocumentoValidationHelper.ValidateFile(viewModel.Archivo);
                 if (!isValid)
-                {
                     throw new Exception(errorMessage);
-                }
 
                 DocumentoCliente? documentoAnterior = null;
                 if (viewModel.ReemplazarExistente && viewModel.DocumentoAReemplazarId.HasValue)
                 {
                     documentoAnterior = await _context.Set<DocumentoCliente>()
-                        .FirstOrDefaultAsync(d => d.Id == viewModel.DocumentoAReemplazarId.Value
-                            && d.ClienteId == viewModel.ClienteId
-                            && !d.IsDeleted);
+                        .FirstOrDefaultAsync(d =>
+                            d.Id == viewModel.DocumentoAReemplazarId.Value &&
+                            d.ClienteId == viewModel.ClienteId);
 
                     if (documentoAnterior == null)
-                    {
                         throw new Exception("El documento a reemplazar no existe o pertenece a otro cliente");
-                    }
                 }
 
-                // Crear carpeta si no existe
                 var uploadPath = Path.Combine(_environment.WebRootPath, UPLOAD_FOLDER);
                 if (!Directory.Exists(uploadPath))
-                {
                     Directory.CreateDirectory(uploadPath);
-                }
 
-                // CAMBIO: Validar ruta para prevenir path traversal
                 var extension = Path.GetExtension(viewModel.Archivo.FileName).ToLowerInvariant();
                 var nombreArchivo = $"{viewModel.ClienteId}_{viewModel.TipoDocumento}_{DateTime.Now:yyyyMMddHHmmss}{extension}";
-                
+
                 var (pathValid, rutaCompleta, pathError) = DocumentoValidationHelper.NormalizePath(uploadPath, nombreArchivo);
                 if (!pathValid)
-                {
                     throw new Exception(pathError);
-                }
 
-                // Guardar archivo
                 using (var stream = new FileStream(rutaCompleta, FileMode.Create))
                 {
                     await viewModel.Archivo.CopyToAsync(stream);
@@ -119,7 +106,6 @@ namespace TheBuryProject.Services
 
                 _logger.LogInformation("Archivo guardado: {Ruta}", rutaCompleta);
 
-                // Crear entidad
                 var documento = new DocumentoCliente
                 {
                     ClienteId = viewModel.ClienteId,
@@ -137,9 +123,7 @@ namespace TheBuryProject.Services
                 _context.Set<DocumentoCliente>().Add(documento);
 
                 if (documentoAnterior != null)
-                {
                     documentoAnterior.IsDeleted = true;
-                }
 
                 await _context.SaveChangesAsync();
 
@@ -183,7 +167,7 @@ namespace TheBuryProject.Services
             };
 
             var documentosCliente = await _context.Set<DocumentoCliente>()
-                .Where(d => d.ClienteId == clienteId && !d.IsDeleted)
+                .Where(d => d.ClienteId == clienteId)
                 .ToListAsync();
 
             var faltantes = new List<TipoDocumentoCliente>();
@@ -195,9 +179,7 @@ namespace TheBuryProject.Services
                     d.Estado == EstadoDocumento.Verificado);
 
                 if (!tieneDocumento)
-                {
                     faltantes.Add(tipo);
-                }
             }
 
             return new DocumentacionClienteEstadoViewModel
@@ -212,7 +194,7 @@ namespace TheBuryProject.Services
             try
             {
                 var documento = await _context.Set<DocumentoCliente>()
-                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+                    .FirstOrDefaultAsync(d => d.Id == id);
 
                 if (documento == null)
                     return false;
@@ -241,7 +223,7 @@ namespace TheBuryProject.Services
             try
             {
                 var documento = await _context.Set<DocumentoCliente>()
-                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+                    .FirstOrDefaultAsync(d => d.Id == id);
 
                 if (documento == null)
                     return false;
@@ -269,16 +251,14 @@ namespace TheBuryProject.Services
             try
             {
                 var documento = await _context.Set<DocumentoCliente>()
-                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+                    .FirstOrDefaultAsync(d => d.Id == id);
 
                 if (documento == null)
                     return false;
 
-                // Soft delete
                 documento.IsDeleted = true;
                 await _context.SaveChangesAsync();
 
-                // Opcional: eliminar archivo físico
                 var rutaCompleta = Path.Combine(_environment.WebRootPath, documento.RutaArchivo);
                 if (File.Exists(rutaCompleta))
                 {
@@ -302,7 +282,7 @@ namespace TheBuryProject.Services
             try
             {
                 var documento = await _context.Set<DocumentoCliente>()
-                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+                    .FirstOrDefaultAsync(d => d.Id == id);
 
                 if (documento == null)
                     throw new Exception("Documento no encontrado");
@@ -327,7 +307,6 @@ namespace TheBuryProject.Services
             {
                 var query = _context.Set<DocumentoCliente>()
                     .Include(d => d.Cliente)
-                    .Where(d => !d.IsDeleted)
                     .AsQueryable();
 
                 if (filtro.ClienteId.HasValue)
@@ -343,13 +322,12 @@ namespace TheBuryProject.Services
                     query = query.Where(d => d.Estado == EstadoDocumento.Pendiente);
 
                 if (filtro.SoloVencidos)
-                    query = query.Where(d => d.Estado == EstadoDocumento.Vencido ||
-                                            (d.FechaVencimiento.HasValue && d.FechaVencimiento.Value < DateTime.Today));
+                    query = query.Where(d =>
+                        d.Estado == EstadoDocumento.Vencido ||
+                        (d.FechaVencimiento.HasValue && d.FechaVencimiento.Value < DateTime.Today));
 
-                // CAMBIO: Contar total antes de paginación
                 var total = await query.CountAsync();
 
-                // CAMBIO: Aplicar paginación
                 var pageNumber = filtro.PageNumber > 0 ? filtro.PageNumber : 1;
                 var pageSize = filtro.PageSize > 0 ? filtro.PageSize : 10;
 
@@ -375,16 +353,13 @@ namespace TheBuryProject.Services
             try
             {
                 var documentosVencidos = await _context.Set<DocumentoCliente>()
-                    .Where(d => !d.IsDeleted
-                             && d.Estado == EstadoDocumento.Verificado
+                    .Where(d => d.Estado == EstadoDocumento.Verificado
                              && d.FechaVencimiento.HasValue
                              && d.FechaVencimiento.Value < DateTime.Today)
                     .ToListAsync();
 
                 foreach (var doc in documentosVencidos)
-                {
                     doc.Estado = EstadoDocumento.Vencido;
-                }
 
                 await _context.SaveChangesAsync();
 

@@ -10,13 +10,11 @@ namespace TheBuryProject.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<AuditMiddleware> _logger;
-        private readonly ICurrentUserService _currentUserService;
 
-        public AuditMiddleware(RequestDelegate next, ILogger<AuditMiddleware> logger, ICurrentUserService currentUserService)
+        public AuditMiddleware(RequestDelegate next, ILogger<AuditMiddleware> logger)
         {
             _next = next;
             _logger = logger;
-            _currentUserService = currentUserService;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -24,8 +22,13 @@ namespace TheBuryProject.Middleware
             var startedAt = DateTimeOffset.UtcNow;
             var method = context.Request.Method;
             var path = context.Request.Path.Value;
-            var userName = _currentUserService.IsAuthenticated() ? _currentUserService.GetUsername() : "Anonymous";
-            var userId = _currentUserService.IsAuthenticated() ? _currentUserService.GetUserId() : "anonymous";
+
+            // Resolver por request (evita problemas de lifetime si es scoped)
+            var currentUserService = context.RequestServices.GetService(typeof(ICurrentUserService)) as ICurrentUserService;
+
+            var isAuth = currentUserService?.IsAuthenticated() == true;
+            var userName = isAuth ? currentUserService!.GetUsername() : "Anonymous";
+            var userId = isAuth ? currentUserService!.GetUserId() : "anonymous";
 
             try
             {

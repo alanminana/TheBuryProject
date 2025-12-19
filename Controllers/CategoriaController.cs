@@ -42,7 +42,7 @@ namespace TheBuryProject.Controllers
                     orderDirection
                 );
 
-                var viewModels = _mapper.Map<IEnumerable<CategoriaViewModel>>(categorias);
+                var viewModels = _mapper.Map<List<CategoriaViewModel>>(categorias);
 
                 // Crear ViewModel de filtros
                 var filterViewModel = new CategoriaFilterViewModel
@@ -52,7 +52,7 @@ namespace TheBuryProject.Controllers
                     OrderBy = orderBy,
                     OrderDirection = orderDirection,
                     Categorias = viewModels,
-                    TotalResultados = viewModels.Count()
+                    TotalResultados = viewModels.Count
                 };
 
                 return View(filterViewModel);
@@ -98,7 +98,8 @@ namespace TheBuryProject.Controllers
                         Descripcion = viewModel.Descripcion,
                         ParentId = viewModel.ParentId,
                         ControlSerieDefault = viewModel.ControlSerieDefault,
-                        Activo = viewModel.Activo
+                        Activo = viewModel.Activo,
+                        RowVersion = viewModel.RowVersion
                     };
 
                     await _categoriaService.CreateAsync(categoria);
@@ -140,7 +141,8 @@ namespace TheBuryProject.Controllers
                     Descripcion = categoria.Descripcion,
                     ParentId = categoria.ParentId,
                     ControlSerieDefault = categoria.ControlSerieDefault,
-                    Activo = categoria.Activo
+                    Activo = categoria.Activo,
+                    RowVersion = categoria.RowVersion
                 };
 
                 await CargarCategoriasParaDropdown(viewModel.ParentId, id.Value);
@@ -184,7 +186,8 @@ namespace TheBuryProject.Controllers
                         Descripcion = viewModel.Descripcion,
                         ParentId = viewModel.ParentId,
                         ControlSerieDefault = viewModel.ControlSerieDefault,
-                        Activo = viewModel.Activo
+                        Activo = viewModel.Activo,
+                        RowVersion = viewModel.RowVersion
                     };
 
                     await _categoriaService.UpdateAsync(categoria);

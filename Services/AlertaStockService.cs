@@ -28,31 +28,44 @@ namespace TheBuryProject.Services
             try
             {
                 var productosConStockBajo = await _context.Productos
+                    .AsNoTracking()
                     .Include(p => p.Categoria)
                     .Include(p => p.Marca)
                     .Where(p => p.Activo && p.StockActual <= p.StockMinimo)
                     .ToListAsync();
 
+                if (productosConStockBajo.Count == 0)
+                {
+                    _logger.LogInformation("Generadas {AlertasCreadas} nuevas alertas de stock bajo", 0);
+                    return 0;
+                }
+
+                var productoIds = productosConStockBajo.Select(p => p.Id).ToList();
+
+                // Cargar en una sola consulta qué productos ya tienen alerta pendiente (evita N+1)
+                var productoIdsConAlertaPendiente = await _context.AlertasStock
+                    .AsNoTracking()
+                    .Where(a => a.Estado == EstadoAlerta.Pendiente && productoIds.Contains(a.ProductoId))
+                    .Select(a => a.ProductoId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var setPendientes = new HashSet<int>(productoIdsConAlertaPendiente);
+
                 int alertasCreadas = 0;
 
                 foreach (var producto in productosConStockBajo)
                 {
-                    // Verificar si ya existe una alerta pendiente para este producto
-                    var alertaExistente = await _context.AlertasStock
-                        .FirstOrDefaultAsync(a =>
-                            a.ProductoId == producto.Id &&
-                            a.Estado == EstadoAlerta.Pendiente);
+                    if (setPendientes.Contains(producto.Id))
+                        continue;
 
-                    if (alertaExistente == null)
+                    var alerta = await CrearAlertaStockAsync(producto);
+                    if (alerta != null)
                     {
-                        var alerta = await CrearAlertaStockAsync(producto);
-                        if (alerta != null)
-                        {
-                            alertasCreadas++;
-                        }
+                        alertasCreadas++;
+                        setPendientes.Add(producto.Id);
                     }
                 }
-
                 _logger.LogInformation("Generadas {AlertasCreadas} nuevas alertas de stock bajo", alertasCreadas);
                 return alertasCreadas;
             }
@@ -68,6 +81,7 @@ namespace TheBuryProject.Services
             try
             {
                 var producto = await _context.Productos
+                    .AsNoTracking()
                     .Include(p => p.Categoria)
                     .Include(p => p.Marca)
                     .FirstOrDefaultAsync(p => p.Id == productoId);
@@ -80,6 +94,7 @@ namespace TheBuryProject.Services
 
                 // Verificar si ya existe alerta pendiente
                 var alertaExistente = await _context.AlertasStock
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(a =>
                         a.ProductoId == productoId &&
                         a.Estado == EstadoAlerta.Pendiente);
@@ -141,7 +156,25 @@ namespace TheBuryProject.Services
                 };
 
                 _context.AlertasStock.Add(alerta);
-                await _context.SaveChangesAsync();
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex)
+                {
+                    // Si hubo condición de carrera, intentar devolver la alerta pendiente ya existente (si existe)
+                    _logger.LogWarning(ex, "Posible duplicado al crear alerta pendiente para producto {ProductoId}", producto.Id);
+
+                    var existente = await _context.AlertasStock
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(a => a.ProductoId == producto.Id && a.Estado == EstadoAlerta.Pendiente);
+
+                    if (existente != null)
+                        return existente;
+
+                    throw;
+                }
 
                 _logger.LogWarning(
                     "Alerta de stock generada: {Tipo} - Producto: {ProductoCodigo} - {ProductoNombre}",
@@ -183,7 +216,7 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var alerta = await _context.AlertasStock.FindAsync(id);
+                var alerta = await _context.AlertasStock.FirstOrDefaultAsync(a => a.Id == id);
                 if (alerta == null)
                     return false;
 
@@ -211,7 +244,7 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var alerta = await _context.AlertasStock.FindAsync(id);
+                var alerta = await _context.AlertasStock.FirstOrDefaultAsync(a => a.Id == id);
                 if (alerta == null)
                     return false;
 
@@ -311,7 +344,7 @@ namespace TheBuryProject.Services
             var hace7Dias = DateTime.UtcNow.AddDays(-7);
             var alertasVencidas = await _context.AlertasStock
                 .CountAsync(a => a.Estado == EstadoAlerta.Pendiente && a.FechaAlerta < hace7Dias);
-    
+
             // Calcular promedio de días para resolver
             var promedioResolucion = alertasResueltas.Any()
                 ? alertasResueltas
@@ -445,7 +478,11 @@ namespace TheBuryProject.Services
                         a.FechaResolucion.Value < fechaLimite)
                     .ToListAsync();
 
-                _context.AlertasStock.RemoveRange(alertasAntiguas);
+                foreach (var alerta in alertasAntiguas)
+                {
+                    alerta.IsDeleted = true;
+                }
+
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Eliminadas {Cantidad} alertas antiguas", alertasAntiguas.Count);
@@ -524,10 +561,10 @@ namespace TheBuryProject.Services
             {
                 Id = alerta.Id,
                 ProductoId = alerta.ProductoId,
-                ProductoCodigo = alerta.Producto.Codigo,
-                ProductoNombre = alerta.Producto.Nombre,
-                CategoriaNombre = alerta.Producto.Categoria.Nombre,
-                MarcaNombre = alerta.Producto.Marca.Nombre,
+                ProductoCodigo = alerta.Producto?.Codigo ?? string.Empty,
+                ProductoNombre = alerta.Producto?.Nombre ?? string.Empty,
+                CategoriaNombre = alerta.Producto?.Categoria?.Nombre ?? string.Empty,
+                MarcaNombre = alerta.Producto?.Marca?.Nombre ?? string.Empty,
                 Tipo = alerta.Tipo,
                 Prioridad = alerta.Prioridad,
                 Estado = alerta.Estado,

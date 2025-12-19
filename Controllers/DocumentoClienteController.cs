@@ -397,8 +397,10 @@ namespace TheBuryProject.Controllers
 
         private async Task CargarViewBags(AppDbContext context, int? clienteIdSeleccionado = null, bool limitarAClienteSeleccionado = false)
         {
+            // Antes: .Where(c => !c.IsDeleted && c.Activo);
+            // Con query filter en Cliente, basta con Activo.
             var clientesQuery = context.Clientes
-                .Where(c => !c.IsDeleted && c.Activo);
+                .Where(c => c.Activo);
 
             if (limitarAClienteSeleccionado && clienteIdSeleccionado.HasValue)
             {
@@ -425,6 +427,7 @@ namespace TheBuryProject.Controllers
                 .Cast<EstadoDocumento>()
                 .Select(e => new { Value = (int)e, Text = e.ToString() }), "Value", "Text");
         }
+
 
         // GET: API endpoint para obtener documentos por cliente
         [HttpGet]
