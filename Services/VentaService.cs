@@ -83,11 +83,11 @@ namespace TheBuryProject.Services
 
             var viewModel = _mapper.Map<VentaViewModel>(venta);
 
-            if (venta.TipoPago == TipoPago.CreditoPersonal &&
+            if (venta.TipoPago == TipoPago.CreditoPersonall &&
                 venta.CreditoId.HasValue &&
                 venta.VentaCreditoCuotas.Any())
             {
-                viewModel.DatosCreditoPersonal = await ObtenerDatosCreditoVentaAsync(id);
+                viewModel.DatosCreditoPersonall = await ObtenerDatosCreditoVentaAsync(id);
             }
 
             return viewModel;
@@ -189,9 +189,9 @@ namespace TheBuryProject.Services
 
                 await DescontarStockYRegistrarMovimientos(venta);
 
-                if (venta.TipoPago == TipoPago.CreditoPersonal && venta.CreditoId.HasValue)
+                if (venta.TipoPago == TipoPago.CreditoPersonall && venta.CreditoId.HasValue)
                 {
-                    await ProcesarCreditoPersonalVentaAsync(venta);
+                    await ProcesarCreditoPersonallVentaAsync(venta);
                 }
 
                 await GenerarAlertasStockBajo(venta);
@@ -240,9 +240,9 @@ namespace TheBuryProject.Services
                     await DevolverStock(venta, motivo);
                 }
 
-                if (venta.TipoPago == TipoPago.CreditoPersonal)
+                if (venta.TipoPago == TipoPago.CreditoPersonall)
                 {
-                    await RestaurarCreditoPersonal(venta);
+                    await RestaurarCreditoPersonall(venta);
                 }
 
                 venta.Estado = EstadoVenta.Cancelada;
@@ -368,7 +368,7 @@ namespace TheBuryProject.Services
 
         public async Task<bool> RequiereAutorizacionAsync(VentaViewModel viewModel)
         {
-            if (viewModel.TipoPago != TipoPago.CreditoPersonal)
+            if (viewModel.TipoPago != TipoPago.CreditoPersonall)
                 return false;
 
             var cliente = await _context.Clientes
@@ -459,7 +459,7 @@ namespace TheBuryProject.Services
 
         #region MÃ©todos de CÃ¡lculo - CrÃ©dito Personal
 
-        public async Task<DatosCreditoPersonalViewModel> CalcularCreditoPersonalAsync(
+        public async Task<DatosCreditoPersonallViewModel> CalcularCreditoPersonallAsync(
             int creditoId,
             decimal montoAFinanciar,
             int cuotas,
@@ -489,12 +489,12 @@ namespace TheBuryProject.Services
             var totalAPagar = _financialService.CalcularTotalConInteres(
                 montoAFinanciar, tasaDecimal, cuotas);
 
-            return GenerarDatosCreditoPersonal(
+            return GenerarDatosCreditoPersonall(
                 credito, montoAFinanciar, cuotas, montoCuota,
                 totalAPagar, fechaPrimeraCuota);
         }
 
-        public async Task<DatosCreditoPersonalViewModel?> ObtenerDatosCreditoVentaAsync(int ventaId)
+        public async Task<DatosCreditoPersonallViewModel?> ObtenerDatosCreditoVentaAsync(int ventaId)
         {
             var venta = await _context.Ventas
                 .Include(v => v.Credito)
@@ -508,7 +508,7 @@ namespace TheBuryProject.Services
             var totalCuotas = venta.VentaCreditoCuotas.Sum(c => c.Monto);
             var primeraCuota = venta.VentaCreditoCuotas.OrderBy(c => c.NumeroCuota).First();
 
-            var resultado = new DatosCreditoPersonalViewModel
+            var resultado = new DatosCreditoPersonallViewModel
             {
                 CreditoId = credito.Id,
                 CreditoNumero = credito.Numero,
@@ -753,7 +753,7 @@ namespace TheBuryProject.Services
             }
         }
 
-        private async Task RestaurarCreditoPersonal(Venta venta)
+        private async Task RestaurarCreditoPersonall(Venta venta)
         {
             if (!venta.CreditoId.HasValue || !venta.VentaCreditoCuotas.Any())
                 return;
@@ -783,7 +783,7 @@ namespace TheBuryProject.Services
 
         private async Task VerificarAutorizacionSiCorrespondeAsync(Venta venta, VentaViewModel viewModel)
         {
-            if (viewModel.TipoPago == TipoPago.CreditoPersonal)
+            if (viewModel.TipoPago == TipoPago.CreditoPersonall)
             {
                 var cliente = await _context.Clientes
                     .Include(c => c.Creditos)
@@ -816,13 +816,13 @@ namespace TheBuryProject.Services
                 await GuardarDatosChequeAsync(ventaId, viewModel.DatosCheque);
             }
 
-            if (viewModel.DatosCreditoPersonal != null && viewModel.TipoPago == TipoPago.CreditoPersonal)
+            if (viewModel.DatosCreditoPersonall != null && viewModel.TipoPago == TipoPago.CreditoPersonall)
             {
-                await GuardarCuotasCreditoPersonalAsync(ventaId, viewModel.DatosCreditoPersonal);
+                await GuardarCuotasCreditoPersonallAsync(ventaId, viewModel.DatosCreditoPersonall);
             }
         }
 
-        private async Task GuardarCuotasCreditoPersonalAsync(int ventaId, DatosCreditoPersonalViewModel datos)
+        private async Task GuardarCuotasCreditoPersonallAsync(int ventaId, DatosCreditoPersonallViewModel datos)
         {
             var venta = await _context.Ventas.FindAsync(ventaId);
             if (venta == null)
@@ -854,7 +854,7 @@ namespace TheBuryProject.Services
             await _context.SaveChangesAsync();
         }
 
-        private async Task ProcesarCreditoPersonalVentaAsync(Venta venta)
+        private async Task ProcesarCreditoPersonallVentaAsync(Venta venta)
         {
             if (venta.Credito == null)
             {
@@ -893,7 +893,7 @@ namespace TheBuryProject.Services
             return Task.FromResult(montoVenta > saldoDisponible);
         }
 
-        private DatosCreditoPersonalViewModel GenerarDatosCreditoPersonal(
+        private DatosCreditoPersonallViewModel GenerarDatosCreditoPersonall(
             Credito credito,
             decimal montoAFinanciar,
             int cuotas,
@@ -901,7 +901,7 @@ namespace TheBuryProject.Services
             decimal totalAPagar,
             DateTime fechaPrimeraCuota)
         {
-            var resultado = new DatosCreditoPersonalViewModel
+            var resultado = new DatosCreditoPersonallViewModel
             {
                 CreditoId = credito.Id,
                 CreditoNumero = credito.Numero,

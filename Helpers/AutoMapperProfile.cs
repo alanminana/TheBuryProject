@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using System.Linq;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
@@ -256,9 +256,9 @@ namespace TheBuryProject.Helpers
                 .ForMember(d => d.Credito, o => o.Ignore());
 
             // =======================
-            // DatosCreditoPersonal
+            // DatosCreditoPersonall
             // =======================
-            CreateMap<DatosCreditoPersonalViewModel, VentaCreditoCuota>()
+            CreateMap<DatosCreditoPersonallViewModel, VentaCreditoCuota>()
                 .ForMember(d => d.Venta, o => o.Ignore())
                 .ForMember(d => d.Credito, o => o.Ignore());
 

@@ -109,7 +109,7 @@ namespace TheBuryProject.Controllers
         // POST: Venta/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(VentaViewModel viewModel, string? DatosCreditoPersonalJson)
+        public async Task<IActionResult> Create(VentaViewModel viewModel, string? DatosCreditoPersonallJson)
         {
             try
             {
@@ -124,7 +124,7 @@ namespace TheBuryProject.Controllers
                     ? $"Venta {venta.Numero} creada. Requiere autorización antes de confirmar."
                     : $"Venta {venta.Numero} creada exitosamente";
 
-                if (venta.TipoPago == TipoPago.CreditoPersonal)
+                if (venta.TipoPago == TipoPago.CreditoPersonall)
                 {
                     var documentacion = await _documentacionService.ProcesarDocumentacionVentaAsync(venta.Id);
 
@@ -223,7 +223,7 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                if (resultado.TipoPago == TipoPago.CreditoPersonal)
+                if (resultado.TipoPago == TipoPago.CreditoPersonall)
                 {
                     var documentacion = await _documentacionService.ProcesarDocumentacionVentaAsync(resultado.Id);
 
@@ -301,7 +301,7 @@ namespace TheBuryProject.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            if (venta.TipoPago != TipoPago.CreditoPersonal)
+            if (venta.TipoPago != TipoPago.CreditoPersonall)
             {
                 TempData["Error"] = "La venta no utiliza crédito personal";
                 return RedirectToAction(nameof(Details), new { id = ventaId });
@@ -388,7 +388,7 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                if (venta.TipoPago == TipoPago.CreditoPersonal)
+                if (venta.TipoPago == TipoPago.CreditoPersonall)
                 {
                     var documentacion = await _documentacionService.ProcesarDocumentacionVentaAsync(id);
 
@@ -770,14 +770,14 @@ namespace TheBuryProject.Controllers
         #endregion
         // GET: API endpoint para calcular crédito personal
         [HttpGet]
-        public async Task<IActionResult> CalcularCreditoPersonal(int creditoId, decimal monto, int cuotas, string fechaPrimeraCuota)
+        public async Task<IActionResult> CalcularCreditoPersonall(int creditoId, decimal monto, int cuotas, string fechaPrimeraCuota)
         {
             try
             {
                 if (!DateTime.TryParse(fechaPrimeraCuota, out DateTime fecha))
                     fecha = DateTime.Today.AddMonths(1);
 
-                var resultado = await _ventaService.CalcularCreditoPersonalAsync(creditoId, monto, cuotas, fecha);
+                var resultado = await _ventaService.CalcularCreditoPersonallAsync(creditoId, monto, cuotas, fecha);
 
                 return Json(new
                 {
@@ -859,3 +859,4 @@ namespace TheBuryProject.Controllers
         }
     }
 }
+
