@@ -1,0 +1,366 @@
+﻿@model TheBuryProject.ViewModels.ReporteVentasResultadoViewModel
+@{
+    ViewData["Title"] = "Reporte de Ventas";
+    var filtro = ViewBag.Filtro as TheBuryProject.ViewModels.ReporteVentasFiltroViewModel;
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2>📊 Reporte de Ventas</h2>
+            <p class="text-muted">Análisis detallado de ventas con filtros avanzados</p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-funnel"></i> Filtros
+            </h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="Ventas" method="post">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Fecha Desde</label>
+                        <input type="date" name="FechaDesde" class="form-control"
+                               value="@filtro?.FechaDesde?.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Fecha Hasta</label>
+                        <input type="date" name="FechaHasta" class="form-control"
+                               value="@filtro?.FechaHasta?.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Cliente</label>
+                        <select name="ClienteId" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach (var cliente in ViewBag.Clientes)
+                            {
+                                <option value="@cliente.Value" selected="@(filtro?.ClienteId?.ToString() == cliente.Value)">
+                                    @cliente.Text
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Producto</label>
+                        <select name="ProductoId" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach (var producto in ViewBag.Productos)
+                            {
+                                <option value="@producto.Value" selected="@(filtro?.ProductoId?.ToString() == producto.Value)">
+                                    @producto.Text
+                                </option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Categoría</label>
+                        <select name="CategoriaId" class="form-select">
+                            <option value="">Todas</option>
+                            @foreach (var categoria in ViewBag.Categorias)
+                            {
+                                <option value="@categoria.Value" selected="@(filtro?.CategoriaId?.ToString() == categoria.Value)">
+                                    @categoria.Text
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Marca</label>
+                        <select name="MarcaId" class="form-select">
+                            <option value="">Todas</option>
+                            @foreach (var marca in ViewBag.Marcas)
+                            {
+                                <option value="@marca.Value" selected="@(filtro?.MarcaId?.ToString() == marca.Value)">
+                                    @marca.Text
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Vendedor</label>
+                        <select name="VendedorId" class="form-select">
+                            <option value="">Todos</option>
+                            @foreach (var vendedor in ViewBag.Vendedores)
+                            {
+                                <option value="@vendedor.Value" selected="@(filtro?.VendedorId?.ToString() == vendedor.Value)">
+                                    @vendedor.Text
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Tipo de Pago</label>
+                        <select name="TipoPago" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="0" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.Efectivo)">Efectivo</option>
+                            <option value="1" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.Transferencia)">Transferencia</option>
+                            <option value="2" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaDebito)">Tarjeta Débito</option>
+                            <option value="3" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaCredito)">Tarjeta Crédito</option>
+                            <option value="4" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.Cheque)">Cheque</option>
+                            <option value="5" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.CreditoPersonal)">Crédito Personal</option>
+                            <option value="6" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.MercadoPago)">Mercado Pago</option>
+                            <option value="7" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.CuentaCorriente)">Cuenta Corriente</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Generar Reporte
+                        </button>
+                        <button type="reset" class="btn btn-secondary" onclick="window.location.href = '@Url.Action("Ventas")'">
+                            <i class="bi bi-x-circle"></i> Limpiar Filtros
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model != null)
+    {
+        <!-- Resumen General -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Total Ventas</h6>
+                        <h2 class="text-primary mb-0">$@Model.TotalVentas.ToString("N2")</h2>
+                        <small class="text-muted">@Model.CantidadVentas ventas</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Ganancia Total</h6>
+                        <h2 class="text-success mb-0">$@Model.TotalGanancia.ToString("N2")</h2>
+                        <small class="text-muted">@Model.MargenPromedio.ToString("N1")% margen</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Ticket Promedio</h6>
+                        <h2 class="text-info mb-0">$@Model.TicketPromedio.ToString("N2")</h2>
+                        <small class="text-muted">por venta</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Productos Vendidos</h6>
+                        <h2 class="text-warning mb-0">@Model.CantidadProductosVendidos</h2>
+                        <small class="text-muted">unidades</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Exportación -->
+        <div class="row mb-3">
+            <div class="col-md-12 text-end">
+                <a href="@Url.Action("ExportarVentasExcel", filtro)" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                </a>
+                <a href="@Url.Action("ExportarVentasPdf", filtro)" class="btn btn-danger">
+                    <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF
+                </a>
+            </div>
+        </div>
+
+        <!-- Tabs con información adicional -->
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ventas" type="button">
+                    Ventas Detalladas
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#productos" type="button">
+                    Productos Más Vendidos
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#clientes" type="button">
+                    Clientes Top
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tipoPago" type="button">
+                    Por Tipo de Pago
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content border border-top-0 p-3 bg-white">
+            <!-- Ventas Detalladas -->
+            <div class="tab-pane fade show active" id="ventas">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nº Venta</th>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Vendedor</th>
+                                <th>Tipo Pago</th>
+                                <th class="text-end">Subtotal</th>
+                                <th class="text-end">Descuento</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-end">Ganancia</th>
+                                <th class="text-end">Margen %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var venta in Model.Ventas)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-controller="Venta" asp-action="Details" asp-route-id="@venta.Id">
+                                            @venta.NumeroVenta
+                                        </a>
+                                    </td>
+                                    <td>@venta.FechaVenta.ToString("dd/MM/yyyy")</td>
+                                    <td>@venta.ClienteNombre</td>
+                                    <td>@venta.VendedorNombre</td>
+                                    <td><span class="badge bg-secondary">@venta.TipoPagoDescripcion</span></td>
+                                    <td class="text-end">$@venta.Subtotal.ToString("N2")</td>
+                                    <td class="text-end">$@venta.Descuento.ToString("N2")</td>
+                                    <td class="text-end"><strong>$@venta.Total.ToString("N2")</strong></td>
+                                    <td class="text-end text-success">$@venta.Ganancia.ToString("N2")</td>
+                                    <td class="text-end">
+                                        <span class="badge @(venta.MargenPorcentaje < 20 ? "bg-danger" : venta.MargenPorcentaje < 35 ? "bg-warning" : "bg-success")">
+                                            @venta.MargenPorcentaje.ToString("N1")%
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-secondary">
+                                <th colspan="5" class="text-end">TOTALES:</th>
+                                <th class="text-end">$@Model.Ventas.Sum(v => v.Subtotal).ToString("N2")</th>
+                                <th class="text-end">$@Model.Ventas.Sum(v => v.Descuento).ToString("N2")</th>
+                                <th class="text-end">$@Model.TotalVentas.ToString("N2")</th>
+                                <th class="text-end text-success">$@Model.TotalGanancia.ToString("N2")</th>
+                                <th class="text-end">@Model.MargenPromedio.ToString("N1")%</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Productos Más Vendidos -->
+            <div class="tab-pane fade" id="productos">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th class="text-end">Cantidad</th>
+                            <th class="text-end">Monto Total</th>
+                            <th class="text-end">Ganancia</th>
+                            <th class="text-end">Margen %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var producto in Model.ProductosMasVendidos)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="Producto" asp-action="Details" asp-route-id="@producto.ProductoId">
+                                        @producto.ProductoCodigo
+                                    </a>
+                                </td>
+                                <td>@producto.ProductoNombre</td>
+                                <td>@producto.CategoriaNombre</td>
+                                <td class="text-end"><strong>@producto.CantidadVendida</strong></td>
+                                <td class="text-end">$@producto.MontoTotal.ToString("N2")</td>
+                                <td class="text-end text-success">$@producto.GananciaTotal.ToString("N2")</td>
+                                <td class="text-end">@producto.MargenPromedio.ToString("N1")%</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Clientes Top -->
+            <div class="tab-pane fade" id="clientes">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Documento</th>
+                            <th class="text-end">Compras</th>
+                            <th class="text-end">Monto Total</th>
+                            <th class="text-end">Ticket Promedio</th>
+                            <th>Última Compra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cliente in Model.ClientesTop)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="Cliente" asp-action="Details" asp-route-id="@cliente.ClienteId">
+                                        @cliente.ClienteNombre
+                                    </a>
+                                </td>
+                                <td>@cliente.ClienteDocumento</td>
+                                <td class="text-end">@cliente.CantidadCompras</td>
+                                <td class="text-end"><strong>$@cliente.MontoTotal.ToString("N2")</strong></td>
+                                <td class="text-end">$@cliente.TicketPromedio.ToString("N2")</td>
+                                <td>@cliente.UltimaCompra?.ToString("dd/MM/yyyy")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Por Tipo de Pago -->
+            <div class="tab-pane fade" id="tipoPago">
+                <div class="row">
+                    @foreach (var tipoPago in Model.VentasPorTipoPago)
+                    {
+                        var porcentaje = Model.TotalVentas > 0 ? (tipoPago.Value / Model.TotalVentas) * 100 : 0;
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5>@tipoPago.Key</h5>
+                                    <h2 class="text-primary">$@tipoPago.Value.ToString("N2")</h2>
+                                    <div class="progress">
+                                        <div class="progress-bar" style="width: @porcentaje.ToString("N1")%">
+                                            @porcentaje.ToString("N1")%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            Selecciona los filtros y haz clic en "Generar Reporte" para ver los resultados.
+        </div>
+    }
+</div>
