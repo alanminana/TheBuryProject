@@ -7,6 +7,8 @@ using TheBuryProject.Data;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
+using TheBuryProject.Helpers;
+using TheBuryProject.Models.Entities;
 
 namespace TheBuryProject.Controllers
 {
@@ -17,17 +19,20 @@ namespace TheBuryProject.Controllers
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<DocumentoClienteController> _logger;
         private readonly IDocumentacionService _documentacionService;
+        private readonly IClienteLookupService _clienteLookup;
 
         public DocumentoClienteController(
             IDocumentoClienteService documentoService,
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<DocumentoClienteController> logger,
-            IDocumentacionService documentacionService)
+            IDocumentacionService documentacionService,
+            IClienteLookupService clienteLookup)
         {
             _documentoService = documentoService;
             _contextFactory = contextFactory;
             _logger = logger;
             _documentacionService = documentacionService;
+            _clienteLookup = clienteLookup;
         }
 
         // GET: DocumentoCliente
@@ -55,18 +60,10 @@ namespace TheBuryProject.Controllers
 
                 if (filtro.UploadModel.ClienteId > 0)
                 {
-                    var cliente = await context.Clientes
-                        .Where(c => c.Id == filtro.UploadModel.ClienteId)
-                        .Select(c => new
-                        {
-                            c.Id,
-                            NombreCompleto = $"{c.Apellido}, {c.Nombre} - DNI: {c.NumeroDocumento}"
-                        })
-                        .FirstOrDefaultAsync();
-
-                    if (cliente != null)
+                    var display = await _clienteLookup.GetClienteDisplayNameAsync(filtro.UploadModel.ClienteId);
+                    if (!string.IsNullOrWhiteSpace(display))
                     {
-                        filtro.UploadModel.ClienteNombre = cliente.NombreCompleto;
+                        filtro.UploadModel.ClienteNombre = display;
                     }
                 }
 
@@ -80,7 +77,7 @@ namespace TheBuryProject.Controllers
                     }
                 }
 
-                await CargarViewBags(context, filtro.ClienteId);
+                await CargarViewBags(filtro.ClienteId);
 
                 return View(filtro);
             }
@@ -90,8 +87,7 @@ namespace TheBuryProject.Controllers
                 TempData["Error"] = $"Error al cargar los documentos: {ex.Message}";
 
                 var emptyModel = new DocumentoClienteFilterViewModel();
-                await using var context = await _contextFactory.CreateDbContextAsync();
-                await CargarViewBags(context, null);
+                await CargarViewBags(null);
                 return View(emptyModel);
             }
         }
@@ -116,7 +112,7 @@ namespace TheBuryProject.Controllers
                 if (venta != null)
                 {
                     viewModel.ClienteId = venta.ClienteId;
-                    viewModel.ClienteNombre = $"{venta.Cliente.Apellido}, {venta.Cliente.Nombre} - DNI: {venta.Cliente.NumeroDocumento}";
+                    viewModel.ClienteNombre = venta.Cliente.ToDisplayName();
                     bloquearCliente = true;
                 }
             }
@@ -131,12 +127,12 @@ namespace TheBuryProject.Controllers
                     viewModel.DocumentoAReemplazarNombre = documento.NombreArchivo;
                     viewModel.ClienteId = documento.ClienteId;
                     viewModel.TipoDocumento = documento.TipoDocumento;
-                    await CargarViewBags(context, documento.ClienteId, false);
+                    await CargarViewBags(documento.ClienteId, false);
                 }
             }
 
             ViewBag.ClienteBloqueado = bloquearCliente;
-            await CargarViewBags(context, viewModel.ClienteId, bloquearCliente);
+            await CargarViewBags(viewModel.ClienteId, bloquearCliente);
 
             if (!string.IsNullOrWhiteSpace(viewModel.ClienteNombre))
             {
@@ -145,10 +141,10 @@ namespace TheBuryProject.Controllers
 
             if (viewModel.ClienteId > 0)
             {
-                var cliente = await context.Clientes.FindAsync(viewModel.ClienteId);
-                if (cliente != null)
+                var display = await _clienteLookup.GetClienteDisplayNameAsync(viewModel.ClienteId);
+                if (!string.IsNullOrWhiteSpace(display))
                 {
-                    viewModel.ClienteNombre = $"{cliente.Apellido}, {cliente.Nombre} - DNI: {cliente.NumeroDocumento}";
+                    viewModel.ClienteNombre = display;
                 }
             }
 
@@ -178,18 +174,18 @@ namespace TheBuryProject.Controllers
                     {
                         ModelState.AddModelError("ClienteId", "Debe adjuntar documentación para el cliente seleccionado en la venta.");
                         viewModel.ClienteId = venta.ClienteId;
-                        viewModel.ClienteNombre = $"{venta.Cliente.Apellido}, {venta.Cliente.Nombre} - DNI: {venta.Cliente.NumeroDocumento}";
+                        viewModel.ClienteNombre = venta.Cliente.ToDisplayName();
                     }
                     else
                     {
-                        viewModel.ClienteNombre = $"{venta.Cliente.Apellido}, {venta.Cliente.Nombre} - DNI: {venta.Cliente.NumeroDocumento}";
+                        viewModel.ClienteNombre = venta.Cliente.ToDisplayName();
                     }
                 }
 
                 if (!ModelState.IsValid)
                 {
                     ViewBag.ClienteBloqueado = viewModel.ReturnToVentaId.HasValue;
-                    await CargarViewBags(context, viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
+                    await CargarViewBags(viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
 
                     // Si viene del inline upload, redirigir con error
                     if (returnToDetails)
@@ -254,7 +250,7 @@ namespace TheBuryProject.Controllers
 
                 ModelState.AddModelError("", "Error al subir documento: " + ex.Message);
                 ViewBag.ClienteBloqueado = viewModel.ReturnToVentaId.HasValue;
-                await CargarViewBags(context, viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
+                await CargarViewBags(viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
                 return View(viewModel);
             }
         }
@@ -395,29 +391,10 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        private async Task CargarViewBags(AppDbContext context, int? clienteIdSeleccionado = null, bool limitarAClienteSeleccionado = false)
+        private async Task CargarViewBags(int? clienteIdSeleccionado = null, bool limitarAClienteSeleccionado = false)
         {
-            // Antes: .Where(c => !c.IsDeleted && c.Activo);
-            // Con query filter en Cliente, basta con Activo.
-            var clientesQuery = context.Clientes
-                .Where(c => c.Activo);
-
-            if (limitarAClienteSeleccionado && clienteIdSeleccionado.HasValue)
-            {
-                clientesQuery = clientesQuery.Where(c => c.Id == clienteIdSeleccionado.Value);
-            }
-
-            var clientes = await clientesQuery
-                .OrderBy(c => c.Apellido)
-                .ThenBy(c => c.Nombre)
-                .Select(c => new
-                {
-                    c.Id,
-                    NombreCompleto = $"{c.Apellido}, {c.Nombre} - DNI: {c.NumeroDocumento}"
-                })
-                .ToListAsync();
-
-            ViewBag.Clientes = new SelectList(clientes, "Id", "NombreCompleto", clienteIdSeleccionado);
+            var clientesSelect = await _clienteLookup.GetClientesSelectListAsync(clienteIdSeleccionado, limitarAClienteSeleccionado);
+            ViewBag.Clientes = new SelectList(clientesSelect, "Value", "Text", clienteIdSeleccionado?.ToString());
 
             ViewBag.TiposDocumento = new SelectList(Enum.GetValues(typeof(TipoDocumentoCliente))
                 .Cast<TipoDocumentoCliente>()
@@ -427,7 +404,6 @@ namespace TheBuryProject.Controllers
                 .Cast<EstadoDocumento>()
                 .Select(e => new { Value = (int)e, Text = e.ToString() }), "Value", "Text");
         }
-
 
         // GET: API endpoint para obtener documentos por cliente
         [HttpGet]

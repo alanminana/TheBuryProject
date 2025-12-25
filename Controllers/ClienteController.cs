@@ -29,6 +29,7 @@ namespace TheBuryProject.Controllers
         private readonly IFinancialCalculationService _financialService;
         private readonly IMapper _mapper;
         private readonly ILogger<ClienteController> _logger;
+        private readonly IClienteLookupService _clienteLookup;
 
         public ClienteController(
             IClienteService clienteService,
@@ -38,7 +39,8 @@ namespace TheBuryProject.Controllers
             IDbContextFactory<AppDbContext> contextFactory,
             IFinancialCalculationService financialService,
             IMapper mapper,
-            ILogger<ClienteController> logger)
+            ILogger<ClienteController> logger,
+            IClienteLookupService clienteLookup)
         {
             _clienteService = clienteService;
             _documentoService = documentoService;
@@ -48,6 +50,7 @@ namespace TheBuryProject.Controllers
             _financialService = financialService;
             _mapper = mapper;
             _logger = logger;
+            _clienteLookup = clienteLookup;
         }
 
         public async Task<IActionResult> Index(ClienteFilterViewModel filter)
@@ -384,6 +387,13 @@ namespace TheBuryProject.Controllers
                 Cliente = _mapper.Map<ClienteViewModel>(cliente)
             };
 
+            // Ensure display name is consistent with lookup service formatting
+            var display = await _clienteLookup.GetClienteDisplayNameAsync(cliente.Id);
+            if (!string.IsNullOrWhiteSpace(display))
+            {
+                detalleViewModel.Cliente.NombreCompleto = display;
+            }
+
             // FIX punto 4.2: no recalcular Edad acá (AutoMapperProfile ya la calcula).
             detalleViewModel.Documentos = await _documentoService.GetByClienteIdAsync(cliente.Id);
 
@@ -431,16 +441,11 @@ namespace TheBuryProject.Controllers
 
         private async Task<EvaluacionCreditoResult> ObtenerEvaluacionActualAsync(Cliente cliente)
         {
-            var detalle = new ClienteDetalleViewModel
-            {
-                Cliente = _mapper.Map<ClienteViewModel>(cliente),
-                Documentos = await _documentoService.GetByClienteIdAsync(cliente.Id)
-            };
+            // Reuse ConstructDetalleViewModel to avoid duplicating mapping + document/credit loading
+            var detalle = await ConstructDetalleViewModel(cliente, tab: null);
 
-            var creditos = await _creditoService.GetByClienteIdAsync(cliente.Id);
-            detalle.CreditosActivos = creditos.Where(c => c.Estado == EstadoCredito.Activo).ToList();
-
-            return await EvaluarCapacidadCrediticia(cliente.Id, detalle);
+            // ConstructDetalleViewModel already runs EvaluarCapacidadCrediticia and populates EvaluacionCredito
+            return detalle.EvaluacionCredito ?? new EvaluacionCreditoResult();
         }
 
         private static decimal CalcularPuntajeRiesgoInicial(EvaluacionCreditoResult eval)

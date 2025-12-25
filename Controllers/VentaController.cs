@@ -21,6 +21,7 @@ namespace TheBuryProject.Controllers
         private readonly IDocumentacionService _documentacionService;
         private readonly IClienteService _clienteService;
         private readonly IProductoService _productoService;
+        private readonly IClienteLookupService _clienteLookup;
 
         public VentaController(
             IVentaService ventaService,
@@ -32,7 +33,8 @@ namespace TheBuryProject.Controllers
             ICreditoService creditoService,
             IDocumentacionService documentacionService,
             IClienteService clienteService,
-            IProductoService productoService)
+            IProductoService productoService,
+            IClienteLookupService clienteLookup)
         {
             _ventaService = ventaService;
             _configuracionPagoService = configuracionPagoService;
@@ -44,6 +46,7 @@ namespace TheBuryProject.Controllers
             _documentacionService = documentacionService;
             _clienteService = clienteService;
             _productoService = productoService;
+            _clienteLookup = clienteLookup;
         }
 
         // GET: Venta
@@ -54,15 +57,8 @@ namespace TheBuryProject.Controllers
                 var ventas = await _ventaService.GetAllAsync(filter);
 
                 // Cargar datos para filtros
-                var clientes = await _clienteService.SearchAsync(soloActivos: true, orderBy: "apellido");
-
-                ViewBag.Clientes = clientes
-                    .Select(c => new SelectListItem
-                    {
-                        Value = c.NumeroDocumento,
-                        Text = $"{c.Apellido}, {c.Nombre} - {c.NumeroDocumento}"
-                    })
-                    .ToList();
+                var clientesSelect = await _clienteLookup.GetClientesSelectListAsync();
+                ViewBag.Clientes = clientesSelect;
 
                 ViewBag.Estados = new SelectList(Enum.GetValues(typeof(EstadoVenta)));
                 ViewBag.TiposPago = new SelectList(Enum.GetValues(typeof(TipoPago)));
@@ -103,14 +99,13 @@ namespace TheBuryProject.Controllers
 
         // GET: Venta/Cotizar
         [HttpGet]
-
-
         public async Task<IActionResult> Cotizar()
         {
             await CargarViewBags();
             ViewBag.IvaRate = VentaConstants.IVA_RATE;
             return View("Create", CrearVentaInicial(EstadoVenta.Cotizacion));
         }
+
         // POST: Venta/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -168,6 +163,7 @@ namespace TheBuryProject.Controllers
                 return View(viewModel);
             }
         }
+
         // GET: Venta/Create
         [HttpGet]
         public async Task<IActionResult> Create()
@@ -603,6 +599,7 @@ namespace TheBuryProject.Controllers
 
             return RedirectToAction(nameof(Details), new { id });
         }
+
         // GET: Venta/Facturar/5
         public async Task<IActionResult> Facturar(int id)
         {
@@ -719,17 +716,9 @@ namespace TheBuryProject.Controllers
 
         private async Task CargarViewBags(int? clienteIdSeleccionado = null)
         {
-            var clientes = await _clienteService.SearchAsync(soloActivos: true, orderBy: "apellido");
-
-            ViewBag.Clientes = new SelectList(
-                clientes.Select(c => new
-                {
-                    c.Id,
-                    NombreCompleto = $"{c.Apellido}, {c.Nombre} - DNI: {c.NumeroDocumento}"
-                }),
-                "Id",
-                "NombreCompleto",
-                clienteIdSeleccionado);
+            // Usar el servicio centralizado para obtener clientes ya formateados
+            var clientes = await _clienteLookup.GetClientesSelectListAsync(clienteIdSeleccionado);
+            ViewBag.Clientes = new SelectList(clientes, "Value", "Text", clienteIdSeleccionado?.ToString());
 
             var productos = await _productoService.SearchAsync(soloActivos: true, orderBy: "nombre");
 

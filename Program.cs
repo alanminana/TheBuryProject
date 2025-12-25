@@ -84,6 +84,7 @@ builder.Services.AddScoped<IDevolucionService, DevolucionService>();
 builder.Services.AddScoped<ICajaService, CajaService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
 builder.Services.AddScoped<IDocumentacionService, DocumentacionService>();
+builder.Services.AddScoped<IClienteLookupService, ClienteLookupService>();
 
 // 5.5 SignalR
 builder.Services.AddSignalR();
