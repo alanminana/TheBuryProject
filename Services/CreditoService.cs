@@ -1,5 +1,10 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using TheBuryProject.Data;
 using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
@@ -29,9 +34,12 @@ namespace TheBuryProject.Services
             try
             {
                 var query = _context.Creditos
+                    .Where(c => !c.IsDeleted &&
+                                c.Cliente != null &&
+                                !c.Cliente.IsDeleted)
                     .Include(c => c.Cliente)
                     .Include(c => c.Garante)
-                    .Include(c => c.Cuotas)
+                    .Include(c => c.Cuotas.Where(cu => !cu.IsDeleted))
                     .AsQueryable();
 
                 // Aplicar filtros
@@ -63,8 +71,9 @@ namespace TheBuryProject.Services
 
                     if (filter.SoloCuotasVencidas)
                         query = query.Where(c => c.Cuotas.Any(cu =>
-                            cu.Estado == EstadoCuota.Vencida ||
-                            (cu.Estado == EstadoCuota.Pendiente && cu.FechaVencimiento < DateTime.Now)));
+                            !cu.IsDeleted &&
+                            (cu.Estado == EstadoCuota.Vencida ||
+                             (cu.Estado == EstadoCuota.Pendiente && cu.FechaVencimiento < DateTime.Now))));
                 }
 
                 var creditos = await query
@@ -87,8 +96,11 @@ namespace TheBuryProject.Services
                 var credito = await _context.Creditos
                     .Include(c => c.Cliente)
                     .Include(c => c.Garante)
-                    .Include(c => c.Cuotas.OrderBy(cu => cu.NumeroCuota))
-                    .FirstOrDefaultAsync(c => c.Id == id);
+                    .Include(c => c.Cuotas.Where(cu => !cu.IsDeleted).OrderBy(cu => cu.NumeroCuota))
+                    .FirstOrDefaultAsync(c => c.Id == id &&
+                                              !c.IsDeleted &&
+                                              c.Cliente != null &&
+                                              !c.Cliente.IsDeleted);
 
                 if (credito == null)
                     return null;
@@ -109,8 +121,11 @@ namespace TheBuryProject.Services
                 var creditos = await _context.Creditos
                     .Include(c => c.Cliente)
                     .Include(c => c.Garante)
-                    .Include(c => c.Cuotas.OrderBy(cu => cu.NumeroCuota))
-                    .Where(c => c.ClienteId == clienteId)
+                    .Include(c => c.Cuotas.Where(cu => !cu.IsDeleted).OrderBy(cu => cu.NumeroCuota))
+                    .Where(c => c.ClienteId == clienteId &&
+                                !c.IsDeleted &&
+                                c.Cliente != null &&
+                                !c.Cliente.IsDeleted)
                     .OrderByDescending(c => c.FechaSolicitud)
                     .ToListAsync();
 
@@ -134,7 +149,8 @@ namespace TheBuryProject.Services
             try
             {
                 // Obtener cliente para validaciones
-                var cliente = await _context.Clientes.FindAsync(viewModel.ClienteId);
+                var cliente = await _context.Clientes
+                    .FirstOrDefaultAsync(c => c.Id == viewModel.ClienteId && !c.IsDeleted);
                 if (cliente == null)
                     throw new Exception("Cliente no encontrado");
 
@@ -150,9 +166,6 @@ namespace TheBuryProject.Services
                 viewModel.MontoAprobado = viewModel.MontoSolicitado;
                 // El SaldoPendiente inicia igual al monto aprobado (disponible completo)
                 viewModel.SaldoPendiente = viewModel.MontoAprobado;
-
-                // La tasa se guarda para aplicar en cada venta
-                // NO se calculan cuotas aquí
 
                 var credito = _mapper.Map<Credito>(viewModel);
                 _context.Creditos.Add(credito);
@@ -192,8 +205,13 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var credito = await _context.Creditos.FindAsync(viewModel.Id);
+                var credito = await _context.Creditos.FirstOrDefaultAsync(c => c.Id == viewModel.Id && !c.IsDeleted);
                 if (credito == null)
+                    return false;
+
+                var clienteActivo = await _context.Clientes
+                    .AnyAsync(c => c.Id == credito.ClienteId && !c.IsDeleted);
+                if (!clienteActivo)
                     return false;
 
                 _mapper.Map(viewModel, credito);
@@ -212,8 +230,12 @@ namespace TheBuryProject.Services
             try
             {
                 var credito = await _context.Creditos
-                    .Include(c => c.Cuotas)
-                    .FirstOrDefaultAsync(c => c.Id == id);
+                    .Include(c => c.Cuotas.Where(cu => !cu.IsDeleted))
+                    .Include(c => c.Cliente)
+                    .FirstOrDefaultAsync(c => c.Id == id &&
+                                              !c.IsDeleted &&
+                                              c.Cliente != null &&
+                                              !c.Cliente.IsDeleted);
 
                 if (credito == null)
                     return false;
@@ -225,7 +247,9 @@ namespace TheBuryProject.Services
                 if (credito.Cuotas.Any(c => c.Estado == EstadoCuota.Pagada))
                     throw new Exception("No se puede eliminar un crédito con cuotas pagadas");
 
-                _context.Creditos.Remove(credito);
+                credito.IsDeleted = true;
+                foreach (var cuota in credito.Cuotas)
+                    cuota.IsDeleted = true;
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -289,8 +313,12 @@ namespace TheBuryProject.Services
             try
             {
                 var credito = await _context.Creditos
-                    .Include(c => c.Cuotas)
-                    .FirstOrDefaultAsync(c => c.Id == creditoId);
+                    .Include(c => c.Cuotas.Where(cu => !cu.IsDeleted))
+                    .Include(c => c.Cliente)
+                    .FirstOrDefaultAsync(c => c.Id == creditoId &&
+                                              !c.IsDeleted &&
+                                              c.Cliente != null &&
+                                              !c.Cliente.IsDeleted);
 
                 if (credito == null)
                     return false;
@@ -325,7 +353,12 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var credito = await _context.Creditos.FindAsync(creditoId);
+                var credito = await _context.Creditos
+                    .Include(c => c.Cliente)
+                    .FirstOrDefaultAsync(c => c.Id == creditoId &&
+                                              !c.IsDeleted &&
+                                              c.Cliente != null &&
+                                              !c.Cliente.IsDeleted);
                 if (credito == null)
                     return false;
 
@@ -346,8 +379,12 @@ namespace TheBuryProject.Services
             try
             {
                 var credito = await _context.Creditos
-                    .Include(c => c.Cuotas)
-                    .FirstOrDefaultAsync(c => c.Id == creditoId);
+                    .Include(c => c.Cuotas.Where(cu => !cu.IsDeleted))
+                    .Include(c => c.Cliente)
+                    .FirstOrDefaultAsync(c => c.Id == creditoId &&
+                                              !c.IsDeleted &&
+                                              c.Cliente != null &&
+                                              !c.Cliente.IsDeleted);
 
                 if (credito == null)
                     return false;
@@ -381,7 +418,12 @@ namespace TheBuryProject.Services
             try
             {
                 var cuotas = await _context.Cuotas
-                    .Where(c => c.CreditoId == creditoId)
+                    .Where(c => c.CreditoId == creditoId &&
+                                !c.IsDeleted &&
+                                c.Credito != null &&
+                                !c.Credito.IsDeleted &&
+                                c.Credito.Cliente != null &&
+                                !c.Credito.Cliente.IsDeleted)
                     .OrderBy(c => c.NumeroCuota)
                     .ToListAsync();
 
@@ -401,7 +443,10 @@ namespace TheBuryProject.Services
                 var cuota = await _context.Cuotas
                     .Include(c => c.Credito)
                         .ThenInclude(cr => cr.Cliente)
-                    .FirstOrDefaultAsync(c => c.Id == cuotaId);
+                    .FirstOrDefaultAsync(c => c.Id == cuotaId &&
+                                              !c.IsDeleted &&
+                                              !c.Credito.IsDeleted &&
+                                              !c.Credito.Cliente.IsDeleted);
 
                 if (cuota == null)
                     return null;
@@ -421,7 +466,10 @@ namespace TheBuryProject.Services
             {
                 var cuota = await _context.Cuotas
                     .Include(c => c.Credito)
-                    .FirstOrDefaultAsync(c => c.Id == pago.CuotaId);
+                    .FirstOrDefaultAsync(c => c.Id == pago.CuotaId &&
+                                              !c.IsDeleted &&
+                                              !c.Credito.IsDeleted &&
+                                              !c.Credito.Cliente.IsDeleted);
 
                 if (cuota == null)
                     return false;
@@ -477,7 +525,10 @@ namespace TheBuryProject.Services
                 var cuotas = await _context.Cuotas
                     .Include(c => c.Credito)
                         .ThenInclude(cr => cr.Cliente)
-                    .Where(c => c.FechaVencimiento < DateTime.Now &&
+                    .Where(c => !c.IsDeleted &&
+                               !c.Credito.IsDeleted &&
+                               !c.Credito.Cliente.IsDeleted &&
+                               c.FechaVencimiento < DateTime.Now &&
                                (c.Estado == EstadoCuota.Pendiente || c.Estado == EstadoCuota.Parcial || c.Estado == EstadoCuota.Vencida))
                     .OrderBy(c => c.FechaVencimiento)
                     .ToListAsync();
@@ -495,17 +546,15 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var cuotasVencidas = await _context.Cuotas
-                    .Where(c => c.FechaVencimiento < DateTime.Now &&
+                var now = DateTime.Now;
+
+                await _context.Cuotas
+                    .Where(c => !c.IsDeleted &&
+                               c.FechaVencimiento < now &&
                                c.Estado == EstadoCuota.Pendiente)
-                    .ToListAsync();
-
-                foreach (var cuota in cuotasVencidas)
-                {
-                    cuota.Estado = EstadoCuota.Vencida;
-                }
-
-                await _context.SaveChangesAsync();
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(c => c.Estado, EstadoCuota.Vencida)
+                        .SetProperty(c => c.UpdatedAt, now));
             }
             catch (Exception ex)
             {
@@ -533,8 +582,12 @@ namespace TheBuryProject.Services
             try
             {
                 var credito = await _context.Creditos
-                    .Include(c => c.Cuotas)
-                    .FirstOrDefaultAsync(c => c.Id == creditoId);
+                    .Include(c => c.Cuotas.Where(cu => !cu.IsDeleted))
+                    .Include(c => c.Cliente)
+                    .FirstOrDefaultAsync(c => c.Id == creditoId &&
+                                              !c.IsDeleted &&
+                                              c.Cliente != null &&
+                                              !c.Cliente.IsDeleted);
 
                 if (credito == null)
                     return false;
@@ -577,6 +630,186 @@ namespace TheBuryProject.Services
 
             var numero = ultimoCredito != null ? ultimoCredito.Id + 1 : 1;
             return $"CRE-{DateTime.Now:yyyyMM}-{numero:D6}";
+        }
+
+        #endregion
+
+        #region Nuevo: flujo seguro SolicitarCreditoAsync
+
+        public async Task<(bool Success, string? NumeroCredito, string? ErrorMessage)> SolicitarCreditoAsync(
+            SolicitudCreditoViewModel solicitud,
+            string usuarioSolicitante,
+            CancellationToken cancellationToken = default)
+        {
+            if (solicitud == null)
+                return (false, null, "Solicitud inválida");
+
+            if (solicitud.MontoSolicitado <= 0)
+                return (false, null, "Monto inválido");
+
+            if (solicitud.CantidadCuotas < 1 || solicitud.CantidadCuotas > 120)
+                return (false, null, "Cantidad de cuotas inválida");
+
+            // Cargar cliente
+            var cliente = await _context.Clientes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == solicitud.ClienteId && !c.IsDeleted, cancellationToken);
+
+            if (cliente == null)
+                return (false, null, "Cliente no encontrado");
+
+            const int maxAttempts = 3;
+
+            for (var intento = 1; intento <= maxAttempts; intento++)
+            {
+                await using var tx = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
+                try
+                {
+                    int? garanteId = null;
+
+                    // Crear garante si se proporcionó información y no existe Id
+                    if (!solicitud.GaranteId.HasValue && !string.IsNullOrWhiteSpace(solicitud.GaranteDocumento))
+                    {
+                        var garante = new Garante
+                        {
+                            ClienteId = solicitud.ClienteId,
+                            TipoDocumento = "DNI",
+                            NumeroDocumento = solicitud.GaranteDocumento.Trim(),
+                            Nombre = solicitud.GaranteNombre,
+                            Telefono = solicitud.GaranteTelefono,
+                            Relacion = "Garante",
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow,
+                            IsDeleted = false
+                        };
+
+                        _context.Garantes.Add(garante);
+                        await _context.SaveChangesAsync(cancellationToken);
+                        garanteId = garante.Id;
+                    }
+                    else if (solicitud.GaranteId.HasValue)
+                    {
+                        garanteId = solicitud.GaranteId;
+                    }
+
+                    // Generar número de crédito
+                    var numeroCredito = await GenerarNumeroCreditoAsync();
+
+                    var ahora = DateTime.UtcNow;
+
+                    var credito = new Credito
+                    {
+                        ClienteId = solicitud.ClienteId,
+                        Numero = numeroCredito,
+                        MontoSolicitado = solicitud.MontoSolicitado,
+                        MontoAprobado = solicitud.MontoSolicitado,
+                        TasaInteres = solicitud.TasaInteres,
+                        CantidadCuotas = solicitud.CantidadCuotas,
+                        MontoCuota = 0m,
+                        CFTEA = 0m,
+                        TotalAPagar = 0m,
+                        SaldoPendiente = 0m,
+                        Estado = EstadoCredito.Aprobado,
+                        FechaSolicitud = ahora,
+                        FechaAprobacion = ahora,
+                        FechaPrimeraCuota = ahora.AddMonths(1),
+                        PuntajeRiesgoInicial = cliente.PuntajeRiesgo,
+                        GaranteId = garanteId,
+                        RequiereGarante = garanteId.HasValue,
+                        AprobadoPor = string.IsNullOrWhiteSpace(usuarioSolicitante) ? "Sistema" : usuarioSolicitante,
+                        Observaciones = solicitud.Observaciones,
+                        CreatedAt = ahora,
+                        UpdatedAt = ahora,
+                        IsDeleted = false
+                    };
+
+                    _context.Creditos.Add(credito);
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    // Calcular cuota usando sistema francés
+                    var tasaMensualDecimal = solicitud.TasaInteres / 100m;
+                    var cuota = CalcularMontoCuotaSistemaFrances(solicitud.MontoSolicitado, tasaMensualDecimal, solicitud.CantidadCuotas);
+
+                    credito.MontoCuota = cuota;
+                    credito.CFTEA = CalcularCFTEA(tasaMensualDecimal);
+                    credito.TotalAPagar = Math.Round(cuota * solicitud.CantidadCuotas, 2);
+                    credito.SaldoPendiente = credito.TotalAPagar;
+
+                    _context.Creditos.Update(credito);
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    // Generar cuotas
+                    var fechaVencimiento = credito.FechaPrimeraCuota!.Value;
+                    var saldoRestante = solicitud.MontoSolicitado;
+                    var cuotas = new List<Cuota>(solicitud.CantidadCuotas);
+
+                    for (int i = 1; i <= solicitud.CantidadCuotas; i++)
+                    {
+                        var montoInteres = Math.Round(saldoRestante * tasaMensualDecimal, 2);
+                        var montoCapital = Math.Round(credito.MontoCuota - montoInteres, 2);
+
+                        // Ajuste en última cuota
+                        if (i == solicitud.CantidadCuotas)
+                        {
+                            montoCapital = Math.Round(saldoRestante, 2);
+                            credito.MontoCuota = Math.Round(montoCapital + montoInteres, 2);
+                        }
+
+                        cuotas.Add(new Cuota
+                        {
+                            CreditoId = credito.Id,
+                            NumeroCuota = i,
+                            MontoCapital = montoCapital,
+                            MontoInteres = montoInteres,
+                            MontoTotal = credito.MontoCuota,
+                            FechaVencimiento = fechaVencimiento,
+                            Estado = EstadoCuota.Pendiente,
+                            MontoPagado = 0,
+                            MontoPunitorio = 0,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow,
+                            IsDeleted = false
+                        });
+
+                        saldoRestante = Math.Round(saldoRestante - montoCapital, 2);
+                        fechaVencimiento = fechaVencimiento.AddMonths(1);
+                    }
+
+                    _context.Cuotas.AddRange(cuotas);
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    await tx.CommitAsync(cancellationToken);
+
+                    _logger.LogInformation("Crédito {Numero} creado para cliente {ClienteId}", numeroCredito, solicitud.ClienteId);
+                    return (true, numeroCredito, null);
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    await tx.RollbackAsync(cancellationToken);
+                    _logger.LogWarning(dbEx, "DbUpdateException al crear crédito (intento {Intento}).", intento);
+
+                    var msg = dbEx.GetBaseException()?.Message ?? string.Empty;
+                    if (msg.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase) ||
+                        msg.Contains("IX_Creditos_Numero", StringComparison.OrdinalIgnoreCase) ||
+                        msg.Contains("duplicate", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (intento == maxAttempts)
+                            return (false, null, "No se pudo generar un número de crédito único (intentos agotados).");
+
+                        continue; // reintentar
+                    }
+
+                    return (false, null, "Error al guardar crédito en la base de datos");
+                }
+                catch (Exception ex)
+                {
+                    await tx.RollbackAsync(cancellationToken);
+                    _logger.LogError(ex, "Error inesperado al solicitar crédito para cliente {ClienteId}", solicitud.ClienteId);
+                    return (false, null, "Error interno al procesar la solicitud de crédito");
+                }
+            }
+
+            return (false, null, "No se pudo procesar la solicitud de crédito");
         }
 
         #endregion

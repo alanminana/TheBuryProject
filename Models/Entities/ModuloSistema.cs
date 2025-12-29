@@ -4,55 +4,55 @@ using TheBuryProject.Models.Base;
 namespace TheBuryProject.Models.Entities;
 
 /// <summary>
-/// Representa un módulo del sistema con sus acciones disponibles
+/// Representa un mï¿½dulo del sistema con sus acciones disponibles
 /// </summary>
-public class ModuloSistema : BaseEntity
+public class ModuloSistema  : AuditableEntity
 {
     /// <summary>
-    /// Nombre del módulo (Productos, Ventas, Clientes, etc.)
+    /// Nombre del mï¿½dulo (Productos, Ventas, Clientes, etc.)
     /// </summary>
     [Required]
     [StringLength(100)]
     public string Nombre { get; set; } = string.Empty;
 
     /// <summary>
-    /// Clave única del módulo (productos, ventas, clientes)
-    /// Usar minúsculas sin espacios
+    /// Clave ï¿½nica del mï¿½dulo (productos, ventas, clientes)
+    /// Usar minï¿½sculas sin espacios
     /// </summary>
     [Required]
     [StringLength(50)]
     public string Clave { get; set; } = string.Empty;
 
     /// <summary>
-    /// Descripción del módulo
+    /// Descripciï¿½n del mï¿½dulo
     /// </summary>
     [StringLength(500)]
     public string? Descripcion { get; set; }
 
     /// <summary>
-    /// Icono del módulo (Bootstrap Icons)
+    /// Icono del mï¿½dulo (Bootstrap Icons)
     /// Ejemplo: "bi-box-seam", "bi-cart"
     /// </summary>
     [StringLength(50)]
     public string? Icono { get; set; }
 
     /// <summary>
-    /// Orden de visualización en el menú
+    /// Orden de visualizaciï¿½n en el menï¿½
     /// </summary>
     public int Orden { get; set; }
 
     /// <summary>
-    /// Indica si el módulo está activo
+    /// Indica si el mï¿½dulo estï¿½ activo
     /// </summary>
     public bool Activo { get; set; } = true;
 
     /// <summary>
-    /// Categoría del módulo (Catálogo, Ventas, Compras, Configuración, etc.)
+    /// Categorï¿½a del mï¿½dulo (Catï¿½logo, Ventas, Compras, Configuraciï¿½n, etc.)
     /// </summary>
     [StringLength(50)]
     public string? Categoria { get; set; }
 
-    // Navegación
+    // Navegaciï¿½n
     public virtual ICollection<AccionModulo> Acciones { get; set; } = new List<AccionModulo>();
     public virtual ICollection<RolPermiso> Permisos { get; set; } = new List<RolPermiso>();
 }

@@ -109,6 +109,14 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException("Caja no encontrada");
                 }
 
+                // Concurrencia optimista
+                if (model.RowVersion is null || model.RowVersion.Length == 0)
+                {
+                    throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la caja e intentá nuevamente.");
+                }
+
+                _context.Entry(caja).Property(c => c.RowVersion).OriginalValue = model.RowVersion;
+
                 // ✅ Validación centralizada
                 ValidarCaja(model);
 
@@ -133,6 +141,11 @@ namespace TheBuryProject.Services
 
                 return caja;
             }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                _logger.LogWarning(ex, "Conflicto de concurrencia al actualizar caja {Id}", id);
+                throw new InvalidOperationException("La caja fue modificada por otro usuario. Por favor, recargue los datos.");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al actualizar caja {Id}", id);
@@ -140,7 +153,7 @@ namespace TheBuryProject.Services
             }
         }
 
-        public async Task EliminarCajaAsync(int id)
+        public async Task EliminarCajaAsync(int id, byte[]? rowVersion = null)
         {
             try
             {
@@ -149,6 +162,14 @@ namespace TheBuryProject.Services
                 {
                     throw new InvalidOperationException("Caja no encontrada");
                 }
+
+                // Concurrencia optimista
+                if (rowVersion is null || rowVersion.Length == 0)
+                {
+                    throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la caja e intentá nuevamente.");
+                }
+
+                _context.Entry(caja).Property(c => c.RowVersion).OriginalValue = rowVersion;
 
                 // No permitir eliminar si está abierta
                 if (caja.Estado == EstadoCaja.Abierta)
@@ -162,6 +183,11 @@ namespace TheBuryProject.Services
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Caja eliminada: {Codigo}", caja.Codigo);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                _logger.LogWarning(ex, "Conflicto de concurrencia al eliminar caja {Id}", id);
+                throw new InvalidOperationException("La caja fue modificada por otro usuario. Por favor, recargue los datos.");
             }
             catch (Exception ex)
             {
@@ -237,15 +263,22 @@ namespace TheBuryProject.Services
                     "Caja abierta: {Codigo} por {Usuario} con monto inicial ${Monto:N2}",
                     caja.Codigo, usuario, model.MontoInicial);
 
-                // Crear notificación
-                await _notificacionService.CrearNotificacionParaRolAsync(
-                    "Supervisor",
-                    TipoNotificacion.CajaAbierta,
-                    "Caja Abierta",
-                    $"Caja {caja.Codigo} abierta por {usuario} con monto inicial ${model.MontoInicial:N2}",
-                    $"/Caja/DetallesApertura/{apertura.Id}",
-                    PrioridadNotificacion.Baja
-                );
+                // Crear notificación (no debe bloquear la apertura)
+                try
+                {
+                    await _notificacionService.CrearNotificacionParaRolAsync(
+                        "Supervisor",
+                        TipoNotificacion.CajaAbierta,
+                        "Caja Abierta",
+                        $"Caja {caja.Codigo} abierta por {usuario} con monto inicial ${model.MontoInicial:N2}",
+                        $"/Caja/DetallesApertura/{apertura.Id}",
+                        PrioridadNotificacion.Baja
+                    );
+                }
+                catch (Exception exNoti)
+                {
+                    _logger.LogWarning(exNoti, "Error al crear notificación de apertura de caja");
+                }
 
                 return apertura;
             }

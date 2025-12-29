@@ -1,9 +1,10 @@
+using System;
 using TheBuryProject.Models.Entities;
 
 namespace TheBuryProject.Helpers
 {
     /// <summary>
-    /// Contiene métodos de validación reutilizables para Cliente
+    /// Contiene mï¿½todos de validaciï¿½n reutilizables para Cliente
     /// </summary>
     public static class ClienteValidationHelper
     {

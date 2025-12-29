@@ -3,7 +3,7 @@ using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.ViewModels
 {
-    public class AjusteStockViewModel
+    public class AjusteStockViewModel : IValidatableObject
     {
         [Required(ErrorMessage = "El producto es requerido")]
         [Display(Name = "Producto")]
@@ -14,7 +14,7 @@ namespace TheBuryProject.ViewModels
         public TipoMovimiento Tipo { get; set; }
 
         [Required(ErrorMessage = "La cantidad es requerida")]
-        [Range(0.01, 999999.99, ErrorMessage = "La cantidad debe ser mayor a 0")]
+        [Range(0, 999999.99, ErrorMessage = "La cantidad debe estar entre 0 y 999999.99")]
         [Display(Name = "Cantidad")]
         public decimal Cantidad { get; set; }
 
@@ -31,5 +31,27 @@ namespace TheBuryProject.ViewModels
         public string? ProductoNombre { get; set; }
         public string? ProductoCodigo { get; set; }
         public decimal StockActual { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (Tipo == TipoMovimiento.Ajuste)
+            {
+                if (Cantidad < 0)
+                {
+                    yield return new ValidationResult(
+                        "Para un ajuste, la cantidad (stock objetivo) no puede ser negativa.",
+                        new[] { nameof(Cantidad) });
+                }
+            }
+            else
+            {
+                if (Cantidad <= 0)
+                {
+                    yield return new ValidationResult(
+                        "La cantidad debe ser mayor a 0 para entradas y salidas.",
+                        new[] { nameof(Cantidad) });
+                }
+            }
+        }
     }
 }

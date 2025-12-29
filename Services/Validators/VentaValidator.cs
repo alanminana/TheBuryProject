@@ -12,7 +12,7 @@ namespace TheBuryProject.Services.Validators
             if (venta.Estado != EstadoVenta.Cotizacion && venta.Estado != EstadoVenta.Presupuesto)
             {
                 throw new InvalidOperationException(
-                    $"Solo se pueden editar ventas en estado Cotización o Presupuesto. Estado actual: {venta.Estado}");
+                    $"Solo se pueden editar ventas en estado Cotizaciï¿½n o Presupuesto. Estado actual: {venta.Estado}");
             }
         }
 
@@ -21,7 +21,7 @@ namespace TheBuryProject.Services.Validators
             if (venta.Estado != EstadoVenta.Cotizacion && venta.Estado != EstadoVenta.Presupuesto)
             {
                 throw new InvalidOperationException(
-                    $"Solo se pueden eliminar ventas en estado Cotización o Presupuesto. Estado actual: {venta.Estado}");
+                    $"Solo se pueden eliminar ventas en estado Cotizaciï¿½n o Presupuesto. Estado actual: {venta.Estado}");
             }
         }
 
@@ -48,19 +48,21 @@ namespace TheBuryProject.Services.Validators
             if (venta.RequiereAutorizacion && venta.EstadoAutorizacion != EstadoAutorizacionVenta.Autorizada)
             {
                 throw new InvalidOperationException(
-                    $"La venta requiere autorización antes de continuar. Estado actual: {venta.EstadoAutorizacion}");
+                    $"La venta requiere autorizaciï¿½n antes de continuar. Estado actual: {venta.EstadoAutorizacion}");
             }
         }
 
         public void ValidarStock(Venta venta)
         {
             var productosInsuficientes = venta.Detalles
-                .Where(d => d.Producto.StockActual < d.Cantidad)
+                .Where(d => !d.IsDeleted)
+                .Where(d => d.Producto != null)
+                .Where(d => d.Producto!.StockActual < d.Cantidad)
                 .Select(d => new
                 {
-                    d.Producto.Nombre,
+                    Nombre = d.Producto!.Nombre,
                     d.Cantidad,
-                    Disponible = d.Producto.StockActual
+                    Disponible = d.Producto!.StockActual
                 })
                 .ToList();
 
@@ -86,7 +88,7 @@ namespace TheBuryProject.Services.Validators
             if (venta.EstadoAutorizacion != estadoEsperado)
             {
                 throw new InvalidOperationException(
-                    $"La venta debe estar en estado de autorización {estadoEsperado}. Estado actual: {venta.EstadoAutorizacion}");
+                    $"La venta debe estar en estado de autorizaciï¿½n {estadoEsperado}. Estado actual: {venta.EstadoAutorizacion}");
             }
         }
     }

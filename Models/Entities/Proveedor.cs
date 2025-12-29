@@ -6,24 +6,24 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Representa un proveedor del sistema
     /// </summary>
-    public class Proveedor : BaseEntity
+    public class Proveedor  : AuditableEntity
     {
         /// <summary>
-        /// CUIT del proveedor (11 dígitos sin guiones)
+        /// CUIT del proveedor (11 dï¿½gitos sin guiones)
         /// </summary>
         [Required]
         [StringLength(11)]
         public string Cuit { get; set; } = string.Empty;
 
         /// <summary>
-        /// Razón Social del proveedor
+        /// Razï¿½n Social del proveedor
         /// </summary>
         [Required]
         [StringLength(200)]
         public string RazonSocial { get; set; } = string.Empty;
 
         /// <summary>
-        /// Nombre de fantasía (opcional)
+        /// Nombre de fantasï¿½a (opcional)
         /// </summary>
         [StringLength(200)]
         public string? NombreFantasia { get; set; }
@@ -35,13 +35,13 @@ namespace TheBuryProject.Models.Entities
         public string? Email { get; set; }
 
         /// <summary>
-        /// Teléfono de contacto
+        /// Telï¿½fono de contacto
         /// </summary>
         [StringLength(50)]
         public string? Telefono { get; set; }
 
         /// <summary>
-        /// Dirección completa
+        /// Direcciï¿½n completa
         /// </summary>
         [StringLength(300)]
         public string? Direccion { get; set; }
@@ -59,7 +59,7 @@ namespace TheBuryProject.Models.Entities
         public string? Provincia { get; set; }
 
         /// <summary>
-        /// Código Postal
+        /// Cï¿½digo Postal
         /// </summary>
         [StringLength(10)]
         public string? CodigoPostal { get; set; }
@@ -77,19 +77,19 @@ namespace TheBuryProject.Models.Entities
         public string? Aclaraciones { get; set; }
 
         /// <summary>
-        /// Indica si el proveedor está activo
+        /// Indica si el proveedor estï¿½ activo
         /// </summary>
         public bool Activo { get; set; } = true;
 
-        // Navegación - Relaciones opcionales para facilitar búsqueda
+        // Navegaciï¿½n - Relaciones opcionales para facilitar bï¿½squeda
         public virtual ICollection<ProveedorProducto> ProveedorProductos { get; set; } = new List<ProveedorProducto>();
         public virtual ICollection<ProveedorMarca> ProveedorMarcas { get; set; } = new List<ProveedorMarca>();
         public virtual ICollection<ProveedorCategoria> ProveedorCategorias { get; set; } = new List<ProveedorCategoria>();
 
-        // Navegación - Órdenes de compra
+        // Navegaciï¿½n - ï¿½rdenes de compra
         public virtual ICollection<OrdenCompra> OrdenesCompra { get; set; } = new List<OrdenCompra>();
 
-        // Navegación - Cheques
+        // Navegaciï¿½n - Cheques
         public virtual ICollection<Cheque> Cheques { get; set; } = new List<Cheque>();
     }
 }

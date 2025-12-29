@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Datos de pago con tarjeta asociados a una venta
     /// </summary>
-    public class DatosTarjeta : BaseEntity
+    public class DatosTarjeta  : AuditableEntity
     {
         public int VentaId { get; set; }
         public int? ConfiguracionTarjetaId { get; set; }
@@ -19,14 +19,14 @@ namespace TheBuryProject.Models.Entities
         [Required]
         public TipoTarjeta TipoTarjeta { get; set; }
 
-        // Para crédito
+        // Para crï¿½dito
         public int? CantidadCuotas { get; set; }
         public TipoCuotaTarjeta? TipoCuota { get; set; }
         public decimal? TasaInteres { get; set; }
         public decimal? MontoCuota { get; set; }
         public decimal? MontoTotalConInteres { get; set; }
 
-        // Para débito con recargo
+        // Para dï¿½bito con recargo
         public decimal? RecargoAplicado { get; set; }
 
         [StringLength(50)]

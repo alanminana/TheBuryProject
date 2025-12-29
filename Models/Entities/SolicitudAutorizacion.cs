@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities;
 /// <summary>
 /// Registra solicitudes de autorización para excepciones de umbrales
 /// </summary>
-public class SolicitudAutorizacion : BaseEntity
+public class SolicitudAutorizacion : AuditableEntity
 {
     [Required]
     [StringLength(50)]

@@ -69,7 +69,8 @@ namespace TheBuryProject.Controllers
 
                 if (filtro.ReturnToVentaId.HasValue)
                 {
-                    var venta = await context.Ventas.FindAsync(filtro.ReturnToVentaId.Value);
+                    var venta = await context.Ventas
+                        .FirstOrDefaultAsync(v => v.Id == filtro.ReturnToVentaId.Value && !v.IsDeleted);
                     if (venta != null)
                     {
                         ViewBag.DocumentacionPendiente =
@@ -107,7 +108,11 @@ namespace TheBuryProject.Controllers
 
                 var venta = await context.Ventas
                     .Include(v => v.Cliente)
-                    .FirstOrDefaultAsync(v => v.Id == returnToVentaId.Value);
+                    .FirstOrDefaultAsync(v =>
+                        v.Id == returnToVentaId.Value &&
+                        !v.IsDeleted &&
+                        v.Cliente != null &&
+                        !v.Cliente.IsDeleted);
 
                 if (venta != null)
                 {
@@ -164,7 +169,11 @@ namespace TheBuryProject.Controllers
                 {
                     var venta = await context.Ventas
                         .Include(v => v.Cliente)
-                        .FirstOrDefaultAsync(v => v.Id == viewModel.ReturnToVentaId.Value);
+                        .FirstOrDefaultAsync(v =>
+                            v.Id == viewModel.ReturnToVentaId.Value &&
+                            !v.IsDeleted &&
+                            v.Cliente != null &&
+                            !v.Cliente.IsDeleted);
 
                     if (venta == null)
                     {

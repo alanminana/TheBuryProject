@@ -224,13 +224,19 @@
                                         <div class="btn-group btn-group-sm" role="group">
                                             @if (!alerta.Leida)
                                             {
-                                                <a asp-action="MarcarLeida" asp-route-id="@alerta.Id" class="btn btn-outline-primary" title="Marcar como leída">
+                                                <a asp-action="MarcarLeida"
+                                                   asp-route-id="@alerta.Id"
+                                                   asp-route-rowVersion="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")"
+                                                   class="btn btn-outline-primary" title="Marcar como leída">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
                                             }
                                             @if (!alerta.Resuelta)
                                             {
-                                                <a asp-action="Resolver" asp-route-id="@alerta.Id" class="btn btn-outline-success" title="Resolver">
+                                                <a asp-action="Resolver"
+                                                   asp-route-id="@alerta.Id"
+                                                   asp-route-rowVersion="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")"
+                                                   class="btn btn-outline-success" title="Resolver">
                                                     <i class="bi bi-check-lg"></i>
                                                 </a>
                                             }

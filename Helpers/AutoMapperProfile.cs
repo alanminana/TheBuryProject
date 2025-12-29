@@ -14,13 +14,13 @@ namespace TheBuryProject.Helpers
             // Categoria
             // =======================
             CreateMap<Categoria, CategoriaViewModel>()
-                .ForMember(d => d.ParentNombre, o => o.MapFrom(s => s.Parent != null ? s.Parent.Nombre : null));
+                .ForMember(d => d.ParentNombre, o => o.MapFrom(s => s.Parent != null && !s.Parent.IsDeleted ? s.Parent.Nombre : null));
 
             // =======================
             // Marca
             // =======================
             CreateMap<Marca, MarcaViewModel>()
-                .ForMember(d => d.ParentNombre, o => o.MapFrom(s => s.Parent != null ? s.Parent.Nombre : null));
+                .ForMember(d => d.ParentNombre, o => o.MapFrom(s => s.Parent != null && !s.Parent.IsDeleted ? s.Parent.Nombre : null));
 
             // =======================
             // Producto
@@ -37,25 +37,32 @@ namespace TheBuryProject.Helpers
             // Proveedor
             // =======================
             CreateMap<Proveedor, ProveedorViewModel>()
-                .ForMember(d => d.TotalOrdenesCompra, o => o.MapFrom(s => s.OrdenesCompra.Count))
+                .ForMember(d => d.TotalOrdenesCompra, o => o.MapFrom(s => s.OrdenesCompra.Count(oc => !oc.IsDeleted)))
                 .ForMember(d => d.ChequesVigentes, o => o.MapFrom(s => s.Cheques.Count(c =>
+                    !c.IsDeleted &&
                     c.Estado != EstadoCheque.Cobrado &&
                     c.Estado != EstadoCheque.Rechazado &&
                     c.Estado != EstadoCheque.Anulado)))
                 .ForMember(d => d.TotalDeuda, o => o.MapFrom(s => s.OrdenesCompra
-                    .Where(oc => oc.Estado != EstadoOrdenCompra.Cancelada)
+                    .Where(oc => !oc.IsDeleted && oc.Estado != EstadoOrdenCompra.Cancelada)
                     .Sum(oc => oc.Total)))
-                .ForMember(d => d.ProductosSeleccionados, o => o.MapFrom(s => s.ProveedorProductos.Select(pp => pp.ProductoId)))
-                .ForMember(d => d.MarcasSeleccionadas, o => o.MapFrom(s => s.ProveedorMarcas.Select(pm => pm.MarcaId)))
-                .ForMember(d => d.CategoriasSeleccionadas, o => o.MapFrom(s => s.ProveedorCategorias.Select(pc => pc.CategoriaId)))
+                .ForMember(d => d.ProductosSeleccionados, o => o.MapFrom(s => s.ProveedorProductos
+                    .Where(pp => !pp.IsDeleted)
+                    .Select(pp => pp.ProductoId)))
+                .ForMember(d => d.MarcasSeleccionadas, o => o.MapFrom(s => s.ProveedorMarcas
+                    .Where(pm => !pm.IsDeleted)
+                    .Select(pm => pm.MarcaId)))
+                .ForMember(d => d.CategoriasSeleccionadas, o => o.MapFrom(s => s.ProveedorCategorias
+                    .Where(pc => !pc.IsDeleted)
+                    .Select(pc => pc.CategoriaId)))
                 .ForMember(d => d.ProductosAsociados, o => o.MapFrom(s => s.ProveedorProductos
-                    .Where(pp => pp.Producto != null)
+                    .Where(pp => !pp.IsDeleted && pp.Producto != null && !pp.Producto.IsDeleted)
                     .Select(pp => pp.Producto!.Nombre)))
                 .ForMember(d => d.MarcasAsociadas, o => o.MapFrom(s => s.ProveedorMarcas
-                    .Where(pm => pm.Marca != null)
+                    .Where(pm => !pm.IsDeleted && pm.Marca != null && !pm.Marca.IsDeleted)
                     .Select(pm => pm.Marca!.Nombre)))
                 .ForMember(d => d.CategoriasAsociadas, o => o.MapFrom(s => s.ProveedorCategorias
-                    .Where(pc => pc.Categoria != null)
+                    .Where(pc => !pc.IsDeleted && pc.Categoria != null && !pc.Categoria.IsDeleted)
                     .Select(pc => pc.Categoria!.Nombre)));
 
             CreateMap<ProveedorViewModel, Proveedor>()
@@ -74,9 +81,9 @@ namespace TheBuryProject.Helpers
             CreateMap<OrdenCompra, OrdenCompraViewModel>()
                 .ForMember(d => d.ProveedorNombre, o => o.MapFrom(s => s.Proveedor != null ? s.Proveedor.RazonSocial : null))
                 .ForMember(d => d.EstadoNombre, o => o.MapFrom(s => s.Estado.ToString()))
-                .ForMember(d => d.TotalItems, o => o.MapFrom(s => s.Detalles.Sum(d => d.Cantidad)))
-                .ForMember(d => d.TotalRecibido, o => o.MapFrom(s => s.Detalles.Sum(d => d.CantidadRecibida)))
-                .ForMember(d => d.Detalles, o => o.MapFrom(s => s.Detalles));
+                .ForMember(d => d.TotalItems, o => o.MapFrom(s => s.Detalles.Where(d => !d.IsDeleted).Sum(d => d.Cantidad)))
+                .ForMember(d => d.TotalRecibido, o => o.MapFrom(s => s.Detalles.Where(d => !d.IsDeleted).Sum(d => d.CantidadRecibida)))
+                .ForMember(d => d.Detalles, o => o.MapFrom(s => s.Detalles.Where(d => !d.IsDeleted)));
 
             CreateMap<OrdenCompraViewModel, OrdenCompra>()
                 .ForMember(d => d.Proveedor, o => o.Ignore())
@@ -124,7 +131,7 @@ namespace TheBuryProject.Helpers
                 .ForMember(d => d.NombreCompleto, o => o.MapFrom(s =>
                     !string.IsNullOrWhiteSpace(s.NombreCompleto)
                         ? s.NombreCompleto
-                        : $"{s.Apellido}, {s.Nombre}"));
+                        : s.ToDisplayName()));
 
             CreateMap<Garante, ClienteResumenViewModel>()
                 .ForMember(d => d.Id, o => o.MapFrom(s => s.GaranteClienteId ?? 0))
@@ -132,8 +139,8 @@ namespace TheBuryProject.Helpers
                     s.GaranteCliente != null
                         ? (!string.IsNullOrWhiteSpace(s.GaranteCliente.NombreCompleto)
                             ? s.GaranteCliente.NombreCompleto
-                            : $"{s.GaranteCliente.Apellido}, {s.GaranteCliente.Nombre}")
-                        : $"{s.Apellido}, {s.Nombre}"))
+                            : s.GaranteCliente.ToDisplayName())
+                        : s.ToDisplayName()))
                 .ForMember(d => d.NumeroDocumento, o => o.MapFrom(s =>
                     s.GaranteCliente != null ? s.GaranteCliente.NumeroDocumento : s.NumeroDocumento ?? string.Empty))
                 .ForMember(d => d.Telefono, o => o.MapFrom(s =>
@@ -145,14 +152,15 @@ namespace TheBuryProject.Helpers
                 .ForMember(d => d.Sueldo, o => o.MapFrom(s => s.GaranteCliente != null ? s.GaranteCliente.Sueldo : (decimal?)null));
 
             CreateMap<Cliente, ClienteViewModel>()
-                .ForMember(d => d.Edad, o => o.MapFrom(s =>
-                    s.FechaNacimiento.HasValue
-                        ? (int)((DateTime.Today - s.FechaNacimiento.Value).TotalDays / 365.25)
-                        : (int?)null))
+                .ForMember(d => d.NombreCompleto, o => o.MapFrom(s =>
+                    !string.IsNullOrWhiteSpace(s.NombreCompleto)
+                        ? s.NombreCompleto
+                        : s.ToDisplayName()))
+                .ForMember(d => d.Edad, o => o.MapFrom(s => ClienteHelper.CalcularEdad(s.FechaNacimiento)))
                 .ForMember(d => d.CreditosActivos, o => o.MapFrom(s => s.Creditos.Count(c =>
-                    c.Estado == EstadoCredito.Activo)))
+                    !c.IsDeleted && c.Estado == EstadoCredito.Activo)))
                 .ForMember(d => d.MontoAdeudado, o => o.MapFrom(s => s.Creditos
-                    .Where(c => c.Estado == EstadoCredito.Activo)
+                    .Where(c => !c.IsDeleted && c.Estado == EstadoCredito.Activo)
                     .Sum(c => c.SaldoPendiente)));
 
             CreateMap<ClienteViewModel, Cliente>()
@@ -165,7 +173,7 @@ namespace TheBuryProject.Helpers
             CreateMap<Credito, CreditoViewModel>()
                 .ForMember(d => d.Cliente, o => o.MapFrom(s => s.Cliente))
                 .ForMember(d => d.Garante, o => o.MapFrom(s => s.Garante))
-                .ForMember(d => d.Cuotas, o => o.MapFrom(s => s.Cuotas));
+                .ForMember(d => d.Cuotas, o => o.MapFrom(s => s.Cuotas.Where(cu => !cu.IsDeleted)));
 
             CreateMap<CreditoViewModel, Credito>()
                 .ForMember(d => d.Cliente, o => o.Ignore())
@@ -185,11 +193,11 @@ namespace TheBuryProject.Helpers
             // =======================
             CreateMap<Venta, VentaViewModel>()
                 .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
-                    src.Cliente != null ? $"{src.Cliente.Apellido}, {src.Cliente.Nombre}" : string.Empty))
+                    src.Cliente != null ? src.Cliente.ToDisplayName() : string.Empty))
                 .ForMember(dest => dest.ClienteDocumento, opt => opt.MapFrom(src => src.Cliente != null ? src.Cliente.NumeroDocumento : string.Empty))
                 .ForMember(dest => dest.CreditoNumero, opt => opt.MapFrom(src => src.Credito != null ? src.Credito.Numero : null))
-                .ForMember(dest => dest.Detalles, opt => opt.MapFrom(src => src.Detalles))
-                .ForMember(dest => dest.Facturas, opt => opt.MapFrom(src => src.Facturas));
+                .ForMember(dest => dest.Detalles, opt => opt.MapFrom(src => src.Detalles.Where(d => !d.IsDeleted)))
+                .ForMember(dest => dest.Facturas, opt => opt.MapFrom(src => src.Facturas.Where(f => !f.IsDeleted)));
 
             CreateMap<VentaViewModel, Venta>()
                 .ForMember(dest => dest.Cliente, opt => opt.Ignore())
@@ -203,6 +211,13 @@ namespace TheBuryProject.Helpers
                 .ForMember(dest => dest.StockDisponible, opt => opt.MapFrom(src => src.Producto.StockActual));
 
             CreateMap<VentaDetalleViewModel, VentaDetalle>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.RowVersion, opt => opt.Ignore())
                 .ForMember(dest => dest.Producto, opt => opt.Ignore())
                 .ForMember(dest => dest.Venta, opt => opt.Ignore());
 
@@ -265,7 +280,7 @@ namespace TheBuryProject.Helpers
             // Evaluación Crédito
             CreateMap<EvaluacionCredito, EvaluacionCreditoViewModel>()
                 .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
-                    src.Cliente != null ? $"{src.Cliente.Apellido}, {src.Cliente.Nombre}" : null))
+                    src.Cliente != null ? src.Cliente.ToDisplayName() : null))
                 .ReverseMap();
             // =======================
             // DocumentoCliente
@@ -282,9 +297,24 @@ namespace TheBuryProject.Helpers
                 .ForMember(dest => dest.TamanoBytes, opt => opt.Ignore());
             // Mora
             // Mora
-            CreateMap<ConfiguracionMora, ConfiguracionMoraViewModel>().ReverseMap();
+            CreateMap<ConfiguracionMora, ConfiguracionMoraViewModel>()
+                .ForMember(d => d.DiasGraciaMora, o => o.MapFrom(s => s.DiasGracia))
+                .ForMember(d => d.DiasGracia, o => o.MapFrom(s => s.DiasGracia))
+                .ReverseMap()
+                .ForMember(d => d.DiasGracia, o => o.MapFrom(s => s.DiasGraciaMora != 0 ? s.DiasGraciaMora : s.DiasGracia));
             CreateMap<AlertaCobranza, AlertaCobranzaViewModel>()
-                .ForMember(dest => dest.ClienteNombre, opt => opt.Ignore());
+                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
+                    src.Cliente != null ? src.Cliente.ToDisplayName() : string.Empty))
+                .ForMember(dest => dest.ClienteDocumento, opt => opt.MapFrom(src =>
+                    src.Cliente != null ? src.Cliente.NumeroDocumento : string.Empty))
+                .ForMember(dest => dest.TipoNombre, opt => opt.MapFrom(src => src.Tipo.ToString()))
+                .ForMember(dest => dest.RowVersion, opt => opt.MapFrom(src => src.RowVersion))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.Leida, opt => opt.MapFrom(src => src.UpdatedAt != null && src.UpdatedAt > src.CreatedAt))
+                .ForMember(dest => dest.Titulo, opt => opt.MapFrom(src =>
+                    src.Cliente != null ? $"Alerta: {src.Cliente.NombreCompleto}" : "Alerta de cobranza"))
+                .ForMember(dest => dest.ColorAlerta, opt => opt.MapFrom(src => GetColorAlerta(src.Prioridad)))
+                .ForMember(dest => dest.IconoAlerta, opt => opt.MapFrom(src => GetIconoAlerta(src.Prioridad)));
             CreateMap<AlertaCobranzaViewModel, AlertaCobranza>();
 
             // =======================
@@ -322,6 +352,20 @@ namespace TheBuryProject.Helpers
 
             CreateMap<PrecioHistoricoViewModel, PrecioHistorico>()
                 .ForMember(dest => dest.Producto, opt => opt.Ignore());
+
+            // =======================
+            // Caja
+            // =======================
+            CreateMap<Caja, CajaViewModel>();
+
+            CreateMap<CajaViewModel, Caja>()
+                .ForMember(dest => dest.Aperturas, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.RowVersion, opt => opt.Ignore());
 
             // =======================
             // Autorizaciones
@@ -383,6 +427,30 @@ namespace TheBuryProject.Helpers
                 .ForMember(dest => dest.Devolucion, opt => opt.Ignore())
                 .ForMember(dest => dest.Proveedor, opt => opt.Ignore());
 
+        }
+
+        private static string GetColorAlerta(PrioridadAlerta prioridad)
+        {
+            return prioridad switch
+            {
+                PrioridadAlerta.Critica => "dark",
+                PrioridadAlerta.Alta => "danger",
+                PrioridadAlerta.Media => "warning",
+                PrioridadAlerta.Baja => "info",
+                _ => "secondary"
+            };
+        }
+
+        private static string GetIconoAlerta(PrioridadAlerta prioridad)
+        {
+            return prioridad switch
+            {
+                PrioridadAlerta.Critica => "bi bi-exclamation-octagon-fill",
+                PrioridadAlerta.Alta => "bi bi-exclamation-triangle-fill",
+                PrioridadAlerta.Media => "bi bi-exclamation-circle-fill",
+                PrioridadAlerta.Baja => "bi bi-info-circle-fill",
+                _ => "bi bi-bell"
+            };
         }
     }
 }

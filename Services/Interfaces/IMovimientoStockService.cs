@@ -35,7 +35,28 @@ namespace TheBuryProject.Services.Interfaces
             decimal cantidad,
             string? referencia,
             string motivo,
-            string? usuarioActual = null);  // ← NUEVO PARÁMETRO
+            string? usuarioActual = null,
+            int? ordenCompraId = null);
+
+        /// <summary>
+        /// ✅ NUEVO: Registrar múltiples ENTRADAS de stock en un solo SaveChanges.
+        /// Útil para recepciones de orden de compra u operaciones batch donde
+        /// se requiere crear un movimiento por ítem y actualizar stock por producto.
+        /// </summary>
+        Task<List<MovimientoStock>> RegistrarEntradasAsync(
+            List<(int productoId, decimal cantidad, string? referencia)> entradas,
+            string motivo,
+            string? usuarioActual = null,
+            int? ordenCompraId = null);
+
+        /// <summary>
+        /// ✅ NUEVO: Registrar múltiples SALIDAS de stock en un solo SaveChanges.
+        /// Valida stock suficiente por producto considerando el total del batch.
+        /// </summary>
+        Task<List<MovimientoStock>> RegistrarSalidasAsync(
+            List<(int productoId, decimal cantidad, string? referencia)> salidas,
+            string motivo,
+            string? usuarioActual = null);
 
         /// <summary>
         /// ✅ NUEVO: Validar disponibilidad de stock

@@ -218,6 +218,14 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
+                    var rowVersion = viewModel.RowVersion;
+                    if (rowVersion is null || rowVersion.Length == 0)
+                    {
+                        ModelState.AddModelError("", "No se recibió la versión de fila (RowVersion). Recargue la página e intente nuevamente.");
+                        await CargarDropdownsAsync(viewModel.CategoriaId, viewModel.MarcaId);
+                        return View(viewModel);
+                    }
+
                     // Verificar que el código no exista en otro producto
                     if (await _productoService.ExistsCodigoAsync(viewModel.Codigo, id))
                     {
@@ -227,6 +235,7 @@ namespace TheBuryProject.Controllers
                     }
 
                     var producto = _mapper.Map<Producto>(viewModel);
+                    producto.RowVersion = rowVersion;
                     await _productoService.UpdateAsync(producto);
 
                     TempData["Success"] = "Producto actualizado exitosamente";

@@ -5,9 +5,9 @@ using TheBuryProject.Models.Enums;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Configuración específica para pagos con tarjeta
+    /// Configuraciï¿½n especï¿½fica para pagos con tarjeta
     /// </summary>
-    public class ConfiguracionTarjeta : BaseEntity
+    public class ConfiguracionTarjeta  : AuditableEntity
     {
         public int ConfiguracionPagoId { get; set; }
 
@@ -20,13 +20,13 @@ namespace TheBuryProject.Models.Entities
 
         public bool Activa { get; set; } = true;
 
-        // Para tarjeta de crédito
+        // Para tarjeta de crï¿½dito
         public bool PermiteCuotas { get; set; } = false;
         public int? CantidadMaximaCuotas { get; set; }
         public TipoCuotaTarjeta? TipoCuota { get; set; }
-        public decimal? TasaInteresesMensual { get; set; } // Si tiene interés
+        public decimal? TasaInteresesMensual { get; set; } // Si tiene interï¿½s
 
-        // Para tarjeta de débito
+        // Para tarjeta de dï¿½bito
         public bool TieneRecargoDebito { get; set; } = false;
         public decimal? PorcentajeRecargoDebito { get; set; }
 

@@ -282,17 +282,11 @@ namespace TheBuryProject.Services
                         existing.Codigo, existing.PrecioCompra, producto.PrecioCompra, existing.PrecioVenta, producto.PrecioVenta);
                 }
 
-                // Concurrencia optimista: si el cliente envía RowVersion, úsalo como valor original.
-                if (producto.RowVersion != null && producto.RowVersion.Length > 0)
-                {
-                    _context.Entry(existing).Property(e => e.RowVersion).OriginalValue = producto.RowVersion;
-                }
-                else
-                {
-                    _logger.LogWarning(
-                        "RowVersion no provisto al actualizar producto {Id}. No se detectarán conflictos de concurrencia.",
-                        producto.Id);
-                }
+                // Concurrencia optimista: RowVersion es obligatorio para evitar actualizaciones perdidas.
+                if (producto.RowVersion is null || producto.RowVersion.Length == 0)
+                    throw new InvalidOperationException("No se recibió la versión de fila (RowVersion). Recargue los datos e intente nuevamente.");
+
+                _context.Entry(existing).Property(e => e.RowVersion).OriginalValue = producto.RowVersion;
 
                 existing.Codigo = producto.Codigo;
                 existing.Nombre = producto.Nombre;
@@ -400,7 +394,10 @@ namespace TheBuryProject.Services
 
                 var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
 
-                using var tx = await _context.Database.BeginTransactionAsync();
+                var hasAmbientTransaction = _context.Database.CurrentTransaction != null;
+                await using var tx = hasAmbientTransaction
+                    ? null
+                    : await _context.Database.BeginTransactionAsync();
 
                 producto.StockActual = nuevoStock;
                 producto.UpdatedAt = DateTime.UtcNow;
@@ -421,7 +418,8 @@ namespace TheBuryProject.Services
                 _context.MovimientosStock.Add(movimiento);
                 await _context.SaveChangesAsync();
 
-                await tx.CommitAsync();
+                if (tx != null)
+                    await tx.CommitAsync();
 
                 _logger.LogInformation(
                     "Stock actualizado para {Codigo}: {StockAnterior} → {StockNuevo} (Tipo {Tipo}, Cantidad {Cantidad})",

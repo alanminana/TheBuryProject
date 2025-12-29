@@ -180,14 +180,13 @@ public class RolService : IRolService
 
     public async Task ClearPermissionsForRoleAsync(string roleId)
     {
-        var permisos = await _context.RolPermisos
-            .Where(rp => rp.RoleId == roleId)
-            .ToListAsync();
+        var now = DateTime.UtcNow;
+        await _context.RolPermisos
+            .Where(rp => rp.RoleId == roleId && !rp.IsDeleted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(rp => rp.IsDeleted, true)
+                .SetProperty(rp => rp.UpdatedAt, now));
 
-        foreach (var permiso in permisos)
-            permiso.IsDeleted = true;
-
-        await _context.SaveChangesAsync();
         await SyncRoleClaimsAsync(roleId);
     }
 
@@ -409,30 +408,34 @@ public class RolService : IRolService
 
     public async Task<bool> DeleteAccionAsync(int id, string? deletedBy = null)
     {
-        var accion = await _context.AccionesModulo
-            .Include(a => a.Permisos)
-            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+        var now = DateTime.UtcNow;
 
-        if (accion == null) return false;
+        var accionExists = await _context.AccionesModulo
+            .AsNoTracking()
+            .AnyAsync(a => a.Id == id && !a.IsDeleted);
 
-        var affectedRoleIds = accion.Permisos
-            .Where(p => !p.IsDeleted)
+        if (!accionExists) return false;
+
+        var affectedRoleIds = await _context.RolPermisos
+            .AsNoTracking()
+            .Where(p => p.AccionId == id && !p.IsDeleted)
             .Select(p => p.RoleId)
             .Distinct()
-            .ToList();
+            .ToListAsync();
 
-        accion.IsDeleted = true;
-        accion.UpdatedAt = DateTime.UtcNow;
-        accion.UpdatedBy = deletedBy;
+        await _context.AccionesModulo
+            .Where(a => a.Id == id && !a.IsDeleted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(a => a.IsDeleted, true)
+                .SetProperty(a => a.UpdatedAt, now)
+                .SetProperty(a => a.UpdatedBy, deletedBy));
 
-        foreach (var permiso in accion.Permisos)
-        {
-            permiso.IsDeleted = true;
-            permiso.UpdatedAt = DateTime.UtcNow;
-            permiso.UpdatedBy = deletedBy;
-        }
-
-        await _context.SaveChangesAsync();
+        await _context.RolPermisos
+            .Where(p => p.AccionId == id && !p.IsDeleted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(p => p.IsDeleted, true)
+                .SetProperty(p => p.UpdatedAt, now)
+                .SetProperty(p => p.UpdatedBy, deletedBy));
 
         foreach (var roleId in affectedRoleIds)
             await SyncRoleClaimsAsync(roleId);
@@ -442,39 +445,41 @@ public class RolService : IRolService
 
     public async Task<bool> DeleteModuloAsync(int id, string? deletedBy = null)
     {
-        var modulo = await _context.ModulosSistema
-            .Include(m => m.Acciones)
-            .ThenInclude(a => a.Permisos)
-            .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
+        var now = DateTime.UtcNow;
 
-        if (modulo == null) return false;
+        var moduloExists = await _context.ModulosSistema
+            .AsNoTracking()
+            .AnyAsync(m => m.Id == id && !m.IsDeleted);
 
-        var affectedRoleIds = modulo.Acciones
-            .SelectMany(a => a.Permisos)
-            .Where(p => !p.IsDeleted)
+        if (!moduloExists) return false;
+
+        var affectedRoleIds = await _context.RolPermisos
+            .AsNoTracking()
+            .Where(p => p.ModuloId == id && !p.IsDeleted)
             .Select(p => p.RoleId)
             .Distinct()
-            .ToList();
+            .ToListAsync();
 
-        modulo.IsDeleted = true;
-        modulo.UpdatedAt = DateTime.UtcNow;
-        modulo.UpdatedBy = deletedBy;
+        await _context.ModulosSistema
+            .Where(m => m.Id == id && !m.IsDeleted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(m => m.IsDeleted, true)
+                .SetProperty(m => m.UpdatedAt, now)
+                .SetProperty(m => m.UpdatedBy, deletedBy));
 
-        foreach (var accion in modulo.Acciones)
-        {
-            accion.IsDeleted = true;
-            accion.UpdatedAt = DateTime.UtcNow;
-            accion.UpdatedBy = deletedBy;
+        await _context.AccionesModulo
+            .Where(a => a.ModuloId == id && !a.IsDeleted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(a => a.IsDeleted, true)
+                .SetProperty(a => a.UpdatedAt, now)
+                .SetProperty(a => a.UpdatedBy, deletedBy));
 
-            foreach (var permiso in accion.Permisos)
-            {
-                permiso.IsDeleted = true;
-                permiso.UpdatedAt = DateTime.UtcNow;
-                permiso.UpdatedBy = deletedBy;
-            }
-        }
-
-        await _context.SaveChangesAsync();
+        await _context.RolPermisos
+            .Where(p => p.ModuloId == id && !p.IsDeleted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(p => p.IsDeleted, true)
+                .SetProperty(p => p.UpdatedAt, now)
+                .SetProperty(p => p.UpdatedBy, deletedBy));
 
         foreach (var roleId in affectedRoleIds)
             await SyncRoleClaimsAsync(roleId);

@@ -17,8 +17,8 @@ namespace TheBuryProject.Services.Interfaces
         Task<List<AlertaCobranzaViewModel>> ObtenerAlertasPorClienteAsync(int clienteId);
 
         // Resolución de alertas
-        Task<bool> ResolverAlertaAsync(int alertaId, string? observaciones = null);
-        Task<bool> MarcarAlertaComoLeidaAsync(int alertaId);
+        Task<bool> ResolverAlertaAsync(int alertaId, string? observaciones = null, byte[]? rowVersion = null);
+        Task<bool> MarcarAlertaComoLeidaAsync(int alertaId, byte[]? rowVersion = null);
 
         // ✅ CORREGIDO: Cambiar nombres de métodos a síncronos (sin Async en la firma)
         decimal CalcularMora(int cuotaId);

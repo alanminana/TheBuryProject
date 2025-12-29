@@ -58,6 +58,7 @@
 
         <!-- Formulario Factura -->
         <form asp-action="Facturar" method="post" novalidate>
+            @Html.AntiForgeryToken()
             <input type="hidden" asp-for="VentaId" />
             <input type="hidden" asp-for="Subtotal" />
             <input type="hidden" asp-for="IVA" />

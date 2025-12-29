@@ -69,7 +69,7 @@ namespace TheBuryProject.Services
         {
             return await _context.PreciosHistoricos
                 .Include(p => p.Producto)
-                .Where(p => p.ProductoId == productoId)
+                .Where(p => p.ProductoId == productoId && !p.IsDeleted && !p.Producto.IsDeleted)
                 .OrderByDescending(p => p.FechaCambio)
                 .ToListAsync();
         }
@@ -78,7 +78,7 @@ namespace TheBuryProject.Services
         {
             return await _context.PreciosHistoricos
                 .Include(p => p.Producto)
-                .Where(p => p.ProductoId == productoId)
+                .Where(p => p.ProductoId == productoId && !p.IsDeleted && !p.Producto.IsDeleted)
                 .OrderByDescending(p => p.FechaCambio)
                 .FirstOrDefaultAsync();
         }
@@ -89,7 +89,7 @@ namespace TheBuryProject.Services
             {
                 var historial = await _context.PreciosHistoricos
                     .Include(p => p.Producto)
-                    .FirstOrDefaultAsync(p => p.Id == historialId);
+                    .FirstOrDefaultAsync(p => p.Id == historialId && !p.IsDeleted && !p.Producto.IsDeleted);
 
                 if (historial == null)
                 {
@@ -135,8 +135,9 @@ namespace TheBuryProject.Services
                 producto.PrecioCompra = historial.PrecioCompraAnterior;
                 producto.PrecioVenta = historial.PrecioVentaAnterior;
 
-                // Eliminar el registro del historial
-                _context.PreciosHistoricos.Remove(historial);
+                // Soft delete del registro del historial (unificado)
+                historial.IsDeleted = true;
+                historial.PuedeRevertirse = false;
 
                 await _context.SaveChangesAsync();
 
@@ -160,6 +161,8 @@ namespace TheBuryProject.Services
             var query = _context.PreciosHistoricos
                 .Include(p => p.Producto)
                 .AsQueryable();
+
+            query = query.Where(p => !p.IsDeleted && !p.Producto.IsDeleted);
 
             if (fechaDesde.HasValue)
                 query = query.Where(p => p.FechaCambio >= fechaDesde.Value);
@@ -199,6 +202,7 @@ namespace TheBuryProject.Services
                     .ToList(),
 
                 ProductosConMasCambios = await _context.PreciosHistoricos
+                    .Where(p => !p.IsDeleted && !p.Producto.IsDeleted)
                     .GroupBy(p => new { p.ProductoId, p.Producto.Codigo, p.Producto.Nombre, p.Producto.PrecioCompra, p.Producto.PrecioVenta })
                     .Select(g => new ProductoConMasCambiosViewModel
                     {
@@ -245,6 +249,8 @@ namespace TheBuryProject.Services
             var query = _context.PreciosHistoricos
                 .Include(p => p.Producto)
                 .AsQueryable();
+
+            query = query.Where(p => !p.IsDeleted && !p.Producto.IsDeleted);
 
             // Filtros
             if (filtro.ProductoId.HasValue)
@@ -300,7 +306,7 @@ namespace TheBuryProject.Services
             decimal precioVentaNuevo)
         {
             var producto = await _context.Productos
-                .FirstOrDefaultAsync(p => p.Id == productoId);
+                .FirstOrDefaultAsync(p => p.Id == productoId && !p.IsDeleted);
 
             if (producto == null)
                 throw new ArgumentException($"Producto {productoId} no encontrado");
@@ -378,7 +384,8 @@ namespace TheBuryProject.Services
 
         public async Task MarcarComoNoReversibleAsync(int historialId)
         {
-            var historial = await _context.PreciosHistoricos.FindAsync(historialId);
+            var historial = await _context.PreciosHistoricos
+                .FirstOrDefaultAsync(p => p.Id == historialId && !p.IsDeleted);
             if (historial != null)
             {
                 historial.PuedeRevertirse = false;

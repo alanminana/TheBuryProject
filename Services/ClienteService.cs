@@ -21,9 +21,10 @@ namespace TheBuryProject.Services
 
         public async Task<IEnumerable<Cliente>> GetAllAsync()
         {
-            // AppDbContext ya aplica HasQueryFilter(e => !e.IsDeleted) para Cliente.
+            // AppDbContext no aplica QueryFilter global para Cliente (por compatibilidad con otras entidades).
             return await _context.Clientes
                 .AsNoTracking()
+                .Where(c => !c.IsDeleted)
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
         }
@@ -31,8 +32,8 @@ namespace TheBuryProject.Services
         public async Task<Cliente?> GetByIdAsync(int id)
         {
             return await _context.Clientes
-                .Include(c => c.Creditos)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                .Include(c => c.Creditos.Where(cr => !cr.IsDeleted))
+                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
         }
 
         public async Task<Cliente?> GetByDocumentoAsync(string tipoDocumento, string numeroDocumento)
@@ -41,7 +42,8 @@ namespace TheBuryProject.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c =>
                     c.TipoDocumento == tipoDocumento &&
-                    c.NumeroDocumento == numeroDocumento);
+                    c.NumeroDocumento == numeroDocumento &&
+                    !c.IsDeleted);
         }
 
         public async Task<bool> ExisteDocumentoAsync(string tipoDocumento, string numeroDocumento, int? excludeId = null)
@@ -51,6 +53,7 @@ namespace TheBuryProject.Services
                 .AnyAsync(c =>
                     c.TipoDocumento == tipoDocumento &&
                     c.NumeroDocumento == numeroDocumento &&
+                    !c.IsDeleted &&
                     (!excludeId.HasValue || c.Id != excludeId.Value));
         }
 
@@ -67,7 +70,7 @@ namespace TheBuryProject.Services
         public async Task<Cliente> UpdateAsync(Cliente cliente)
         {
             var clienteExistente = await _context.Clientes
-                .FirstOrDefaultAsync(c => c.Id == cliente.Id);
+                .FirstOrDefaultAsync(c => c.Id == cliente.Id && !c.IsDeleted);
 
             if (clienteExistente == null)
                 throw new InvalidOperationException("Cliente no encontrado.");
@@ -83,7 +86,7 @@ namespace TheBuryProject.Services
             clienteExistente.FechaNacimiento = cliente.FechaNacimiento;
             clienteExistente.Telefono = cliente.Telefono;
             clienteExistente.Email = cliente.Email;
-            clienteExistente.Direccion = cliente.Direccion;
+            clienteExistente.Domicilio = cliente.Domicilio;
             clienteExistente.Provincia = cliente.Provincia;
             clienteExistente.Localidad = cliente.Localidad;
 
@@ -94,21 +97,36 @@ namespace TheBuryProject.Services
             // FIX punto 4.3: antes estaba la asignación sin efecto.
             clienteExistente.TieneReciboSueldo = cliente.TieneReciboSueldo;
 
-            clienteExistente.PuntajeRiesgo = cliente.PuntajeRiesgo;
+            // PuntajeRiesgo es gestionado por el sistema (ver ActualizarPuntajeRiesgoAsync).
+            // No se actualiza desde el formulario de edición para evitar pisadas/tampering.
 
             // Estado
             clienteExistente.Activo = cliente.Activo;
 
             clienteExistente.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            // Si el cliente enviado incluye RowVersion, usarlo para detectar conflictos de concurrencia
+            if (cliente.RowVersion != null)
+            {
+                _context.Entry(clienteExistente).Property("RowVersion").OriginalValue = cliente.RowVersion;
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new InvalidOperationException("Conflicto de concurrencia: el cliente fue modificado por otro usuario. Por favor recargue y reintente.");
+            }
+
             return clienteExistente;
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
             var cliente = await _context.Clientes
-                .FirstOrDefaultAsync(c => c.Id == id);
+                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
 
             if (cliente == null)
                 return false;
@@ -129,8 +147,13 @@ namespace TheBuryProject.Services
             string? orderBy,
             string? orderDirection)
         {
-            // QueryFilter aplica IsDeleted automáticamente.
-            var query = _context.Clientes.AsNoTracking().AsQueryable();
+            // QueryFilter no aplica IsDeleted automáticamente.
+            var query = _context.Clientes
+                .AsNoTracking()
+                .Where(c => !c.IsDeleted)
+                // Necesario para que AutoMapper calcule correctamente CreditosActivos/MontoAdeudado en Index.
+                .Include(c => c.Creditos.Where(cr => !cr.IsDeleted && cr.Estado == EstadoCredito.Activo))
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -152,7 +175,7 @@ namespace TheBuryProject.Services
             if (conCreditosActivos.HasValue && conCreditosActivos.Value)
             {
                 query = query.Where(c =>
-                    c.Creditos.Any(cr => cr.Estado == EstadoCredito.Activo));
+                    c.Creditos.Any(cr => !cr.IsDeleted && cr.Estado == EstadoCredito.Activo));
             }
 
             if (puntajeMinimo.HasValue)
@@ -185,7 +208,7 @@ namespace TheBuryProject.Services
         public async Task ActualizarPuntajeRiesgoAsync(int clienteId, decimal nuevoPuntaje, string actualizadoPor)
         {
             var cliente = await _context.Clientes
-                .FirstOrDefaultAsync(c => c.Id == clienteId);
+                .FirstOrDefaultAsync(c => c.Id == clienteId && !c.IsDeleted);
 
             if (cliente == null)
                 throw new InvalidOperationException("Cliente no encontrado.");

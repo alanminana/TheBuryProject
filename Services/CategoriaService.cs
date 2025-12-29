@@ -25,6 +25,7 @@ namespace TheBuryProject.Services
             {
                 return await _context.Categorias
                     .AsNoTracking()
+                    .Where(c => !c.IsDeleted)
                     .Include(c => c.Parent)
                     .OrderBy(c => c.Nombre)
                     .ToListAsync();
@@ -44,7 +45,7 @@ namespace TheBuryProject.Services
                     .AsNoTracking()
                     .Include(c => c.Parent)
                     .Include(c => c.Children)
-                    .FirstOrDefaultAsync(c => c.Id == id);
+                    .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -59,7 +60,7 @@ namespace TheBuryProject.Services
             {
                 return await _context.Categorias
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Codigo == codigo);
+                    .FirstOrDefaultAsync(c => c.Codigo == codigo && !c.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -83,7 +84,7 @@ namespace TheBuryProject.Services
 
                 // Validar que el ParentId exista si se especifica
                 if (categoria.ParentId.HasValue &&
-                    !await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value))
+                    !await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value && !c.IsDeleted))
                 {
                     throw new InvalidOperationException($"La categoría padre con Id {categoria.ParentId.Value} no existe");
                 }
@@ -131,7 +132,7 @@ namespace TheBuryProject.Services
 
                 // Validar que el ParentId exista si se especifica
                 if (categoria.ParentId.HasValue &&
-                    !await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value))
+                    !await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value && !c.IsDeleted))
                 {
                     throw new InvalidOperationException($"La categoría padre con Id {categoria.ParentId.Value} no existe");
                 }
@@ -188,11 +189,11 @@ namespace TheBuryProject.Services
                     return false;
 
                 // Verificar si tiene categorías hijas
-                if (await _context.Categorias.AnyAsync(c => c.ParentId == id))
+                if (await _context.Categorias.AnyAsync(c => c.ParentId == id && !c.IsDeleted))
                     throw new InvalidOperationException("No se puede eliminar una categoría que tiene subcategorías");
 
                 // Verificar si tiene productos asociados
-                if (await _context.Productos.AnyAsync(p => p.CategoriaId == id))
+                if (await _context.Productos.AnyAsync(p => p.CategoriaId == id && !p.IsDeleted))
                     throw new InvalidOperationException("No se puede eliminar una categoría que tiene productos asociados");
 
                 categoria.IsDeleted = true;
@@ -218,7 +219,7 @@ namespace TheBuryProject.Services
             {
                 var query = _context.Categorias
                     .AsNoTracking()
-                    .Where(c => c.Codigo == codigo);
+                    .Where(c => c.Codigo == codigo && !c.IsDeleted);
 
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
@@ -243,6 +244,7 @@ namespace TheBuryProject.Services
                 var query = _context.Categorias
                     .AsNoTracking()
                     .Include(c => c.Parent)
+                    .Where(c => !c.IsDeleted)
                     .AsQueryable();
 
                 // Búsqueda por texto
@@ -301,7 +303,7 @@ namespace TheBuryProject.Services
 
                 var nextParentId = await _context.Categorias
                     .AsNoTracking()
-                    .Where(c => c.Id == currentParentId.Value)
+                    .Where(c => c.Id == currentParentId.Value && !c.IsDeleted)
                     .Select(c => c.ParentId)
                     .FirstOrDefaultAsync();
 

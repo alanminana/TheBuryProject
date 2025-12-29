@@ -30,7 +30,7 @@ namespace TheBuryProject.Services
                 .AsNoTracking()
                 .Include(m => m.Producto)
                 .Include(m => m.OrdenCompra)
-                .Where(m => !m.IsDeleted)
+                .Where(m => !m.IsDeleted && m.Producto != null && !m.Producto.IsDeleted)
                 .OrderByDescending(m => m.CreatedAt)
                 .ToListAsync();
         }
@@ -41,7 +41,7 @@ namespace TheBuryProject.Services
                 .AsNoTracking()
                 .Include(m => m.Producto)
                 .Include(m => m.OrdenCompra)
-                .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
+                .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted && m.Producto != null && !m.Producto.IsDeleted);
         }
 
         public async Task<IEnumerable<MovimientoStock>> GetByProductoIdAsync(int productoId)
@@ -59,7 +59,7 @@ namespace TheBuryProject.Services
             return await _context.MovimientosStock
                 .AsNoTracking()
                 .Include(m => m.Producto)
-                .Where(m => m.OrdenCompraId == ordenCompraId && !m.IsDeleted)
+                .Where(m => m.OrdenCompraId == ordenCompraId && !m.IsDeleted && m.Producto != null && !m.Producto.IsDeleted)
                 .OrderBy(m => m.CreatedAt)
                 .ToListAsync();
         }
@@ -70,7 +70,7 @@ namespace TheBuryProject.Services
                 .AsNoTracking()
                 .Include(m => m.Producto)
                 .Include(m => m.OrdenCompra)
-                .Where(m => m.Tipo == tipo && !m.IsDeleted)
+                .Where(m => m.Tipo == tipo && !m.IsDeleted && m.Producto != null && !m.Producto.IsDeleted)
                 .OrderByDescending(m => m.CreatedAt)
                 .ToListAsync();
         }
@@ -81,7 +81,7 @@ namespace TheBuryProject.Services
                 .AsNoTracking()
                 .Include(m => m.Producto)
                 .Include(m => m.OrdenCompra)
-                .Where(m => m.CreatedAt >= fechaDesde && m.CreatedAt <= fechaHasta && !m.IsDeleted)
+                .Where(m => m.CreatedAt >= fechaDesde && m.CreatedAt <= fechaHasta && !m.IsDeleted && m.Producto != null && !m.Producto.IsDeleted)
                 .OrderByDescending(m => m.CreatedAt)
                 .ToListAsync();
         }
@@ -98,7 +98,7 @@ namespace TheBuryProject.Services
                 .AsNoTracking()
                 .Include(m => m.Producto)
                 .Include(m => m.OrdenCompra)
-                .Where(m => !m.IsDeleted)
+                .Where(m => !m.IsDeleted && m.Producto != null && !m.Producto.IsDeleted)
                 .AsQueryable();
 
             if (productoId.HasValue)
@@ -161,7 +161,8 @@ namespace TheBuryProject.Services
             decimal cantidad,
             string? referencia,
             string motivo,
-            string? usuarioActual = null)
+            string? usuarioActual = null,
+            int? ordenCompraId = null)
         {
             // ✅ VALIDACIÓN 1: Cantidad
             // - Entrada/Salida: debe ser > 0
@@ -178,7 +179,10 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException(mensaje);
             }
 
-            await using var transaction = await _context.Database.BeginTransactionAsync();
+            var hasAmbientTransaction = _context.Database.CurrentTransaction != null;
+            await using var transaction = hasAmbientTransaction
+                ? null
+                : await _context.Database.BeginTransactionAsync();
 
             try
             {
@@ -217,6 +221,7 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException("El stock resultante no puede ser negativo");
 
                 producto.UpdatedAt = DateTime.UtcNow;
+                producto.UpdatedBy = string.IsNullOrWhiteSpace(usuarioActual) ? "Sistema" : usuarioActual;
 
                 // Crear movimiento con usuario real
                 var movimiento = new MovimientoStock
@@ -228,6 +233,7 @@ namespace TheBuryProject.Services
                     StockAnterior = stockAnterior,
                     StockNuevo = producto.StockActual,
                     Referencia = referencia,
+                    OrdenCompraId = ordenCompraId,
                     Motivo = motivo,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = string.IsNullOrWhiteSpace(usuarioActual) ? "Sistema" : usuarioActual
@@ -236,7 +242,8 @@ namespace TheBuryProject.Services
                 _context.MovimientosStock.Add(movimiento);
                 await _context.SaveChangesAsync();
 
-                await transaction.CommitAsync();
+                if (transaction != null)
+                    await transaction.CommitAsync();
 
                 _logger.LogInformation(
                     "Movimiento (TRANSACCIÓN): Producto {ProductoId}, Tipo {Tipo}, Stock {Anterior} → {Nuevo}, Usuario {Usuario}",
@@ -244,10 +251,239 @@ namespace TheBuryProject.Services
 
                 return movimiento;
             }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                if (transaction != null)
+                    await transaction.RollbackAsync();
+                _logger.LogWarning(ex, "Conflicto de concurrencia al ajustar stock - ProductoId {ProductoId}", productoId);
+                throw new InvalidOperationException("El stock fue modificado por otro usuario/proceso. Recargue e intente nuevamente.");
+            }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (transaction != null)
+                    await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error en RegistrarAjusteAsync - Transacción revertida");
+                throw;
+            }
+        }
+
+        public async Task<List<MovimientoStock>> RegistrarEntradasAsync(
+            List<(int productoId, decimal cantidad, string? referencia)> entradas,
+            string motivo,
+            string? usuarioActual = null,
+            int? ordenCompraId = null)
+        {
+            if (entradas == null || entradas.Count == 0)
+                return new List<MovimientoStock>();
+
+            var usuario = string.IsNullOrWhiteSpace(usuarioActual) ? "Sistema" : usuarioActual;
+            var ahora = DateTime.UtcNow;
+
+            foreach (var (_, cantidad, _) in entradas)
+            {
+                var (valido, mensaje) = ValidarCantidadSync(cantidad);
+                if (!valido)
+                    throw new InvalidOperationException(mensaje);
+            }
+
+            var hasAmbientTransaction = _context.Database.CurrentTransaction != null;
+            await using var transaction = hasAmbientTransaction
+                ? null
+                : await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var productoIds = entradas
+                    .Select(e => e.productoId)
+                    .Distinct()
+                    .ToList();
+
+                var productos = await _context.Productos
+                    .Where(p => productoIds.Contains(p.Id) && !p.IsDeleted)
+                    .ToListAsync();
+
+                var productosById = productos.ToDictionary(p => p.Id);
+
+                var missingIds = productoIds.Where(id => !productosById.ContainsKey(id)).ToList();
+                if (missingIds.Count > 0)
+                    throw new InvalidOperationException($"Producto(s) no encontrado(s): {string.Join(", ", missingIds)}");
+
+                var movimientos = new List<MovimientoStock>(entradas.Count);
+
+                foreach (var (productoId, cantidad, referencia) in entradas)
+                {
+                    if (cantidad <= 0)
+                        continue;
+
+                    var producto = productosById[productoId];
+                    var stockAnterior = producto.StockActual;
+
+                    producto.StockActual += cantidad;
+
+                    if (producto.StockActual < 0)
+                        throw new InvalidOperationException("El stock resultante no puede ser negativo");
+
+                    producto.UpdatedAt = ahora;
+                    producto.UpdatedBy = usuario;
+
+                    var movimiento = new MovimientoStock
+                    {
+                        ProductoId = productoId,
+                        Tipo = TipoMovimiento.Entrada,
+                        Cantidad = cantidad,
+                        StockAnterior = stockAnterior,
+                        StockNuevo = producto.StockActual,
+                        Referencia = referencia,
+                        OrdenCompraId = ordenCompraId,
+                        Motivo = motivo,
+                        CreatedAt = ahora,
+                        CreatedBy = usuario
+                    };
+
+                    movimientos.Add(movimiento);
+                }
+
+                if (movimientos.Count > 0)
+                {
+                    _context.MovimientosStock.AddRange(movimientos);
+                    await _context.SaveChangesAsync();
+                }
+
+                if (transaction != null)
+                    await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    "Entradas registradas (BATCH): {Cantidad} movimientos, OrdenCompraId {OrdenCompraId}, Usuario {Usuario}",
+                    movimientos.Count, ordenCompraId, usuario);
+
+                return movimientos;
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                if (transaction != null)
+                    await transaction.RollbackAsync();
+
+                _logger.LogWarning(ex, "Conflicto de concurrencia al registrar entradas batch - OrdenCompraId {OrdenCompraId}", ordenCompraId);
+                throw new InvalidOperationException("El stock fue modificado por otro usuario/proceso. Recargue e intente nuevamente.");
+            }
+            catch
+            {
+                if (transaction != null)
+                    await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<List<MovimientoStock>> RegistrarSalidasAsync(
+            List<(int productoId, decimal cantidad, string? referencia)> salidas,
+            string motivo,
+            string? usuarioActual = null)
+        {
+            if (salidas == null || salidas.Count == 0)
+                return new List<MovimientoStock>();
+
+            var usuario = string.IsNullOrWhiteSpace(usuarioActual) ? "Sistema" : usuarioActual;
+            var ahora = DateTime.UtcNow;
+
+            foreach (var (_, cantidad, _) in salidas)
+            {
+                var (valido, mensaje) = ValidarCantidadSync(cantidad);
+                if (!valido)
+                    throw new InvalidOperationException(mensaje);
+            }
+
+            var totalsByProducto = salidas
+                .GroupBy(s => s.productoId)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.cantidad));
+
+            var hasAmbientTransaction = _context.Database.CurrentTransaction != null;
+            await using var transaction = hasAmbientTransaction
+                ? null
+                : await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var productoIds = totalsByProducto.Keys.ToList();
+
+                var productos = await _context.Productos
+                    .Where(p => productoIds.Contains(p.Id) && !p.IsDeleted)
+                    .ToListAsync();
+
+                var productosById = productos.ToDictionary(p => p.Id);
+
+                var missingIds = productoIds.Where(id => !productosById.ContainsKey(id)).ToList();
+                if (missingIds.Count > 0)
+                    throw new InvalidOperationException($"Producto(s) no encontrado(s): {string.Join(", ", missingIds)}");
+
+                foreach (var (productoId, totalCantidad) in totalsByProducto)
+                {
+                    var producto = productosById[productoId];
+                    if (producto.StockActual < totalCantidad)
+                        throw new InvalidOperationException(
+                            $"Stock insuficiente. ProductoId: {productoId}, Disponible: {producto.StockActual}, Solicitado: {totalCantidad}");
+                }
+
+                var movimientos = new List<MovimientoStock>(salidas.Count);
+
+                foreach (var (productoId, cantidad, referencia) in salidas)
+                {
+                    if (cantidad <= 0)
+                        continue;
+
+                    var producto = productosById[productoId];
+                    var stockAnterior = producto.StockActual;
+
+                    producto.StockActual -= cantidad;
+
+                    if (producto.StockActual < 0)
+                        throw new InvalidOperationException("El stock resultante no puede ser negativo");
+
+                    producto.UpdatedAt = ahora;
+                    producto.UpdatedBy = usuario;
+
+                    var movimiento = new MovimientoStock
+                    {
+                        ProductoId = productoId,
+                        Tipo = TipoMovimiento.Salida,
+                        Cantidad = cantidad,
+                        StockAnterior = stockAnterior,
+                        StockNuevo = producto.StockActual,
+                        Referencia = referencia,
+                        Motivo = motivo,
+                        CreatedAt = ahora,
+                        CreatedBy = usuario
+                    };
+
+                    movimientos.Add(movimiento);
+                }
+
+                if (movimientos.Count > 0)
+                {
+                    _context.MovimientosStock.AddRange(movimientos);
+                    await _context.SaveChangesAsync();
+                }
+
+                if (transaction != null)
+                    await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    "Salidas registradas (BATCH): {Cantidad} movimientos, Usuario {Usuario}",
+                    movimientos.Count, usuario);
+
+                return movimientos;
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                if (transaction != null)
+                    await transaction.RollbackAsync();
+
+                _logger.LogWarning(ex, "Conflicto de concurrencia al registrar salidas batch");
+                throw new InvalidOperationException("El stock fue modificado por otro usuario/proceso. Recargue e intente nuevamente.");
+            }
+            catch
+            {
+                if (transaction != null)
+                    await transaction.RollbackAsync();
                 throw;
             }
         }

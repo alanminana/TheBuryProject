@@ -16,15 +16,15 @@ namespace TheBuryProject.Services.Interfaces
         Task<int> ObtenerCantidadNoLeidasAsync(string usuario);
         Task<Notificacion?> ObtenerNotificacionPorIdAsync(int id);
 
-        // Marcar como leída
-        Task MarcarComoLeidaAsync(int notificacionId, string usuario);
+        // Marcar como leï¿½da
+        Task MarcarComoLeidaAsync(int notificacionId, string usuario, byte[]? rowVersion = null);
         Task MarcarTodasComoLeidasAsync(string usuario);
 
         // Eliminar
-        Task EliminarNotificacionAsync(int id, string usuario);
+        Task EliminarNotificacionAsync(int id, string usuario, byte[]? rowVersion = null);
         Task LimpiarNotificacionesAntiguasAsync(int diasAntiguedad = 30);
 
-        // Estadísticas
+        // Estadï¿½sticas
         Task<ListaNotificacionesViewModel> ObtenerResumenNotificacionesAsync(string usuario);
     }
 }

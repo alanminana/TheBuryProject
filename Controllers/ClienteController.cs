@@ -257,7 +257,8 @@ namespace TheBuryProject.Controllers
             {
                 await using var context = await _contextFactory.CreateDbContextAsync();
 
-                var cliente = await context.Clientes.FindAsync(model.ClienteId);
+                var cliente = await context.Clientes
+                    .FirstOrDefaultAsync(c => c.Id == model.ClienteId && !c.IsDeleted);
                 if (!ClienteValidationHelper.ClienteExiste(cliente))
                     return RedirectToAction(nameof(Index));
 
@@ -623,7 +624,7 @@ namespace TheBuryProject.Controllers
 
             return await context.Set<Cliente>()
                 .AsNoTracking()
-                .Where(c => c.Id == clienteId)
+                .Where(c => c.Id == clienteId && !c.IsDeleted)
                 .Select(c => c.GaranteId != null)
                 .FirstOrDefaultAsync();
         }

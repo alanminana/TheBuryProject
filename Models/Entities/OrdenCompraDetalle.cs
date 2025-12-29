@@ -5,7 +5,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Detalle de items de una orden de compra
     /// </summary>
-    public class OrdenCompraDetalle : BaseEntity
+    public class OrdenCompraDetalle  : AuditableEntity
     {
         /// <summary>
         /// Orden de compra asociada
@@ -28,7 +28,7 @@ namespace TheBuryProject.Models.Entities
         public decimal PrecioUnitario { get; set; }
 
         /// <summary>
-        /// Subtotal de la línea (Cantidad * PrecioUnitario)
+        /// Subtotal de la lï¿½nea (Cantidad * PrecioUnitario)
         /// </summary>
         public decimal Subtotal { get; set; }
 
@@ -42,7 +42,7 @@ namespace TheBuryProject.Models.Entities
         /// </summary>
         public string? Observaciones { get; set; }
 
-        // Navegación
+        // Navegaciï¿½n
         public virtual OrdenCompra OrdenCompra { get; set; } = null!;
         public virtual Producto Producto { get; set; } = null!;
     }

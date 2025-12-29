@@ -12,8 +12,8 @@ using TheBuryProject.Data;
 namespace TheBuryProject.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251207173307_EnsureClienteTieneReciboSueldoDefaultSeedUpdate")]
-    partial class EnsureClienteTieneReciboSueldoDefaultSeedUpdate
+    [Migration("20251227061658_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -457,7 +457,10 @@ namespace TheBuryProject.Migrations
 
                     b.HasIndex("Prioridad");
 
-                    b.HasIndex("ProductoId");
+                    b.HasIndex("ProductoId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_AlertasStock_Producto_Activa")
+                        .HasFilter("[IsDeleted] = 0 AND [FechaResolucion] IS NULL");
 
                     b.HasIndex("Tipo");
 
@@ -594,7 +597,6 @@ namespace TheBuryProject.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Activo")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
@@ -659,7 +661,7 @@ namespace TheBuryProject.Migrations
                             Activo = true,
                             Codigo = "ELEC",
                             ControlSerieDefault = true,
-                            CreatedAt = new DateTime(2025, 12, 7, 17, 33, 6, 964, DateTimeKind.Utc).AddTicks(2702),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             Descripcion = "Productos electrónicos",
                             IsDeleted = false,
@@ -671,7 +673,7 @@ namespace TheBuryProject.Migrations
                             Activo = true,
                             Codigo = "FRIO",
                             ControlSerieDefault = true,
-                            CreatedAt = new DateTime(2025, 12, 7, 17, 33, 6, 964, DateTimeKind.Utc).AddTicks(2705),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             Descripcion = "Heladeras, freezers y aire acondicionado",
                             IsDeleted = false,
@@ -962,10 +964,25 @@ namespace TheBuryProject.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<bool>("TieneImpuesto")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("TieneReciboSueldo")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
+
+                    b.Property<bool>("TieneServicioAgua")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("TieneServicioGas")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("TieneServicioLuz")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("TieneVeraz")
+                        .HasColumnType("bit");
 
                     b.Property<string>("TipoDocumento")
                         .IsRequired()
@@ -1089,7 +1106,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("decimal(5,2)");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<bool>("TieneRecargo")
                         .HasColumnType("bit");
@@ -1154,7 +1173,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("decimal(5,2)");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<decimal?>("TasaInteresesMensual")
                         .HasPrecision(5, 2)
@@ -1424,7 +1445,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<string>("Titular")
                         .IsRequired()
@@ -1499,7 +1522,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<decimal?>("TasaInteres")
                         .HasPrecision(5, 2)
@@ -1937,7 +1962,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<decimal>("Subtotal")
                         .HasColumnType("decimal(18,2)");
@@ -2363,7 +2390,7 @@ namespace TheBuryProject.Migrations
                             Id = 1,
                             Activo = true,
                             Codigo = "SAM",
-                            CreatedAt = new DateTime(2025, 12, 7, 17, 33, 6, 969, DateTimeKind.Utc).AddTicks(5420),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             Descripcion = "Electrónica y electrodomésticos",
                             IsDeleted = false,
@@ -2375,7 +2402,7 @@ namespace TheBuryProject.Migrations
                             Id = 2,
                             Activo = true,
                             Codigo = "LG",
-                            CreatedAt = new DateTime(2025, 12, 7, 17, 33, 6, 969, DateTimeKind.Utc).AddTicks(5423),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             Descripcion = "Electrónica y electrodomésticos",
                             IsDeleted = false,
@@ -2387,7 +2414,7 @@ namespace TheBuryProject.Migrations
                             Id = 3,
                             Activo = true,
                             Codigo = "WHI",
-                            CreatedAt = new DateTime(2025, 12, 7, 17, 33, 6, 969, DateTimeKind.Utc).AddTicks(5426),
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = "System",
                             Descripcion = "Electrodomésticos",
                             IsDeleted = false,
@@ -2915,7 +2942,7 @@ namespace TheBuryProject.Migrations
 
                     b.HasIndex("ProductoId");
 
-                    b.ToTable("OrdenCompraDetalles");
+                    b.ToTable("OrdenCompraDetalle");
                 });
 
             modelBuilder.Entity("TheBuryProject.Models.Entities.PrecioHistorico", b =>
@@ -3519,7 +3546,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3561,7 +3590,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -3603,7 +3634,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -4020,7 +4053,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("bit");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<decimal>("Subtotal")
                         .HasPrecision(18, 2)
@@ -4112,7 +4147,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("bit");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<decimal>("Saldo")
                         .HasPrecision(18, 2)
@@ -4176,7 +4213,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<decimal>("Subtotal")
                         .HasPrecision(18, 2)

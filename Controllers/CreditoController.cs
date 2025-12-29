@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Helpers;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Constants;
+using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
@@ -114,16 +116,20 @@ namespace TheBuryProject.Controllers
 
                 var venta = await context.Ventas
                     .Include(v => v.Detalles)
-                    .FirstOrDefaultAsync(v => v.Id == ventaId.Value);
+                    .FirstOrDefaultAsync(v => v.Id == ventaId.Value && !v.IsDeleted);
 
                 if (venta != null)
                 {
                     // Prioriza el total guardado; si no existe, recalcula desde el detalle
                     montoVenta = venta.Total;
 
-                    if (montoVenta <= 0 && venta.Detalles != null && venta.Detalles.Any())
+                    var detallesVenta = (venta.Detalles ?? new List<VentaDetalle>())
+                        .Where(d => !d.IsDeleted)
+                        .ToList();
+
+                    if (montoVenta <= 0 && detallesVenta.Count > 0)
                     {
-                        var subtotal = venta.Detalles.Sum(d =>
+                        var subtotal = detallesVenta.Sum(d =>
                             d.Subtotal > 0
                                 ? d.Subtotal
                                 : Math.Max(0, (d.Cantidad * d.PrecioUnitario) - d.Descuento));
@@ -558,8 +564,11 @@ namespace TheBuryProject.Controllers
                 var cuotas = await context.Cuotas
                     .Include(c => c.Credito)
                         .ThenInclude(cr => cr.Cliente)
-                    .Where(c => c.Estado == EstadoCuota.Vencida ||
-                               (c.Estado == EstadoCuota.Pendiente && c.FechaVencimiento < DateTime.Today))
+                    .Where(c => !c.IsDeleted
+                             && !c.Credito.IsDeleted
+                             && !c.Credito.Cliente.IsDeleted
+                             && (c.Estado == EstadoCuota.Vencida ||
+                                 (c.Estado == EstadoCuota.Pendiente && c.FechaVencimiento < DateTime.Today)))
                     .OrderBy(c => c.FechaVencimiento)
                     .ToListAsync();
 
@@ -568,7 +577,7 @@ namespace TheBuryProject.Controllers
                     Id = c.Id,
                     CreditoId = c.CreditoId,
                     CreditoNumero = c.Credito.Numero,
-                    ClienteNombre = $"{c.Credito.Cliente.Apellido}, {c.Credito.Cliente.Nombre}",
+                    ClienteNombre = c.Credito.Cliente != null ? c.Credito.Cliente.ToDisplayName() : string.Empty,
                     NumeroCuota = c.NumeroCuota,
                     MontoCapital = c.MontoCapital,
                     MontoInteres = c.MontoInteres,

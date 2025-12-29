@@ -191,7 +191,7 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
-                await CargarViewBags(venta.ClienteId);
+                await CargarViewBags(venta.ClienteId, venta.Detalles.Select(d => d.ProductoId).Distinct());
                 ViewBag.IvaRate = VentaConstants.IVA_RATE;
                 return View(venta);
             }
@@ -714,7 +714,7 @@ namespace TheBuryProject.Controllers
 
         #region Métodos Privados
 
-        private async Task CargarViewBags(int? clienteIdSeleccionado = null)
+        private async Task CargarViewBags(int? clienteIdSeleccionado = null, IEnumerable<int>? productoIdsIncluidos = null)
         {
             // Usar el servicio centralizado para obtener clientes ya formateados
             var clientes = await _clienteLookup.GetClientesSelectListAsync(clienteIdSeleccionado);
@@ -722,9 +722,13 @@ namespace TheBuryProject.Controllers
 
             var productos = await _productoService.SearchAsync(soloActivos: true, orderBy: "nombre");
 
+            var productoIdsIncluidosSet = productoIdsIncluidos != null
+                ? new HashSet<int>(productoIdsIncluidos)
+                : null;
+
             ViewBag.Productos = new SelectList(
                 productos
-                    .Where(p => p.StockActual > 0)
+                    .Where(p => p.StockActual > 0 || (productoIdsIncluidosSet != null && productoIdsIncluidosSet.Contains(p.Id)))
                     .Select(p => new
                     {
                         p.Id,
@@ -853,7 +857,7 @@ namespace TheBuryProject.Controllers
 
         private async Task<IActionResult> RetornarVistaConDatos(VentaViewModel viewModel)
         {
-            await CargarViewBags(viewModel.ClienteId);
+            await CargarViewBags(viewModel.ClienteId, viewModel.Detalles.Select(d => d.ProductoId).Distinct());
             ViewBag.IvaRate = VentaConstants.IVA_RATE;
             return View(viewModel);
         }

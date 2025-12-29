@@ -13,11 +13,16 @@ public class DevolucionService : IDevolucionService
 {
     private readonly AppDbContext _context;
     private readonly IMovimientoStockService _movimientoStockService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public DevolucionService(AppDbContext context, IMovimientoStockService movimientoStockService)
+    public DevolucionService(
+        AppDbContext context,
+        IMovimientoStockService movimientoStockService,
+        IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
         _movimientoStockService = movimientoStockService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     #region Devoluciones
@@ -27,8 +32,9 @@ public class DevolucionService : IDevolucionService
         return await _context.Devoluciones
             .Include(d => d.Cliente)
             .Include(d => d.Venta)
-            .Include(d => d.Detalles).ThenInclude(dd => dd.Producto)
-            .Where(d => !d.IsDeleted)
+            .Include(d => d.Detalles.Where(dd => !dd.IsDeleted && dd.Producto != null && !dd.Producto.IsDeleted))
+                .ThenInclude(dd => dd.Producto)
+            .Where(d => !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted)
             .OrderByDescending(d => d.FechaDevolucion)
             .ToListAsync();
     }
@@ -37,8 +43,9 @@ public class DevolucionService : IDevolucionService
     {
         return await _context.Devoluciones
             .Include(d => d.Venta)
-            .Include(d => d.Detalles).ThenInclude(dd => dd.Producto)
-            .Where(d => d.ClienteId == clienteId && !d.IsDeleted)
+            .Include(d => d.Detalles.Where(dd => !dd.IsDeleted && dd.Producto != null && !dd.Producto.IsDeleted))
+                .ThenInclude(dd => dd.Producto)
+            .Where(d => d.ClienteId == clienteId && !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted)
             .OrderByDescending(d => d.FechaDevolucion)
             .ToListAsync();
     }
@@ -48,8 +55,9 @@ public class DevolucionService : IDevolucionService
         return await _context.Devoluciones
             .Include(d => d.Cliente)
             .Include(d => d.Venta)
-            .Include(d => d.Detalles).ThenInclude(dd => dd.Producto)
-            .Where(d => d.Estado == estado && !d.IsDeleted)
+            .Include(d => d.Detalles.Where(dd => !dd.IsDeleted && dd.Producto != null && !dd.Producto.IsDeleted))
+                .ThenInclude(dd => dd.Producto)
+            .Where(d => d.Estado == estado && !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted)
             .OrderByDescending(d => d.FechaDevolucion)
             .ToListAsync();
     }
@@ -59,10 +67,11 @@ public class DevolucionService : IDevolucionService
         return await _context.Devoluciones
             .Include(d => d.Cliente)
             .Include(d => d.Venta)
-            .Include(d => d.Detalles).ThenInclude(dd => dd.Producto)
+            .Include(d => d.Detalles.Where(dd => !dd.IsDeleted && dd.Producto != null && !dd.Producto.IsDeleted))
+                .ThenInclude(dd => dd.Producto)
             .Include(d => d.NotaCredito)
             .Include(d => d.RMA).ThenInclude(r => r!.Proveedor)
-            .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+            .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted);
     }
 
     public async Task<Devolucion?> ObtenerDevolucionPorNumeroAsync(string numeroDevolucion)
@@ -70,40 +79,121 @@ public class DevolucionService : IDevolucionService
         return await _context.Devoluciones
             .Include(d => d.Cliente)
             .Include(d => d.Venta)
-            .Include(d => d.Detalles).ThenInclude(dd => dd.Producto)
-            .FirstOrDefaultAsync(d => d.NumeroDevolucion == numeroDevolucion && !d.IsDeleted);
+            .Include(d => d.Detalles.Where(dd => !dd.IsDeleted && dd.Producto != null && !dd.Producto.IsDeleted))
+                .ThenInclude(dd => dd.Producto)
+            .FirstOrDefaultAsync(d => d.NumeroDevolucion == numeroDevolucion && !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted);
     }
 
     public async Task<Devolucion> CrearDevolucionAsync(Devolucion devolucion, List<DevolucionDetalle> detalles)
     {
+        if (detalles == null || detalles.Count == 0)
+            throw new InvalidOperationException("Debe incluir al menos un detalle para la devolución");
+
         // Validar que la venta existe
-        var venta = await _context.Ventas.FindAsync(devolucion.VentaId);
+        var venta = await _context.Ventas
+            .FirstOrDefaultAsync(v => v.Id == devolucion.VentaId && !v.IsDeleted);
+
         if (venta == null)
-        {
             throw new InvalidOperationException("La venta no existe");
-        }
 
-        // Generar número de devolución
-        devolucion.NumeroDevolucion = await GenerarNumeroDevolucionAsync();
-        devolucion.Estado = EstadoDevolucion.Pendiente;
+        // Validaciones básicas de detalles
+        if (detalles.Any(d => d.Cantidad <= 0))
+            throw new InvalidOperationException("La cantidad a devolver debe ser mayor a 0");
 
-        // Calcular total
-        devolucion.TotalDevolucion = detalles.Sum(d => d.Subtotal);
+        var duplicatedProduct = detalles
+            .GroupBy(d => d.ProductoId)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .FirstOrDefault();
 
-        // Agregar devolución
-        _context.Devoluciones.Add(devolucion);
-        await _context.SaveChangesAsync();
+        if (duplicatedProduct != 0)
+            throw new InvalidOperationException("No se permiten productos duplicados en la devolución");
 
-        // Agregar detalles
-        foreach (var detalle in detalles)
+        // Ventas: obtener lo vendido por producto (cantidad y total ponderado)
+        var vendidoPorProducto = await _context.VentaDetalles
+            .Where(vd => vd.VentaId == devolucion.VentaId && !vd.IsDeleted)
+            .GroupBy(vd => vd.ProductoId)
+            .Select(g => new
+            {
+                ProductoId = g.Key,
+                CantidadVendida = g.Sum(x => x.Cantidad),
+                TotalVendido = g.Sum(x => x.Cantidad * x.PrecioUnitario)
+            })
+            .ToDictionaryAsync(x => x.ProductoId, x => (x.CantidadVendida, x.TotalVendido));
+
+        if (vendidoPorProducto.Count == 0)
+            throw new InvalidOperationException("La venta no tiene detalles para devolver");
+
+        // Devoluciones previas (incluye pendientes/en revisión/aprobadas/completadas; excluye rechazadas)
+        var devueltoPorProducto = await _context.DevolucionDetalles
+            .Where(dd => !dd.IsDeleted)
+            .Join(
+                _context.Devoluciones.Where(d => !d.IsDeleted && d.VentaId == devolucion.VentaId && d.Estado != EstadoDevolucion.Rechazada),
+                dd => dd.DevolucionId,
+                d => d.Id,
+                (dd, d) => new { dd.ProductoId, dd.Cantidad })
+            .GroupBy(x => x.ProductoId)
+            .Select(g => new { ProductoId = g.Key, Cantidad = g.Sum(x => x.Cantidad) })
+            .ToDictionaryAsync(x => x.ProductoId, x => x.Cantidad);
+
+        var hasAmbientTransaction = _context.Database.CurrentTransaction != null;
+        await using var transaction = hasAmbientTransaction
+            ? null
+            : await _context.Database.BeginTransactionAsync();
+
+        try
         {
-            detalle.DevolucionId = devolucion.Id;
-            detalle.Subtotal = detalle.Cantidad * detalle.PrecioUnitario;
-            _context.DevolucionDetalles.Add(detalle);
-        }
+            // Generar número + estado
+            devolucion.NumeroDevolucion = await GenerarNumeroDevolucionAsync();
+            devolucion.Estado = EstadoDevolucion.Pendiente;
+            devolucion.FechaDevolucion = devolucion.FechaDevolucion == default ? DateTime.UtcNow : devolucion.FechaDevolucion;
 
-        await _context.SaveChangesAsync();
-        return devolucion;
+            // Calcular precios/subtotales desde la venta y validar cantidades
+            decimal total = 0m;
+            foreach (var detalle in detalles)
+            {
+                if (!vendidoPorProducto.TryGetValue(detalle.ProductoId, out var vendido))
+                    throw new InvalidOperationException("El producto a devolver no pertenece a la venta");
+
+                var yaDevuelto = devueltoPorProducto.TryGetValue(detalle.ProductoId, out var cantDevuelta)
+                    ? cantDevuelta
+                    : 0;
+
+                var disponible = vendido.CantidadVendida - yaDevuelto;
+                if (detalle.Cantidad > disponible)
+                {
+                    throw new InvalidOperationException(
+                        $"La cantidad a devolver excede lo disponible. Vendido: {vendido.CantidadVendida}, Ya devuelto: {yaDevuelto}, Disponible: {disponible}");
+                }
+
+                var precioUnitario = vendido.CantidadVendida > 0
+                    ? Math.Round(vendido.TotalVendido / vendido.CantidadVendida, 2)
+                    : 0m;
+
+                detalle.PrecioUnitario = precioUnitario;
+                detalle.Subtotal = detalle.Cantidad * detalle.PrecioUnitario;
+                total += detalle.Subtotal;
+
+                // Relación
+                detalle.Devolucion = devolucion;
+            }
+
+            devolucion.TotalDevolucion = total;
+
+            _context.Devoluciones.Add(devolucion);
+            await _context.SaveChangesAsync();
+
+            if (transaction != null)
+                await transaction.CommitAsync();
+
+            return devolucion;
+        }
+        catch
+        {
+            if (transaction != null)
+                await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<Devolucion> ActualizarDevolucionAsync(Devolucion devolucion)
@@ -122,7 +212,7 @@ public class DevolucionService : IDevolucionService
         return existente;
     }
 
-    public async Task<Devolucion> AprobarDevolucionAsync(int id, string aprobadoPor)
+    public async Task<Devolucion> AprobarDevolucionAsync(int id, string aprobadoPor, byte[] rowVersion)
     {
         var devolucion = await ObtenerDevolucionAsync(id);
         if (devolucion == null)
@@ -135,31 +225,68 @@ public class DevolucionService : IDevolucionService
             throw new InvalidOperationException($"No se puede aprobar una devolución en estado {devolucion.Estado}");
         }
 
-        devolucion.Estado = EstadoDevolucion.Aprobada;
-        devolucion.AprobadoPor = aprobadoPor;
-        devolucion.FechaAprobacion = DateTime.UtcNow;
-        devolucion.UpdatedAt = DateTime.UtcNow;
+        if (rowVersion is null || rowVersion.Length == 0)
+            throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la devolución e intentá nuevamente.");
 
-        // Generar nota de crédito automáticamente
-        var notaCredito = new NotaCredito
+        // Concurrencia optimista
+        _context.Entry(devolucion).Property(d => d.RowVersion).OriginalValue = rowVersion;
+
+        // Idempotencia: evitar doble generación de nota de crédito
+        if (devolucion.NotaCreditoGenerada || devolucion.NotaCredito != null ||
+            await _context.NotasCredito.AnyAsync(nc => nc.DevolucionId == devolucion.Id && !nc.IsDeleted))
         {
-            DevolucionId = devolucion.Id,
-            ClienteId = devolucion.ClienteId,
-            NumeroNotaCredito = await GenerarNumeroNotaCreditoAsync(),
-            FechaEmision = DateTime.UtcNow,
-            MontoTotal = devolucion.TotalDevolucion,
-            Estado = EstadoNotaCredito.Vigente,
-            FechaVencimiento = DateTime.UtcNow.AddYears(1)
-        };
+            throw new InvalidOperationException("La nota de crédito ya fue generada para esta devolución");
+        }
 
-        _context.NotasCredito.Add(notaCredito);
-        devolucion.NotaCreditoGenerada = true;
+        var hasAmbientTransaction = _context.Database.CurrentTransaction != null;
+        await using var transaction = hasAmbientTransaction
+            ? null
+            : await _context.Database.BeginTransactionAsync();
 
-        await _context.SaveChangesAsync();
-        return devolucion;
+        try
+        {
+            devolucion.Estado = EstadoDevolucion.Aprobada;
+            devolucion.AprobadoPor = aprobadoPor;
+            devolucion.FechaAprobacion = DateTime.UtcNow;
+            devolucion.UpdatedAt = DateTime.UtcNow;
+
+            // Generar nota de crédito automáticamente
+            var notaCredito = new NotaCredito
+            {
+                DevolucionId = devolucion.Id,
+                ClienteId = devolucion.ClienteId,
+                NumeroNotaCredito = await GenerarNumeroNotaCreditoAsync(),
+                FechaEmision = DateTime.UtcNow,
+                MontoTotal = devolucion.TotalDevolucion,
+                Estado = EstadoNotaCredito.Vigente,
+                FechaVencimiento = DateTime.UtcNow.AddYears(1)
+            };
+
+            _context.NotasCredito.Add(notaCredito);
+            devolucion.NotaCreditoGenerada = true;
+
+            await _context.SaveChangesAsync();
+
+            if (transaction != null)
+                await transaction.CommitAsync();
+
+            return devolucion;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (transaction != null)
+                await transaction.RollbackAsync();
+            throw new InvalidOperationException("La devolución fue modificada por otro usuario. Por favor, recargue los datos.");
+        }
+        catch
+        {
+            if (transaction != null)
+                await transaction.RollbackAsync();
+            throw;
+        }
     }
 
-    public async Task<Devolucion> RechazarDevolucionAsync(int id, string motivo)
+    public async Task<Devolucion> RechazarDevolucionAsync(int id, string motivo, byte[] rowVersion)
     {
         var devolucion = await ObtenerDevolucionAsync(id);
         if (devolucion == null)
@@ -167,15 +294,30 @@ public class DevolucionService : IDevolucionService
             throw new KeyNotFoundException($"Devolución con ID {id} no encontrada");
         }
 
+        if (devolucion.Estado == EstadoDevolucion.Completada)
+            throw new InvalidOperationException("No se puede rechazar una devolución completada");
+
+        if (rowVersion is null || rowVersion.Length == 0)
+            throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la devolución e intentá nuevamente.");
+
+        _context.Entry(devolucion).Property(d => d.RowVersion).OriginalValue = rowVersion;
+
         devolucion.Estado = EstadoDevolucion.Rechazada;
         devolucion.ObservacionesInternas = motivo;
         devolucion.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
-        return devolucion;
+        try
+        {
+            await _context.SaveChangesAsync();
+            return devolucion;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new InvalidOperationException("La devolución fue modificada por otro usuario. Por favor, recargue los datos.");
+        }
     }
 
-    public async Task<Devolucion> CompletarDevolucionAsync(int id)
+    public async Task<Devolucion> CompletarDevolucionAsync(int id, byte[] rowVersion)
     {
         var devolucion = await ObtenerDevolucionAsync(id);
         if (devolucion == null)
@@ -188,39 +330,71 @@ public class DevolucionService : IDevolucionService
             throw new InvalidOperationException("Solo se pueden completar devoluciones aprobadas");
         }
 
-        devolucion.Estado = EstadoDevolucion.Completada;
-        devolucion.UpdatedAt = DateTime.UtcNow;
+        if (rowVersion is null || rowVersion.Length == 0)
+            throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la devolución e intentá nuevamente.");
 
-        // Procesar stock según acción recomendada en cada detalle
-        foreach (var detalle in devolucion.Detalles)
+        _context.Entry(devolucion).Property(d => d.RowVersion).OriginalValue = rowVersion;
+
+        var hasAmbientTransaction = _context.Database.CurrentTransaction != null;
+        await using var transaction = hasAmbientTransaction
+            ? null
+            : await _context.Database.BeginTransactionAsync();
+
+        var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
+
+        try
         {
-            if (detalle.AccionRecomendada == AccionProducto.ReintegrarStock)
-            {
-                // Aumentar stock
-                await _movimientoStockService.RegistrarAjusteAsync(
-                    detalle.ProductoId,
-                    TipoMovimiento.Entrada,
-                    detalle.Cantidad,
-                    $"DEV-{devolucion.NumeroDevolucion}",
-                    $"Reintegro por devolución {devolucion.NumeroDevolucion}"
-                );
-            }
-            else if (detalle.AccionRecomendada == AccionProducto.Cuarentena)
-            {
-                // TODO: Implementar stock en cuarentena
-                // Por ahora solo registramos el movimiento
-                await _movimientoStockService.RegistrarAjusteAsync(
-                    detalle.ProductoId,
-                    TipoMovimiento.Entrada,
-                    detalle.Cantidad,
-                    $"DEV-{devolucion.NumeroDevolucion}",
-                    $"En cuarentena por devolución {devolucion.NumeroDevolucion}"
-                );
-            }
-        }
+            // Marcar como completada primero (misma transacción) para evitar doble procesamiento
+            devolucion.Estado = EstadoDevolucion.Completada;
+            devolucion.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
 
-        await _context.SaveChangesAsync();
-        return devolucion;
+            // Procesar stock según acción recomendada en cada detalle
+            var referencia = $"DEV-{devolucion.NumeroDevolucion}";
+
+            var reintegros = devolucion.Detalles
+                .Where(d => d.AccionRecomendada == AccionProducto.ReintegrarStock)
+                .Select(d => (d.ProductoId, (decimal)d.Cantidad, (string?)referencia))
+                .ToList();
+
+            var cuarentenas = devolucion.Detalles
+                .Where(d => d.AccionRecomendada == AccionProducto.Cuarentena)
+                .Select(d => (d.ProductoId, (decimal)d.Cantidad, (string?)referencia))
+                .ToList();
+
+            if (reintegros.Count > 0)
+            {
+                await _movimientoStockService.RegistrarEntradasAsync(
+                    reintegros,
+                    $"Reintegro por devolución {devolucion.NumeroDevolucion}",
+                    usuario);
+            }
+
+            if (cuarentenas.Count > 0)
+            {
+                await _movimientoStockService.RegistrarEntradasAsync(
+                    cuarentenas,
+                    $"En cuarentena por devolución {devolucion.NumeroDevolucion}",
+                    usuario);
+            }
+
+            if (transaction != null)
+                await transaction.CommitAsync();
+
+            return devolucion;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (transaction != null)
+                await transaction.RollbackAsync();
+            throw new InvalidOperationException("La devolución fue modificada por otro usuario. Por favor, recargue los datos.");
+        }
+        catch
+        {
+            if (transaction != null)
+                await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<string> GenerarNumeroDevolucionAsync()
@@ -242,7 +416,9 @@ public class DevolucionService : IDevolucionService
 
     public async Task<int> ObtenerDiasDesdeVentaAsync(int ventaId)
     {
-        var venta = await _context.Ventas.FindAsync(ventaId);
+        var venta = await _context.Ventas
+            .AsNoTracking()
+            .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
         if (venta == null) return int.MaxValue;
 
         return (DateTime.UtcNow - venta.FechaVenta).Days;
@@ -257,7 +433,11 @@ public class DevolucionService : IDevolucionService
         return await _context.DevolucionDetalles
             .Include(dd => dd.Producto)
             .Include(dd => dd.Garantia)
-            .Where(dd => dd.DevolucionId == devolucionId && !dd.IsDeleted)
+            .Where(dd =>
+                dd.DevolucionId == devolucionId &&
+                !dd.IsDeleted &&
+                dd.Producto != null &&
+                !dd.Producto.IsDeleted)
             .ToListAsync();
     }
 
@@ -268,11 +448,13 @@ public class DevolucionService : IDevolucionService
         await _context.SaveChangesAsync();
 
         // Actualizar total de la devolución
-        var devolucion = await _context.Devoluciones.FindAsync(detalle.DevolucionId);
+        var devolucion = await _context.Devoluciones
+            .FirstOrDefaultAsync(d => d.Id == detalle.DevolucionId && !d.IsDeleted);
         if (devolucion != null)
         {
-            var detalles = await ObtenerDetallesDevolucionAsync(detalle.DevolucionId);
-            devolucion.TotalDevolucion = detalles.Sum(d => d.Subtotal);
+            devolucion.TotalDevolucion = await _context.DevolucionDetalles
+                .Where(dd => dd.DevolucionId == detalle.DevolucionId && !dd.IsDeleted)
+                .SumAsync(dd => dd.Subtotal);
             await _context.SaveChangesAsync();
         }
 
@@ -281,7 +463,8 @@ public class DevolucionService : IDevolucionService
 
     public async Task<DevolucionDetalle> ActualizarEstadoProductoAsync(int detalleId, EstadoProductoDevuelto estado, AccionProducto accion)
     {
-        var detalle = await _context.DevolucionDetalles.FindAsync(detalleId);
+        var detalle = await _context.DevolucionDetalles
+            .FirstOrDefaultAsync(d => d.Id == detalleId && !d.IsDeleted);
         if (detalle == null)
         {
             throw new KeyNotFoundException($"Detalle con ID {detalleId} no encontrado");
@@ -297,7 +480,8 @@ public class DevolucionService : IDevolucionService
 
     public async Task<bool> VerificarAccesoriosAsync(int detalleId, bool completos, string? faltantes)
     {
-        var detalle = await _context.DevolucionDetalles.FindAsync(detalleId);
+        var detalle = await _context.DevolucionDetalles
+            .FirstOrDefaultAsync(d => d.Id == detalleId && !d.IsDeleted);
         if (detalle == null) return false;
 
         detalle.AccesoriosCompletos = completos;
@@ -317,7 +501,12 @@ public class DevolucionService : IDevolucionService
         return await _context.Garantias
             .Include(g => g.Cliente)
             .Include(g => g.Producto)
-            .Where(g => !g.IsDeleted)
+            .Where(g =>
+                !g.IsDeleted &&
+                g.Cliente != null &&
+                !g.Cliente.IsDeleted &&
+                g.Producto != null &&
+                !g.Producto.IsDeleted)
             .OrderByDescending(g => g.FechaInicio)
             .ToListAsync();
     }
@@ -329,6 +518,10 @@ public class DevolucionService : IDevolucionService
             .Include(g => g.Cliente)
             .Include(g => g.Producto)
             .Where(g => !g.IsDeleted &&
+                       g.Cliente != null &&
+                       !g.Cliente.IsDeleted &&
+                       g.Producto != null &&
+                       !g.Producto.IsDeleted &&
                        g.Estado == EstadoGarantia.Vigente &&
                        g.FechaVencimiento >= hoy)
             .OrderBy(g => g.FechaVencimiento)
@@ -339,7 +532,13 @@ public class DevolucionService : IDevolucionService
     {
         return await _context.Garantias
             .Include(g => g.Producto)
-            .Where(g => g.ClienteId == clienteId && !g.IsDeleted)
+            .Where(g =>
+                g.ClienteId == clienteId &&
+                !g.IsDeleted &&
+                g.Cliente != null &&
+                !g.Cliente.IsDeleted &&
+                g.Producto != null &&
+                !g.Producto.IsDeleted)
             .OrderByDescending(g => g.FechaInicio)
             .ToListAsync();
     }
@@ -350,7 +549,13 @@ public class DevolucionService : IDevolucionService
             .Include(g => g.Cliente)
             .Include(g => g.Producto)
             .Include(g => g.VentaDetalle)
-            .FirstOrDefaultAsync(g => g.Id == id && !g.IsDeleted);
+            .FirstOrDefaultAsync(g =>
+                g.Id == id &&
+                !g.IsDeleted &&
+                g.Cliente != null &&
+                !g.Cliente.IsDeleted &&
+                g.Producto != null &&
+                !g.Producto.IsDeleted);
     }
 
     public async Task<Garantia?> ObtenerGarantiaPorNumeroAsync(string numeroGarantia)
@@ -358,7 +563,13 @@ public class DevolucionService : IDevolucionService
         return await _context.Garantias
             .Include(g => g.Cliente)
             .Include(g => g.Producto)
-            .FirstOrDefaultAsync(g => g.NumeroGarantia == numeroGarantia && !g.IsDeleted);
+            .FirstOrDefaultAsync(g =>
+                g.NumeroGarantia == numeroGarantia &&
+                !g.IsDeleted &&
+                g.Cliente != null &&
+                !g.Cliente.IsDeleted &&
+                g.Producto != null &&
+                !g.Producto.IsDeleted);
     }
 
     public async Task<Garantia> CrearGarantiaAsync(Garantia garantia)
@@ -406,6 +617,10 @@ public class DevolucionService : IDevolucionService
             .Include(g => g.Cliente)
             .Include(g => g.Producto)
             .Where(g => !g.IsDeleted &&
+                       g.Cliente != null &&
+                       !g.Cliente.IsDeleted &&
+                       g.Producto != null &&
+                       !g.Producto.IsDeleted &&
                        g.Estado == EstadoGarantia.Vigente &&
                        g.FechaVencimiento >= hoy &&
                        g.FechaVencimiento <= fechaLimite)
@@ -432,7 +647,12 @@ public class DevolucionService : IDevolucionService
         return await _context.RMAs
             .Include(r => r.Proveedor)
             .Include(r => r.Devolucion).ThenInclude(d => d.Cliente)
-            .Where(r => !r.IsDeleted)
+            .Where(r =>
+                !r.IsDeleted &&
+                r.Devolucion != null &&
+                !r.Devolucion.IsDeleted &&
+                r.Devolucion.Cliente != null &&
+                !r.Devolucion.Cliente.IsDeleted)
             .OrderByDescending(r => r.FechaSolicitud)
             .ToListAsync();
     }
@@ -442,7 +662,13 @@ public class DevolucionService : IDevolucionService
         return await _context.RMAs
             .Include(r => r.Proveedor)
             .Include(r => r.Devolucion)
-            .Where(r => r.Estado == estado && !r.IsDeleted)
+            .Where(r =>
+                r.Estado == estado &&
+                !r.IsDeleted &&
+                r.Devolucion != null &&
+                !r.Devolucion.IsDeleted &&
+                r.Devolucion.Cliente != null &&
+                !r.Devolucion.Cliente.IsDeleted)
             .OrderByDescending(r => r.FechaSolicitud)
             .ToListAsync();
     }
@@ -451,7 +677,13 @@ public class DevolucionService : IDevolucionService
     {
         return await _context.RMAs
             .Include(r => r.Devolucion).ThenInclude(d => d.Cliente)
-            .Where(r => r.ProveedorId == proveedorId && !r.IsDeleted)
+            .Where(r =>
+                r.ProveedorId == proveedorId &&
+                !r.IsDeleted &&
+                r.Devolucion != null &&
+                !r.Devolucion.IsDeleted &&
+                r.Devolucion.Cliente != null &&
+                !r.Devolucion.Cliente.IsDeleted)
             .OrderByDescending(r => r.FechaSolicitud)
             .ToListAsync();
     }
@@ -461,8 +693,19 @@ public class DevolucionService : IDevolucionService
         return await _context.RMAs
             .Include(r => r.Proveedor)
             .Include(r => r.Devolucion).ThenInclude(d => d.Cliente)
-            .Include(r => r.Devolucion).ThenInclude(d => d.Detalles).ThenInclude(dd => dd.Producto)
-            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+            .Include(r => r.Devolucion)
+                .ThenInclude(d => d.Detalles.Where(dd =>
+                    !dd.IsDeleted &&
+                    dd.Producto != null &&
+                    !dd.Producto.IsDeleted))
+                .ThenInclude(dd => dd.Producto)
+            .FirstOrDefaultAsync(r =>
+                r.Id == id &&
+                !r.IsDeleted &&
+                r.Devolucion != null &&
+                !r.Devolucion.IsDeleted &&
+                r.Devolucion.Cliente != null &&
+                !r.Devolucion.Cliente.IsDeleted);
     }
 
     public async Task<RMA?> ObtenerRMAPorNumeroAsync(string numeroRMA)
@@ -470,27 +713,69 @@ public class DevolucionService : IDevolucionService
         return await _context.RMAs
             .Include(r => r.Proveedor)
             .Include(r => r.Devolucion)
-            .FirstOrDefaultAsync(r => r.NumeroRMA == numeroRMA && !r.IsDeleted);
+            .FirstOrDefaultAsync(r =>
+                r.NumeroRMA == numeroRMA &&
+                !r.IsDeleted &&
+                r.Devolucion != null &&
+                !r.Devolucion.IsDeleted &&
+                r.Devolucion.Cliente != null &&
+                !r.Devolucion.Cliente.IsDeleted);
     }
 
-    public async Task<RMA> CrearRMAAsync(RMA rma)
+    public async Task<RMA> CrearRMAAsync(RMA rma, byte[] devolucionRowVersion)
     {
-        rma.NumeroRMA = await GenerarNumeroRMAAsync();
-        rma.Estado = EstadoRMA.Pendiente;
+        if (devolucionRowVersion is null || devolucionRowVersion.Length == 0)
+            throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la devolución e intentá nuevamente.");
 
-        _context.RMAs.Add(rma);
-        await _context.SaveChangesAsync();
+        var devolucion = await _context.Devoluciones
+            .FirstOrDefaultAsync(d => d.Id == rma.DevolucionId && !d.IsDeleted);
 
-        // Marcar la devolución como que requiere RMA
-        var devolucion = await _context.Devoluciones.FindAsync(rma.DevolucionId);
-        if (devolucion != null)
+        if (devolucion == null)
+            throw new InvalidOperationException("Devolución no encontrada");
+
+        if (devolucion.Estado != EstadoDevolucion.Aprobada)
+            throw new InvalidOperationException("Solo se puede crear RMA para devoluciones aprobadas");
+
+        if (devolucion.RequiereRMA || await _context.RMAs.AnyAsync(x => x.DevolucionId == devolucion.Id && !x.IsDeleted))
+            throw new InvalidOperationException("Esta devolución ya tiene un RMA asociado");
+
+        _context.Entry(devolucion).Property(d => d.RowVersion).OriginalValue = devolucionRowVersion;
+
+        var hasAmbientTransaction = _context.Database.CurrentTransaction != null;
+        await using var transaction = hasAmbientTransaction
+            ? null
+            : await _context.Database.BeginTransactionAsync();
+
+        try
         {
+            rma.NumeroRMA = await GenerarNumeroRMAAsync();
+            rma.Estado = EstadoRMA.Pendiente;
+
+            _context.RMAs.Add(rma);
+
             devolucion.RequiereRMA = true;
             devolucion.RMAId = rma.Id;
-            await _context.SaveChangesAsync();
-        }
+            devolucion.UpdatedAt = DateTime.UtcNow;
 
-        return rma;
+            await _context.SaveChangesAsync();
+
+            if (transaction != null)
+                await transaction.CommitAsync();
+
+            return rma;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (transaction != null)
+                await transaction.RollbackAsync();
+            throw new InvalidOperationException("La devolución fue modificada por otro usuario. Por favor, recargue los datos.");
+        }
+        catch
+        {
+            if (transaction != null)
+                await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<RMA> ActualizarRMAAsync(RMA rma)
@@ -596,7 +881,11 @@ public class DevolucionService : IDevolucionService
         return await _context.NotasCredito
             .Include(nc => nc.Cliente)
             .Include(nc => nc.Devolucion)
-            .Where(nc => !nc.IsDeleted)
+            .Where(nc =>
+                !nc.IsDeleted &&
+                nc.Cliente != null &&
+                !nc.Cliente.IsDeleted &&
+                (nc.Devolucion == null || !nc.Devolucion.IsDeleted))
             .OrderByDescending(nc => nc.FechaEmision)
             .ToListAsync();
     }
@@ -605,7 +894,12 @@ public class DevolucionService : IDevolucionService
     {
         return await _context.NotasCredito
             .Include(nc => nc.Devolucion)
-            .Where(nc => nc.ClienteId == clienteId && !nc.IsDeleted)
+            .Where(nc =>
+                nc.ClienteId == clienteId &&
+                !nc.IsDeleted &&
+                nc.Cliente != null &&
+                !nc.Cliente.IsDeleted &&
+                (nc.Devolucion == null || !nc.Devolucion.IsDeleted))
             .OrderByDescending(nc => nc.FechaEmision)
             .ToListAsync();
     }
@@ -616,6 +910,8 @@ public class DevolucionService : IDevolucionService
         return await _context.NotasCredito
             .Where(nc => nc.ClienteId == clienteId &&
                         !nc.IsDeleted &&
+                        nc.Cliente != null &&
+                        !nc.Cliente.IsDeleted &&
                         nc.MontoDisponible > 0 &&
                         (nc.FechaVencimiento == null || nc.FechaVencimiento >= hoy) &&
                         nc.Estado == EstadoNotaCredito.Vigente)
@@ -628,14 +924,23 @@ public class DevolucionService : IDevolucionService
         return await _context.NotasCredito
             .Include(nc => nc.Cliente)
             .Include(nc => nc.Devolucion)
-            .FirstOrDefaultAsync(nc => nc.Id == id && !nc.IsDeleted);
+            .FirstOrDefaultAsync(nc =>
+                nc.Id == id &&
+                !nc.IsDeleted &&
+                nc.Cliente != null &&
+                !nc.Cliente.IsDeleted &&
+                (nc.Devolucion == null || !nc.Devolucion.IsDeleted));
     }
 
     public async Task<NotaCredito?> ObtenerNotaCreditoPorNumeroAsync(string numeroNotaCredito)
     {
         return await _context.NotasCredito
             .Include(nc => nc.Cliente)
-            .FirstOrDefaultAsync(nc => nc.NumeroNotaCredito == numeroNotaCredito && !nc.IsDeleted);
+            .FirstOrDefaultAsync(nc =>
+                nc.NumeroNotaCredito == numeroNotaCredito &&
+                !nc.IsDeleted &&
+                nc.Cliente != null &&
+                !nc.Cliente.IsDeleted);
     }
 
     public async Task<NotaCredito> CrearNotaCreditoAsync(NotaCredito notaCredito)
@@ -725,9 +1030,17 @@ public class DevolucionService : IDevolucionService
             .Select(g => g.Key)
             .ToListAsync();
 
-        return await _context.Productos
-            .Where(p => productosIds.Contains(p.Id))
+        if (productosIds.Count == 0)
+            return new List<Producto>();
+
+        var productos = await _context.Productos
+            .Where(p => productosIds.Contains(p.Id) && !p.IsDeleted)
             .ToListAsync();
+
+        // Mantener el orden de ranking calculado en productosIds.
+        return productos
+            .OrderBy(p => productosIds.IndexOf(p.Id))
+            .ToList();
     }
 
     public async Task<decimal> ObtenerTotalDevolucionesPeriodoAsync(DateTime desde, DateTime hasta)

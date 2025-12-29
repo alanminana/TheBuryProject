@@ -23,17 +23,21 @@ namespace TheBuryProject.Services
             try
             {
                 return await _context.Proveedores
+                    .Where(p => !p.IsDeleted)
                     .AsNoTracking()
                     .AsSplitQuery()
-                    .Include(p => p.ProveedorProductos)
+                    .Include(p => p.ProveedorProductos.Where(pp =>
+                        !pp.IsDeleted &&
+                        pp.Producto != null &&
+                        !pp.Producto.IsDeleted))
                         .ThenInclude(pp => pp.Producto)
                     .Include(p => p.ProveedorMarcas)
                         .ThenInclude(pm => pm.Marca)
                     .Include(p => p.ProveedorCategorias)
                         .ThenInclude(pc => pc.Categoria)
                     // Necesario para los campos calculados del ProveedorViewModel (AutoMapperProfile)
-                    .Include(p => p.OrdenesCompra)
-                    .Include(p => p.Cheques)
+                    .Include(p => p.OrdenesCompra.Where(o => !o.IsDeleted))
+                    .Include(p => p.Cheques.Where(c => !c.IsDeleted))
                     .OrderBy(p => p.RazonSocial)
                     .ToListAsync();
             }
@@ -51,16 +55,19 @@ namespace TheBuryProject.Services
                 return await _context.Proveedores
                     .AsNoTracking()
                     .AsSplitQuery()
-                    .Include(p => p.ProveedorProductos)
+                    .Include(p => p.ProveedorProductos.Where(pp =>
+                        !pp.IsDeleted &&
+                        pp.Producto != null &&
+                        !pp.Producto.IsDeleted))
                         .ThenInclude(pp => pp.Producto)
                     .Include(p => p.ProveedorMarcas)
                         .ThenInclude(pm => pm.Marca)
                     .Include(p => p.ProveedorCategorias)
                         .ThenInclude(pc => pc.Categoria)
                     // Necesario para los campos calculados del ProveedorViewModel (AutoMapperProfile)
-                    .Include(p => p.OrdenesCompra)
-                    .Include(p => p.Cheques)
-                    .FirstOrDefaultAsync(p => p.Id == id);
+                    .Include(p => p.OrdenesCompra.Where(o => !o.IsDeleted))
+                    .Include(p => p.Cheques.Where(c => !c.IsDeleted))
+                    .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -109,6 +116,9 @@ namespace TheBuryProject.Services
             {
                 if (proveedor == null) throw new ArgumentNullException(nameof(proveedor));
 
+                if (proveedor.RowVersion == null || proveedor.RowVersion.Length == 0)
+                    throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá el proveedor e intentá nuevamente.");
+
                 // Validar CUIT único (excluyendo el registro actual)
                 if (await ExistsCuitAsync(proveedor.Cuit, proveedor.Id))
                 {
@@ -119,7 +129,7 @@ namespace TheBuryProject.Services
                     .Include(p => p.ProveedorProductos)
                     .Include(p => p.ProveedorMarcas)
                     .Include(p => p.ProveedorCategorias)
-                    .FirstOrDefaultAsync(p => p.Id == proveedor.Id);
+                    .FirstOrDefaultAsync(p => p.Id == proveedor.Id && !p.IsDeleted);
 
                 if (existingProveedor == null)
                 {
@@ -129,10 +139,12 @@ namespace TheBuryProject.Services
                 // Actualizar propiedades básicas sin pisar auditoría/concurrencia (si existen)
                 _context.Entry(existingProveedor).CurrentValues.SetValues(proveedor);
 
+                // Concurrencia optimista
+                _context.Entry(existingProveedor).Property(p => p.RowVersion).OriginalValue = proveedor.RowVersion;
+
                 var entry = _context.Entry(existingProveedor);
                 MarkNotModifiedIfExists(entry, "CreatedAt");
                 MarkNotModifiedIfExists(entry, "CreatedBy");
-                MarkNotModifiedIfExists(entry, "RowVersion");
                 MarkNotModifiedIfExists(entry, "IsDeleted");
 
                 // Reemplazar asociaciones (hard delete de relaciones para evitar inconsistencias con índices únicos)
@@ -146,7 +158,15 @@ namespace TheBuryProject.Services
                 existingProveedor.ProveedorMarcas = proveedor.ProveedorMarcas;
                 existingProveedor.ProveedorCategorias = proveedor.ProveedorCategorias;
 
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    throw new InvalidOperationException(
+                        "El proveedor fue modificado por otro usuario. Recargá la página y volvé a intentar.");
+                }
 
                 _logger.LogInformation("Proveedor actualizado: {Id} - {RazonSocial}", proveedor.Id, proveedor.RazonSocial);
             }
@@ -162,14 +182,14 @@ namespace TheBuryProject.Services
             try
             {
                 // Respetar query filters (soft delete): si ya está eliminado, no debería aparecer
-                var proveedor = await _context.Proveedores.FirstOrDefaultAsync(p => p.Id == id);
+                var proveedor = await _context.Proveedores.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
                 if (proveedor == null)
                 {
                     return false;
                 }
 
                 // Verificar si tiene órdenes de compra asociadas
-                var tieneOrdenes = await _context.OrdenesCompra.AnyAsync(o => o.ProveedorId == id);
+                var tieneOrdenes = await _context.OrdenesCompra.AnyAsync(o => o.ProveedorId == id && !o.IsDeleted);
                 if (tieneOrdenes)
                 {
                     throw new InvalidOperationException("No se puede eliminar el proveedor porque tiene órdenes de compra asociadas");
@@ -178,6 +198,7 @@ namespace TheBuryProject.Services
                 // Verificar si tiene cheques vigentes asociados (alineado a AutoMapperProfile)
                 var tieneChequesVigentes = await _context.Cheques.AnyAsync(c =>
                     c.ProveedorId == id &&
+                    !c.IsDeleted &&
                     c.Estado != EstadoCheque.Cobrado &&
                     c.Estado != EstadoCheque.Rechazado &&
                     c.Estado != EstadoCheque.Anulado
@@ -206,7 +227,8 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var query = _context.Proveedores.Where(p => p.Cuit == cuit);
+                // Debe coincidir con el índice único filtrado (solo no eliminados)
+                var query = _context.Proveedores.Where(p => p.Cuit == cuit && !p.IsDeleted);
 
                 if (excludeId.HasValue)
                 {
@@ -233,16 +255,22 @@ namespace TheBuryProject.Services
                 var query = _context.Proveedores
                     .AsNoTracking()
                     .AsSplitQuery()
-                    .Include(p => p.ProveedorProductos)
+                    .Include(p => p.ProveedorProductos.Where(pp =>
+                        !pp.IsDeleted &&
+                        pp.Producto != null &&
+                        !pp.Producto.IsDeleted))
                         .ThenInclude(pp => pp.Producto)
                     .Include(p => p.ProveedorMarcas)
                         .ThenInclude(pm => pm.Marca)
                     .Include(p => p.ProveedorCategorias)
                         .ThenInclude(pc => pc.Categoria)
                     // Necesario para los campos calculados del ProveedorViewModel (AutoMapperProfile)
-                    .Include(p => p.OrdenesCompra)
-                    .Include(p => p.Cheques)
+                    .Include(p => p.OrdenesCompra.Where(o => !o.IsDeleted))
+                    .Include(p => p.Cheques.Where(c => !c.IsDeleted))
                     .AsQueryable();
+
+                // Soft delete
+                query = query.Where(p => !p.IsDeleted);
 
                 // Búsqueda por texto
                 if (!string.IsNullOrWhiteSpace(searchTerm))

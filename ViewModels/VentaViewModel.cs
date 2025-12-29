@@ -7,6 +7,12 @@ namespace TheBuryProject.ViewModels
     {
         public int Id { get; set; }
 
+        /// <summary>
+        /// RowVersion para control de concurrencia optimista.
+        /// Debe enviarse en POST para detectar conflictos.
+        /// </summary>
+        public byte[]? RowVersion { get; set; }
+
         [Display(Name = "Número")]
         public string Numero { get; set; } = string.Empty;
 

@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Cierre de caja con arqueo
     /// </summary>
-    public class CierreCaja : BaseEntity
+    public class CierreCaja  : AuditableEntity
     {
         [Required]
         public int AperturaCajaId { get; set; }

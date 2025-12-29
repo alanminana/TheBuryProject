@@ -31,7 +31,7 @@ namespace TheBuryProject.Services
                     .AsNoTracking()
                     .Include(p => p.Categoria)
                     .Include(p => p.Marca)
-                    .Where(p => p.Activo && p.StockActual <= p.StockMinimo)
+                    .Where(p => !p.IsDeleted && p.Activo && p.StockActual <= p.StockMinimo)
                     .ToListAsync();
 
                 if (productosConStockBajo.Count == 0)
@@ -45,7 +45,7 @@ namespace TheBuryProject.Services
                 // Cargar en una sola consulta qué productos ya tienen alerta pendiente (evita N+1)
                 var productoIdsConAlertaPendiente = await _context.AlertasStock
                     .AsNoTracking()
-                    .Where(a => a.Estado == EstadoAlerta.Pendiente && productoIds.Contains(a.ProductoId))
+                    .Where(a => !a.IsDeleted && a.FechaResolucion == null && productoIds.Contains(a.ProductoId))
                     .Select(a => a.ProductoId)
                     .Distinct()
                     .ToListAsync();
@@ -84,7 +84,7 @@ namespace TheBuryProject.Services
                     .AsNoTracking()
                     .Include(p => p.Categoria)
                     .Include(p => p.Marca)
-                    .FirstOrDefaultAsync(p => p.Id == productoId);
+                    .FirstOrDefaultAsync(p => p.Id == productoId && !p.IsDeleted);
 
                 if (producto == null || !producto.Activo)
                     return null;
@@ -97,7 +97,8 @@ namespace TheBuryProject.Services
                     .AsNoTracking()
                     .FirstOrDefaultAsync(a =>
                         a.ProductoId == productoId &&
-                        a.Estado == EstadoAlerta.Pendiente);
+                        !a.IsDeleted &&
+                        a.FechaResolucion == null);
 
                 if (alertaExistente != null)
                     return alertaExistente;
@@ -107,6 +108,59 @@ namespace TheBuryProject.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al verificar y generar alerta para producto {ProductoId}", productoId);
+                throw;
+            }
+        }
+
+        public async Task<int> VerificarYGenerarAlertasAsync(IEnumerable<int> productoIds)
+        {
+            try
+            {
+                var ids = (productoIds ?? Array.Empty<int>()).Distinct().ToList();
+                if (ids.Count == 0)
+                    return 0;
+
+                var productos = await _context.Productos
+                    .AsNoTracking()
+                    .Include(p => p.Categoria)
+                    .Include(p => p.Marca)
+                    .Where(p => ids.Contains(p.Id) && !p.IsDeleted && p.Activo && p.StockActual <= p.StockMinimo)
+                    .ToListAsync();
+
+                if (productos.Count == 0)
+                    return 0;
+
+                var productoIdsConCondicion = productos.Select(p => p.Id).ToList();
+
+                // Precargar en una sola consulta qué productos ya tienen alerta pendiente
+                var productoIdsConAlertaPendiente = await _context.AlertasStock
+                    .AsNoTracking()
+                    .Where(a => !a.IsDeleted && a.FechaResolucion == null && productoIdsConCondicion.Contains(a.ProductoId))
+                    .Select(a => a.ProductoId)
+                    .Distinct()
+                    .ToListAsync();
+
+                var setPendientes = new HashSet<int>(productoIdsConAlertaPendiente);
+                var creadas = 0;
+
+                foreach (var producto in productos)
+                {
+                    if (setPendientes.Contains(producto.Id))
+                        continue;
+
+                    var alerta = await CrearAlertaStockAsync(producto);
+                    if (alerta != null)
+                    {
+                        creadas++;
+                        setPendientes.Add(producto.Id);
+                    }
+                }
+
+                return creadas;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al verificar y generar alertas (batch)");
                 throw;
             }
         }
@@ -168,7 +222,7 @@ namespace TheBuryProject.Services
 
                     var existente = await _context.AlertasStock
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(a => a.ProductoId == producto.Id && a.Estado == EstadoAlerta.Pendiente);
+                        .FirstOrDefaultAsync(a => a.ProductoId == producto.Id && !a.IsDeleted && a.FechaResolucion == null);
 
                     if (existente != null)
                         return existente;
@@ -196,36 +250,53 @@ namespace TheBuryProject.Services
                     .ThenInclude(p => p.Categoria)
                 .Include(a => a.Producto)
                     .ThenInclude(p => p.Marca)
-                .Where(a => a.Estado == EstadoAlerta.Pendiente)
+                .Where(a => !a.IsDeleted && !a.Producto.IsDeleted && a.Estado == EstadoAlerta.Pendiente)
                 .OrderByDescending(a => a.Prioridad)
                 .ThenBy(a => a.FechaAlerta)
                 .ToListAsync();
         }
 
-        public async Task<AlertaStock?> GetByIdAsync(int id)
+        public async Task<AlertaStockViewModel?> GetByIdAsync(int id)
         {
             return await _context.AlertasStock
                 .Include(a => a.Producto)
                     .ThenInclude(p => p.Categoria)
                 .Include(a => a.Producto)
                     .ThenInclude(p => p.Marca)
-                .FirstOrDefaultAsync(a => a.Id == id);
+                .Where(a => a.Id == id && !a.IsDeleted && a.Producto != null && !a.Producto.IsDeleted)
+                .Select(a => MapToViewModel(a))
+                .FirstOrDefaultAsync();
         }
 
-        public async Task<bool> ResolverAlertaAsync(int id, string usuarioResolucion, string? observaciones = null)
+        public async Task<bool> ResolverAlertaAsync(int id, string usuarioResolucion, string? observaciones = null, byte[]? rowVersion = null)
         {
             try
             {
-                var alerta = await _context.AlertasStock.FirstOrDefaultAsync(a => a.Id == id);
+                var alerta = await _context.AlertasStock.FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
                 if (alerta == null)
                     return false;
+
+                if (alerta.Estado != EstadoAlerta.Pendiente)
+                    return true; // idempotente
+
+                if (rowVersion is null || rowVersion.Length == 0)
+                    throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la alerta e intentá nuevamente.");
+
+                _context.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
 
                 alerta.Estado = EstadoAlerta.Resuelta;
                 alerta.FechaResolucion = DateTime.UtcNow;
                 alerta.UsuarioResolucion = usuarioResolucion;
                 alerta.Observaciones = observaciones;
 
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    throw new InvalidOperationException("La alerta fue modificada por otro usuario. Por favor, recargue los datos.");
+                }
 
                 _logger.LogInformation(
                     "Alerta {AlertaId} resuelta por {Usuario}",
@@ -236,24 +307,39 @@ namespace TheBuryProject.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al resolver alerta {AlertaId}", id);
-                return false;
+                throw;
             }
         }
 
-        public async Task<bool> IgnorarAlertaAsync(int id, string usuarioResolucion, string? observaciones = null)
+        public async Task<bool> IgnorarAlertaAsync(int id, string usuarioResolucion, string? observaciones = null, byte[]? rowVersion = null)
         {
             try
             {
-                var alerta = await _context.AlertasStock.FirstOrDefaultAsync(a => a.Id == id);
+                var alerta = await _context.AlertasStock.FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
                 if (alerta == null)
                     return false;
+
+                if (alerta.Estado != EstadoAlerta.Pendiente)
+                    return true; // idempotente
+
+                if (rowVersion is null || rowVersion.Length == 0)
+                    throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la alerta e intentá nuevamente.");
+
+                _context.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
 
                 alerta.Estado = EstadoAlerta.Ignorada;
                 alerta.FechaResolucion = DateTime.UtcNow;
                 alerta.UsuarioResolucion = usuarioResolucion;
                 alerta.Observaciones = observaciones;
 
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    throw new InvalidOperationException("La alerta fue modificada por otro usuario. Por favor, recargue los datos.");
+                }
 
                 _logger.LogInformation(
                     "Alerta {AlertaId} ignorada por {Usuario}",
@@ -264,7 +350,7 @@ namespace TheBuryProject.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al ignorar alerta {AlertaId}", id);
-                return false;
+                throw;
             }
         }
 
@@ -275,6 +361,7 @@ namespace TheBuryProject.Services
                     .ThenInclude(p => p.Categoria)
                 .Include(a => a.Producto)
                     .ThenInclude(p => p.Marca)
+                .Where(a => !a.IsDeleted && !a.Producto.IsDeleted)
                 .AsQueryable();
 
             // Filtros
@@ -335,6 +422,7 @@ namespace TheBuryProject.Services
             var todasAlertas = await _context.AlertasStock
                 .Include(a => a.Producto)
                     .ThenInclude(p => p.Categoria)
+                .Where(a => !a.IsDeleted && !a.Producto.IsDeleted)
                 .ToListAsync();
 
             var alertasPendientes = todasAlertas.Where(a => a.Estado == EstadoAlerta.Pendiente).ToList();
@@ -343,7 +431,7 @@ namespace TheBuryProject.Services
 
             var hace7Dias = DateTime.UtcNow.AddDays(-7);
             var alertasVencidas = await _context.AlertasStock
-                .CountAsync(a => a.Estado == EstadoAlerta.Pendiente && a.FechaAlerta < hace7Dias);
+                .CountAsync(a => !a.IsDeleted && !a.Producto.IsDeleted && a.Estado == EstadoAlerta.Pendiente && a.FechaAlerta < hace7Dias);
 
             // Calcular promedio de días para resolver
             var promedioResolucion = alertasResueltas.Any()
@@ -410,6 +498,7 @@ namespace TheBuryProject.Services
                         .ThenInclude(p => p.Categoria)
                     .Include(a => a.Producto)
                         .ThenInclude(p => p.Marca)
+                    .Where(a => !a.IsDeleted && !a.Producto.IsDeleted)
                     .OrderByDescending(a => a.FechaAlerta)
                     .Take(10)
                     .Select(a => MapToViewModel(a))
@@ -420,6 +509,7 @@ namespace TheBuryProject.Services
                         .ThenInclude(p => p.Categoria)
                     .Include(a => a.Producto)
                         .ThenInclude(p => p.Marca)
+                    .Where(a => !a.IsDeleted && !a.Producto.IsDeleted)
                     .GroupBy(a => new
                     {
                         a.ProductoId,
@@ -460,7 +550,7 @@ namespace TheBuryProject.Services
         {
             return await _context.AlertasStock
                 .Include(a => a.Producto)
-                .Where(a => a.ProductoId == productoId)
+                .Where(a => !a.IsDeleted && a.ProductoId == productoId && a.Producto != null && !a.Producto.IsDeleted)
                 .OrderByDescending(a => a.FechaAlerta)
                 .ToListAsync();
         }
@@ -471,22 +561,19 @@ namespace TheBuryProject.Services
             {
                 var fechaLimite = DateTime.UtcNow.AddDays(-diasAntiguedad);
 
-                var alertasAntiguas = await _context.AlertasStock
+                var now = DateTime.UtcNow;
+                var updated = await _context.AlertasStock
                     .Where(a =>
+                        !a.IsDeleted &&
                         (a.Estado == EstadoAlerta.Resuelta || a.Estado == EstadoAlerta.Ignorada) &&
                         a.FechaResolucion.HasValue &&
                         a.FechaResolucion.Value < fechaLimite)
-                    .ToListAsync();
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(a => a.IsDeleted, true)
+                        .SetProperty(a => a.UpdatedAt, now));
 
-                foreach (var alerta in alertasAntiguas)
-                {
-                    alerta.IsDeleted = true;
-                }
-
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Eliminadas {Cantidad} alertas antiguas", alertasAntiguas.Count);
-                return alertasAntiguas.Count;
+                _logger.LogInformation("Eliminadas {Cantidad} alertas antiguas", updated);
+                return updated;
             }
             catch (Exception ex)
             {
@@ -504,29 +591,40 @@ namespace TheBuryProject.Services
                 .Include(a => a.Producto)
                     .ThenInclude(p => p.Marca)
                 .Where(a =>
+                    !a.IsDeleted &&
+                    !a.Producto.IsDeleted &&
                     a.Estado == EstadoAlerta.Pendiente &&
                     (a.Tipo == TipoAlertaStock.StockCritico || a.Tipo == TipoAlertaStock.StockAgotado))
                 .Select(a => a.Producto)
                 .Distinct()
                 .ToListAsync();
 
+            if (productosConAlertas.Count == 0)
+                return new List<ProductoCriticoViewModel>();
+
+            var productoIds = productosConAlertas.Select(p => p.Id).ToList();
+
+            var alertasPendientesByProductoId = await _context.AlertasStock
+                .AsNoTracking()
+                .Where(a => !a.IsDeleted && productoIds.Contains(a.ProductoId) && a.Estado == EstadoAlerta.Pendiente)
+                .GroupBy(a => a.ProductoId)
+                .Select(g => new { ProductoId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.ProductoId, x => x.Count);
+
+            var ultimaVentaByProductoId = await _context.VentaDetalles
+                .AsNoTracking()
+                .Where(vd => productoIds.Contains(vd.ProductoId))
+                .GroupBy(vd => vd.ProductoId)
+                .Select(g => new { ProductoId = g.Key, UltimaVenta = g.Max(vd => (DateTime?)vd.Venta.FechaVenta) })
+                .ToDictionaryAsync(x => x.ProductoId, x => x.UltimaVenta);
+
             // Mapear a ViewModels con información adicional
             var resultado = new List<ProductoCriticoViewModel>();
 
             foreach (var producto in productosConAlertas)
             {
-                // Contar alertas pendientes para este producto
-                var alertasPendientes = await _context.AlertasStock
-                    .CountAsync(a => a.ProductoId == producto.Id && a.Estado == EstadoAlerta.Pendiente);
-
-                // Obtener última venta del producto
-                var ultimaVentaQuery = await _context.VentaDetalles
-                    .Where(vd => vd.ProductoId == producto.Id)
-                    .OrderByDescending(vd => vd.Venta.FechaVenta)
-                    .Select(vd => (DateTime?)vd.Venta.FechaVenta)
-                    .FirstOrDefaultAsync();
-
-                DateTime? ultimaVenta = ultimaVentaQuery;
+                alertasPendientesByProductoId.TryGetValue(producto.Id, out var alertasPendientes);
+                ultimaVentaByProductoId.TryGetValue(producto.Id, out var ultimaVenta);
                 var diasDesdeUltimaVenta = ultimaVenta.HasValue
                     ? (DateTime.UtcNow - ultimaVenta.Value).Days
                     : 0;
@@ -560,6 +658,7 @@ namespace TheBuryProject.Services
             return new AlertaStockViewModel
             {
                 Id = alerta.Id,
+                RowVersion = alerta.RowVersion,
                 ProductoId = alerta.ProductoId,
                 ProductoCodigo = alerta.Producto?.Codigo ?? string.Empty,
                 ProductoNombre = alerta.Producto?.Nombre ?? string.Empty,

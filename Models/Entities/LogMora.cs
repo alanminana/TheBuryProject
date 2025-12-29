@@ -5,7 +5,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Registro de ejecuciones del proceso de mora
     /// </summary>
-    public class LogMora : BaseEntity
+    public class LogMora  : AuditableEntity
     {
         public DateTime FechaEjecucion { get; set; }
         public int CuotasProcesadas { get; set; }

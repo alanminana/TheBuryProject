@@ -106,6 +106,19 @@ namespace TheBuryProject.Controllers
         [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> Edit(int id, CajaViewModel model)
         {
+            if (id != model.Id)
+            {
+                TempData["Error"] = "Caja no encontrada";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var rowVersion = model.RowVersion;
+            if (rowVersion is null || rowVersion.Length == 0)
+            {
+                ModelState.AddModelError("", "No se recibió la versión de fila (RowVersion). Recargue la página e intente nuevamente.");
+                return View(model);
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -128,11 +141,17 @@ namespace TheBuryProject.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, byte[]? rowVersion)
         {
             try
             {
-                await _cajaService.EliminarCajaAsync(id);
+                if (rowVersion is null || rowVersion.Length == 0)
+                {
+                    TempData["Error"] = "No se recibió la versión de fila (RowVersion). Recargue la página e intente nuevamente.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                await _cajaService.EliminarCajaAsync(id, rowVersion);
                 TempData["Success"] = "Caja eliminada exitosamente";
             }
             catch (Exception ex)

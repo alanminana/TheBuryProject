@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using TheBuryProject.Data;
+using TheBuryProject.Helpers;
 using TheBuryProject.Services.Interfaces;
 
 namespace TheBuryProject.Services
@@ -61,23 +62,18 @@ namespace TheBuryProject.Services
 
             await using var context = await _contextFactory.CreateDbContextAsync();
 
-            var items = await context.Clientes
+            var clientes = await context.Clientes
                 .AsNoTracking()
-                .Where(c => c.Activo)
+                .Where(c => c.Activo && !c.IsDeleted)
                 .OrderBy(c => c.Apellido)
                 .ThenBy(c => c.Nombre)
-                .Select(c => new
-                {
-                    c.Id,
-                    Display = (c.Apellido ?? "") + ", " + (c.Nombre ?? "") + (string.IsNullOrWhiteSpace(c.NumeroDocumento) ? "" : " - " + c.NumeroDocumento)
-                })
                 .ToListAsync();
 
-            var selectItems = items
-                .Select(i => new SelectListItem
+            var selectItems = clientes
+                .Select(c => new SelectListItem
                 {
-                    Value = i.Id.ToString(),
-                    Text = i.Display
+                    Value = c.Id.ToString(),
+                    Text = c.ToDisplayName()
                 })
                 .ToList();
 
@@ -113,17 +109,14 @@ namespace TheBuryProject.Services
         {
             await using var context = await _contextFactory.CreateDbContextAsync();
 
-            var dto = await context.Clientes
+            var cliente = await context.Clientes
                 .AsNoTracking()
-                .Where(c => c.Id == clienteId && c.Activo)
-                .Select(c => new { c.Id, c.Apellido, c.Nombre, c.NumeroDocumento })
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(c => c.Id == clienteId && c.Activo && !c.IsDeleted);
 
-            if (dto == null)
+            if (cliente == null)
                 return null;
 
-            var display = (dto.Apellido ?? "") + ", " + (dto.Nombre ?? "") + (string.IsNullOrWhiteSpace(dto.NumeroDocumento) ? "" : " - " + dto.NumeroDocumento);
-            return (dto.Id, display);
+            return (cliente.Id, cliente.ToDisplayName());
         }
     }
 }

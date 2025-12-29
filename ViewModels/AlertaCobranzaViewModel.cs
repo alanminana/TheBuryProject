@@ -5,6 +5,7 @@ namespace TheBuryProject.ViewModels
     public class AlertaCobranzaViewModel
     {
         public int Id { get; set; }
+        public byte[]? RowVersion { get; set; }
         public int CreditoId { get; set; }
         public int ClienteId { get; set; }
         public string ClienteNombre { get; set; } = string.Empty;

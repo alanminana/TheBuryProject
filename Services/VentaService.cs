@@ -17,11 +17,14 @@ namespace TheBuryProject.Services
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly ILogger<VentaService> _logger;
+        private readonly IPrecioService _precioService;
         private readonly IConfiguracionPagoService _configuracionPagoService;
         private readonly IAlertaStockService _alertaStockService;
+        private readonly IMovimientoStockService _movimientoStockService;
         private readonly IFinancialCalculationService _financialService;
         private readonly IVentaValidator _validator;
         private readonly VentaNumberGenerator _numberGenerator;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public VentaService(
             AppDbContext context,
@@ -29,18 +32,24 @@ namespace TheBuryProject.Services
             ILogger<VentaService> logger,
             IConfiguracionPagoService configuracionPagoService,
             IAlertaStockService alertaStockService,
+            IMovimientoStockService movimientoStockService,
             IFinancialCalculationService financialService,
             IVentaValidator validator,
-            VentaNumberGenerator numberGenerator)
+            VentaNumberGenerator numberGenerator,
+            IPrecioService precioService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _mapper = mapper;
             _logger = logger;
             _configuracionPagoService = configuracionPagoService;
             _alertaStockService = alertaStockService;
+            _movimientoStockService = movimientoStockService;
             _financialService = financialService;
             _validator = validator;
             _numberGenerator = numberGenerator;
+            _precioService = precioService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         #region Consultas
@@ -50,10 +59,13 @@ namespace TheBuryProject.Services
             var query = _context.Ventas
                 .Include(v => v.Cliente)
                 .Include(v => v.Credito)
-                .Include(v => v.Detalles).ThenInclude(d => d.Producto)
+                .Include(v => v.Detalles.Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted)).ThenInclude(d => d.Producto)
                 .Include(v => v.DatosTarjeta)
                 .Include(v => v.DatosCheque)
-                .Where(v => !v.IsDeleted)
+                .Where(v =>
+                    !v.IsDeleted &&
+                    (v.Cliente == null || !v.Cliente.IsDeleted) &&
+                    (v.Credito == null || (!v.Credito.IsDeleted && v.Credito.Cliente != null && !v.Credito.Cliente.IsDeleted)))
                 .AsQueryable();
 
             query = AplicarFiltros(query, filter);
@@ -71,12 +83,16 @@ namespace TheBuryProject.Services
             var venta = await _context.Ventas
                 .Include(v => v.Cliente)
                 .Include(v => v.Credito)
-                .Include(v => v.Detalles).ThenInclude(d => d.Producto)
+                .Include(v => v.Detalles.Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted)).ThenInclude(d => d.Producto)
                 .Include(v => v.Facturas)
                 .Include(v => v.DatosTarjeta).ThenInclude(dt => dt!.ConfiguracionTarjeta)
                 .Include(v => v.DatosCheque)
                 .Include(v => v.VentaCreditoCuotas.OrderBy(c => c.NumeroCuota))
-                .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
+                .FirstOrDefaultAsync(v =>
+                    v.Id == id &&
+                    !v.IsDeleted &&
+                    (v.Cliente == null || !v.Cliente.IsDeleted) &&
+                    (v.Credito == null || (!v.Credito.IsDeleted && v.Credito.Cliente != null && !v.Credito.Cliente.IsDeleted)));
 
             if (venta == null)
                 return null;
@@ -108,6 +124,8 @@ namespace TheBuryProject.Services
                 venta.Numero = await _numberGenerator.GenerarNumeroAsync(viewModel.Estado);
 
                 AgregarDetalles(venta, viewModel.Detalles);
+
+                await AplicarPrecioVigenteADetallesAsync(venta);
 
                 CalcularTotales(venta);
 
@@ -142,13 +160,29 @@ namespace TheBuryProject.Services
 
             _validator.ValidarEstadoParaEdicion(venta);
 
+            if (viewModel.RowVersion == null || viewModel.RowVersion.Length == 0)
+                throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la venta e intentá nuevamente.");
+
+            _context.Entry(venta).Property(v => v.RowVersion).OriginalValue = viewModel.RowVersion;
+
             ActualizarDatosVenta(venta, viewModel);
             ActualizarDetalles(venta, viewModel.Detalles);
+
+            await AplicarPrecioVigenteADetallesAsync(venta);
+
             CalcularTotales(venta);
 
             await VerificarAutorizacionSiCorrespondeAsync(venta, viewModel);
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new InvalidOperationException(
+                    "La venta fue modificada por otro usuario. Recargá la página y volvé a intentar.");
+            }
 
             _logger.LogInformation("Venta {Id} actualizada exitosamente", id);
             return _mapper.Map<VentaViewModel>(venta);
@@ -156,7 +190,8 @@ namespace TheBuryProject.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var venta = await _context.Ventas.FindAsync(id);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
             if (venta == null)
                 return false;
 
@@ -215,7 +250,8 @@ namespace TheBuryProject.Services
 
         public async Task AsociarCreditoAVentaAsync(int ventaId, int creditoId)
         {
-            var venta = await _context.Ventas.FindAsync(ventaId);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
             if (venta == null)
                 throw new InvalidOperationException(VentaConstants.ErrorMessages.VENTA_NO_ENCONTRADA);
 
@@ -293,7 +329,7 @@ namespace TheBuryProject.Services
         public async Task<bool> ValidarStockAsync(int ventaId)
         {
             var venta = await _context.Ventas
-                .Include(v => v.Detalles).ThenInclude(d => d.Producto)
+                .Include(v => v.Detalles.Where(d => !d.IsDeleted)).ThenInclude(d => d.Producto)
                 .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
 
             if (venta == null)
@@ -316,7 +352,8 @@ namespace TheBuryProject.Services
 
         public async Task<bool> SolicitarAutorizacionAsync(int id, string usuarioSolicita, string motivo)
         {
-            var venta = await _context.Ventas.FindAsync(id);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
             if (venta == null)
                 return false;
 
@@ -341,7 +378,14 @@ namespace TheBuryProject.Services
             venta.EstadoAutorizacion = EstadoAutorizacionVenta.Autorizada;
             venta.UsuarioAutoriza = usuarioAutoriza;
             venta.FechaAutorizacion = DateTime.Now;
-            venta.MotivoAutorizacion = motivo;
+
+            if (!string.IsNullOrWhiteSpace(motivo))
+            {
+                var prefijo = $"[Autorización {DateTime.Now:dd/MM/yyyy HH:mm} por {usuarioAutoriza}] ";
+                venta.Observaciones = string.IsNullOrWhiteSpace(venta.Observaciones)
+                    ? prefijo + motivo.Trim()
+                    : venta.Observaciones.TrimEnd() + Environment.NewLine + prefijo + motivo.Trim();
+            }
 
             await _context.SaveChangesAsync();
 
@@ -372,8 +416,8 @@ namespace TheBuryProject.Services
                 return false;
 
             var cliente = await _context.Clientes
-                .Include(c => c.Creditos)
-                .FirstOrDefaultAsync(c => c.Id == viewModel.ClienteId);
+                .Include(c => c.Creditos.Where(cr => !cr.IsDeleted))
+                .FirstOrDefaultAsync(c => c.Id == viewModel.ClienteId && !c.IsDeleted);
 
             if (cliente == null)
                 return false;
@@ -387,7 +431,8 @@ namespace TheBuryProject.Services
 
         public async Task<DatosTarjetaViewModel> CalcularCuotasTarjetaAsync(int tarjetaId, decimal monto, int cuotas)
         {
-            var configuracion = await _context.ConfiguracionesTarjeta.FindAsync(tarjetaId);
+            var configuracion = await _context.ConfiguracionesTarjeta
+                .FirstOrDefaultAsync(t => t.Id == tarjetaId && !t.IsDeleted);
             if (configuracion == null)
                 throw new InvalidOperationException("ConfiguraciÃ³n de tarjeta no encontrada");
 
@@ -422,7 +467,8 @@ namespace TheBuryProject.Services
 
         public async Task<bool> GuardarDatosTarjetaAsync(int ventaId, DatosTarjetaViewModel datosTarjeta)
         {
-            var venta = await _context.Ventas.FindAsync(ventaId);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
             if (venta == null)
                 return false;
 
@@ -467,7 +513,10 @@ namespace TheBuryProject.Services
         {
             var credito = await _context.Creditos
                 .Include(c => c.Cuotas)
-                .FirstOrDefaultAsync(c => c.Id == creditoId && !c.IsDeleted);
+                .FirstOrDefaultAsync(c => c.Id == creditoId &&
+                                          !c.IsDeleted &&
+                                          c.Cliente != null &&
+                                          !c.Cliente.IsDeleted);
 
             if (credito == null)
                 throw new InvalidOperationException(VentaConstants.ErrorMessages.CREDITO_NO_ENCONTRADO);
@@ -498,10 +547,17 @@ namespace TheBuryProject.Services
         {
             var venta = await _context.Ventas
                 .Include(v => v.Credito)
+                    .ThenInclude(c => c!.Cliente)
                 .Include(v => v.VentaCreditoCuotas.OrderBy(c => c.NumeroCuota))
-                .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
+                .FirstOrDefaultAsync(v => v.Id == ventaId &&
+                                          !v.IsDeleted &&
+                                          v.CreditoId != null &&
+                                          v.Credito != null &&
+                                          !v.Credito.IsDeleted &&
+                                          v.Credito.Cliente != null &&
+                                          !v.Credito.Cliente.IsDeleted);
 
-            if (venta == null || venta.CreditoId == null || !venta.VentaCreditoCuotas.Any())
+            if (venta == null || !venta.VentaCreditoCuotas.Any())
                 return null;
 
             var credito = venta.Credito!;
@@ -539,7 +595,10 @@ namespace TheBuryProject.Services
         public async Task<bool> ValidarDisponibilidadCreditoAsync(int creditoId, decimal monto)
         {
             var credito = await _context.Creditos
-                .FirstOrDefaultAsync(c => c.Id == creditoId && !c.IsDeleted);
+                .FirstOrDefaultAsync(c => c.Id == creditoId &&
+                                          !c.IsDeleted &&
+                                          c.Cliente != null &&
+                                          !c.Cliente.IsDeleted);
 
             if (credito == null || credito.Estado != EstadoCredito.Activo)
                 return false;
@@ -558,7 +617,8 @@ namespace TheBuryProject.Services
 
         public async Task<bool> GuardarDatosChequeAsync(int ventaId, DatosChequeViewModel datosCheque)
         {
-            var venta = await _context.Ventas.FindAsync(ventaId);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
             if (venta == null)
                 return false;
 
@@ -607,16 +667,21 @@ namespace TheBuryProject.Services
         private async Task<Venta?> CargarVentaCompleta(int id)
         {
             return await _context.Ventas
-                .Include(v => v.Detalles).ThenInclude(d => d.Producto)
+                .Include(v => v.Detalles.Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted)).ThenInclude(d => d.Producto)
                 .Include(v => v.Credito)
                 .Include(v => v.Cliente)
                 .Include(v => v.VentaCreditoCuotas)
-                .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
+                .FirstOrDefaultAsync(v =>
+                    v.Id == id &&
+                    !v.IsDeleted &&
+                    (v.Cliente == null || !v.Cliente.IsDeleted) &&
+                    (v.Credito == null || (!v.Credito.IsDeleted && v.Credito.Cliente != null && !v.Credito.Cliente.IsDeleted)));
         }
 
         private async Task<Venta?> ObtenerVentaPendienteAutorizacionAsync(int id)
         {
-            var venta = await _context.Ventas.FindAsync(id);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
             if (venta == null)
                 return null;
 
@@ -626,7 +691,7 @@ namespace TheBuryProject.Services
 
         private void CalcularTotales(Venta venta)
         {
-            var detallesList = venta.Detalles.ToList();
+            var detallesList = venta.Detalles.Where(d => !d.IsDeleted).ToList();
 
             var detalleRequests = detallesList
                 .Select(d => new DetalleCalculoVentaRequest
@@ -689,7 +754,10 @@ namespace TheBuryProject.Services
 
         private void ActualizarDetalles(Venta venta, List<VentaDetalleViewModel> detallesVM)
         {
-            _context.VentaDetalles.RemoveRange(venta.Detalles);
+            foreach (var existente in venta.Detalles.Where(d => !d.IsDeleted))
+            {
+                existente.IsDeleted = true;
+            }
 
             foreach (var detalleVM in detallesVM)
             {
@@ -711,45 +779,91 @@ namespace TheBuryProject.Services
 
         private async Task DescontarStockYRegistrarMovimientos(Venta venta)
         {
-            foreach (var detalle in venta.Detalles)
-            {
-                var stockAnterior = detalle.Producto.StockActual;
-                detalle.Producto.StockActual -= detalle.Cantidad;
+            var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
 
-                var movimiento = new MovimientoStock
-                {
-                    ProductoId = detalle.ProductoId,
-                    Tipo = TipoMovimiento.Salida,
-                    Cantidad = detalle.Cantidad,
-                    StockAnterior = stockAnterior,
-                    StockNuevo = detalle.Producto.StockActual,
-                    Referencia = $"Venta {venta.Numero}",
-                    Motivo = $"ConfirmaciÃ³n de venta - Cliente: {venta.Cliente.Nombre}"
-                };
+            var referencia = $"Venta {venta.Numero}";
+            var motivo = $"Confirmación de venta - Cliente: {venta.Cliente?.Nombre ?? "(sin cliente)"}";
 
-                _context.MovimientosStock.Add(movimiento);
-            }
+            var salidas = venta.Detalles
+                .Where(d => !d.IsDeleted)
+                .Select(d => (d.ProductoId, (decimal)d.Cantidad, (string?)referencia))
+                .ToList();
+
+            await _movimientoStockService.RegistrarSalidasAsync(
+                salidas,
+                motivo,
+                usuario);
         }
 
         private async Task DevolverStock(Venta venta, string motivo)
         {
-            foreach (var detalle in venta.Detalles)
+            var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
+
+            var referencia = $"Cancelación Venta {venta.Numero}";
+
+            var entradas = venta.Detalles
+                .Where(d => !d.IsDeleted)
+                .Select(d => (d.ProductoId, (decimal)d.Cantidad, (string?)referencia))
+                .ToList();
+
+            await _movimientoStockService.RegistrarEntradasAsync(
+                entradas,
+                motivo,
+                usuario);
+        }
+
+        private async Task AplicarPrecioVigenteADetallesAsync(Venta venta)
+        {
+            var detalles = venta.Detalles.Where(d => !d.IsDeleted).ToList();
+            if (detalles.Count == 0)
+                return;
+
+            var listaPredeterminada = await _precioService.GetListaPredeterminadaAsync();
+            var productoIds = detalles.Select(d => d.ProductoId).Distinct().ToList();
+
+            var preciosListaPorProductoId = new Dictionary<int, decimal>();
+            if (listaPredeterminada != null && productoIds.Count > 0)
             {
-                var stockAnterior = detalle.Producto.StockActual;
-                detalle.Producto.StockActual += detalle.Cantidad;
+                var fecha = DateTime.UtcNow;
 
-                var movimiento = new MovimientoStock
+                var precios = await _context.ProductosPrecios
+                    .AsNoTracking()
+                    .Where(p => productoIds.Contains(p.ProductoId)
+                             && p.ListaId == listaPredeterminada.Id
+                             && p.VigenciaDesde <= fecha
+                             && (p.VigenciaHasta == null || p.VigenciaHasta >= fecha)
+                             && p.EsVigente
+                             && !p.IsDeleted)
+                    .Select(p => new { p.ProductoId, p.Precio })
+                    .ToListAsync();
+
+                // Defensive: si por datos sucios hubiese duplicados, priorizar el último leído.
+                foreach (var p in precios)
+                    preciosListaPorProductoId[p.ProductoId] = p.Precio;
+            }
+
+            var productos = await _context.Productos
+                .AsNoTracking()
+                .Where(p => productoIds.Contains(p.Id) && !p.IsDeleted)
+                .Select(p => new { p.Id, p.PrecioVenta })
+                .ToDictionaryAsync(p => p.Id, p => p.PrecioVenta);
+
+            var cache = new Dictionary<int, decimal>();
+
+            foreach (var detalle in detalles)
+            {
+                if (!cache.TryGetValue(detalle.ProductoId, out var precioUnitario))
                 {
-                    ProductoId = detalle.ProductoId,
-                    Tipo = TipoMovimiento.Entrada,
-                    Cantidad = detalle.Cantidad,
-                    StockAnterior = stockAnterior,
-                    StockNuevo = detalle.Producto.StockActual,
-                    Referencia = $"CancelaciÃ³n Venta {venta.Numero}",
-                    Motivo = motivo
-                };
+                    productos.TryGetValue(detalle.ProductoId, out var fallbackPrecioVenta);
+                    precioUnitario = fallbackPrecioVenta;
 
-                _context.MovimientosStock.Add(movimiento);
+                    if (preciosListaPorProductoId.TryGetValue(detalle.ProductoId, out var precioLista))
+                        precioUnitario = precioLista;
+
+                    cache[detalle.ProductoId] = precioUnitario;
+                }
+
+                detalle.PrecioUnitario = precioUnitario;
             }
         }
 
@@ -758,7 +872,11 @@ namespace TheBuryProject.Services
             if (!venta.CreditoId.HasValue || !venta.VentaCreditoCuotas.Any())
                 return;
 
-            var credito = venta.Credito ?? await _context.Creditos.FindAsync(venta.CreditoId);
+            var credito = venta.Credito ?? await _context.Creditos
+                .FirstOrDefaultAsync(c => c.Id == venta.CreditoId!.Value &&
+                                          !c.IsDeleted &&
+                                          c.Cliente != null &&
+                                          !c.Cliente.IsDeleted);
             if (credito == null)
                 return;
 
@@ -775,10 +893,13 @@ namespace TheBuryProject.Services
 
         private async Task GenerarAlertasStockBajo(Venta venta)
         {
-            foreach (var detalle in venta.Detalles)
-            {
-                await _alertaStockService.VerificarYGenerarAlertaAsync(detalle.ProductoId);
-            }
+            var productoIds = venta.Detalles
+                .Where(d => !d.IsDeleted)
+                .Select(d => d.ProductoId)
+                .Distinct()
+                .ToList();
+
+            await _alertaStockService.VerificarYGenerarAlertasAsync(productoIds);
         }
 
         private async Task VerificarAutorizacionSiCorrespondeAsync(Venta venta, VentaViewModel viewModel)
@@ -786,8 +907,8 @@ namespace TheBuryProject.Services
             if (viewModel.TipoPago == TipoPago.CreditoPersonall)
             {
                 var cliente = await _context.Clientes
-                    .Include(c => c.Creditos)
-                    .FirstOrDefaultAsync(c => c.Id == viewModel.ClienteId);
+                    .Include(c => c.Creditos.Where(cr => !cr.IsDeleted))
+                    .FirstOrDefaultAsync(c => c.Id == viewModel.ClienteId && !c.IsDeleted);
 
                 if (cliente != null)
                 {
@@ -824,11 +945,16 @@ namespace TheBuryProject.Services
 
         private async Task GuardarCuotasCreditoPersonallAsync(int ventaId, DatosCreditoPersonallViewModel datos)
         {
-            var venta = await _context.Ventas.FindAsync(ventaId);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
             if (venta == null)
                 throw new InvalidOperationException(VentaConstants.ErrorMessages.VENTA_NO_ENCONTRADA);
 
-            var credito = await _context.Creditos.FindAsync(datos.CreditoId);
+            var credito = await _context.Creditos
+                .FirstOrDefaultAsync(c => c.Id == datos.CreditoId &&
+                                          !c.IsDeleted &&
+                                          c.Cliente != null &&
+                                          !c.Cliente.IsDeleted);
             if (credito == null)
                 throw new InvalidOperationException(VentaConstants.ErrorMessages.CREDITO_NO_ENCONTRADO);
 
@@ -858,7 +984,14 @@ namespace TheBuryProject.Services
         {
             if (venta.Credito == null)
             {
-                venta.Credito = await _context.Creditos.FindAsync(venta.CreditoId);
+                if (venta.CreditoId.HasValue)
+                {
+                    venta.Credito = await _context.Creditos
+                        .FirstOrDefaultAsync(c => c.Id == venta.CreditoId.Value &&
+                                                  !c.IsDeleted &&
+                                                  c.Cliente != null &&
+                                                  !c.Cliente.IsDeleted);
+                }
             }
 
             if (venta.Credito == null)

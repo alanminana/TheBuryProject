@@ -8,7 +8,7 @@ namespace TheBuryProject.Models.Entities;
 /// Asocia un rol con un permiso específico (claim)
 /// Permite gestión granular de permisos por rol
 /// </summary>
-public class RolPermiso : BaseEntity
+public class RolPermiso : AuditableEntity
 {
     /// <summary>
     /// ID del rol (Identity)

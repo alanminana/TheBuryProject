@@ -3,7 +3,7 @@ using TheBuryProject.Models.Entities;
 namespace TheBuryProject.Services.Interfaces;
 
 /// <summary>
-/// Servicio para gestión de devoluciones, garantías y RMAs
+/// Servicio para gestiï¿½n de devoluciones, garantï¿½as y RMAs
 /// </summary>
 public interface IDevolucionService
 {
@@ -18,15 +18,15 @@ public interface IDevolucionService
     Task<Devolucion?> ObtenerDevolucionPorNumeroAsync(string numeroDevolucion);
     Task<Devolucion> CrearDevolucionAsync(Devolucion devolucion, List<DevolucionDetalle> detalles);
     Task<Devolucion> ActualizarDevolucionAsync(Devolucion devolucion);
-    Task<Devolucion> AprobarDevolucionAsync(int id, string aprobadoPor);
-    Task<Devolucion> RechazarDevolucionAsync(int id, string motivo);
-    Task<Devolucion> CompletarDevolucionAsync(int id);
+    Task<Devolucion> AprobarDevolucionAsync(int id, string aprobadoPor, byte[] rowVersion);
+    Task<Devolucion> RechazarDevolucionAsync(int id, string motivo, byte[] rowVersion);
+    Task<Devolucion> CompletarDevolucionAsync(int id, byte[] rowVersion);
     Task<string> GenerarNumeroDevolucionAsync();
     Task<bool> PuedeDevolverVentaAsync(int ventaId);
     Task<int> ObtenerDiasDesdeVentaAsync(int ventaId);
 
     // ============================================
-    // DETALLES DE DEVOLUCIÓN
+    // DETALLES DE DEVOLUCIï¿½N
     // ============================================
 
     Task<List<DevolucionDetalle>> ObtenerDetallesDevolucionAsync(int devolucionId);
@@ -35,7 +35,7 @@ public interface IDevolucionService
     Task<bool> VerificarAccesoriosAsync(int detalleId, bool completos, string? faltantes);
 
     // ============================================
-    // GARANTÍAS
+    // GARANTï¿½AS
     // ============================================
 
     Task<List<Garantia>> ObtenerTodasGarantiasAsync();
@@ -58,7 +58,7 @@ public interface IDevolucionService
     Task<List<RMA>> ObtenerRMAsPorProveedorAsync(int proveedorId);
     Task<RMA?> ObtenerRMAAsync(int id);
     Task<RMA?> ObtenerRMAPorNumeroAsync(string numeroRMA);
-    Task<RMA> CrearRMAAsync(RMA rma);
+    Task<RMA> CrearRMAAsync(RMA rma, byte[] devolucionRowVersion);
     Task<RMA> ActualizarRMAAsync(RMA rma);
     Task<RMA> AprobarRMAProveedorAsync(int rmaId, string numeroRMAProveedor);
     Task<RMA> RegistrarEnvioRMAAsync(int rmaId, string numeroGuia);
@@ -67,7 +67,7 @@ public interface IDevolucionService
     Task<string> GenerarNumeroRMAAsync();
 
     // ============================================
-    // NOTAS DE CRÉDITO
+    // NOTAS DE CRï¿½DITO
     // ============================================
 
     Task<List<NotaCredito>> ObtenerTodasNotasCreditoAsync();
@@ -81,7 +81,7 @@ public interface IDevolucionService
     Task<string> GenerarNumeroNotaCreditoAsync();
 
     // ============================================
-    // REPORTES Y ESTADÍSTICAS
+    // REPORTES Y ESTADï¿½STICAS
     // ============================================
 
     Task<Dictionary<MotivoDevolucion, int>> ObtenerEstadisticasMotivoDevolucionAsync(DateTime? desde = null, DateTime? hasta = null);

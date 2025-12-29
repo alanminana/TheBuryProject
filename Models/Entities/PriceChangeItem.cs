@@ -5,9 +5,9 @@ namespace TheBuryProject.Models.Entities;
 
 /// <summary>
 /// Representa el detalle de un cambio de precio individual dentro de un batch
-/// Mantiene el estado antes/después para auditoría y posible reversión
+/// Mantiene el estado antes/despuï¿½s para auditorï¿½a y posible reversiï¿½n
 /// </summary>
-public class PriceChangeItem : BaseEntity
+public class PriceChangeItem  : AuditableEntity
 {
     /// <summary>
     /// ID del batch al que pertenece este item
@@ -28,7 +28,7 @@ public class PriceChangeItem : BaseEntity
     public int ListaId { get; set; }
 
     /// <summary>
-    /// Código del producto (desnormalizado para reporting)
+    /// Cï¿½digo del producto (desnormalizado para reporting)
     /// </summary>
     [Required]
     [StringLength(50)]
@@ -48,7 +48,7 @@ public class PriceChangeItem : BaseEntity
     public decimal PrecioAnterior { get; set; }
 
     /// <summary>
-    /// Precio nuevo (después del cambio)
+    /// Precio nuevo (despuï¿½s del cambio)
     /// </summary>
     [Required]
     public decimal PrecioNuevo { get; set; }
@@ -82,7 +82,7 @@ public class PriceChangeItem : BaseEntity
 
     /// <summary>
     /// Indica si hubo alguna advertencia en este item
-    /// Ejemplo: margen por debajo del mínimo, precio negativo, etc.
+    /// Ejemplo: margen por debajo del mï¿½nimo, precio negativo, etc.
     /// </summary>
     public bool TieneAdvertencia { get; set; } = false;
 
@@ -102,7 +102,7 @@ public class PriceChangeItem : BaseEntity
     /// </summary>
     public bool Revertido { get; set; } = false;
 
-    // Navegación
+    // Navegaciï¿½n
     public virtual PriceChangeBatch Batch { get; set; } = null!;
     public virtual Producto Producto { get; set; } = null!;
     public virtual ListaPrecio Lista { get; set; } = null!;

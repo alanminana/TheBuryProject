@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Alerta de cobranza generada por el sistema
     /// </summary>
-    public class AlertaCobranza : BaseEntity
+    public class AlertaCobranza  : AuditableEntity
     {
         public int CreditoId { get; set; }
         public virtual Credito? Credito { get; set; }

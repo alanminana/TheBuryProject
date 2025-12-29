@@ -8,9 +8,10 @@ namespace TheBuryProject.Models.Entities
 {
     /// <summary>
     /// Representa un cliente del sistema que puede solicitar créditos.
-    /// La documentación se gestiona en la tabla DocumentoCliente (no en booleanos persistidos en esta entidad).
+    /// La documentación principal se gestiona en la tabla DocumentoCliente.
+    /// Además existen flags históricos (servicios/impuesto/veraz) que se persisten por compatibilidad.
     /// </summary>
-    public class Cliente : BaseEntity
+    public class Cliente : AuditableEntity
     {
         // Datos Personales
         [Required]
@@ -120,13 +121,12 @@ namespace TheBuryProject.Models.Entities
             set => Sueldo = value;
         }
 
-        // Estos flags NO existen como columnas en tu tabla (según el error).
-        // Si los querés persistir, hay que crear migración y agregarlas a la DB.
-        [NotMapped] public bool TieneImpuesto { get; set; } = false;
-        [NotMapped] public bool TieneServicioAgua { get; set; } = false;
-        [NotMapped] public bool TieneServicioGas { get; set; } = false;
-        [NotMapped] public bool TieneServicioLuz { get; set; } = false;
-        [NotMapped] public bool TieneVeraz { get; set; } = false;
+        // Flags de documentación y servicios (mapeados en la base según migraciones).
+        public bool TieneImpuesto { get; set; } = false;
+        public bool TieneServicioAgua { get; set; } = false;
+        public bool TieneServicioGas { get; set; } = false;
+        public bool TieneServicioLuz { get; set; } = false;
+        public bool TieneVeraz { get; set; } = false;
 
         // Garante asociado (si el cliente tiene un garante asignado)
         public int? GaranteId { get; set; }
@@ -136,5 +136,6 @@ namespace TheBuryProject.Models.Entities
         public virtual ICollection<Credito> Creditos { get; set; } = new List<Credito>();
         public virtual ICollection<Garante> ComoGarante { get; set; } = new List<Garante>();
         public virtual ICollection<DocumentoCliente> Documentos { get; set; } = new List<DocumentoCliente>();
+
     }
 }

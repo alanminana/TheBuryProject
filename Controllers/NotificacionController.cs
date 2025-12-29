@@ -82,7 +82,7 @@ public class NotificacionController : ControllerBase
     /// Marcar notificación como leída
     /// </summary>
     [HttpPost("{id}/marcarLeida")]
-    public async Task<IActionResult> MarcarComoLeida(int id)
+    public async Task<IActionResult> MarcarComoLeida(int id, [FromQuery] byte[]? rowVersion = null)
     {
         try
         {
@@ -92,9 +92,13 @@ public class NotificacionController : ControllerBase
                 return Unauthorized();
             }
 
-            await _notificacionService.MarcarComoLeidaAsync(id, user.UserName ?? user.Email ?? "");
+            await _notificacionService.MarcarComoLeidaAsync(id, user.UserName ?? user.Email ?? "", rowVersion);
 
             return Ok(new { success = true });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -132,7 +136,7 @@ public class NotificacionController : ControllerBase
     /// Eliminar notificación
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> EliminarNotificacion(int id)
+    public async Task<IActionResult> EliminarNotificacion(int id, [FromQuery] byte[]? rowVersion = null)
     {
         try
         {
@@ -142,9 +146,13 @@ public class NotificacionController : ControllerBase
                 return Unauthorized();
             }
 
-            await _notificacionService.EliminarNotificacionAsync(id, user.UserName ?? user.Email ?? "");
+            await _notificacionService.EliminarNotificacionAsync(id, user.UserName ?? user.Email ?? "", rowVersion);
 
             return Ok(new { success = true });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
         }
         catch (Exception ex)
         {

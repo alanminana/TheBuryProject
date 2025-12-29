@@ -14,7 +14,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<Caja?> ObtenerCajaPorIdAsync(int id);
         Task<Caja> CrearCajaAsync(CajaViewModel model);
         Task<Caja> ActualizarCajaAsync(int id, CajaViewModel model);
-        Task EliminarCajaAsync(int id);
+        Task EliminarCajaAsync(int id, byte[]? rowVersion = null);
         Task<bool> ExisteCodigoCajaAsync(string codigo, int? cajaIdExcluir = null);
 
         #endregion

@@ -39,6 +39,7 @@ namespace TheBuryProject.Services
         {
             var documentos = await _context.Set<DocumentoCliente>()
                 .Include(d => d.Cliente)
+                .Where(d => !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted)
                 .OrderByDescending(d => d.FechaSubida)
                 .ToListAsync();
 
@@ -49,7 +50,7 @@ namespace TheBuryProject.Services
         {
             var documento = await _context.Set<DocumentoCliente>()
                 .Include(d => d.Cliente)
-                .FirstOrDefaultAsync(d => d.Id == id);
+                .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted);
 
             return documento != null ? _mapper.Map<DocumentoClienteViewModel>(documento) : null;
         }
@@ -58,7 +59,7 @@ namespace TheBuryProject.Services
         {
             var documentos = await _context.Set<DocumentoCliente>()
                 .Include(d => d.Cliente)
-                .Where(d => d.ClienteId == clienteId)
+                .Where(d => d.ClienteId == clienteId && !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted)
                 .OrderByDescending(d => d.FechaSubida)
                 .ToListAsync();
 
@@ -167,7 +168,7 @@ namespace TheBuryProject.Services
             };
 
             var documentosCliente = await _context.Set<DocumentoCliente>()
-                .Where(d => d.ClienteId == clienteId)
+                .Where(d => d.ClienteId == clienteId && !d.IsDeleted)
                 .ToListAsync();
 
             var faltantes = new List<TipoDocumentoCliente>();
@@ -194,7 +195,7 @@ namespace TheBuryProject.Services
             try
             {
                 var documento = await _context.Set<DocumentoCliente>()
-                    .FirstOrDefaultAsync(d => d.Id == id);
+                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
 
                 if (documento == null)
                     return false;
@@ -223,7 +224,7 @@ namespace TheBuryProject.Services
             try
             {
                 var documento = await _context.Set<DocumentoCliente>()
-                    .FirstOrDefaultAsync(d => d.Id == id);
+                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
 
                 if (documento == null)
                     return false;
@@ -251,7 +252,7 @@ namespace TheBuryProject.Services
             try
             {
                 var documento = await _context.Set<DocumentoCliente>()
-                    .FirstOrDefaultAsync(d => d.Id == id);
+                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
 
                 if (documento == null)
                     return false;
@@ -282,7 +283,7 @@ namespace TheBuryProject.Services
             try
             {
                 var documento = await _context.Set<DocumentoCliente>()
-                    .FirstOrDefaultAsync(d => d.Id == id);
+                    .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
 
                 if (documento == null)
                     throw new Exception("Documento no encontrado");
@@ -307,6 +308,7 @@ namespace TheBuryProject.Services
             {
                 var query = _context.Set<DocumentoCliente>()
                     .Include(d => d.Cliente)
+                    .Where(d => !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted)
                     .AsQueryable();
 
                 if (filtro.ClienteId.HasValue)
@@ -352,18 +354,19 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var documentosVencidos = await _context.Set<DocumentoCliente>()
-                    .Where(d => d.Estado == EstadoDocumento.Verificado
+                var today = DateTime.Today;
+                var now = DateTime.Now;
+
+                var updated = await _context.Set<DocumentoCliente>()
+                    .Where(d => !d.IsDeleted
+                             && d.Estado == EstadoDocumento.Verificado
                              && d.FechaVencimiento.HasValue
-                             && d.FechaVencimiento.Value < DateTime.Today)
-                    .ToListAsync();
+                             && d.FechaVencimiento.Value < today)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(d => d.Estado, EstadoDocumento.Vencido)
+                        .SetProperty(d => d.UpdatedAt, now));
 
-                foreach (var doc in documentosVencidos)
-                    doc.Estado = EstadoDocumento.Vencido;
-
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Se marcaron {Count} documentos como vencidos", documentosVencidos.Count);
+                _logger.LogInformation("Se marcaron {Count} documentos como vencidos", updated);
             }
             catch (Exception ex)
             {

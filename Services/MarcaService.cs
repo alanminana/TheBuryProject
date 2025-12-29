@@ -51,7 +51,7 @@ namespace TheBuryProject.Services
                 return await _context.Marcas
                     .Include(m => m.Parent)
                     .Include(m => m.Children)
-                    .FirstOrDefaultAsync(m => m.Id == id);
+                    .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -70,7 +70,7 @@ namespace TheBuryProject.Services
             try
             {
                 return await _context.Marcas
-                    .FirstOrDefaultAsync(m => m.Codigo == codigo);
+                    .FirstOrDefaultAsync(m => m.Codigo == codigo && !m.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -108,7 +108,7 @@ namespace TheBuryProject.Services
                 // Validar que el ParentId exista si se especifica
                 if (marca.ParentId.HasValue)
                 {
-                    var parentExists = await _context.Marcas.AnyAsync(m => m.Id == marca.ParentId.Value);
+                    var parentExists = await _context.Marcas.AnyAsync(m => m.Id == marca.ParentId.Value && !m.IsDeleted);
                     if (!parentExists)
                     {
                         throw new InvalidOperationException($"La marca padre con Id {marca.ParentId.Value} no existe");
@@ -179,7 +179,7 @@ namespace TheBuryProject.Services
                 // Validar que el ParentId exista si se especifica
                 if (marca.ParentId.HasValue)
                 {
-                    var parentExists = await _context.Marcas.AnyAsync(m => m.Id == marca.ParentId.Value);
+                    var parentExists = await _context.Marcas.AnyAsync(m => m.Id == marca.ParentId.Value && !m.IsDeleted);
                     if (!parentExists)
                     {
                         throw new InvalidOperationException($"La marca padre con Id {marca.ParentId.Value} no existe");
@@ -232,17 +232,25 @@ namespace TheBuryProject.Services
             var shouldCloseConnection = await EnsureConnectionOpenAsync();
             try
             {
-                var marca = await _context.Marcas.FindAsync(id);
-                if (marca == null)
-                {
+                var marca = await _context.Marcas
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(m => m.Id == id);
+
+                if (marca == null || marca.IsDeleted)
                     return false;
-                }
 
                 // Verificar si tiene submarcas
-                var hasChildren = await _context.Marcas.AnyAsync(m => m.ParentId == id);
+                var hasChildren = await _context.Marcas.AnyAsync(m => m.ParentId == id && !m.IsDeleted);
                 if (hasChildren)
                 {
                     throw new InvalidOperationException("No se puede eliminar una marca que tiene submarcas");
+                }
+
+                // Verificar si tiene productos asociados
+                var hasProductos = await _context.Productos.AnyAsync(p => p.MarcaId == id && !p.IsDeleted);
+                if (hasProductos)
+                {
+                    throw new InvalidOperationException("No se puede eliminar una marca que tiene productos asociados");
                 }
 
                 // Soft delete
@@ -269,7 +277,7 @@ namespace TheBuryProject.Services
             var shouldCloseConnection = await EnsureConnectionOpenAsync();
             try
             {
-                var query = _context.Marcas.Where(m => m.Codigo == codigo);
+                var query = _context.Marcas.Where(m => m.Codigo == codigo && !m.IsDeleted);
 
                 if (excludeId.HasValue)
                 {
@@ -360,6 +368,7 @@ namespace TheBuryProject.Services
                 var query = _context.Marcas
                     .Include(m => m.Parent)
                     .AsNoTracking()
+                    .Where(m => !m.IsDeleted)
                     .AsQueryable();
 
                 // Búsqueda por texto

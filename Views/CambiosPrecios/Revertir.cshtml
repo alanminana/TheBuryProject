@@ -80,6 +80,7 @@
                     <form asp-action="RevertirConfirmed" method="post" class="mt-2">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.BatchId" />
+                        <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(Model.RowVersion)" />
 
                         <div class="mb-3">
                             <label for="motivo" class="form-label small fw-semibold">

@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Notificaci�n en el sistema
     /// </summary>
-    public class Notificacion : BaseEntity
+    public class Notificacion  : AuditableEntity
     {
         [Required]
         [StringLength(100)]

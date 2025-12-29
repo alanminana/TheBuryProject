@@ -98,8 +98,7 @@ namespace TheBuryProject.Controllers
                         Descripcion = viewModel.Descripcion,
                         ParentId = viewModel.ParentId,
                         ControlSerieDefault = viewModel.ControlSerieDefault,
-                        Activo = viewModel.Activo,
-                        RowVersion = viewModel.RowVersion
+                        Activo = viewModel.Activo
                     };
 
                     await _categoriaService.CreateAsync(categoria);
@@ -170,6 +169,14 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
+                    var rowVersion = viewModel.RowVersion;
+                    if (rowVersion is null || rowVersion.Length == 0)
+                    {
+                        ModelState.AddModelError("", "No se recibió la versión de fila (RowVersion). Recargue la página e intente nuevamente.");
+                        await CargarCategoriasParaDropdown(viewModel.ParentId, id);
+                        return View(viewModel);
+                    }
+
                     // Verificar que el código no exista (excluyendo el registro actual)
                     if (await _categoriaService.ExistsCodigoAsync(viewModel.Codigo, id))
                     {
@@ -187,7 +194,7 @@ namespace TheBuryProject.Controllers
                         ParentId = viewModel.ParentId,
                         ControlSerieDefault = viewModel.ControlSerieDefault,
                         Activo = viewModel.Activo,
-                        RowVersion = viewModel.RowVersion
+                        RowVersion = rowVersion
                     };
 
                     await _categoriaService.UpdateAsync(categoria);
@@ -233,7 +240,7 @@ namespace TheBuryProject.Controllers
                     Nombre = categoria.Nombre,
                     Descripcion = categoria.Descripcion,
                     ParentId = categoria.ParentId,
-                    ParentNombre = categoria.Parent?.Nombre,
+                    ParentNombre = categoria.Parent != null && !categoria.Parent.IsDeleted ? categoria.Parent.Nombre : null,
                     ControlSerieDefault = categoria.ControlSerieDefault
                 };
 

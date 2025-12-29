@@ -65,6 +65,7 @@
 
         <!-- Motivo de cancelación -->
         <form asp-action="Cancelar" method="post">
+            @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
 
             <div class="card shadow-sm border-0 mb-4">

@@ -5,9 +5,9 @@ namespace TheBuryProject.Models.Entities
 {
     /// <summary>
     /// Entidad que registra el historial de cambios de precios de productos
-    /// Permite auditoría completa y función de Undo
+    /// Permite auditorï¿½a completa y funciï¿½n de Undo
     /// </summary>
-    public class PrecioHistorico : BaseEntity
+    public class PrecioHistorico  : AuditableEntity
     {
         /// <summary>
         /// ID del producto al que pertenece este registro de precio
@@ -22,7 +22,7 @@ namespace TheBuryProject.Models.Entities
         public decimal PrecioCompraAnterior { get; set; }
 
         /// <summary>
-        /// Nuevo precio de compra después del cambio
+        /// Nuevo precio de compra despuï¿½s del cambio
         /// </summary>
         [Required]
         public decimal PrecioCompraNuevo { get; set; }
@@ -34,14 +34,14 @@ namespace TheBuryProject.Models.Entities
         public decimal PrecioVentaAnterior { get; set; }
 
         /// <summary>
-        /// Nuevo precio de venta después del cambio
+        /// Nuevo precio de venta despuï¿½s del cambio
         /// </summary>
         [Required]
         public decimal PrecioVentaNuevo { get; set; }
 
         /// <summary>
         /// Motivo del cambio de precio (opcional)
-        /// Ej: "Ajuste por inflación", "Cambio de proveedor", "Promoción"
+        /// Ej: "Ajuste por inflaciï¿½n", "Cambio de proveedor", "Promociï¿½n"
         /// </summary>
         [StringLength(500)]
         public string? MotivoCambio { get; set; }
@@ -53,13 +53,13 @@ namespace TheBuryProject.Models.Entities
         public bool PuedeRevertirse { get; set; } = true;
 
         /// <summary>
-        /// Fecha en que se realizó el cambio de precio
+        /// Fecha en que se realizï¿½ el cambio de precio
         /// </summary>
         [Required]
         public DateTime FechaCambio { get; set; }
 
         /// <summary>
-        /// Usuario que realizó el cambio (para auditoría)
+        /// Usuario que realizï¿½ el cambio (para auditorï¿½a)
         /// </summary>
         [Required]
         [StringLength(100)]

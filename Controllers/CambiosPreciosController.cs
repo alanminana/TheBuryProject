@@ -213,6 +213,7 @@ public class CambiosPreciosController : Controller
             var viewModel = new SimulacionViewModel
             {
                 BatchId = batch.Id,
+                RowVersion = batch.RowVersion,
                 Nombre = batch.Nombre,
                 TipoCambio = batch.TipoCambio,
                 TipoAplicacion = batch.TipoAplicacion,
@@ -282,6 +283,7 @@ public class CambiosPreciosController : Controller
             var viewModel = new AutorizarBatchViewModel
             {
                 BatchId = batch.Id,
+                RowVersion = batch.RowVersion,
                 Nombre = batch.Nombre,
                 TipoCambio = batch.TipoCambio,
                 ValorCambio = batch.ValorCambio,
@@ -307,15 +309,20 @@ public class CambiosPreciosController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionAprobar)]
-    public async Task<IActionResult> Aprobar(int id, string? notas)
+    public async Task<IActionResult> Aprobar(int id, byte[] rowVersion, string? notas)
     {
         try
         {
             var aprobadoPor = User.Identity?.Name ?? "Sistema";
-            var batch = await _precioService.AprobarBatchAsync(id, aprobadoPor, notas);
+            var batch = await _precioService.AprobarBatchAsync(id, aprobadoPor, rowVersion, notas);
 
             TempData["Success"] = $"Batch '{batch.Nombre}' aprobado exitosamente.";
             return RedirectToAction(nameof(Preview), new { id = batch.Id });
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            TempData["Error"] = "El batch fue modificado por otro usuario. Recargue y reintente.";
+            return RedirectToAction(nameof(Autorizar), new { id });
         }
         catch (Exception ex)
         {
@@ -331,7 +338,7 @@ public class CambiosPreciosController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionAprobar)]
-    public async Task<IActionResult> Rechazar(int id, string motivo)
+    public async Task<IActionResult> Rechazar(int id, byte[] rowVersion, string motivo)
     {
         if (string.IsNullOrWhiteSpace(motivo))
         {
@@ -342,10 +349,15 @@ public class CambiosPreciosController : Controller
         try
         {
             var rechazadoPor = User.Identity?.Name ?? "Sistema";
-            var batch = await _precioService.RechazarBatchAsync(id, rechazadoPor, motivo);
+            var batch = await _precioService.RechazarBatchAsync(id, rechazadoPor, rowVersion, motivo);
 
             TempData["Success"] = $"Batch '{batch.Nombre}' rechazado.";
             return RedirectToAction(nameof(Index));
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            TempData["Error"] = "El batch fue modificado por otro usuario. Recargue y reintente.";
+            return RedirectToAction(nameof(Autorizar), new { id });
         }
         catch (Exception ex)
         {
@@ -361,15 +373,20 @@ public class CambiosPreciosController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionAprobar)]
-    public async Task<IActionResult> Cancelar(int id, string? motivo)
+    public async Task<IActionResult> Cancelar(int id, byte[] rowVersion, string? motivo)
     {
         try
         {
             var canceladoPor = User.Identity?.Name ?? "Sistema";
-            var batch = await _precioService.CancelarBatchAsync(id, canceladoPor, motivo);
+            var batch = await _precioService.CancelarBatchAsync(id, canceladoPor, rowVersion, motivo);
 
             TempData["Success"] = $"Batch '{batch.Nombre}' cancelado.";
             return RedirectToAction(nameof(Index));
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            TempData["Error"] = "El batch fue modificado por otro usuario. Recargue y reintente.";
+            return RedirectToAction(nameof(Preview), new { id });
         }
         catch (Exception ex)
         {
@@ -408,6 +425,7 @@ public class CambiosPreciosController : Controller
             var viewModel = new AplicarBatchViewModel
             {
                 BatchId = batch.Id,
+                RowVersion = batch.RowVersion,
                 Nombre = batch.Nombre,
                 CantidadProductos = batch.CantidadProductos,
                 AprobadoPor = batch.AprobadoPor,
@@ -431,15 +449,20 @@ public class CambiosPreciosController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionAplicar)]
-    public async Task<IActionResult> AplicarConfirmed(int id, DateTime? fechaVigencia)
+    public async Task<IActionResult> AplicarConfirmed(int id, byte[] rowVersion, DateTime? fechaVigencia)
     {
         try
         {
             var aplicadoPor = User.Identity?.Name ?? "Sistema";
-            var batch = await _precioService.AplicarBatchAsync(id, aplicadoPor, fechaVigencia);
+            var batch = await _precioService.AplicarBatchAsync(id, aplicadoPor, rowVersion, fechaVigencia);
 
             TempData["Success"] = $"Batch '{batch.Nombre}' aplicado exitosamente. {batch.CantidadProductos} precios actualizados.";
             return RedirectToAction(nameof(Preview), new { id = batch.Id });
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            TempData["Error"] = "El batch fue modificado por otro usuario. Recargue y reintente.";
+            return RedirectToAction(nameof(Aplicar), new { id });
         }
         catch (Exception ex)
         {
@@ -478,6 +501,7 @@ public class CambiosPreciosController : Controller
             var viewModel = new RevertirBatchViewModel
             {
                 BatchId = batch.Id,
+                RowVersion = batch.RowVersion,
                 Nombre = batch.Nombre,
                 CantidadProductos = batch.CantidadProductos,
                 AplicadoPor = batch.AplicadoPor,
@@ -501,7 +525,7 @@ public class CambiosPreciosController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionRevertir)]
-    public async Task<IActionResult> RevertirConfirmed(int id, string motivo)
+    public async Task<IActionResult> RevertirConfirmed(int id, byte[] rowVersion, string motivo)
     {
         if (string.IsNullOrWhiteSpace(motivo))
         {
@@ -512,10 +536,15 @@ public class CambiosPreciosController : Controller
         try
         {
             var revertidoPor = User.Identity?.Name ?? "Sistema";
-            var batch = await _precioService.RevertirBatchAsync(id, revertidoPor, motivo);
+            var batch = await _precioService.RevertirBatchAsync(id, revertidoPor, rowVersion, motivo);
 
             TempData["Success"] = $"Batch '{batch.Nombre}' revertido exitosamente.";
             return RedirectToAction(nameof(Index));
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            TempData["Error"] = "El batch fue modificado por otro usuario. Recargue y reintente.";
+            return RedirectToAction(nameof(Revertir), new { id });
         }
         catch (Exception ex)
         {

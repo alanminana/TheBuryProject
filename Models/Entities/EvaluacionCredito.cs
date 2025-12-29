@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Registro de evaluaci�n crediticia autom�tica
     /// </summary>
-    public class EvaluacionCredito : BaseEntity
+    public class EvaluacionCredito  : AuditableEntity
     {
         public int CreditoId { get; set; }
         public int ClienteId { get; set; }

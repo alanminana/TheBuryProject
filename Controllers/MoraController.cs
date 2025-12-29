@@ -51,15 +51,32 @@ namespace TheBuryProject.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Configuracion()
+        {
+            try
+            {
+                var config = await _moraService.GetConfiguracionAsync();
+                var vm = _mapper.Map<ConfiguracionMoraViewModel>(config);
+                return View(vm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar configuración de mora");
+                TempData["Error"] = "Error al cargar configuración: " + ex.Message;
+                return View(new ConfiguracionMoraViewModel());
+            }
+        }
+
         [HttpPost]
-        public async Task<IActionResult> ActualizarConfiguracion(ConfiguracionMoraViewModel viewModel)
+        public async Task<IActionResult> GuardarConfiguracion(ConfiguracionMoraViewModel viewModel)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
                     TempData["Error"] = "Datos inválidos";
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToAction(nameof(Configuracion));
                 }
 
                 await _moraService.UpdateConfiguracionAsync(viewModel);
@@ -67,15 +84,15 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar configuración");
-                TempData["Error"] = "Error al actualizar configuración: " + ex.Message;
+                _logger.LogError(ex, "Error al guardar configuración");
+                TempData["Error"] = "Error al guardar configuración: " + ex.Message;
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Configuracion));
         }
 
         [HttpPost]
-        public async Task<IActionResult> ProcesarMora()
+        public async Task<IActionResult> EjecutarJob()
         {
             try
             {
@@ -84,25 +101,114 @@ namespace TheBuryProject.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al procesar mora");
-                TempData["Error"] = "Error al procesar mora: " + ex.Message;
+                _logger.LogError(ex, "Error al ejecutar job de mora");
+                TempData["Error"] = "Error al ejecutar mora: " + ex.Message;
             }
 
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpPost]
-        // ✅ OPTIMIZADO: Sin query innecesaria
-        public async Task<IActionResult> ResolverAlerta(int id, string? observaciones)
+        [HttpGet]
+        public async Task<IActionResult> Alertas(int? tipo = null, int? prioridad = null, string? estado = null, string? cliente = null)
         {
             try
             {
-                var resultado = await _moraService.ResolverAlertaAsync(id, observaciones);
+                var alertas = await _moraService.GetTodasAlertasAsync();
 
-                if (resultado)
-                    TempData["Success"] = "Alerta resuelta correctamente";
-                else
-                    TempData["Error"] = "No se pudo resolver la alerta";
+                if (tipo.HasValue)
+                    alertas = alertas.Where(a => (int)a.Tipo == tipo.Value).ToList();
+
+                if (prioridad.HasValue)
+                    alertas = alertas.Where(a => (int)a.Prioridad == prioridad.Value).ToList();
+
+                if (!string.IsNullOrWhiteSpace(estado))
+                {
+                    alertas = estado switch
+                    {
+                        "noLeidas" => alertas.Where(a => !a.Leida).ToList(),
+                        "leidas" => alertas.Where(a => a.Leida).ToList(),
+                        "noResueltas" => alertas.Where(a => !a.Resuelta).ToList(),
+                        "resueltas" => alertas.Where(a => a.Resuelta).ToList(),
+                        _ => alertas
+                    };
+                }
+
+                if (!string.IsNullOrWhiteSpace(cliente))
+                {
+                    alertas = alertas.Where(a =>
+                        (a.ClienteNombre != null && a.ClienteNombre.Contains(cliente, StringComparison.OrdinalIgnoreCase)) ||
+                        (a.ClienteDocumento != null && a.ClienteDocumento.Contains(cliente, StringComparison.OrdinalIgnoreCase)))
+                        .ToList();
+                }
+
+                ViewBag.ClienteFiltro = cliente;
+                return View(alertas);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar alertas de mora");
+                TempData["Error"] = "Error al cargar alertas: " + ex.Message;
+                return View(Enumerable.Empty<AlertaCobranzaViewModel>());
+            }
+        }
+
+        [HttpGet]
+        [HttpPost]
+        public async Task<IActionResult> MarcarLeida(int id, string? rowVersion = null)
+        {
+            return await MarcarLeidaPost(id, rowVersion);
+        }
+
+        private async Task<IActionResult> MarcarLeidaPost(int id, string? rowVersion)
+        {
+            try
+            {
+                var bytes = string.IsNullOrWhiteSpace(rowVersion) ? null : Convert.FromBase64String(rowVersion);
+                var ok = await _moraService.MarcarAlertaComoLeidaAsync(id, bytes);
+                TempData[ok ? "Success" : "Error"] = ok ? "Alerta marcada como leída" : "No se pudo marcar la alerta";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+            catch (FormatException)
+            {
+                TempData["Error"] = "RowVersion inválida. Recargue la página e intente nuevamente.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al marcar alerta como leída");
+                TempData["Error"] = "Error al marcar alerta como leída: " + ex.Message;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        [HttpPost]
+        public async Task<IActionResult> Resolver(int id, string? rowVersion = null, string? observaciones = null)
+        {
+            return await ResolverPost(id, rowVersion, observaciones);
+        }
+
+        private async Task<IActionResult> ResolverPost(int id, string? rowVersion, string? observaciones)
+        {
+            try
+            {
+                var bytes = string.IsNullOrWhiteSpace(rowVersion) ? null : Convert.FromBase64String(rowVersion);
+                var resultado = await _moraService.ResolverAlertaAsync(id, observaciones, bytes);
+
+                TempData[resultado ? "Success" : "Error"] = resultado
+                    ? "Alerta resuelta correctamente"
+                    : "No se pudo resolver la alerta";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+            catch (FormatException)
+            {
+                TempData["Error"] = "RowVersion inválida. Recargue la página e intente nuevamente.";
             }
             catch (Exception ex)
             {
@@ -111,6 +217,18 @@ namespace TheBuryProject.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        public Task<IActionResult> ProcesarMora()
+        {
+            return EjecutarJob();
+        }
+
+        [HttpPost]
+        public Task<IActionResult> ResolverAlerta(int id, string? observaciones, [FromForm] string? rowVersion)
+        {
+            return ResolverPost(id, rowVersion, observaciones);
         }
 
         public async Task<IActionResult> Logs()
