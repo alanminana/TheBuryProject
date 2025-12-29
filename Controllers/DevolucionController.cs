@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
@@ -39,7 +40,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Lista de todas las devoluciones
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+[Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public async Task<IActionResult> Index()
     {
         var todasDevoluciones = await _devolucionService.ObtenerTodasDevolucionesAsync();
@@ -245,15 +246,21 @@ public class DevolucionController : Controller
     /// <summary>
     /// Aprobar devolución
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Aprobar(int id)
+    public async Task<IActionResult> Aprobar(int id, byte[]? rowVersion)
     {
         try
         {
+            if (rowVersion is null || rowVersion.Length == 0)
+            {
+                TempData["Error"] = "Falta información de concurrencia (RowVersion). Recargá la página e intentá nuevamente.";
+                return RedirectToAction(nameof(Detalles), new { id });
+            }
+
             var usuario = await _userManager.GetUserAsync(User);
-            await _devolucionService.AprobarDevolucionAsync(id, usuario?.UserName ?? "Admin");
+            await _devolucionService.AprobarDevolucionAsync(id, usuario?.UserName ?? Roles.Administrador, rowVersion);
             TempData["Success"] = "Devolución aprobada exitosamente. Se generó una nota de crédito.";
         }
         catch (Exception ex)
@@ -267,10 +274,10 @@ public class DevolucionController : Controller
     /// <summary>
     /// Rechazar devolución
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Rechazar(int id, string motivo)
+    public async Task<IActionResult> Rechazar(int id, string motivo, byte[]? rowVersion)
     {
         if (string.IsNullOrWhiteSpace(motivo))
         {
@@ -278,9 +285,15 @@ public class DevolucionController : Controller
             return RedirectToAction(nameof(Detalles), new { id });
         }
 
+        if (rowVersion is null || rowVersion.Length == 0)
+        {
+            TempData["Error"] = "Falta información de concurrencia (RowVersion). Recargá la página e intentá nuevamente.";
+            return RedirectToAction(nameof(Detalles), new { id });
+        }
+
         try
         {
-            await _devolucionService.RechazarDevolucionAsync(id, motivo);
+            await _devolucionService.RechazarDevolucionAsync(id, motivo, rowVersion);
             TempData["Success"] = "Devolución rechazada";
         }
         catch (Exception ex)
@@ -294,14 +307,20 @@ public class DevolucionController : Controller
     /// <summary>
     /// Completar devolución (procesar stock)
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Completar(int id)
+    public async Task<IActionResult> Completar(int id, byte[]? rowVersion)
     {
         try
         {
-            await _devolucionService.CompletarDevolucionAsync(id);
+            if (rowVersion is null || rowVersion.Length == 0)
+            {
+                TempData["Error"] = "Falta información de concurrencia (RowVersion). Recargá la página e intentá nuevamente.";
+                return RedirectToAction(nameof(Detalles), new { id });
+            }
+
+            await _devolucionService.CompletarDevolucionAsync(id, rowVersion);
             TempData["Success"] = "Devolución completada. Stock actualizado según las acciones definidas.";
         }
         catch (Exception ex)
@@ -319,7 +338,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Lista de garantías
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public async Task<IActionResult> Garantias()
     {
         var todasGarantias = await _devolucionService.ObtenerTodasGarantiasAsync();
@@ -345,7 +364,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Estadísticas de RMAs y devoluciones
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public async Task<IActionResult> RMAs(DateTime? desde, DateTime? hasta)
     {
         var fechaDesde = desde ?? DateTime.Now.AddMonths(-1);
@@ -369,13 +388,19 @@ public class DevolucionController : Controller
     /// <summary>
     /// Crear RMA para una devolución
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CrearRMA(int devolucionId, int proveedorId, string motivoSolicitud)
+    public async Task<IActionResult> CrearRMA(int devolucionId, int proveedorId, string motivoSolicitud, byte[]? devolucionRowVersion)
     {
         try
         {
+            if (devolucionRowVersion is null || devolucionRowVersion.Length == 0)
+            {
+                TempData["Error"] = "Falta información de concurrencia (RowVersion). Recargá la devolución e intentá nuevamente.";
+                return RedirectToAction(nameof(Detalles), new { id = devolucionId });
+            }
+
             var rma = new RMA
             {
                 DevolucionId = devolucionId,
@@ -383,7 +408,7 @@ public class DevolucionController : Controller
                 MotivoSolicitud = motivoSolicitud
             };
 
-            await _devolucionService.CrearRMAAsync(rma);
+            await _devolucionService.CrearRMAAsync(rma, devolucionRowVersion);
             TempData["Success"] = $"RMA {rma.NumeroRMA} creado exitosamente";
         }
         catch (Exception ex)
@@ -432,7 +457,7 @@ public class DevolucionController : Controller
     /// <summary>
     /// Estadísticas de devoluciones
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public async Task<IActionResult> Estadisticas(DateTime? desde, DateTime? hasta)
     {
         var fechaDesde = desde ?? DateTime.Now.AddMonths(-1);

@@ -70,6 +70,7 @@
                     <form asp-action="AplicarConfirmed" method="post" novalidate>
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.BatchId" />
+                        <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(Model.RowVersion)" />
 
                         <div class="mb-3">
                             <label asp-for="FechaVigencia" class="form-label small">Fecha de vigencia *</label>

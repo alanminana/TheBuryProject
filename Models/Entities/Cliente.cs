@@ -1,13 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using TheBuryProject.Models.Base;
 
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
     /// Representa un cliente del sistema que puede solicitar créditos.
-    /// La documentación se gestiona en la tabla DocumentoCliente (no en booleanos de esta entidad).
+    /// La documentación principal se gestiona en la tabla DocumentoCliente.
+    /// Además existen flags históricos (servicios/impuesto/veraz) que se persisten por compatibilidad.
     /// </summary>
-    public class Cliente : BaseEntity
+    public class Cliente : AuditableEntity
     {
         // Datos Personales
         [Required]
@@ -46,7 +50,7 @@ namespace TheBuryProject.Models.Entities
         [StringLength(100)]
         public string? Email { get; set; }
 
-        // Domicilio
+        // Domicilio (columna real en DB)
         [Required]
         [StringLength(200)]
         public string Domicilio { get; set; } = string.Empty;
@@ -67,13 +71,13 @@ namespace TheBuryProject.Models.Entities
         [StringLength(100)]
         public string? TipoEmpleo { get; set; } // Relación de dependencia, Autónomo, Monotributista
 
+        // Columna real en DB (según tu AppDbContext y logs)
         public decimal? Sueldo { get; set; }
 
         [StringLength(20)]
         public string? TelefonoLaboral { get; set; }
 
         /// <summary>
-        /// Indica si el cliente presentó recibo de sueldo al momento del alta.
         /// Esta columna SÍ existe en la base y se sigue usando.
         /// </summary>
         public bool TieneReciboSueldo { get; set; } = false;
@@ -86,12 +90,44 @@ namespace TheBuryProject.Models.Entities
 
         [StringLength(500)]
         public string? Observaciones { get; set; }
-        public bool TieneReciboSueldo { get; set; } = false;
+
+        // ==========================
+        // NO persistidos (evitan Invalid column name)
+        // ==========================
+
+        /// <summary>
+        /// Alias/compatibilidad (tu DB no tiene columna 'Direccion').
+        /// Usa Domicilio como fuente.
+        /// </summary>
+        [NotMapped]
+        public string? Direccion
+        {
+            get => Domicilio;
+            set
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                    Domicilio = value;
+            }
+        }
+
+        /// <summary>
+        /// Tu DB no tiene columna 'IngresosMensuales'.
+        /// Si querés compatibilidad, lo tratamos como alias de Sueldo.
+        /// </summary>
+        [NotMapped]
+        public decimal? IngresosMensuales
+        {
+            get => Sueldo;
+            set => Sueldo = value;
+        }
+
+        // Flags de documentación y servicios (mapeados en la base según migraciones).
         public bool TieneImpuesto { get; set; } = false;
         public bool TieneServicioAgua { get; set; } = false;
         public bool TieneServicioGas { get; set; } = false;
         public bool TieneServicioLuz { get; set; } = false;
         public bool TieneVeraz { get; set; } = false;
+
         // Garante asociado (si el cliente tiene un garante asignado)
         public int? GaranteId { get; set; }
 
@@ -100,5 +136,6 @@ namespace TheBuryProject.Models.Entities
         public virtual ICollection<Credito> Creditos { get; set; } = new List<Credito>();
         public virtual ICollection<Garante> ComoGarante { get; set; } = new List<Garante>();
         public virtual ICollection<DocumentoCliente> Documentos { get; set; } = new List<DocumentoCliente>();
+
     }
 }

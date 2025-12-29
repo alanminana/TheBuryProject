@@ -1,11 +1,9 @@
 ﻿@model TheBuryProject.ViewModels.ClienteViewModel
 @{
     Layout = "_ModuleLayout";
-    ViewData["Title"] = "Nuevo Cliente";
-    ViewData["PageTitle"] = "Nuevo Cliente";
-    ViewData["PageSubtitle"] = "Carga inicial del cliente, contacto y domicilio";
-    ViewData["MostrarToggleActivo"] = true;
-    ViewData["MensajeDocumentacion"] = "<strong>Documentación:</strong> Los documentos del cliente se cargan después de crear el registro, en la sección de \"Documentación\" en los detalles del cliente.";
+    ViewData["Title"] = "Eliminar Cliente";
+    ViewData["PageTitle"] = "Eliminar Cliente";
+    ViewData["PageSubtitle"] = "Confirmá la eliminación del cliente";
 }
 
 @section PageActions {
@@ -14,42 +12,61 @@
     </a>
 }
 
-<div class="row justify-content-center">
-    <div class="col-lg-10">
-        <div class="card bg-dark border-0 shadow-sm">
-            <div class="card-header bg-secondary">
-                <h5 class="mb-0 text-light">
-                    <i class="bi bi-person-plus me-2"></i>Datos del Nuevo Cliente
-                </h5>
-            </div>
-            <div class="card-body p-4">
-                <form asp-action="Create" method="post" class="needs-validation" novalidate>
-                    @Html.AntiForgeryToken()
+<section class="container-fluid py-4 text-light">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card bg-dark border-0 shadow-sm">
+                <div class="card-header bg-danger text-white border-0">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
+                    </h4>
+                </div>
 
-                    <div asp-validation-summary="ModelOnly"
-                         class="alert alert-danger d-none"
-                         role="alert">
+                <div class="card-body">
+                    <div class="alert alert-danger bg-opacity-25 border-danger text-light shadow-sm">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        Por favor, corregí los errores antes de continuar.
+                        <strong>¡Atención!</strong> Esta acción es irreversible. El cliente será marcado como eliminado.
                     </div>
 
-                    <partial name="~/Views/Shared/Cliente/_ClienteFormFields.cshtml" model="Model" />
+                    <div class="card bg-dark border-secondary shadow-sm">
+                        <div class="card-header bg-secondary text-light">
+                            <h5 class="mb-0">
+                                <i class="bi bi-person me-2"></i>Cliente a eliminar
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-3 text-secondary">Cliente</dt>
+                                <dd class="col-sm-9 fw-semibold">@(Model.NombreCompleto ?? (Model.Apellido + " " + Model.Nombre))</dd>
 
-                    <hr class="border-secondary mt-4" />
+                                <dt class="col-sm-3 text-secondary">Documento</dt>
+                                <dd class="col-sm-9">@Model.TipoDocumento: @Model.NumeroDocumento</dd>
 
-                    <div class="d-flex justify-content-end gap-2 mt-3">
-                        <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
-                            <i class="bi bi-x-circle me-2"></i>Cancelar
-                        </a>
-                        <button type="submit" class="btn btn-success btn-lg px-4">
-                            <i class="bi bi-check-circle me-2"></i>Crear Cliente
-                        </button>
+                                <dt class="col-sm-3 text-secondary">Teléfono</dt>
+                                <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.Telefono) ? "-" : Model.Telefono)</dd>
+
+                                <dt class="col-sm-3 text-secondary">Domicilio</dt>
+                                <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.Domicilio) ? "-" : Model.Domicilio)</dd>
+                            </dl>
+                        </div>
                     </div>
-                </form>
+
+                    <form asp-action="Delete" method="post" class="mt-4">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-light">
+                                <i class="bi bi-arrow-left me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger fw-semibold">
+                                <i class="bi bi-trash me-2"></i>Eliminar Cliente
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -8,7 +8,7 @@ namespace TheBuryProject.Models.Entities;
 /// Representa un lote de cambios de precios masivos
 /// Soporta workflow: Simulación → Autorización → Aplicación → Reversión
 /// </summary>
-public class PriceChangeBatch : BaseEntity
+public class PriceChangeBatch  : AuditableEntity
 {
     /// <summary>
     /// Nombre descriptivo del batch

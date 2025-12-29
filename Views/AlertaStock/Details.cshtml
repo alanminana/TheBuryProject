@@ -189,6 +189,7 @@
                     <div class="card-body">
                         <form asp-action="Resolver" asp-route-id="@Model.Id" method="post" class="mb-3">
                             @Html.AntiForgeryToken()
+                            <input type="hidden" name="rowVersion" value="@(Model.RowVersion != null ? Convert.ToBase64String(Model.RowVersion) : "")" />
                             <div class="mb-3">
                                 <label class="form-label">Observaciones (opcional)</label>
                                 <textarea name="observaciones"
@@ -205,6 +206,7 @@
 
                         <form asp-action="Ignorar" asp-route-id="@Model.Id" method="post">
                             @Html.AntiForgeryToken()
+                            <input type="hidden" name="rowVersion" value="@(Model.RowVersion != null ? Convert.ToBase64String(Model.RowVersion) : "")" />
                             <div class="mb-3">
                                 <label class="form-label">Motivo (opcional)</label>
                                 <textarea name="observaciones"

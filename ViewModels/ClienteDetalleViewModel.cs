@@ -1,4 +1,5 @@
-﻿using TheBuryProject.Models.Enums;
+using System.ComponentModel.DataAnnotations;
+using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.ViewModels
 {
@@ -7,19 +8,15 @@ namespace TheBuryProject.ViewModels
     /// </summary>
     public class ClienteDetalleViewModel
     {
-        // Información básica del cliente
         public ClienteViewModel Cliente { get; set; } = new();
 
-        // Documentos del cliente
         public List<DocumentoClienteViewModel> Documentos { get; set; } = new();
 
-        // Créditos activos
+        // Nota: se utiliza como "lista de créditos del cliente" en UI; la evaluación filtra por estado.
         public List<CreditoViewModel> CreditosActivos { get; set; } = new();
 
-        // Evaluación de crédito
         public EvaluacionCreditoResult EvaluacionCredito { get; set; } = new();
 
-        // Tab activo (por defecto: información)
         public string TabActivo { get; set; } = "informacion";
     }
 
@@ -28,31 +25,25 @@ namespace TheBuryProject.ViewModels
     /// </summary>
     public class EvaluacionCreditoResult
     {
-        // Validaciones de documentación
         public bool TieneDocumentosCompletos { get; set; }
         public List<string> DocumentosFaltantes { get; set; } = new();
 
-        // Validaciones de capacidad crediticia
         public decimal MontoMaximoDisponible { get; set; }
         public decimal IngresosMensuales { get; set; }
         public decimal DeudaActual { get; set; }
         public decimal CapacidadPagoMensual { get; set; }
         public double PorcentajeEndeudamiento { get; set; }
 
-        // Score crediticio
         public int ScoreCrediticio { get; set; }
         public string NivelRiesgo { get; set; } = "Medio";
 
-        // Estado general
         public bool CumpleRequisitos { get; set; }
         public List<string> AlertasYRecomendaciones { get; set; } = new();
 
-        // Garante
         public bool RequiereGarante { get; set; }
         public bool TieneGarante { get; set; }
         public string? GaranteNombre { get; set; }
 
-        // Excepciones permitidas
         public bool PuedeAprobarConExcepcion { get; set; }
         public string? MotivoExcepcion { get; set; }
     }
@@ -63,20 +54,35 @@ namespace TheBuryProject.ViewModels
     public class SolicitudCreditoViewModel
     {
         public int ClienteId { get; set; }
+
+        [Required, Range(1, 100000000, ErrorMessage = "Monto inválido")]
         public decimal MontoSolicitado { get; set; }
+
+        [Required, Range(1, 120, ErrorMessage = "Cantidad de cuotas inválida")]
         public int CantidadCuotas { get; set; }
-        public decimal TasaInteres { get; set; } = 5.0m; // Tasa mensual por defecto
+
+        [Required, Range(0, 100, ErrorMessage = "Tasa inválida")]
+        public decimal TasaInteres { get; set; } = 5.0m;
+
         public string? Observaciones { get; set; }
 
-        // Garante (opcional)
         public int? GaranteId { get; set; }
+
+        [StringLength(100)]
         public string? GaranteNombre { get; set; }
+
+        [StringLength(20)]
         public string? GaranteDocumento { get; set; }
+
+        [StringLength(20)]
         public string? GaranteTelefono { get; set; }
 
-        // Excepción (si no cumple requisitos)
         public bool AprobarConExcepcion { get; set; }
+
+        [StringLength(500)]
         public string? MotivoExcepcion { get; set; }
+
+        [StringLength(200)]
         public string? AutorizadoPor { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿@model TheBuryProject.ViewModels.CajaViewModel
+@using TheBuryProject.Models.Constants
 
 @{
     ViewData["Title"] = "Editar Caja";
@@ -18,9 +19,23 @@
             </p>
         </div>
 
-        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver al listado
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            @if (User.IsInRole(Roles.SuperAdmin) || User.IsInRole(Roles.Administrador))
+            {
+                <form asp-action="Delete" asp-controller="Caja" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="RowVersion" />
+                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                    </button>
+                </form>
+            }
+
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Volver al listado
+            </a>
+        </div>
     </div>
 
     <div class="row">
@@ -33,6 +48,7 @@
                         @Html.AntiForgeryToken()
 
                         <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="RowVersion" />
 
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
 

@@ -1,9 +1,8 @@
-using TheBuryProject.ViewModels;
-
+using System;
 namespace TheBuryProject.Helpers
 {
     /// <summary>
-    /// Contiene métodos auxiliares para operaciones comunes con clientes
+    /// Contiene mï¿½todos auxiliares para operaciones comunes con clientes
     /// </summary>
     public static class ClienteHelper
     {
@@ -18,22 +17,12 @@ namespace TheBuryProject.Helpers
             var hoy = DateTime.Today;
             var edad = hoy.Year - fechaNacimiento.Value.Year;
 
-            // Restar 1 si el cumpleaños aún no ha ocurrido este año
+            // Restar 1 si el cumpleaï¿½os aï¿½n no ha ocurrido este aï¿½o
             if (fechaNacimiento.Value.Date > hoy.AddYears(-edad))
                 edad--;
 
             return edad;
         }
 
-        /// <summary>
-        /// Aplica el cálculo de edad a una colección de ViewModels
-        /// </summary>
-        public static void AplicarEdadAMultiples(IEnumerable<ClienteViewModel> viewModels)
-        {
-            foreach (var vm in viewModels)
-            {
-                vm.Edad = CalcularEdad(vm.FechaNacimiento);
-            }
-        }
     }
 }

@@ -70,7 +70,8 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var config = await _context.ConfiguracionesMora.FindAsync(viewModel.Id);
+                var config = await _context.ConfiguracionesMora
+                    .FirstOrDefaultAsync(c => c.Id == viewModel.Id && !c.IsDeleted);
                 if (config == null)
                     throw new InvalidOperationException("Configuración no encontrada");
 
@@ -127,6 +128,8 @@ namespace TheBuryProject.Services
                     .Include(c => c.Credito)
                         .ThenInclude(cr => cr!.Cliente)
                     .Where(c => !c.IsDeleted &&
+                           !c.Credito!.IsDeleted &&
+                           !c.Credito!.Cliente!.IsDeleted &&
                            c.Estado == EstadoCuota.Pendiente &&
                            c.FechaVencimiento < fechaLimite)
                     .ToListAsync();
@@ -246,15 +249,37 @@ namespace TheBuryProject.Services
                 var hoy = DateTime.Today;
                 var diasAntesAlerta = 5; // ✅ TODO: Hacer configurable en ConfiguracionMora
                 var proximosDias = hoy.AddDays(diasAntesAlerta);
+                var now = DateTime.Now;
 
                 var cuotasPorVencer = await _context.Cuotas
                     .Include(c => c.Credito)
                         .ThenInclude(cr => cr!.Cliente)
                     .Where(c => !c.IsDeleted &&
+                           !c.Credito!.IsDeleted &&
+                           !c.Credito!.Cliente!.IsDeleted &&
                            c.Estado == EstadoCuota.Pendiente &&
                            c.FechaVencimiento > hoy &&
                            c.FechaVencimiento <= proximosDias)
                     .ToListAsync();
+
+                var creditoIds = cuotasPorVencer
+                    .Where(c => c.Credito?.Cliente != null)
+                    .Select(c => c.CreditoId)
+                    .Distinct()
+                    .ToList();
+
+                var creditosConAlerta = creditoIds.Count == 0
+                    ? new HashSet<int>()
+                    : (await _context.AlertasCobranza
+                        .AsNoTracking()
+                        .Where(a => creditoIds.Contains(a.CreditoId) &&
+                                   !a.Resuelta &&
+                                   a.Tipo == TipoAlertaCobranza.ProximoVencimiento &&
+                                   !a.IsDeleted)
+                        .Select(a => a.CreditoId)
+                        .Distinct()
+                        .ToListAsync())
+                        .ToHashSet();
 
                 foreach (var cuota in cuotasPorVencer)
                 {
@@ -262,13 +287,7 @@ namespace TheBuryProject.Services
                         continue;
 
                     // Verificar si ya existe alerta
-                    var alertaExistente = await _context.AlertasCobranza
-                        .AnyAsync(a => a.CreditoId == cuota.CreditoId &&
-                                  !a.Resuelta &&
-                                  a.Tipo == TipoAlertaCobranza.ProximoVencimiento &&
-                                  !a.IsDeleted);
-
-                    if (alertaExistente)
+                    if (creditosConAlerta.Contains(cuota.CreditoId))
                         continue;
 
                     var diasRestantes = (cuota.FechaVencimiento - hoy).Days;
@@ -283,9 +302,9 @@ namespace TheBuryProject.Services
                         Mensaje = $"Cliente {cliente.NombreCompleto} tiene cuota por vencer en {diasRestantes} días",
                         MontoVencido = cuota.MontoTotal,
                         CuotasVencidas = 1,
-                        FechaAlerta = DateTime.Now,
+                        FechaAlerta = now,
                         Resuelta = false,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = now
                     };
 
                     _context.AlertasCobranza.Add(alerta);
@@ -322,6 +341,26 @@ namespace TheBuryProject.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener alertas activas");
+                throw;
+            }
+        }
+
+        public async Task<List<AlertaCobranzaViewModel>> GetTodasAlertasAsync()
+        {
+            try
+            {
+                var alertas = await _context.AlertasCobranza
+                    .Include(a => a.Cliente)
+                    .Include(a => a.Credito)
+                    .Where(a => !a.IsDeleted)
+                    .OrderByDescending(a => a.FechaAlerta)
+                    .ToListAsync();
+
+                return _mapper.Map<List<AlertaCobranzaViewModel>>(alertas);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener todas las alertas");
                 throw;
             }
         }
@@ -364,20 +403,35 @@ namespace TheBuryProject.Services
             }
         }
 
-        public async Task<bool> ResolverAlertaAsync(int id, string? observaciones = null)
+        public async Task<bool> ResolverAlertaAsync(int id, string? observaciones = null, byte[]? rowVersion = null)
         {
             try
             {
-                var alerta = await _context.AlertasCobranza.FindAsync(id);
-                if (alerta == null || alerta.IsDeleted)
+                var alerta = await _context.AlertasCobranza.FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+                if (alerta == null)
                     return false;
+
+                if (alerta.Resuelta)
+                    return true; // idempotente
+
+                if (rowVersion is null || rowVersion.Length == 0)
+                    throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la alerta e intentá nuevamente.");
+
+                _context.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
 
                 alerta.Resuelta = true;
                 alerta.FechaResolucion = DateTime.Now;
                 alerta.Observaciones = observaciones;
                 alerta.UpdatedAt = DateTime.Now;
 
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    throw new InvalidOperationException("La alerta fue modificada por otro usuario. Por favor, recargue los datos.");
+                }
 
                 _logger.LogInformation("Alerta {Id} resuelta. Observaciones: {Obs}", id, observaciones ?? "Ninguna");
                 return true;
@@ -385,6 +439,39 @@ namespace TheBuryProject.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al resolver alerta {Id}", id);
+                throw;
+            }
+        }
+
+        public async Task<bool> MarcarAlertaComoLeidaAsync(int id, byte[]? rowVersion = null)
+        {
+            try
+            {
+                var alerta = await _context.AlertasCobranza.FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+                if (alerta == null)
+                    return false;
+
+                if (rowVersion is null || rowVersion.Length == 0)
+                    throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la alerta e intentá nuevamente.");
+
+                _context.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
+
+                alerta.UpdatedAt = DateTime.Now;
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    throw new InvalidOperationException("La alerta fue modificada por otro usuario. Por favor, recargue los datos.");
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al marcar alerta como leída {Id}", id);
                 throw;
             }
         }

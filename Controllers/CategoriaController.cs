@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
@@ -9,7 +10,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public class CategoriaController : Controller
     {
         private readonly ICategoriaService _categoriaService;
@@ -41,7 +42,7 @@ namespace TheBuryProject.Controllers
                     orderDirection
                 );
 
-                var viewModels = _mapper.Map<IEnumerable<CategoriaViewModel>>(categorias);
+                var viewModels = _mapper.Map<List<CategoriaViewModel>>(categorias);
 
                 // Crear ViewModel de filtros
                 var filterViewModel = new CategoriaFilterViewModel
@@ -51,7 +52,7 @@ namespace TheBuryProject.Controllers
                     OrderBy = orderBy,
                     OrderDirection = orderDirection,
                     Categorias = viewModels,
-                    TotalResultados = viewModels.Count()
+                    TotalResultados = viewModels.Count
                 };
 
                 return View(filterViewModel);
@@ -139,7 +140,8 @@ namespace TheBuryProject.Controllers
                     Descripcion = categoria.Descripcion,
                     ParentId = categoria.ParentId,
                     ControlSerieDefault = categoria.ControlSerieDefault,
-                    Activo = categoria.Activo
+                    Activo = categoria.Activo,
+                    RowVersion = categoria.RowVersion
                 };
 
                 await CargarCategoriasParaDropdown(viewModel.ParentId, id.Value);
@@ -167,6 +169,14 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
+                    var rowVersion = viewModel.RowVersion;
+                    if (rowVersion is null || rowVersion.Length == 0)
+                    {
+                        ModelState.AddModelError("", "No se recibió la versión de fila (RowVersion). Recargue la página e intente nuevamente.");
+                        await CargarCategoriasParaDropdown(viewModel.ParentId, id);
+                        return View(viewModel);
+                    }
+
                     // Verificar que el código no exista (excluyendo el registro actual)
                     if (await _categoriaService.ExistsCodigoAsync(viewModel.Codigo, id))
                     {
@@ -183,7 +193,8 @@ namespace TheBuryProject.Controllers
                         Descripcion = viewModel.Descripcion,
                         ParentId = viewModel.ParentId,
                         ControlSerieDefault = viewModel.ControlSerieDefault,
-                        Activo = viewModel.Activo
+                        Activo = viewModel.Activo,
+                        RowVersion = rowVersion
                     };
 
                     await _categoriaService.UpdateAsync(categoria);
@@ -229,7 +240,7 @@ namespace TheBuryProject.Controllers
                     Nombre = categoria.Nombre,
                     Descripcion = categoria.Descripcion,
                     ParentId = categoria.ParentId,
-                    ParentNombre = categoria.Parent?.Nombre,
+                    ParentNombre = categoria.Parent != null && !categoria.Parent.IsDeleted ? categoria.Parent.Nombre : null,
                     ControlSerieDefault = categoria.ControlSerieDefault
                 };
 

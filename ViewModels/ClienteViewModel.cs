@@ -118,5 +118,8 @@ namespace TheBuryProject.ViewModels
 
         // Alias para Domicilio
         public string? Direccion => Domicilio;
+
+        [Timestamp]
+        public byte[]? RowVersion { get; set; }
     }
 }

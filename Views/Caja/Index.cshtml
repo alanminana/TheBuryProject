@@ -1,5 +1,6 @@
 ﻿@model TheBuryProject.ViewModels.CajasListViewModel
 @using TheBuryProject.Models.Enums
+@using TheBuryProject.Models.Constants
 
 @{
     ViewData["Title"] = "Cajas y arqueos";
@@ -188,6 +189,18 @@
                                                        class="btn btn-outline-secondary">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
+
+                                                    @if (User.IsInRole(Roles.SuperAdmin) || User.IsInRole(Roles.Administrador))
+                                                    {
+                                                        <form asp-action="Delete" asp-controller="Caja" method="post" class="d-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@caja.Id" />
+                                                            <input type="hidden" name="rowVersion" value="@(caja.RowVersion != null ? Convert.ToBase64String(caja.RowVersion) : "")" />
+                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
                                                 </div>
                                             </td>
                                         </tr>
@@ -250,11 +263,25 @@
                                             <td class="small">@caja.Nombre</td>
                                             <td class="small">@(caja.Sucursal ?? "-")</td>
                                             <td class="text-end">
-                                                <a asp-action="Edit"
-                                                   asp-route-id="@caja.Id"
-                                                   class="btn btn-sm btn-outline-secondary">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a asp-action="Edit"
+                                                       asp-route-id="@caja.Id"
+                                                       class="btn btn-outline-secondary">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+
+                                                    @if (User.IsInRole(Roles.SuperAdmin) || User.IsInRole(Roles.Administrador))
+                                                    {
+                                                        <form asp-action="Delete" asp-controller="Caja" method="post" class="d-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@caja.Id" />
+                                                            <input type="hidden" name="rowVersion" value="@(caja.RowVersion != null ? Convert.ToBase64String(caja.RowVersion) : "")" />
+                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                </div>
                                             </td>
                                         </tr>
                                     }

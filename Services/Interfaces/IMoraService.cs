@@ -4,25 +4,27 @@ using TheBuryProject.ViewModels;
 namespace TheBuryProject.Services.Interfaces
 {
     /// <summary>
-    /// Servicio centralizado para gestión de mora, alertas y cobranzas
-    /// Consolida cálculo de mora, generación de alertas y auditoría
+    /// Servicio centralizado para gestiï¿½n de mora, alertas y cobranzas
+    /// Consolida cï¿½lculo de mora, generaciï¿½n de alertas y auditorï¿½a
     /// </summary>
     public interface IMoraService
     {
-        // Configuración
+        // Configuraciï¿½n
         Task<ConfiguracionMora> GetConfiguracionAsync();
         Task<ConfiguracionMora> UpdateConfiguracionAsync(ConfiguracionMoraViewModel viewModel);
 
         // Procesamiento de mora
         Task ProcesarMoraAsync();
         
-        // Gestión de alertas
+        // Gestiï¿½n de alertas
         Task<List<AlertaCobranzaViewModel>> GetAlertasActivasAsync();
+            Task<List<AlertaCobranzaViewModel>> GetTodasAlertasAsync();
         Task<AlertaCobranzaViewModel?> GetAlertaByIdAsync(int id);
-        Task<bool> ResolverAlertaAsync(int id, string? observaciones = null);
+            Task<bool> ResolverAlertaAsync(int id, string? observaciones = null, byte[]? rowVersion = null);
+            Task<bool> MarcarAlertaComoLeidaAsync(int id, byte[]? rowVersion = null);
         Task<List<AlertaCobranzaViewModel>> GetAlertasPorClienteAsync(int clienteId);
 
-        // Logs y auditoría
+        // Logs y auditorï¿½a
         Task<List<LogMora>> GetLogsAsync(int cantidad = 50);
     }
 }

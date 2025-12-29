@@ -98,7 +98,8 @@
                    href="#"
                    data-notif-id="${notif.id}"
                    data-notif-url="${notif.url || '#'}"
-                   data-notif-leida="${notif.leida}">
+                   data-notif-leida="${notif.leida}"
+                   data-notif-rowversion="${notif.rowVersion || ''}">
                     <div class="d-flex">
                         <div class="flex-shrink-0 me-3">
                             <i class="bi ${iconoClase} fs-4"></i>
@@ -128,6 +129,7 @@
                 const id = item.dataset.notifId;
                 const url = item.dataset.notifUrl;
                 const leida = item.dataset.notifLeida === 'true';
+                const rowVersion = item.dataset.notifRowversion;
 
                 const redirect = function () {
                     if (url && url !== '#') {
@@ -136,7 +138,7 @@
                 };
 
                 if (!leida) {
-                    marcarComoLeida(id, redirect);
+                    marcarComoLeida(id, rowVersion, redirect);
                 } else {
                     redirect();
                 }
@@ -158,8 +160,9 @@
         document.getElementById('notificacionesDropdown')?.addEventListener('click', cargarNotificaciones);
     }
 
-    function marcarComoLeida(id, callback) {
-        fetch(`${config.apiUrl}/${id}/marcarLeida`, { method: 'POST' })
+    function marcarComoLeida(id, rowVersion, callback) {
+        const qs = rowVersion ? `?rowVersion=${encodeURIComponent(rowVersion)}` : '';
+        fetch(`${config.apiUrl}/${id}/marcarLeida${qs}`, { method: 'POST' })
             .then((response) => {
                 if (!response.ok) throw new Error('Error al marcar como leída');
                 cargarNotificaciones();

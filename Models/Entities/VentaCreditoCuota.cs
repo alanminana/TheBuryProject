@@ -5,9 +5,9 @@ using TheBuryProject.Models.Enums;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Cuotas específicas generadas por una venta a crédito personal
+    /// Cuotas especï¿½ficas generadas por una venta a crï¿½dito personal
     /// </summary>
-    public class VentaCreditoCuota : BaseEntity
+    public class VentaCreditoCuota  : AuditableEntity
     {
         public int VentaId { get; set; }
         public int CreditoId { get; set; }

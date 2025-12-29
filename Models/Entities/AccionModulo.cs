@@ -4,54 +4,54 @@ using TheBuryProject.Models.Base;
 namespace TheBuryProject.Models.Entities;
 
 /// <summary>
-/// Representa una acción disponible en un módulo del sistema
+/// Representa una acciï¿½n disponible en un mï¿½dulo del sistema
 /// </summary>
-public class AccionModulo : BaseEntity
+public class AccionModulo  : AuditableEntity
 {
     /// <summary>
-    /// ID del módulo al que pertenece esta acción
+    /// ID del mï¿½dulo al que pertenece esta acciï¿½n
     /// </summary>
     [Required]
     public int ModuloId { get; set; }
 
     /// <summary>
-    /// Nombre de la acción (Ver, Crear, Editar, Eliminar, etc.)
+    /// Nombre de la acciï¿½n (Ver, Crear, Editar, Eliminar, etc.)
     /// </summary>
     [Required]
     [StringLength(100)]
     public string Nombre { get; set; } = string.Empty;
 
     /// <summary>
-    /// Clave única de la acción (view, create, update, delete, authorize, etc.)
-    /// Usar minúsculas sin espacios
+    /// Clave ï¿½nica de la acciï¿½n (view, create, update, delete, authorize, etc.)
+    /// Usar minï¿½sculas sin espacios
     /// </summary>
     [Required]
     [StringLength(50)]
     public string Clave { get; set; } = string.Empty;
 
     /// <summary>
-    /// Descripción de la acción
+    /// Descripciï¿½n de la acciï¿½n
     /// </summary>
     [StringLength(500)]
     public string? Descripcion { get; set; }
 
     /// <summary>
-    /// Icono de la acción (Bootstrap Icons)
+    /// Icono de la acciï¿½n (Bootstrap Icons)
     /// </summary>
     [StringLength(50)]
     public string? Icono { get; set; }
 
     /// <summary>
-    /// Orden de visualización
+    /// Orden de visualizaciï¿½n
     /// </summary>
     public int Orden { get; set; }
 
     /// <summary>
-    /// Indica si la acción está activa
+    /// Indica si la acciï¿½n estï¿½ activa
     /// </summary>
     public bool Activa { get; set; } = true;
 
-    // Navegación
+    // Navegaciï¿½n
     public virtual ModuloSistema Modulo { get; set; } = null!;
     public virtual ICollection<RolPermiso> Permisos { get; set; } = new List<RolPermiso>();
 }

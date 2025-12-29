@@ -1,22 +1,26 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public class MarcaController : Controller
     {
         private readonly IMarcaService _marcaService;
         private readonly ILogger<MarcaController> _logger;
+        private readonly IMapper _mapper;
 
-        public MarcaController(IMarcaService marcaService, ILogger<MarcaController> logger)
+        public MarcaController(IMarcaService marcaService, ILogger<MarcaController> logger, IMapper mapper)
         {
             _marcaService = marcaService;
             _logger = logger;
+            _mapper = mapper;
         }
 
         // GET: Marca
@@ -37,17 +41,7 @@ namespace TheBuryProject.Controllers
                     orderDirection
                 );
 
-                var viewModels = marcas.Select(m => new MarcaViewModel
-                {
-                    Id = m.Id,
-                    Codigo = m.Codigo,
-                    Nombre = m.Nombre,
-                    Descripcion = m.Descripcion,
-                    ParentId = m.ParentId,
-                    ParentNombre = m.Parent?.Nombre,
-                    PaisOrigen = m.PaisOrigen,
-                    Activo = m.Activo
-                }).ToList();
+                var viewModels = _mapper.Map<List<MarcaViewModel>>(marcas);
 
                 // Crear ViewModel de filtros
                 var filterViewModel = new MarcaFilterViewModel
@@ -86,16 +80,7 @@ namespace TheBuryProject.Controllers
                     return NotFound();
                 }
 
-                var viewModel = new MarcaViewModel
-                {
-                    Id = marca.Id,
-                    Codigo = marca.Codigo,
-                    Nombre = marca.Nombre,
-                    Descripcion = marca.Descripcion,
-                    ParentId = marca.ParentId,
-                    ParentNombre = marca.Parent?.Nombre,
-                    PaisOrigen = marca.PaisOrigen
-                };
+                var viewModel = _mapper.Map<MarcaViewModel>(marca);
 
                 return View(viewModel);
             }
@@ -171,16 +156,7 @@ namespace TheBuryProject.Controllers
                     return NotFound();
                 }
 
-                var viewModel = new MarcaViewModel
-                {
-                    Id = marca.Id,
-                    Codigo = marca.Codigo,
-                    Nombre = marca.Nombre,
-                    Descripcion = marca.Descripcion,
-                    ParentId = marca.ParentId,
-                    PaisOrigen = marca.PaisOrigen,
-                    RowVersion = marca.RowVersion
-                };
+                var viewModel = _mapper.Map<MarcaViewModel>(marca);
 
                 await CargarMarcasParaDropdown(viewModel.ParentId, id.Value);
                 return View(viewModel);
@@ -207,6 +183,14 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
+                    var rowVersion = viewModel.RowVersion;
+                    if (rowVersion is null || rowVersion.Length == 0)
+                    {
+                        ModelState.AddModelError("", "No se recibió la versión de fila (RowVersion). Recargue la página e intente nuevamente.");
+                        await CargarMarcasParaDropdown(viewModel.ParentId, id);
+                        return View(viewModel);
+                    }
+
                     // Verificar que el c�digo no exista (excluyendo el registro actual)
                     if (await _marcaService.ExistsCodigoAsync(viewModel.Codigo, id))
                     {
@@ -223,7 +207,7 @@ namespace TheBuryProject.Controllers
                         Descripcion = viewModel.Descripcion,
                         ParentId = viewModel.ParentId,
                         PaisOrigen = viewModel.PaisOrigen,
-                        RowVersion = viewModel.RowVersion
+                        RowVersion = rowVersion
                     };
 
                     await _marcaService.UpdateAsync(marca);
@@ -262,16 +246,7 @@ namespace TheBuryProject.Controllers
                     return NotFound();
                 }
 
-                var viewModel = new MarcaViewModel
-                {
-                    Id = marca.Id,
-                    Codigo = marca.Codigo,
-                    Nombre = marca.Nombre,
-                    Descripcion = marca.Descripcion,
-                    ParentId = marca.ParentId,
-                    ParentNombre = marca.Parent?.Nombre,
-                    PaisOrigen = marca.PaisOrigen
-                };
+                var viewModel = _mapper.Map<MarcaViewModel>(marca);
 
                 return View(viewModel);
             }

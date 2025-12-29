@@ -9,6 +9,12 @@ namespace TheBuryProject.ViewModels
     {
         public int Id { get; set; }
 
+        /// <summary>
+        /// RowVersion para control de concurrencia optimista.
+        /// Debe enviarse en POST para detectar conflictos.
+        /// </summary>
+        public byte[]? RowVersion { get; set; }
+
         [Required(ErrorMessage = "El CUIT es obligatorio")]
         [StringLength(11, MinimumLength = 11, ErrorMessage = "El CUIT debe tener 11 dígitos")]
         [Display(Name = "CUIT")]

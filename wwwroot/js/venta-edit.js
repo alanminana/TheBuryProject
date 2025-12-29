@@ -43,7 +43,7 @@
     const subtotalHidden = document.getElementById('subtotalHidden');
     const ivaHidden = document.getElementById('ivaHidden');
 
-    let ultimoTipoPagoNoFinanciado = tipoPagoSelect?.value && tipoPagoSelect.value !== 'CreditoPersonal'
+    let ultimoTipoPagoNoFinanciado = tipoPagoSelect?.value && tipoPagoSelect.value !== 'CreditoPersonall'
         ? tipoPagoSelect.value
         : 'Efectivo';
 
@@ -82,12 +82,12 @@
         }
 
         tipoPagoSelect?.addEventListener('change', function () {
-            if (this.value !== 'CreditoPersonal' && toggleFinanciado?.checked) {
+            if (this.value !== 'CreditoPersonall' && toggleFinanciado?.checked) {
                 toggleFinanciado.checked = false;
                 financiamientoCampos?.classList.add('d-none');
                 restaurarTipoPagoNoFinanciado();
                 limpiarResumenFinanciamiento();
-            } else if (this.value === 'CreditoPersonal') {
+            } else if (this.value === 'CreditoPersonall') {
                 sincronizarTipoPagoConFinanciado();
             }
         });
@@ -226,7 +226,7 @@
 
     function restaurarTipoPagoNoFinanciado() {
         if (!tipoPagoSelect) return;
-        if (tipoPagoSelect.value === 'CreditoPersonal') {
+        if (tipoPagoSelect.value === 'CreditoPersonall') {
             tipoPagoSelect.value = ultimoTipoPagoNoFinanciado || 'Efectivo';
             tipoPagoSelect.dispatchEvent(new Event('change'));
         }
@@ -235,9 +235,9 @@
     function sincronizarTipoPagoConFinanciado() {
         if (!toggleFinanciado || !tipoPagoSelect) return;
         if (toggleFinanciado.checked) {
-            if (tipoPagoSelect.value !== 'CreditoPersonal') {
+            if (tipoPagoSelect.value !== 'CreditoPersonall') {
                 ultimoTipoPagoNoFinanciado = tipoPagoSelect.value || ultimoTipoPagoNoFinanciado;
-                tipoPagoSelect.value = 'CreditoPersonal';
+                tipoPagoSelect.value = 'CreditoPersonall';
                 tipoPagoSelect.dispatchEvent(new Event('change'));
             }
         }
@@ -433,3 +433,4 @@
 
     init();
 })();
+

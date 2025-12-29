@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Data;
 using TheBuryProject.Filters;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
@@ -10,20 +13,23 @@ namespace TheBuryProject.Controllers;
 /// <summary>
 /// Controller para gestión de usuarios del sistema
 /// </summary>
-[Authorize(Roles = "SuperAdmin,Administrador")]
+[Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
 [PermisoRequerido(Modulo = "usuarios", Accion = "view")]
 public class UsuariosController : Controller
 {
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly AppDbContext _context;
     private readonly IRolService _rolService;
     private readonly ILogger<UsuariosController> _logger;
 
     public UsuariosController(
         UserManager<IdentityUser> userManager,
+        AppDbContext context,
         IRolService rolService,
         ILogger<UsuariosController> logger)
     {
         _userManager = userManager;
+        _context = context;
         _rolService = rolService;
         _logger = logger;
     }
@@ -36,23 +42,28 @@ public class UsuariosController : Controller
     {
         try
         {
-            var users = _userManager.Users.ToList();
-            var viewModels = new List<UsuarioViewModel>();
+            var users = await _context.Users
+                .OrderBy(u => u.UserName)
+                .ToListAsync();
 
-            foreach (var user in users.OrderBy(u => u.UserName))
+            var rolesLookup = await _context.UserRoles
+                .Join(_context.Roles,
+                    ur => ur.RoleId,
+                    r => r.Id,
+                    (ur, r) => new { ur.UserId, r.Name })
+                .GroupBy(x => x.UserId)
+                .ToDictionaryAsync(g => g.Key, g => g.Select(x => x.Name!).ToList());
+
+            var viewModels = users.Select(user => new UsuarioViewModel
             {
-                var roles = await _userManager.GetRolesAsync(user);
-                viewModels.Add(new UsuarioViewModel
-                {
-                    Id = user.Id,
-                    Email = user.Email!,
-                    UserName = user.UserName!,
-                    EmailConfirmed = user.EmailConfirmed,
-                    LockoutEnabled = user.LockoutEnabled,
-                    LockoutEnd = user.LockoutEnd,
-                    Roles = roles.ToList()
-                });
-            }
+                Id = user.Id,
+                Email = user.Email!,
+                UserName = user.UserName!,
+                EmailConfirmed = user.EmailConfirmed,
+                LockoutEnabled = user.LockoutEnabled,
+                LockoutEnd = user.LockoutEnd,
+                Roles = rolesLookup.GetValueOrDefault(user.Id, new List<string>())
+            }).ToList();
 
             return View(viewModels);
         }

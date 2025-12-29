@@ -382,7 +382,13 @@ namespace TheBuryProject.Services
             {
                 var evaluacion = await _context.EvaluacionesCredito
                     .Include(e => e.Cliente)
-                    .Where(e => e.CreditoId == creditoId && !e.IsDeleted)
+                    .Include(e => e.Credito)
+                    .Where(e => e.CreditoId == creditoId &&
+                               !e.IsDeleted &&
+                               e.Cliente != null &&
+                               !e.Cliente.IsDeleted &&
+                               e.Credito != null &&
+                               !e.Credito.IsDeleted)
                     .OrderByDescending(e => e.FechaEvaluacion)
                     .FirstOrDefaultAsync();
 
@@ -401,7 +407,12 @@ namespace TheBuryProject.Services
             {
                 var evaluaciones = await _context.EvaluacionesCredito
                     .Include(e => e.Credito)
-                    .Where(e => e.ClienteId == clienteId && !e.IsDeleted)
+                    .Where(e => e.ClienteId == clienteId &&
+                               !e.IsDeleted &&
+                               e.Cliente != null &&
+                               !e.Cliente.IsDeleted &&
+                               e.Credito != null &&
+                               !e.Credito.IsDeleted)
                     .OrderByDescending(e => e.FechaEvaluacion)
                     .ToListAsync();
 

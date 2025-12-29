@@ -4,7 +4,7 @@ using TheBuryProject.Models.Base;
 
 namespace TheBuryProject.Models.Entities
 {
-    public class VentaDetalle : BaseEntity
+    public class VentaDetalle  : AuditableEntity
     {
         [Required]
         public int VentaId { get; set; }
@@ -29,7 +29,7 @@ namespace TheBuryProject.Models.Entities
         [StringLength(200)]
         public string? Observaciones { get; set; }
 
-        // Navegación
+        // Navegaciï¿½n
         public virtual Venta Venta { get; set; } = null!;
         public virtual Producto Producto { get; set; } = null!;
     }

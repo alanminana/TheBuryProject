@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities;
 /// <summary>
 /// Define los umbrales de autorización por rol de usuario
 /// </summary>
-public class UmbralAutorizacion : BaseEntity
+public class UmbralAutorizacion : AuditableEntity
 {
     [Required]
     [StringLength(50)]

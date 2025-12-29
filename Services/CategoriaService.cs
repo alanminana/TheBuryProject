@@ -24,6 +24,7 @@ namespace TheBuryProject.Services
             try
             {
                 return await _context.Categorias
+                    .AsNoTracking()
                     .Where(c => !c.IsDeleted)
                     .Include(c => c.Parent)
                     .OrderBy(c => c.Nombre)
@@ -41,6 +42,7 @@ namespace TheBuryProject.Services
             try
             {
                 return await _context.Categorias
+                    .AsNoTracking()
                     .Include(c => c.Parent)
                     .Include(c => c.Children)
                     .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
@@ -57,6 +59,7 @@ namespace TheBuryProject.Services
             try
             {
                 return await _context.Categorias
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(c => c.Codigo == codigo && !c.IsDeleted);
             }
             catch (Exception ex)
@@ -70,29 +73,25 @@ namespace TheBuryProject.Services
         {
             try
             {
-                // Validación: modelo debe tener DataAnnotations
-                // No repetir validación aquí
+                if (string.IsNullOrWhiteSpace(categoria.Codigo))
+                    throw new InvalidOperationException("El código de la categoría es obligatorio");
+
                 if (string.IsNullOrWhiteSpace(categoria.Nombre))
-                {
                     throw new InvalidOperationException("El nombre de la categoría es obligatorio");
-                }
 
                 if (await ExistsCodigoAsync(categoria.Codigo))
-                {
                     throw new InvalidOperationException($"Ya existe una categoría con el código {categoria.Codigo}");
-                }
 
                 // Validar que el ParentId exista si se especifica
-                if (categoria.ParentId.HasValue && !await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value && !c.IsDeleted))
+                if (categoria.ParentId.HasValue &&
+                    !await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value && !c.IsDeleted))
                 {
                     throw new InvalidOperationException($"La categoría padre con Id {categoria.ParentId.Value} no existe");
                 }
 
                 // Validar que no cree un ciclo
                 if (await WouldCreateCycleAsync(null, categoria.ParentId))
-                {
                     throw new InvalidOperationException("No se puede establecer esta relación porque crearía un ciclo");
-                }
 
                 _context.Categorias.Add(categoria);
                 await _context.SaveChangesAsync();
@@ -111,33 +110,47 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var existing = await _context.Categorias.FindAsync(categoria.Id);
+                var existing = await _context.Categorias
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(c => c.Id == categoria.Id);
+
                 if (existing == null)
-                {
                     throw new InvalidOperationException($"No se encontró la categoría con Id {categoria.Id}");
-                }
+
+                if (existing.IsDeleted)
+                    throw new InvalidOperationException("No se puede actualizar una categoría eliminada.");
+
+                if (string.IsNullOrWhiteSpace(categoria.Codigo))
+                    throw new InvalidOperationException("El código de la categoría es obligatorio");
 
                 if (string.IsNullOrWhiteSpace(categoria.Nombre))
-                {
                     throw new InvalidOperationException("El nombre de la categoría es obligatorio");
-                }
 
                 // Validar código único (excluyendo el registro actual)
                 if (await ExistsCodigoAsync(categoria.Codigo, categoria.Id))
-                {
                     throw new InvalidOperationException($"Ya existe otra categoría con el código {categoria.Codigo}");
-                }
 
                 // Validar que el ParentId exista si se especifica
-                if (categoria.ParentId.HasValue && !await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value && !c.IsDeleted))
+                if (categoria.ParentId.HasValue &&
+                    !await _context.Categorias.AnyAsync(c => c.Id == categoria.ParentId.Value && !c.IsDeleted))
                 {
                     throw new InvalidOperationException($"La categoría padre con Id {categoria.ParentId.Value} no existe");
                 }
 
                 // Validar que no cree un ciclo
                 if (await WouldCreateCycleAsync(categoria.Id, categoria.ParentId))
-                {
                     throw new InvalidOperationException("No se puede establecer esta relación porque crearía un ciclo jerárquico");
+
+                // Concurrencia optimista
+                if (categoria.RowVersion != null)
+                {
+                    _context.Entry(existing).Property(e => e.RowVersion).OriginalValue = categoria.RowVersion;
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "RowVersion no provisto al actualizar categoría {Id}. La operación no podrá detectar conflictos de concurrencia.",
+                        categoria.Id);
                 }
 
                 existing.Codigo = categoria.Codigo;
@@ -148,7 +161,8 @@ namespace TheBuryProject.Services
                 existing.Activo = categoria.Activo;
 
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Categoría actualizada: {Codigo} - {Nombre}", categoria.Codigo, categoria.Nombre);
+
+                _logger.LogInformation("Categoría actualizada: {Codigo} - {Nombre}", existing.Codigo, existing.Nombre);
                 return existing;
             }
             catch (DbUpdateConcurrencyException ex)
@@ -167,19 +181,29 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var categoria = await _context.Categorias.FindAsync(id);
-                if (categoria == null)
+                var categoria = await _context.Categorias
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(c => c.Id == id);
+
+                if (categoria == null || categoria.IsDeleted)
                     return false;
 
                 // Verificar si tiene categorías hijas
                 if (await _context.Categorias.AnyAsync(c => c.ParentId == id && !c.IsDeleted))
-                {
                     throw new InvalidOperationException("No se puede eliminar una categoría que tiene subcategorías");
-                }
+
+                // Verificar si tiene productos asociados
+                if (await _context.Productos.AnyAsync(p => p.CategoriaId == id && !p.IsDeleted))
+                    throw new InvalidOperationException("No se puede eliminar una categoría que tiene productos asociados");
 
                 categoria.IsDeleted = true;
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Categoría eliminada (soft delete): {Codigo} - {Nombre}", categoria.Codigo, categoria.Nombre);
+
+                _logger.LogInformation(
+                    "Categoría eliminada (soft delete): {Codigo} - {Nombre}",
+                    categoria.Codigo,
+                    categoria.Nombre);
+
                 return true;
             }
             catch (Exception ex)
@@ -193,8 +217,10 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var query = _context.Categorias.Where(c => c.Codigo == codigo && !c.IsDeleted);
-                
+                var query = _context.Categorias
+                    .AsNoTracking()
+                    .Where(c => c.Codigo == codigo && !c.IsDeleted);
+
                 if (excludeId.HasValue)
                     query = query.Where(c => c.Id != excludeId.Value);
 
@@ -216,6 +242,7 @@ namespace TheBuryProject.Services
             try
             {
                 var query = _context.Categorias
+                    .AsNoTracking()
                     .Include(c => c.Parent)
                     .Where(c => !c.IsDeleted)
                     .AsQueryable();
@@ -223,10 +250,10 @@ namespace TheBuryProject.Services
                 // Búsqueda por texto
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    searchTerm = searchTerm.ToLower();
+                    var pattern = $"%{searchTerm.Trim()}%";
                     query = query.Where(c =>
-                        c.Nombre.ToLower().Contains(searchTerm) ||
-                        (c.Descripcion != null && c.Descripcion.ToLower().Contains(searchTerm)));
+                        EF.Functions.Like(c.Nombre, pattern) ||
+                        (c.Descripcion != null && EF.Functions.Like(c.Descripcion, pattern)));
                 }
 
                 // Filtro solo activos
@@ -252,16 +279,19 @@ namespace TheBuryProject.Services
             }
         }
 
-        // ✅ Método privado mejorado: valida ciclos sin incluir el registro actual
+        // ✅ Método privado: valida ciclos sin incluir el registro actual
         private async Task<bool> WouldCreateCycleAsync(int? categoryId, int? parentId)
         {
             if (!parentId.HasValue)
                 return false;
 
-            if (categoryId == parentId)
+            if (categoryId.HasValue && categoryId.Value == parentId.Value)
                 return true;
 
-            var visitedIds = new HashSet<int> { categoryId.GetValueOrDefault() };
+            var visitedIds = new HashSet<int>();
+            if (categoryId.HasValue)
+                visitedIds.Add(categoryId.Value);
+
             var currentParentId = parentId;
 
             while (currentParentId.HasValue)
@@ -271,12 +301,13 @@ namespace TheBuryProject.Services
 
                 visitedIds.Add(currentParentId.Value);
 
-                var parent = await _context.Categorias
-                    .Where(c => c.Id == currentParentId.Value)
+                var nextParentId = await _context.Categorias
+                    .AsNoTracking()
+                    .Where(c => c.Id == currentParentId.Value && !c.IsDeleted)
                     .Select(c => c.ParentId)
                     .FirstOrDefaultAsync();
 
-                currentParentId = parent;
+                currentParentId = nextParentId;
             }
 
             return false;

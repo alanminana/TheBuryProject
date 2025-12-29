@@ -2,13 +2,14 @@ using System;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels.Requests;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
     [ApiController]
     [Route("api/ventas/[action]")]
     public class VentaApiController : ControllerBase
@@ -16,17 +17,20 @@ namespace TheBuryProject.Controllers
         private readonly IProductoService _productoService;
         private readonly ICreditoService _creditoService;
         private readonly IVentaService _ventaService;
+        private readonly IPrecioService _precioService;
         private readonly ILogger<VentaApiController> _logger;
 
         public VentaApiController(
             IProductoService productoService,
             ICreditoService creditoService,
             IVentaService ventaService,
+            IPrecioService precioService,
             ILogger<VentaApiController> logger)
         {
             _productoService = productoService;
             _creditoService = creditoService;
             _ventaService = ventaService;
+            _precioService = precioService;
             _logger = logger;
         }
 
@@ -41,9 +45,19 @@ namespace TheBuryProject.Controllers
                     return NotFound(new { error = "Producto no encontrado" });
                 }
 
+                decimal precioVenta = producto.PrecioVenta;
+
+                var listaPredeterminada = await _precioService.GetListaPredeterminadaAsync();
+                if (listaPredeterminada != null)
+                {
+                    var vigente = await _precioService.GetPrecioVigenteAsync(producto.Id, listaPredeterminada.Id);
+                    if (vigente != null)
+                        precioVenta = vigente.Precio;
+                }
+
                 return Ok(new
                 {
-                    precioVenta = producto.PrecioVenta,
+                    precioVenta,
                     stockActual = producto.StockActual,
                     codigo = producto.Codigo,
                     nombre = producto.Nombre

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.ViewModels
@@ -6,6 +6,12 @@ namespace TheBuryProject.ViewModels
     public class VentaViewModel
     {
         public int Id { get; set; }
+
+        /// <summary>
+        /// RowVersion para control de concurrencia optimista.
+        /// Debe enviarse en POST para detectar conflictos.
+        /// </summary>
+        public byte[]? RowVersion { get; set; }
 
         [Display(Name = "Número")]
         public string Numero { get; set; } = string.Empty;
@@ -84,7 +90,7 @@ namespace TheBuryProject.ViewModels
         // Datos adicionales según tipo de pago
         public DatosTarjetaViewModel? DatosTarjeta { get; set; }
         public DatosChequeViewModel? DatosCheque { get; set; }
-        public DatosCreditoPersonalViewModel? DatosCreditoPersonal { get; set; }  // NUEVO
+        public DatosCreditoPersonallViewModel? DatosCreditoPersonall { get; set; }  // NUEVO
 
         // Datos de financiamiento
         [Display(Name = "Venta financiada")]

@@ -70,7 +70,7 @@
                         <!-- Categoría -->
                         <div class="col-md-3">
                             <label class="form-label text-light fw-semibold"><i class="bi bi-tag me-1"></i>Categoría</label>
-                            <select class="form-select bg-body-secondary text-light border-0" name="categoriaId" asp-items="ViewBag.CategoriasFiltro">
+                            <select asp-for="CategoriaId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.CategoriasFiltro">
                                 <option value="">Todas</option>
                             </select>
                         </div>
@@ -78,7 +78,7 @@
                         <!-- Marca -->
                         <div class="col-md-3">
                             <label class="form-label text-light fw-semibold"><i class="bi bi-award me-1"></i>Marca</label>
-                            <select class="form-select bg-body-secondary text-light border-0" name="marcaId" asp-items="ViewBag.MarcasFiltro">
+                            <select asp-for="MarcaId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.MarcasFiltro">
                                 <option value="">Todas</option>
                             </select>
                         </div>

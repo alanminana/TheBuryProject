@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Datos espec�ficos del cheque asociado a una venta
     /// </summary>
-    public class DatosCheque : BaseEntity
+    public class DatosCheque  : AuditableEntity
     {
         public int VentaId { get; set; }
 

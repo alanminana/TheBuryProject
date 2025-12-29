@@ -9,6 +9,7 @@ namespace TheBuryProject.ViewModels;
 public class ListaPrecioViewModel
 {
     public int Id { get; set; }
+    public byte[]? RowVersion { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public string Codigo { get; set; } = string.Empty;
     public TipoListaPrecio Tipo { get; set; }
@@ -90,6 +91,9 @@ public class EditarListaPrecioViewModel : CrearListaPrecioViewModel
 {
     [Required]
     public int Id { get; set; }
+
+    [Required]
+    public byte[] RowVersion { get; set; } = default!;
 }
 
 /// <summary>
@@ -191,6 +195,7 @@ public class SimularCambioMasivoViewModel
 public class SimulacionViewModel
 {
     public int BatchId { get; set; }
+    public byte[]? RowVersion { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public TipoCambio TipoCambio { get; set; }
     public TipoAplicacion TipoAplicacion { get; set; }
@@ -234,6 +239,7 @@ public class SimulacionItemViewModel
 public class AutorizarBatchViewModel
 {
     public int BatchId { get; set; }
+    public byte[] RowVersion { get; set; } = default!;
     public string Nombre { get; set; } = string.Empty;
     public TipoCambio TipoCambio { get; set; }
     public decimal ValorCambio { get; set; }
@@ -249,6 +255,7 @@ public class AutorizarBatchViewModel
 public class AplicarBatchViewModel
 {
     public int BatchId { get; set; }
+    public byte[] RowVersion { get; set; } = default!;
     public string Nombre { get; set; } = string.Empty;
     public int CantidadProductos { get; set; }
     public string? AprobadoPor { get; set; }
@@ -264,6 +271,7 @@ public class AplicarBatchViewModel
 public class RevertirBatchViewModel
 {
     public int BatchId { get; set; }
+    public byte[] RowVersion { get; set; } = default!;
     public string Nombre { get; set; } = string.Empty;
     public int CantidadProductos { get; set; }
     public string? AplicadoPor { get; set; }

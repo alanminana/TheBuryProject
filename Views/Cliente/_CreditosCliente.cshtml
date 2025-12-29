@@ -151,9 +151,9 @@ else
             }
             else
             {
-                <a href="#documentos" class="btn btn-warning" onclick="$('[data-bs-target=\'#documentos\']').tab('show')">
+                <button type="button" class="btn btn-warning" onclick="document.querySelector('[data-bs-target=\"#documentos\"]')?.click();">
                     <i class="bi bi-folder me-2"></i>Completar Documentación
-                </a>
+                </button>
             }
         }
         else

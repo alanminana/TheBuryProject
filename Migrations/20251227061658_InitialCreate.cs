@@ -83,12 +83,12 @@ namespace TheBuryProject.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Codigo = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    Nombre = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Codigo = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: ""),
+                    Nombre = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
                     Descripcion = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ParentId = table.Column<int>(type: "int", nullable: true),
                     ControlSerieDefault = table.Column<bool>(type: "bit", nullable: false),
-                    Activo = table.Column<bool>(type: "bit", nullable: false),
+                    Activo = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -151,7 +151,7 @@ namespace TheBuryProject.Migrations
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -169,12 +169,15 @@ namespace TheBuryProject.Migrations
                     Tipo = table.Column<int>(type: "int", nullable: false),
                     Descripcion = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     MargenPorcentaje = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: true),
+                    MargenMinimoPorcentaje = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     RecargoPorcentaje = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: true),
                     CantidadCuotas = table.Column<int>(type: "int", nullable: true),
+                    ReglaRedondeo = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     Activa = table.Column<bool>(type: "bit", nullable: false),
                     EsPredeterminada = table.Column<bool>(type: "bit", nullable: false),
                     Orden = table.Column<int>(type: "int", nullable: false),
                     ReglasJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Notas = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -326,7 +329,11 @@ namespace TheBuryProject.Migrations
                     FechaVigencia = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RevertidoPor = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     FechaReversion = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CanceladoPor = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    FechaCancelacion = table.Column<DateTime>(type: "datetime2", nullable: true),
                     MotivoRechazo = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    MotivoCancelacion = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    MotivoReversion = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     Notas = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     RequiereAutorizacion = table.Column<bool>(type: "bit", nullable: false),
                     PorcentajePromedioCambio = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: true),
@@ -583,7 +590,7 @@ namespace TheBuryProject.Migrations
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -717,7 +724,7 @@ namespace TheBuryProject.Migrations
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -749,7 +756,7 @@ namespace TheBuryProject.Migrations
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1026,7 +1033,7 @@ namespace TheBuryProject.Migrations
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1166,7 +1173,7 @@ namespace TheBuryProject.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "OrdenCompraDetalles",
+                name: "OrdenCompraDetalle",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -1187,15 +1194,15 @@ namespace TheBuryProject.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OrdenCompraDetalles", x => x.Id);
+                    table.PrimaryKey("PK_OrdenCompraDetalle", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_OrdenCompraDetalles_OrdenesCompra_OrdenCompraId",
+                        name: "FK_OrdenCompraDetalle_OrdenesCompra_OrdenCompraId",
                         column: x => x.OrdenCompraId,
                         principalTable: "OrdenesCompra",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_OrdenCompraDetalles_Productos_ProductoId",
+                        name: "FK_OrdenCompraDetalle_Productos_ProductoId",
                         column: x => x.ProductoId,
                         principalTable: "Productos",
                         principalColumn: "Id",
@@ -1255,15 +1262,15 @@ namespace TheBuryProject.Migrations
                     TipoEmpleo = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Sueldo = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
                     TelefonoLaboral = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    TieneReciboSueldo = table.Column<bool>(type: "bit", nullable: false),
-                    TieneVeraz = table.Column<bool>(type: "bit", nullable: false),
-                    TieneImpuesto = table.Column<bool>(type: "bit", nullable: false),
-                    TieneServicioLuz = table.Column<bool>(type: "bit", nullable: false),
-                    TieneServicioGas = table.Column<bool>(type: "bit", nullable: false),
-                    TieneServicioAgua = table.Column<bool>(type: "bit", nullable: false),
+                    TieneReciboSueldo = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     PuntajeRiesgo = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
                     Activo = table.Column<bool>(type: "bit", nullable: false),
                     Observaciones = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    TieneImpuesto = table.Column<bool>(type: "bit", nullable: false),
+                    TieneServicioAgua = table.Column<bool>(type: "bit", nullable: false),
+                    TieneServicioGas = table.Column<bool>(type: "bit", nullable: false),
+                    TieneServicioLuz = table.Column<bool>(type: "bit", nullable: false),
+                    TieneVeraz = table.Column<bool>(type: "bit", nullable: false),
                     GaranteId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -1442,6 +1449,51 @@ namespace TheBuryProject.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "EvaluacionesCredito",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CreditoId = table.Column<int>(type: "int", nullable: false),
+                    ClienteId = table.Column<int>(type: "int", nullable: false),
+                    Resultado = table.Column<int>(type: "int", nullable: false),
+                    PuntajeRiesgoCliente = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    MontoSolicitado = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    SueldoCliente = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    RelacionCuotaIngreso = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
+                    TieneDocumentacionCompleta = table.Column<bool>(type: "bit", nullable: false),
+                    TieneIngresosSuficientes = table.Column<bool>(type: "bit", nullable: false),
+                    TieneBuenHistorial = table.Column<bool>(type: "bit", nullable: false),
+                    TieneGarante = table.Column<bool>(type: "bit", nullable: false),
+                    PuntajeFinal = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Motivo = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Observaciones = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    FechaEvaluacion = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EvaluacionesCredito", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EvaluacionesCredito_Clientes_ClienteId",
+                        column: x => x.ClienteId,
+                        principalTable: "Clientes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EvaluacionesCredito_Creditos_CreditoId",
+                        column: x => x.CreditoId,
+                        principalTable: "Creditos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Ventas",
                 columns: table => new
                 {
@@ -1477,7 +1529,7 @@ namespace TheBuryProject.Migrations
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1516,7 +1568,7 @@ namespace TheBuryProject.Migrations
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1552,7 +1604,7 @@ namespace TheBuryProject.Migrations
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1640,7 +1692,7 @@ namespace TheBuryProject.Migrations
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1674,7 +1726,7 @@ namespace TheBuryProject.Migrations
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1711,7 +1763,7 @@ namespace TheBuryProject.Migrations
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1914,8 +1966,8 @@ namespace TheBuryProject.Migrations
                 columns: new[] { "Id", "Activo", "Codigo", "ControlSerieDefault", "CreatedAt", "CreatedBy", "Descripcion", "IsDeleted", "Nombre", "ParentId", "UpdatedAt", "UpdatedBy" },
                 values: new object[,]
                 {
-                    { 1, true, "ELEC", true, new DateTime(2025, 11, 13, 7, 1, 30, 382, DateTimeKind.Utc).AddTicks(808), "System", "Productos electrónicos", false, "Electrónica", null, null, null },
-                    { 2, true, "FRIO", true, new DateTime(2025, 11, 13, 7, 1, 30, 382, DateTimeKind.Utc).AddTicks(812), "System", "Heladeras, freezers y aire acondicionado", false, "Refrigeración", null, null, null }
+                    { 1, true, "ELEC", true, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "System", "Productos electrónicos", false, "Electrónica", null, null, null },
+                    { 2, true, "FRIO", true, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "System", "Heladeras, freezers y aire acondicionado", false, "Refrigeración", null, null, null }
                 });
 
             migrationBuilder.InsertData(
@@ -1923,9 +1975,9 @@ namespace TheBuryProject.Migrations
                 columns: new[] { "Id", "Activo", "Codigo", "CreatedAt", "CreatedBy", "Descripcion", "IsDeleted", "Nombre", "PaisOrigen", "ParentId", "UpdatedAt", "UpdatedBy" },
                 values: new object[,]
                 {
-                    { 1, true, "SAM", new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4753), "System", "Electrónica y electrodomésticos", false, "Samsung", "Corea del Sur", null, null, null },
-                    { 2, true, "LG", new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4755), "System", "Electrónica y electrodomésticos", false, "LG", "Corea del Sur", null, null, null },
-                    { 3, true, "WHI", new DateTime(2025, 11, 13, 7, 1, 30, 389, DateTimeKind.Utc).AddTicks(4758), "System", "Electrodomésticos", false, "Whirlpool", "Estados Unidos", null, null, null }
+                    { 1, true, "SAM", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "System", "Electrónica y electrodomésticos", false, "Samsung", "Corea del Sur", null, null, null },
+                    { 2, true, "LG", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "System", "Electrónica y electrodomésticos", false, "LG", "Corea del Sur", null, null, null },
+                    { 3, true, "WHI", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "System", "Electrodomésticos", false, "Whirlpool", "Estados Unidos", null, null, null }
                 });
 
             migrationBuilder.CreateIndex(
@@ -2001,14 +2053,16 @@ namespace TheBuryProject.Migrations
                 column: "Prioridad");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AlertasStock_ProductoId",
-                table: "AlertasStock",
-                column: "ProductoId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_AlertasStock_Tipo",
                 table: "AlertasStock",
                 column: "Tipo");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_AlertasStock_Producto_Activa",
+                table: "AlertasStock",
+                column: "ProductoId",
+                unique: true,
+                filter: "[IsDeleted] = 0 AND [FechaResolucion] IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AperturasCaja_CajaId",
@@ -2239,6 +2293,26 @@ namespace TheBuryProject.Migrations
                 column: "TipoDocumento");
 
             migrationBuilder.CreateIndex(
+                name: "IX_EvaluacionesCredito_ClienteId",
+                table: "EvaluacionesCredito",
+                column: "ClienteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EvaluacionesCredito_CreditoId",
+                table: "EvaluacionesCredito",
+                column: "CreditoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EvaluacionesCredito_FechaEvaluacion",
+                table: "EvaluacionesCredito",
+                column: "FechaEvaluacion");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EvaluacionesCredito_Resultado",
+                table: "EvaluacionesCredito",
+                column: "Resultado");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Facturas_CAE",
                 table: "Facturas",
                 column: "CAE");
@@ -2454,13 +2528,13 @@ namespace TheBuryProject.Migrations
                 column: "UsuarioDestino");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrdenCompraDetalles_OrdenCompraId",
-                table: "OrdenCompraDetalles",
+                name: "IX_OrdenCompraDetalle_OrdenCompraId",
+                table: "OrdenCompraDetalle",
                 column: "OrdenCompraId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrdenCompraDetalles_ProductoId",
-                table: "OrdenCompraDetalles",
+                name: "IX_OrdenCompraDetalle_ProductoId",
+                table: "OrdenCompraDetalle",
                 column: "ProductoId");
 
             migrationBuilder.CreateIndex(
@@ -2855,6 +2929,9 @@ namespace TheBuryProject.Migrations
                 name: "DocumentosCliente");
 
             migrationBuilder.DropTable(
+                name: "EvaluacionesCredito");
+
+            migrationBuilder.DropTable(
                 name: "Facturas");
 
             migrationBuilder.DropTable(
@@ -2873,7 +2950,7 @@ namespace TheBuryProject.Migrations
                 name: "Notificaciones");
 
             migrationBuilder.DropTable(
-                name: "OrdenCompraDetalles");
+                name: "OrdenCompraDetalle");
 
             migrationBuilder.DropTable(
                 name: "PreciosHistoricos");

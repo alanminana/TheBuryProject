@@ -53,6 +53,7 @@
                 <form asp-action="Recepcionar" method="post" class="mt-3">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="Id" />
+                    <input type="hidden" name="rowVersion" value="@(Model.RowVersion != null ? Convert.ToBase64String(Model.RowVersion) : string.Empty)" />
 
                     <div class="card bg-dark border-0 shadow-sm">
                         <div class="card-header bg-primary text-white">

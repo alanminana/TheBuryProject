@@ -56,44 +56,73 @@ namespace TheBuryProject.Services
 
                 // KPIs de Créditos - USANDO EstadoCredito.Activo
                 CreditosActivos = await _context.Creditos
-                    .CountAsync(c => !c.IsDeleted && c.Estado == EstadoCredito.Activo),
+                    .CountAsync(c => !c.IsDeleted &&
+                                   c.Cliente != null &&
+                                   !c.Cliente.IsDeleted &&
+                                   c.Estado == EstadoCredito.Activo),
 
                 // USANDO TotalAPagar en lugar de MontoTotal
                 MontoTotalCreditos = await _context.Creditos
-                    .Where(c => !c.IsDeleted && c.Estado == EstadoCredito.Activo)
+                    .Where(c => !c.IsDeleted &&
+                                c.Cliente != null &&
+                                !c.Cliente.IsDeleted &&
+                                c.Estado == EstadoCredito.Activo)
                     .SumAsync(c => (decimal?)c.TotalAPagar) ?? 0,
 
                 SaldoPendienteTotal = await _context.Creditos
-                    .Where(c => !c.IsDeleted && c.Estado == EstadoCredito.Activo)
+                    .Where(c => !c.IsDeleted &&
+                                c.Cliente != null &&
+                                !c.Cliente.IsDeleted &&
+                                c.Estado == EstadoCredito.Activo)
                     .SumAsync(c => (decimal?)c.SaldoPendiente) ?? 0,
 
                 CuotasVencidasTotal = await _context.Cuotas
                     .CountAsync(c => !c.IsDeleted &&
+                                c.Credito != null &&
+                                !c.Credito.IsDeleted &&
+                                c.Credito.Cliente != null &&
+                                !c.Credito.Cliente.IsDeleted &&
                                 c.Estado == EstadoCuota.Pendiente &&
                                 c.FechaVencimiento < hoy),
 
                 // USANDO MontoTotal en lugar de Monto
                 MontoVencidoTotal = await _context.Cuotas
-                    .Where(c => !c.IsDeleted &&
+                      .Where(c => !c.IsDeleted &&
+                          c.Credito != null &&
+                          !c.Credito.IsDeleted &&
+                          c.Credito.Cliente != null &&
+                          !c.Credito.Cliente.IsDeleted &&
                            c.Estado == EstadoCuota.Pendiente &&
                            c.FechaVencimiento < hoy)
                     .SumAsync(c => (decimal?)c.MontoTotal) ?? 0,
 
                 // KPIs de Cobranza
                 CobranzaHoy = await _context.Cuotas
-                    .Where(c => !c.IsDeleted &&
+                      .Where(c => !c.IsDeleted &&
+                          c.Credito != null &&
+                          !c.Credito.IsDeleted &&
+                          c.Credito.Cliente != null &&
+                          !c.Credito.Cliente.IsDeleted &&
                            c.Estado == EstadoCuota.Pagada &&
                            c.FechaPago.HasValue && c.FechaPago.Value.Date == hoy)
                     .SumAsync(c => (decimal?)c.MontoPagado) ?? 0,
 
                 CobranzaMes = await _context.Cuotas
-                    .Where(c => !c.IsDeleted &&
+                      .Where(c => !c.IsDeleted &&
+                          c.Credito != null &&
+                          !c.Credito.IsDeleted &&
+                          c.Credito.Cliente != null &&
+                          !c.Credito.Cliente.IsDeleted &&
                            c.Estado == EstadoCuota.Pagada &&
                            c.FechaPago.HasValue && c.FechaPago.Value >= inicioMes)
                     .SumAsync(c => (decimal?)c.MontoPagado) ?? 0,
 
                 CobranzaAnio = await _context.Cuotas
-                    .Where(c => !c.IsDeleted &&
+                      .Where(c => !c.IsDeleted &&
+                          c.Credito != null &&
+                          !c.Credito.IsDeleted &&
+                          c.Credito.Cliente != null &&
+                          !c.Credito.Cliente.IsDeleted &&
                            c.Estado == EstadoCuota.Pagada &&
                            c.FechaPago.HasValue && c.FechaPago.Value >= inicioAnio)
                     .SumAsync(c => (decimal?)c.MontoPagado) ?? 0,
@@ -142,13 +171,22 @@ namespace TheBuryProject.Services
         private async Task<decimal> CalcularTasaMorosidadAsync()
         {
             var totalCuotas = await _context.Cuotas
-                .Where(c => !c.IsDeleted && c.Estado == EstadoCuota.Pendiente)
+                .Where(c => !c.IsDeleted &&
+                            c.Credito != null &&
+                            !c.Credito.IsDeleted &&
+                            c.Credito.Cliente != null &&
+                            !c.Credito.Cliente.IsDeleted &&
+                            c.Estado == EstadoCuota.Pendiente)
                 .CountAsync();
 
             if (totalCuotas == 0) return 0;
 
             var cuotasVencidas = await _context.Cuotas
                 .CountAsync(c => !c.IsDeleted &&
+                           c.Credito != null &&
+                           !c.Credito.IsDeleted &&
+                           c.Credito.Cliente != null &&
+                           !c.Credito.Cliente.IsDeleted &&
                            c.Estado == EstadoCuota.Pendiente &&
                            c.FechaVencimiento < DateTime.Today);
 
@@ -161,7 +199,11 @@ namespace TheBuryProject.Services
 
             // USANDO MontoTotal en lugar de Monto
             var montoEsperado = await _context.Cuotas
-                .Where(c => !c.IsDeleted &&
+                  .Where(c => !c.IsDeleted &&
+                      c.Credito != null &&
+                      !c.Credito.IsDeleted &&
+                      c.Credito.Cliente != null &&
+                      !c.Credito.Cliente.IsDeleted &&
                        c.FechaVencimiento >= inicioMes &&
                        c.FechaVencimiento < DateTime.Today)
                 .SumAsync(c => (decimal?)c.MontoTotal) ?? 0;
@@ -169,7 +211,11 @@ namespace TheBuryProject.Services
             if (montoEsperado == 0) return 0;
 
             var montoRecaudado = await _context.Cuotas
-                .Where(c => !c.IsDeleted &&
+                  .Where(c => !c.IsDeleted &&
+                      c.Credito != null &&
+                      !c.Credito.IsDeleted &&
+                      c.Credito.Cliente != null &&
+                      !c.Credito.Cliente.IsDeleted &&
                        c.Estado == EstadoCuota.Pagada &&
                        c.FechaPago.HasValue &&
                        c.FechaPago.Value >= inicioMes)
@@ -239,6 +285,8 @@ namespace TheBuryProject.Services
 
             var productos = await _context.VentaDetalles
                 .Where(vd => !vd.IsDeleted &&
+                    vd.Producto != null &&
+                    !vd.Producto.IsDeleted &&
                         vd.Venta != null &&
                         !vd.Venta.IsDeleted &&
                         vd.Venta.FechaVenta >= inicioMes)
@@ -261,7 +309,9 @@ namespace TheBuryProject.Services
         {
             // USANDO TotalAPagar en lugar de MontoTotal
             var creditos = await _context.Creditos
-                .Where(c => !c.IsDeleted)
+                .Where(c => !c.IsDeleted &&
+                            c.Cliente != null &&
+                            !c.Cliente.IsDeleted)
                 .GroupBy(c => c.Estado)
                 .Select(g => new EstadoCreditoDto
                 {
@@ -281,7 +331,12 @@ namespace TheBuryProject.Services
 
             // USANDO MontoTotal en lugar de Monto
             var cobranza = await _context.Cuotas
-                .Where(c => !c.IsDeleted && c.FechaVencimiento >= inicioMes)
+                .Where(c => !c.IsDeleted &&
+                            c.Credito != null &&
+                            !c.Credito.IsDeleted &&
+                            c.Credito.Cliente != null &&
+                            !c.Credito.Cliente.IsDeleted &&
+                            c.FechaVencimiento >= inicioMes)
                 .GroupBy(c => new { c.FechaVencimiento.Year, c.FechaVencimiento.Month })
                 .Select(g => new CobranzaPorMesDto
                 {

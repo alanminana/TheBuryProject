@@ -4,7 +4,7 @@ using TheBuryProject.Models.Enums;
 namespace TheBuryProject.Helpers
 {
     /// <summary>
-    /// Contiene métodos para evaluación de capacidad crediticia
+    /// Contiene mï¿½todos para evaluaciï¿½n de capacidad crediticia
     /// </summary>
     public static class EvaluacionCrediticiaHelper
     {
@@ -23,13 +23,19 @@ namespace TheBuryProject.Helpers
             EvaluacionCreditoResult evaluacion,
             ClienteDetalleViewModel modelo)
         {
+            var creditosVigentes = modelo.CreditosActivos
+                .Where(c => c.Estado == EstadoCredito.Activo || c.Estado == EstadoCredito.Aprobado)
+                .ToList();
+
             evaluacion.IngresosMensuales = modelo.Cliente.IngresoMensual ?? 0;
-            evaluacion.DeudaActual = modelo.CreditosActivos.Sum(c => c.SaldoPendiente);
+            evaluacion.DeudaActual = creditosVigentes.Sum(c => c.SaldoPendiente);
             evaluacion.CapacidadPagoMensual = evaluacion.IngresosMensuales * CAPACIDAD_PAGO_PORCENTAJE;
 
             if (evaluacion.IngresosMensuales > 0)
             {
-                var cuotaMensualActual = modelo.CreditosActivos.Sum(c => c.MontoTotal / c.CantidadCuotas);
+                var cuotaMensualActual = creditosVigentes
+                    .Where(c => c.CantidadCuotas > 0)
+                    .Sum(c => c.MontoTotal / c.CantidadCuotas);
                 evaluacion.PorcentajeEndeudamiento = (double)(cuotaMensualActual / evaluacion.IngresosMensuales * 100);
             }
 
@@ -37,7 +43,7 @@ namespace TheBuryProject.Helpers
         }
 
         /// <summary>
-        /// Determina si requiere garante según criterios
+        /// Determina si requiere garante segï¿½n criterios
         /// </summary>
         public static bool DeterminarRequiereGarante(EvaluacionCreditoResult evaluacion)
         {
@@ -47,7 +53,7 @@ namespace TheBuryProject.Helpers
         }
 
         /// <summary>
-        /// Determina si puede aprobarse con excepción
+        /// Determina si puede aprobarse con excepciï¿½n
         /// </summary>
         public static bool DeterminarPuedeAprobarConExcepcion(EvaluacionCreditoResult evaluacion)
         {
@@ -57,7 +63,7 @@ namespace TheBuryProject.Helpers
         }
 
         /// <summary>
-        /// Verifica si cumple todos los requisitos mínimos
+        /// Verifica si cumple todos los requisitos mï¿½nimos
         /// </summary>
         public static bool VerificaCumplimientoRequisitos(EvaluacionCreditoResult evaluacion)
         {

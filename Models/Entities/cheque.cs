@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Representa un cheque emitido como pago a proveedor
     /// </summary>
-    public class Cheque : BaseEntity
+    public class Cheque  : AuditableEntity
     {
         /// <summary>
         /// N�mero de cheque

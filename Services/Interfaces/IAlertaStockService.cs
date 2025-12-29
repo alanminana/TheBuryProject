@@ -5,11 +5,17 @@ using TheBuryProject.ViewModels;
 namespace TheBuryProject.Services.Interfaces
 {
     /// <summary>
-    /// Interfaz para el servicio de gestión de alertas de stock
+    /// Interfaz para el servicio de gestiï¿½n de alertas de stock
     /// </summary>
     public interface IAlertaStockService
     {
         /// <summary>
+
+    /// <summary>
+    /// Verifica y genera alertas para mltiples productos (batch), evitando N+1.
+    /// Devuelve la cantidad de alertas nuevas creadas.
+    /// </summary>
+    Task<int> VerificarYGenerarAlertasAsync(IEnumerable<int> productoIds);
         /// Genera alertas para todos los productos con stock bajo
         /// </summary>
         Task<int> GenerarAlertasStockBajoAsync();
@@ -27,20 +33,20 @@ namespace TheBuryProject.Services.Interfaces
         /// <summary>
         /// Obtiene una alerta por ID
         /// </summary>
-        Task<AlertaStock?> GetByIdAsync(int id);
+        Task<AlertaStockViewModel?> GetByIdAsync(int id);
 
         /// <summary>
         /// Marca una alerta como resuelta
         /// </summary>
-        Task<bool> ResolverAlertaAsync(int id, string usuarioResolucion, string? observaciones = null);
+        Task<bool> ResolverAlertaAsync(int id, string usuarioResolucion, string? observaciones = null, byte[]? rowVersion = null);
 
         /// <summary>
         /// Marca una alerta como ignorada
         /// </summary>
-        Task<bool> IgnorarAlertaAsync(int id, string usuarioResolucion, string? observaciones = null);
+        Task<bool> IgnorarAlertaAsync(int id, string usuarioResolucion, string? observaciones = null, byte[]? rowVersion = null);
 
         /// <summary>
-        /// Obtiene estadísticas de alertas de stock
+        /// Obtiene estadï¿½sticas de alertas de stock
         /// </summary>
         Task<AlertaStockEstadisticasViewModel> GetEstadisticasAsync();
 
@@ -50,17 +56,17 @@ namespace TheBuryProject.Services.Interfaces
         Task<List<AlertaStock>> GetAlertasByProductoIdAsync(int productoId);
 
         /// <summary>
-        /// Verifica y genera alerta para un producto específico
+        /// Verifica y genera alerta para un producto especï¿½fico
         /// </summary>
         Task<AlertaStock?> VerificarYGenerarAlertaAsync(int productoId);
 
         /// <summary>
-        /// Elimina alertas resueltas antiguas (más de X días)
+        /// Elimina alertas resueltas antiguas (mï¿½s de X dï¿½as)
         /// </summary>
         Task<int> LimpiarAlertasAntiguasAsync(int diasAntiguedad = 30);
 
         /// <summary>
-        /// Obtiene productos críticos (sin stock o stock agotado)
+        /// Obtiene productos crï¿½ticos (sin stock o stock agotado)
         /// </summary>
         Task<List<ProductoCriticoViewModel>> GetProductosCriticosAsync();
     }

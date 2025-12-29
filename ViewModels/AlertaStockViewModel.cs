@@ -8,6 +8,7 @@ namespace TheBuryProject.ViewModels
     public class AlertaStockViewModel
     {
         public int Id { get; set; }
+        public byte[]? RowVersion { get; set; }
         public int ProductoId { get; set; }
         public string ProductoCodigo { get; set; } = string.Empty;
         public string ProductoNombre { get; set; } = string.Empty;

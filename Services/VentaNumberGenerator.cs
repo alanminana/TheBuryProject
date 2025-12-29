@@ -29,7 +29,7 @@ namespace TheBuryProject.Services
                 var prefijoCompleto = $"{prefijo}-{periodo}";
 
                 var ultimaVenta = await _context.Ventas
-                    .Where(v => v.Numero.StartsWith(prefijoCompleto) && !v.IsDeleted)
+                    .Where(v => v.Numero.StartsWith(prefijoCompleto))
                     .OrderByDescending(v => v.Numero)
                     .FirstOrDefaultAsync();
 

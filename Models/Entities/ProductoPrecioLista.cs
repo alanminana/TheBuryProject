@@ -4,11 +4,11 @@ using TheBuryProject.Models.Base;
 namespace TheBuryProject.Models.Entities;
 
 /// <summary>
-/// Representa el precio de un producto en una lista específica con vigencia
+/// Representa el precio de un producto en una lista especï¿½fica con vigencia
 /// Esta tabla mantiene el historial completo de precios (append-only)
 /// Clave compuesta: ProductoId + ListaId + VigenciaDesde
 /// </summary>
-public class ProductoPrecioLista : BaseEntity
+public class ProductoPrecioLista  : AuditableEntity
 {
     /// <summary>
     /// ID del producto
@@ -23,15 +23,15 @@ public class ProductoPrecioLista : BaseEntity
     public int ListaId { get; set; }
 
     /// <summary>
-    /// Fecha desde la cual este precio es válido
+    /// Fecha desde la cual este precio es vï¿½lido
     /// Permite tener historial completo de cambios
     /// </summary>
     [Required]
     public DateTime VigenciaDesde { get; set; }
 
     /// <summary>
-    /// Fecha hasta la cual este precio es válido (null = vigente)
-    /// Se calcula automáticamente al insertar un nuevo registro
+    /// Fecha hasta la cual este precio es vï¿½lido (null = vigente)
+    /// Se calcula automï¿½ticamente al insertar un nuevo registro
     /// </summary>
     public DateTime? VigenciaHasta { get; set; }
 
@@ -58,23 +58,23 @@ public class ProductoPrecioLista : BaseEntity
     public decimal MargenValor { get; set; }
 
     /// <summary>
-    /// Indica si este precio fue calculado automáticamente o es manual
+    /// Indica si este precio fue calculado automï¿½ticamente o es manual
     /// </summary>
     public bool EsManual { get; set; } = false;
 
     /// <summary>
-    /// ID del batch de cambio que generó este precio (si aplica)
+    /// ID del batch de cambio que generï¿½ este precio (si aplica)
     /// </summary>
     public int? BatchId { get; set; }
 
     /// <summary>
-    /// Usuario que creó o autorizó este precio
+    /// Usuario que creï¿½ o autorizï¿½ este precio
     /// </summary>
     [StringLength(50)]
     public string? CreadoPor { get; set; }
 
     /// <summary>
-    /// Notas o justificación del cambio de precio
+    /// Notas o justificaciï¿½n del cambio de precio
     /// </summary>
     [StringLength(500)]
     public string? Notas { get; set; }
@@ -84,7 +84,7 @@ public class ProductoPrecioLista : BaseEntity
     /// </summary>
     public bool EsVigente { get; set; } = true;
 
-    // Navegación
+    // Navegaciï¿½n
     public virtual Producto Producto { get; set; } = null!;
     public virtual ListaPrecio Lista { get; set; } = null!;
     public virtual PriceChangeBatch? Batch { get; set; }

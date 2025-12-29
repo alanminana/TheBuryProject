@@ -11,6 +11,8 @@ public class CajaViewModel
 {
     public int Id { get; set; }
 
+    public byte[]? RowVersion { get; set; }
+
     [Required(ErrorMessage = "El código es obligatorio")]
     [StringLength(50)]
     [Display(Name = "Código")]

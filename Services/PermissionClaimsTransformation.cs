@@ -1,56 +1,63 @@
+using System;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Identity;
 using TheBuryProject.Services.Interfaces;
 
 namespace TheBuryProject.Services;
 
 /// <summary>
-/// Agrega dinámicamente los claims de permisos efectivos del usuario después de la autenticación.
-/// Esto asegura que los permisos asignados vía roles estén presentes en el principal incluso cuando
-/// los claims del rol no se copien automáticamente al cookie de autenticación.
+/// Agrega/remueve dinámicamente los claims "Permission" efectivos del usuario en cada autenticación.
+/// Debe ser idempotente.
 /// </summary>
-public class PermissionClaimsTransformation : IClaimsTransformation
+public sealed class PermissionClaimsTransformation : IClaimsTransformation
 {
     private readonly IRolService _rolService;
-    private readonly UserManager<IdentityUser> _userManager;
 
-    public PermissionClaimsTransformation(IRolService rolService, UserManager<IdentityUser> userManager)
+    public PermissionClaimsTransformation(IRolService rolService)
     {
         _rolService = rolService;
-        _userManager = userManager;
     }
 
     public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
-        var identity = principal.Identity as ClaimsIdentity;
+        // Evita CS8603: nunca devolvemos null
+        if (principal is null)
+            return new ClaimsPrincipal(new ClaimsIdentity());
+
+        if (principal.Identity is not ClaimsIdentity identity)
+            return principal;
+
         var userId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (identity == null || string.IsNullOrEmpty(userId))
-        {
+        if (string.IsNullOrWhiteSpace(userId))
             return principal;
+
+        var effectivePermissions = await _rolService.GetUserEffectivePermissionsAsync(userId);
+
+        var normalized = effectivePermissions
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Select(p => p.Trim().ToLowerInvariant())
+            .ToHashSet(StringComparer.Ordinal);
+
+        // Quitar claims que ya no correspondan
+        var existingPermissionClaims = identity.FindAll("Permission").ToList();
+        foreach (var claim in existingPermissionClaims)
+        {
+            var claimValue = (claim.Value ?? string.Empty).Trim().ToLowerInvariant();
+            if (!normalized.Contains(claimValue))
+                identity.RemoveClaim(claim);
         }
 
-        // Evitar duplicados si los claims ya fueron agregados (por ejemplo, vía fábrica personalizada)
-        var existingPermissions = identity
-            .FindAll(c => c.Type == "Permission")
-            .Select(c => c.Value)
-            .Where(v => !string.IsNullOrWhiteSpace(v))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Agregar faltantes
+        var current = identity.FindAll("Permission")
+            .Select(c => (c.Value ?? string.Empty).Trim().ToLowerInvariant())
+            .ToHashSet(StringComparer.Ordinal);
 
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null)
+        foreach (var permiso in normalized)
         {
-            return principal;
-        }
-
-        var effectivePermissions = await _rolService.GetUserEffectivePermissionsAsync(user.Id);
-        foreach (var permiso in effectivePermissions.Where(p => !string.IsNullOrWhiteSpace(p)))
-        {
-            if (existingPermissions.Add(permiso))
-            {
+            if (current.Add(permiso))
                 identity.AddClaim(new Claim("Permission", permiso));
-            }
         }
 
         return principal;

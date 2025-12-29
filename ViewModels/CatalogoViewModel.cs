@@ -1,9 +1,9 @@
-using TheBuryProject.ViewModels;
+Ôªøusing TheBuryProject.ViewModels;
 
 namespace TheBuryProject.ViewModels
 {
     /// <summary>
-    /// ViewModel unificado para la vista de Cat·logo (CategorÌas + Marcas)
+    /// ViewModel unificado para la vista de Cat√°logo (Categor√≠as + Marcas)
     /// </summary>
     public class CatalogoViewModel
     {

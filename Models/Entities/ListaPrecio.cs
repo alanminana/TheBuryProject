@@ -8,7 +8,7 @@ namespace TheBuryProject.Models.Entities;
 /// Representa una lista de precios del sistema
 /// Ejemplos: "Contado", "Tarjeta 3 cuotas", "Mayorista"
 /// </summary>
-public class ListaPrecio : BaseEntity
+public class ListaPrecio  : AuditableEntity
 {
     /// <summary>
     /// Nombre de la lista de precios
@@ -18,7 +18,7 @@ public class ListaPrecio : BaseEntity
     public string Nombre { get; set; } = string.Empty;
 
     /// <summary>
-    /// Código único de la lista
+    /// Cï¿½digo ï¿½nico de la lista
     /// </summary>
     [Required]
     [StringLength(20)]
@@ -31,18 +31,18 @@ public class ListaPrecio : BaseEntity
     public TipoListaPrecio Tipo { get; set; }
 
     /// <summary>
-    /// Descripción de la lista y sus reglas
+    /// Descripciï¿½n de la lista y sus reglas
     /// </summary>
     [StringLength(500)]
     public string? Descripcion { get; set; }
 
     /// <summary>
-    /// Porcentaje de margen sobre costo (para cálculo automático)
+    /// Porcentaje de margen sobre costo (para cï¿½lculo automï¿½tico)
     /// </summary>
     public decimal? MargenPorcentaje { get; set; }
 
     /// <summary>
-    /// Margen mínimo permitido en porcentaje (validación)
+    /// Margen mï¿½nimo permitido en porcentaje (validaciï¿½n)
     /// </summary>
     public decimal? MargenMinimoPorcentaje { get; set; }
 
@@ -63,7 +63,7 @@ public class ListaPrecio : BaseEntity
     public string? ReglaRedondeo { get; set; }
 
     /// <summary>
-    /// Indica si esta lista está activa
+    /// Indica si esta lista estï¿½ activa
     /// </summary>
     public bool Activa { get; set; } = true;
 
@@ -73,7 +73,7 @@ public class ListaPrecio : BaseEntity
     public bool EsPredeterminada { get; set; } = false;
 
     /// <summary>
-    /// Orden de visualización en el sistema
+    /// Orden de visualizaciï¿½n en el sistema
     /// </summary>
     public int Orden { get; set; }
 
@@ -89,6 +89,6 @@ public class ListaPrecio : BaseEntity
     [StringLength(1000)]
     public string? Notas { get; set; }
 
-    // Navegación
+    // Navegaciï¿½n
     public virtual ICollection<ProductoPrecioLista> Precios { get; set; } = new List<ProductoPrecioLista>();
 }

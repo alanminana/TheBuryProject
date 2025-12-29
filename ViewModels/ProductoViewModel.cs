@@ -68,6 +68,13 @@ namespace TheBuryProject.ViewModels
         [Display(Name = "Activo")]
         public bool Activo { get; set; } = true;
 
+
+        /// <summary>
+        /// RowVersion para control de concurrencia optimista.
+        /// Debe enviarse en POST/PUT para detectar conflictos.
+        /// </summary>
+        public byte[]? RowVersion { get; set; }
+
         // Propiedades calculadas
         [Display(Name = "Margen de Ganancia")]
         public decimal? MargenGanancia

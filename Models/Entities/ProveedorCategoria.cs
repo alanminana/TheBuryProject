@@ -3,15 +3,15 @@ using TheBuryProject.Models.Base;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Relación N:N entre Proveedor y Categoría
-    /// Indica en qué categorías se especializa cada proveedor
+    /// Relaciï¿½n N:N entre Proveedor y Categorï¿½a
+    /// Indica en quï¿½ categorï¿½as se especializa cada proveedor
     /// </summary>
-    public class ProveedorCategoria : BaseEntity
+    public class ProveedorCategoria  : AuditableEntity
     {
         public int ProveedorId { get; set; }
         public int CategoriaId { get; set; }
 
-        // Navegación
+        // Navegaciï¿½n
         public virtual Proveedor Proveedor { get; set; } = null!;
         public virtual Categoria Categoria { get; set; } = null!;
     }

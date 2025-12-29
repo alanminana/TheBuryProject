@@ -88,7 +88,8 @@ namespace TheBuryProject.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var configuracion = await _context.ConfiguracionesPago.FindAsync(id);
+            var configuracion = await _context.ConfiguracionesPago
+                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
             if (configuracion == null)
                 return false;
 

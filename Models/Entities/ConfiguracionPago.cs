@@ -5,9 +5,9 @@ using TheBuryProject.Models.Enums;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Configuración general de tipo de pago
+    /// Configuraciï¿½n general de tipo de pago
     /// </summary>
-    public class ConfiguracionPago : BaseEntity
+    public class ConfiguracionPago  : AuditableEntity
     {
         [Required]
         public TipoPago TipoPago { get; set; }
@@ -29,7 +29,7 @@ namespace TheBuryProject.Models.Entities
         public bool TieneRecargo { get; set; } = false;
         public decimal? PorcentajeRecargo { get; set; }
 
-        // Relaciones específicas
+        // Relaciones especï¿½ficas
         public virtual ICollection<ConfiguracionTarjeta> ConfiguracionesTarjeta { get; set; } = new List<ConfiguracionTarjeta>();
     }
 }

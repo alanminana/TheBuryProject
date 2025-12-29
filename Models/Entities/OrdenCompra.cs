@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Representa una orden de compra realizada a un proveedor
     /// </summary>
-    public class OrdenCompra : BaseEntity
+    public class OrdenCompra  : AuditableEntity
     {
         /// <summary>
         /// N?mero de orden de compra (formato: OC-YYYYMMDD-0001)

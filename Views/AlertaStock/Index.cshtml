@@ -295,6 +295,7 @@
                                                         class="btn btn-outline-success js-resolver-alerta"
                                                         data-id="@alerta.Id"
                                                         data-producto="@alerta.ProductoNombre"
+                                                        data-rowversion="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")"
                                                         title="Resolver">
                                                     <i class="bi bi-check-circle"></i>
                                                 </button>
@@ -302,6 +303,7 @@
                                                         class="btn btn-outline-secondary js-ignorar-alerta"
                                                         data-id="@alerta.Id"
                                                         data-producto="@alerta.ProductoNombre"
+                                                        data-rowversion="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")"
                                                         title="Ignorar">
                                                     <i class="bi bi-x-circle"></i>
                                                 </button>

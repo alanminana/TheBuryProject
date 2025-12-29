@@ -7,6 +7,8 @@ namespace TheBuryProject.ViewModels
     {
         public int Id { get; set; }
 
+        public byte[]? RowVersion { get; set; }
+
         [Required(ErrorMessage = "El número de orden es obligatorio")]
         [Display(Name = "Número de Orden")]
         public string Numero { get; set; } = string.Empty;

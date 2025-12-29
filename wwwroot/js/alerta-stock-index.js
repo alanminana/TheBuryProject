@@ -12,7 +12,7 @@
         };
     }
 
-    function createForm(url, id, observaciones, token) {
+    function createForm(url, id, observaciones, rowVersion, token) {
         var form = document.createElement('form');
         form.method = 'POST';
         form.action = url + '/' + id;
@@ -31,22 +31,30 @@
             form.appendChild(obsInput);
         }
 
+        if (rowVersion) {
+            var rowVersionInput = document.createElement('input');
+            rowVersionInput.type = 'hidden';
+            rowVersionInput.name = 'rowVersion';
+            rowVersionInput.value = rowVersion;
+            form.appendChild(rowVersionInput);
+        }
+
         document.body.appendChild(form);
         form.submit();
     }
 
-    function resolverAlerta(config, id, producto) {
+    function resolverAlerta(config, id, producto, rowVersion) {
         var observaciones = window.prompt('Resolver alerta de "' + producto + '".\n\nObservaciones (opcional):');
         if (observaciones !== null) {
-            createForm(config.resolverUrl, id, observaciones, config.token);
+            createForm(config.resolverUrl, id, observaciones, rowVersion, config.token);
         }
     }
 
-    function ignorarAlerta(config, id, producto) {
+    function ignorarAlerta(config, id, producto, rowVersion) {
         if (window.confirm('¿Ignorar alerta de "' + producto + '"?')) {
             var observaciones = window.prompt('Motivo (opcional):');
             if (observaciones !== null) {
-                createForm(config.ignorarUrl, id, observaciones, config.token);
+                createForm(config.ignorarUrl, id, observaciones, rowVersion, config.token);
             }
         }
     }
@@ -59,13 +67,13 @@
 
         document.querySelectorAll('.js-resolver-alerta').forEach(function (button) {
             button.addEventListener('click', function () {
-                resolverAlerta(config, button.dataset.id, button.dataset.producto);
+                resolverAlerta(config, button.dataset.id, button.dataset.producto, button.dataset.rowversion);
             });
         });
 
         document.querySelectorAll('.js-ignorar-alerta').forEach(function (button) {
             button.addEventListener('click', function () {
-                ignorarAlerta(config, button.dataset.id, button.dataset.producto);
+                ignorarAlerta(config, button.dataset.id, button.dataset.producto, button.dataset.rowversion);
             });
         });
     }

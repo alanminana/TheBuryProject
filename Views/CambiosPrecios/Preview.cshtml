@@ -1,0 +1,182 @@
+@model TheBuryProject.ViewModels.SimulacionViewModel
+
+@{
+    ViewData["Title"] = "Detalle de simulación";
+}
+
+<div class="container-fluid px-0 py-4">
+
+    <div class="d-flex align-items-start justify-content-between mb-4">
+        <div>
+            <div class="text-muted text-uppercase small mb-1">Gestión de precios · Cambios masivos</div>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-eye"></i>
+                <span>Detalle de simulación</span>
+            </h1>
+            <p class="text-muted small mb-0">Revisión de items, advertencias y acciones disponibles.</p>
+        </div>
+
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-1"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-1"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-12 col-xl-4">
+            <div class="card card-animate border-0 mb-3">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <span class="fw-semibold">Resumen</span>
+                    <span class="badge bg-dark-subtle text-light">@Model.Estado</span>
+                </div>
+                <div class="card-body small">
+                    <dl class="row mb-0">
+                        <dt class="col-5 text-muted">Nombre</dt>
+                        <dd class="col-7 fw-semibold">@Model.Nombre</dd>
+
+                        <dt class="col-5 text-muted">Tipo cambio</dt>
+                        <dd class="col-7">@Model.TipoCambio</dd>
+
+                        <dt class="col-5 text-muted">Aplicación</dt>
+                        <dd class="col-7">@Model.TipoAplicacion</dd>
+
+                        <dt class="col-5 text-muted">Valor</dt>
+                        <dd class="col-7">@Model.ValorCambio.ToString("N2")</dd>
+
+                        <dt class="col-5 text-muted">Productos</dt>
+                        <dd class="col-7"><span class="fw-semibold text-primary">@Model.CantidadProductos</span></dd>
+
+                        <dt class="col-5 text-muted">Solicitado</dt>
+                        <dd class="col-7">
+                            <div class="fw-semibold">@Model.SolicitadoPor</div>
+                            <div class="text-muted">@Model.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</div>
+                        </dd>
+                    </dl>
+
+                    @if (Model.Estadisticas != null && Model.Estadisticas.Any())
+                    {
+                        <hr />
+                        <div class="small text-muted mb-2">Estadísticas</div>
+                        <pre class="mb-0 small">@System.Text.Json.JsonSerializer.Serialize(Model.Estadisticas, new System.Text.Json.JsonSerializerOptions { WriteIndented = true })</pre>
+                    }
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                @if (Model.Estado == TheBuryProject.Models.Enums.EstadoBatch.Simulado)
+                {
+                    if (User.HasClaim("Permission", "precios:authorize"))
+                    {
+                        <a asp-action="Autorizar" asp-route-id="@Model.BatchId" class="btn btn-warning btn-sm">
+                            <i class="bi bi-shield-check me-1"></i>Autorizar
+                        </a>
+                    }
+
+                    if (User.HasClaim("Permission", "precios:approve"))
+                    {
+                        <form asp-action="Cancelar" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.BatchId" />
+                            <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(Model.RowVersion ?? Array.Empty<byte>())" />
+                            <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="return confirm('¿Cancelar este batch?');">
+                                <i class="bi bi-ban me-1"></i>Cancelar
+                            </button>
+                        </form>
+                    }
+                }
+
+                @if (Model.Estado == TheBuryProject.Models.Enums.EstadoBatch.Aprobado)
+                {
+                    if (User.HasClaim("Permission", "precios:apply"))
+                    {
+                        <a asp-action="Aplicar" asp-route-id="@Model.BatchId" class="btn btn-success btn-sm">
+                            <i class="bi bi-check-circle me-1"></i>Aplicar
+                        </a>
+                    }
+                }
+
+                @if (Model.Estado == TheBuryProject.Models.Enums.EstadoBatch.Aplicado)
+                {
+                    if (User.HasClaim("Permission", "precios:revert"))
+                    {
+                        <a asp-action="Revertir" asp-route-id="@Model.BatchId" class="btn btn-danger btn-sm">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Revertir
+                        </a>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-8">
+            <div class="card card-animate border-0">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <span class="fw-semibold">Items</span>
+                    <span class="badge bg-dark-subtle text-light">@Model.Items.Count</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.Items.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover table-striped align-middle mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Producto</th>
+                                        <th class="text-end">Precio anterior</th>
+                                        <th class="text-end">Precio nuevo</th>
+                                        <th class="text-end">Δ%</th>
+                                        <th>Advertencia</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Items)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@item.ProductoCodigo</td>
+                                            <td>@item.ProductoNombre</td>
+                                            <td class="text-end">@item.PrecioAnterior.ToString("N2")</td>
+                                            <td class="text-end">@item.PrecioNuevo.ToString("N2")</td>
+                                            <td class="text-end">@item.DiferenciaPorcentaje.ToString("N2")%</td>
+                                            <td>
+                                                @if (item.TieneAdvertencia)
+                                                {
+                                                    <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> @item.MensajeAdvertencia</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">—</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-info-circle" style="font-size: 2.5rem;"></i>
+                            <div class="mt-2">No hay items para mostrar.</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -3,9 +3,9 @@ using TheBuryProject.Models.Base;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Configuración del sistema de mora y alertas de cobranza
+    /// Configuraciï¿½n del sistema de mora y alertas de cobranza
     /// </summary>
-    public class ConfiguracionMora : BaseEntity
+    public class ConfiguracionMora  : AuditableEntity
     {
         public int DiasGracia { get; set; } = 3;
         public decimal PorcentajeRecargo { get; set; } = 5.0m;

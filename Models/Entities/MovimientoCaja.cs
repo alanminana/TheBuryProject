@@ -8,7 +8,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Movimiento de entrada o salida de efectivo en caja
     /// </summary>
-    public class MovimientoCaja : BaseEntity
+    public class MovimientoCaja  : AuditableEntity
     {
         [Required]
         public int AperturaCajaId { get; set; }
