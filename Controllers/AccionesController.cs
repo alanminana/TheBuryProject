@@ -21,6 +21,21 @@ public class AccionesController : Controller
 
     private string CurrentUserName => User.Identity?.Name ?? "Sistema";
 
+    private string? GetSafeReturnUrl(string? returnUrl)
+        => !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : null;
+
+    private IActionResult RedirectToReturnUrlOrIndex(string? returnUrl)
+    {
+        var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        return safeReturnUrl != null ? LocalRedirect(safeReturnUrl) : RedirectToAction(nameof(Index));
+    }
+
+    private IActionResult RedirectToReturnUrlOrDetails(int id, string? returnUrl)
+    {
+        var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        return safeReturnUrl != null ? LocalRedirect(safeReturnUrl) : RedirectToAction(nameof(Details), new { id });
+    }
+
     public AccionesController(
         IRolService rolService,
         ILogger<AccionesController> logger)
@@ -33,7 +48,7 @@ public class AccionesController : Controller
     /// Lista todas las acciones del sistema
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? returnUrl)
     {
         try
         {
@@ -68,8 +83,10 @@ public class AccionesController : Controller
     /// Muestra detalles de una acción
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Details(int id)
+    public async Task<IActionResult> Details(int id, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         try
         {
             var accion = await _rolService.GetAccionByIdAsync(id);
@@ -112,8 +129,9 @@ public class AccionesController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "acciones", Accion = "create")]
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
         await CargarModulosEnViewBag();
         return View(new CrearAccionViewModel());
     }
@@ -124,8 +142,10 @@ public class AccionesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "acciones", Accion = "create")]
-    public async Task<IActionResult> Create(CrearAccionViewModel model)
+    public async Task<IActionResult> Create(CrearAccionViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
             await CargarModulosEnViewBag();
@@ -148,7 +168,7 @@ public class AccionesController : Controller
             _logger.LogInformation("Acción creada: {AccionNombre} por usuario {User}",
                 model.Nombre, User.Identity?.Name);
             TempData["Success"] = $"Acción '{model.Nombre}' creada exitosamente";
-            return RedirectToAction(nameof(Index));
+            return RedirectToReturnUrlOrIndex(returnUrl);
         }
         catch (Exception ex)
         {
@@ -165,8 +185,10 @@ public class AccionesController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "acciones", Accion = "update")]
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(int id, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         try
         {
             var accion = await _rolService.GetAccionByIdAsync(id);
@@ -202,8 +224,10 @@ public class AccionesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "acciones", Accion = "update")]
-    public async Task<IActionResult> Edit(EditarAccionViewModel model)
+    public async Task<IActionResult> Edit(EditarAccionViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
             await CargarModulosEnViewBag();
@@ -236,7 +260,7 @@ public class AccionesController : Controller
             _logger.LogInformation("Acción actualizada: {AccionId} por usuario {User}",
                 model.Id, CurrentUserName);
             TempData["Success"] = $"Acción '{model.Nombre}' actualizada exitosamente";
-            return RedirectToAction(nameof(Index));
+            return RedirectToReturnUrlOrDetails(model.Id, returnUrl);
         }
         catch (Exception ex)
         {
@@ -253,8 +277,10 @@ public class AccionesController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "acciones", Accion = "delete")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         try
         {
             var accion = await _rolService.GetAccionByIdAsync(id);
@@ -288,7 +314,7 @@ public class AccionesController : Controller
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "acciones", Accion = "delete")]
-    public async Task<IActionResult> DeleteConfirmed(int id)
+    public async Task<IActionResult> DeleteConfirmed(int id, string? returnUrl)
     {
         try
         {
@@ -318,7 +344,7 @@ public class AccionesController : Controller
             TempData["Error"] = "Error al eliminar la acción";
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToReturnUrlOrIndex(returnUrl);
     }
 
     /// <summary>

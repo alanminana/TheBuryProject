@@ -1,13 +1,15 @@
 ﻿@model TheBuryProject.ViewModels.MarcaViewModel
 @{
     ViewData["Title"] = "Editar Marca";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index")!;
 }
 
 <section class="container-fluid py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="mb-4">
-                <a asp-action="Index" class="text-decoration-none text-light">
+                <a href="@backUrl" class="text-decoration-none text-light">
                     <i class="bi bi-arrow-left me-2"></i>Volver al listado
                 </a>
             </div>
@@ -23,11 +25,18 @@
                     <form asp-action="Edit" method="post">
                         <input type="hidden" asp-for="Id" />
                         <input type="hidden" asp-for="RowVersion" />
+                        @if (!string.IsNullOrWhiteSpace(returnUrl))
+                        {
+                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        }
 
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            <div>Corregí los errores antes de continuar</div>
-                        </div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <div>Corregí los errores antes de continuar</div>
+                            </div>
+                        }
 
                         <div class="row g-3">
                             <div class="col-md-4">
@@ -78,7 +87,7 @@
                         <hr class="my-4" />
 
                         <div class="d-flex justify-content-end gap-2">
-                            <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
+                            <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
                                 <i class="bi bi-x-circle me-2"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-warning btn-lg px-4 text-dark fw-semibold">
@@ -94,4 +103,8 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/catalogo.css" asp-append-version="true" />
 }

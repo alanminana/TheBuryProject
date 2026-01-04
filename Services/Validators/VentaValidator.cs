@@ -9,28 +9,34 @@ namespace TheBuryProject.Services.Validators
     {
         public void ValidarEstadoParaEdicion(Venta venta)
         {
-            if (venta.Estado != EstadoVenta.Cotizacion && venta.Estado != EstadoVenta.Presupuesto)
+            if (venta.Estado != EstadoVenta.Cotizacion && 
+                venta.Estado != EstadoVenta.Presupuesto &&
+                venta.Estado != EstadoVenta.PendienteRequisitos &&
+                venta.Estado != EstadoVenta.PendienteFinanciacion)
             {
                 throw new InvalidOperationException(
-                    $"Solo se pueden editar ventas en estado Cotizaci�n o Presupuesto. Estado actual: {venta.Estado}");
+                    $"Solo se pueden editar ventas en estado Cotización, Presupuesto, Pendiente Requisitos o Pendiente Financiación. Estado actual: {venta.Estado}");
             }
         }
 
         public void ValidarEstadoParaEliminacion(Venta venta)
         {
-            if (venta.Estado != EstadoVenta.Cotizacion && venta.Estado != EstadoVenta.Presupuesto)
+            if (venta.Estado != EstadoVenta.Cotizacion && 
+                venta.Estado != EstadoVenta.Presupuesto &&
+                venta.Estado != EstadoVenta.PendienteRequisitos &&
+                venta.Estado != EstadoVenta.PendienteFinanciacion)
             {
                 throw new InvalidOperationException(
-                    $"Solo se pueden eliminar ventas en estado Cotizaci�n o Presupuesto. Estado actual: {venta.Estado}");
+                    $"Solo se pueden eliminar ventas en estado Cotización, Presupuesto, Pendiente Requisitos o Pendiente Financiación. Estado actual: {venta.Estado}");
             }
         }
 
         public void ValidarEstadoParaConfirmacion(Venta venta)
         {
-            if (venta.Estado != EstadoVenta.Presupuesto)
+            if (venta.Estado != EstadoVenta.Presupuesto && venta.Estado != EstadoVenta.PendienteRequisitos)
             {
                 throw new InvalidOperationException(
-                    $"Solo se pueden confirmar ventas en estado Presupuesto. Estado actual: {venta.Estado}");
+                    $"Solo se pueden confirmar ventas en estado Presupuesto o Pendiente Requisitos. Estado actual: {venta.Estado}");
             }
         }
 

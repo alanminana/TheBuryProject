@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TheBuryProject.Models.Base;
+using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.Models.Entities
 {
@@ -37,6 +38,21 @@ namespace TheBuryProject.Models.Entities
 
         [StringLength(50)]
         public string? EstadoCivil { get; set; } // Soltero, Casado, Divorciado, Viudo
+
+        // Datos de Cónyuge (opcionales)
+        [StringLength(200)]
+        public string? ConyugeNombreCompleto { get; set; }
+
+        [StringLength(20)]
+        public string? ConyugeTipoDocumento { get; set; } // DNI, CUIL, CUIT
+
+        [StringLength(20)]
+        public string? ConyugeNumeroDocumento { get; set; }
+
+        [StringLength(20)]
+        public string? ConyugeTelefono { get; set; }
+
+        public decimal? ConyugeSueldo { get; set; }
 
         // Datos de Contacto
         [Required]
@@ -83,7 +99,31 @@ namespace TheBuryProject.Models.Entities
         public bool TieneReciboSueldo { get; set; } = false;
 
         // Control de Riesgo
-        public decimal PuntajeRiesgo { get; set; } = 5.0m; // 0 a 10 (5 = neutro)
+        public decimal PuntajeRiesgo { get; set; } = 5.0m; // 0 a 10 (5 = neutro, manual)
+
+        // Aptitud Crediticia (semáforo)
+        /// <summary>
+        /// Estado de aptitud crediticia actual: Apto, NoApto, RequiereAutorizacion
+        /// Se actualiza automáticamente al evaluar al cliente.
+        /// </summary>
+        public EstadoCrediticioCliente EstadoCrediticio { get; set; } = EstadoCrediticioCliente.NoEvaluado;
+
+        /// <summary>
+        /// Límite de crédito asignado manualmente al cliente (cupo máximo).
+        /// Si es null, no tiene límite asignado y debe configurarse.
+        /// </summary>
+        public decimal? LimiteCredito { get; set; }
+
+        /// <summary>
+        /// Motivo descriptivo si el cliente no está apto para crédito.
+        /// </summary>
+        [StringLength(500)]
+        public string? MotivoNoApto { get; set; }
+
+        /// <summary>
+        /// Fecha de la última evaluación de aptitud crediticia.
+        /// </summary>
+        public DateTime? FechaUltimaEvaluacion { get; set; }
 
         // Estado
         public bool Activo { get; set; } = true;

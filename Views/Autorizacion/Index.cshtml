@@ -3,6 +3,8 @@
 
 @{
     ViewData["Title"] = "Umbrales de Autorización";
+    var cleanedQuery = QueryString.Create(Context.Request.Query.Where(kvp => !string.Equals(kvp.Key, "returnUrl", StringComparison.OrdinalIgnoreCase)));
+    var pageReturnUrl = Context.Request.Path + cleanedQuery;
 }
 
 <div class="container-fluid px-0">
@@ -22,11 +24,11 @@
         <div class="d-flex flex-wrap gap-2">
             @if (User.IsInRole(Roles.Administrador))
             {
-                <a asp-action="CrearUmbral" class="btn btn-primary btn-sm">
+                <a asp-action="CrearUmbral" asp-route-returnUrl="@pageReturnUrl" class="btn btn-primary btn-sm">
                     <i class="bi bi-plus-circle me-1"></i>Nuevo umbral
                 </a>
             }
-            <a asp-action="Solicitudes" class="btn btn-outline-info btn-sm">
+            <a asp-action="Solicitudes" asp-route-returnUrl="@pageReturnUrl" class="btn btn-outline-info btn-sm">
                 <i class="bi bi-clipboard-check me-1"></i>Ver solicitudes
             </a>
         </div>
@@ -174,6 +176,7 @@
                                                             <div class="btn-group btn-group-sm" role="group">
                                                                 <a asp-action="EditarUmbral"
                                                                    asp-route-id="@umbral.Id"
+                                                                                         asp-route-returnUrl="@pageReturnUrl"
                                                                    class="btn btn-outline-primary">
                                                                     <i class="bi bi-pencil"></i>
                                                                     <span class="d-none d-md-inline">Editar</span>
@@ -183,8 +186,9 @@
                                                                       asp-route-id="@umbral.Id"
                                                                       method="post"
                                                                       class="d-inline"
-                                                                      onsubmit="return confirm('¿Está seguro de eliminar este umbral?');">
+                                                                      data-confirm="¿Está seguro de eliminar este umbral?">
                                                                     @Html.AntiForgeryToken()
+                                                                    <input type="hidden" name="returnUrl" value="@pageReturnUrl" />
                                                                     <button type="submit" class="btn btn-outline-danger">
                                                                         <i class="bi bi-trash"></i>
                                                                         <span class="d-none d-md-inline">Eliminar</span>
@@ -206,7 +210,7 @@
                                     No hay umbrales configurados para el rol <strong>@rol</strong>.
                                     @if (User.IsInRole(Roles.Administrador))
                                     {
-                                        <a asp-action="CrearUmbral" class="alert-link ms-1">Crear uno ahora</a>
+                                        <a asp-action="CrearUmbral" asp-route-returnUrl="@pageReturnUrl" class="alert-link ms-1">Crear uno ahora</a>
                                     }
                                 </div>
                             }

@@ -104,7 +104,8 @@ public class VentaFacturacionAutorizacionFlowTests
             new VentaValidator(),
             new VentaNumberGenerator(db.Context),
             precioService,
-            db.HttpContextAccessor);
+            db.HttpContextAccessor,
+            new NoopValidacionVentaService());
 
         var okConfirmar = await ventaService.ConfirmarVentaAsync(venta.Id);
         Assert.True(okConfirmar);
@@ -236,7 +237,8 @@ public class VentaFacturacionAutorizacionFlowTests
             new VentaValidator(),
             new VentaNumberGenerator(db.Context),
             precioService,
-            db.HttpContextAccessor);
+            db.HttpContextAccessor,
+            new NoopValidacionVentaService());
 
         var okAutorizar = await ventaService.AutorizarVentaAsync(venta1.Id, "admin", "OK por excepcion");
         Assert.True(okAutorizar);
@@ -245,8 +247,8 @@ public class VentaFacturacionAutorizacionFlowTests
         Assert.NotNull(venta1Db);
         Assert.Equal(EstadoAutorizacionVenta.Autorizada, venta1Db!.EstadoAutorizacion);
         Assert.Equal("admin", venta1Db.UsuarioAutoriza);
-        Assert.Equal("Supera limite", venta1Db.MotivoAutorizacion);
-        Assert.Contains("OK por excepcion", venta1Db.Observaciones ?? string.Empty);
+        // E3: MotivoAutorizacion ahora guarda la observación del autorizador
+        Assert.Equal("OK por excepcion", venta1Db.MotivoAutorizacion);
 
         var okRechazar = await ventaService.RechazarVentaAsync(venta2.Id, "admin", "No cumple requisitos");
         Assert.True(okRechazar);
@@ -255,7 +257,6 @@ public class VentaFacturacionAutorizacionFlowTests
         Assert.NotNull(venta2Db);
         Assert.Equal(EstadoAutorizacionVenta.Rechazada, venta2Db!.EstadoAutorizacion);
         Assert.Equal("admin", venta2Db.UsuarioAutoriza);
-        Assert.Equal("Supera limite 2", venta2Db.MotivoAutorizacion);
         Assert.Equal("No cumple requisitos", venta2Db.MotivoRechazo);
     }
 }

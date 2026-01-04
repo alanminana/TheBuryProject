@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Eliminar Acción";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Acciones")!;
 }
 
 <div class="container-fluid px-0">
@@ -13,7 +15,7 @@
             <h1 class="h4 mb-0">Eliminar acción</h1>
         </div>
 
-        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <a href="@backUrl" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i>
             Volver al listado
         </a>
@@ -82,12 +84,13 @@
                     <!-- Formulario de confirmación -->
                     <form asp-action="Delete" method="post" class="mt-4">
                         <input type="hidden" asp-for="Id" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
 
                         <div class="d-flex justify-content-end gap-2">
-                            <a asp-action="Index" class="btn btn-outline-secondary">
+                            <a href="@backUrl" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-lg me-1"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-danger">
+                            <button type="submit" class="btn btn-danger" data-confirm="¿Eliminar la acción '@Model.Nombre'? Esta operación es irreversible.">
                                 <i class="bi bi-trash me-1"></i>Eliminar acción
                             </button>
                         </div>

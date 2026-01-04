@@ -149,6 +149,7 @@ public class VentaApiControllerPrecioVigenteTests
         public Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel) => throw new NotImplementedException();
         public Task<bool> DeleteAsync(int id) => throw new NotImplementedException();
         public Task<bool> ConfirmarVentaAsync(int id) => throw new NotImplementedException();
+        public Task<bool> ConfirmarVentaCreditoAsync(int id) => throw new NotImplementedException();
         public Task<bool> CancelarVentaAsync(int id, string motivo) => throw new NotImplementedException();
         public Task AsociarCreditoAVentaAsync(int ventaId, int creditoId) => throw new NotImplementedException();
         public Task<bool> FacturarVentaAsync(int id, FacturaViewModel facturaViewModel) => throw new NotImplementedException();

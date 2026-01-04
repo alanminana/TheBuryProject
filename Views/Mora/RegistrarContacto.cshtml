@@ -1,0 +1,141 @@
+@model RegistrarContactoViewModel
+@using TheBuryProject.Models.Enums
+@using TheBuryProject.ViewModels.Mora
+
+@{
+    ViewData["Title"] = "Registrar Contacto";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("FichaCliente", "Mora", new { id = Model.ClienteId })!;
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-telephone-plus me-2"></i>Registrar Contacto</h2>
+                <a href="@backUrl" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Cancelar
+                </a>
+            </div>
+
+            <!-- Datos del Cliente -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="bi bi-person me-2"></i>Cliente</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>@Model.NombreCliente</strong></p>
+                            <p class="mb-0 text-muted">@Model.DocumentoCliente</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <p class="mb-1">Monto Vencido: <strong class="text-danger">$@Model.MontoVencido?.ToString("N2")</strong></p>
+                            <p class="mb-0">Días Atraso: <strong>@Model.DiasAtraso</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Detalles del Contacto</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="RegistrarContacto" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="ClienteId" />
+                        <input type="hidden" asp-for="AlertaId" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="TipoContacto" class="form-label">Tipo de Contacto *</label>
+                                <select asp-for="TipoContacto" class="form-select" asp-items="Html.GetEnumSelectList<TipoContacto>()">
+                                </select>
+                                <span asp-validation-for="TipoContacto" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Resultado" class="form-label">Resultado *</label>
+                                <select asp-for="Resultado" class="form-select" asp-items="Html.GetEnumSelectList<ResultadoContacto>()" id="selectResultado">
+                                </select>
+                                <span asp-validation-for="Resultado" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Telefono" class="form-label">Teléfono Usado</label>
+                                <input asp-for="Telefono" class="form-control" placeholder="Número de teléfono" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label">Email Usado</label>
+                                <input asp-for="Email" class="form-control" type="email" placeholder="correo@ejemplo.com" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="DuracionMinutos" class="form-label">Duración (minutos)</label>
+                                <input asp-for="DuracionMinutos" class="form-control" type="number" min="0" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ProximoContacto" class="form-label">Próximo Contacto</label>
+                                <input asp-for="ProximoContacto" class="form-control" type="date" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Observaciones" class="form-label">Observaciones</label>
+                            <textarea asp-for="Observaciones" class="form-control" rows="3" placeholder="Detalles del contacto..."></textarea>
+                        </div>
+
+                        <!-- Sección de Promesa de Pago (visible solo si resultado es PromesaPago) -->
+                        <div id="seccionPromesa" style="display: none;">
+                            <hr>
+                            <h6 class="text-info"><i class="bi bi-calendar-check me-2"></i>Promesa de Pago</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label asp-for="FechaPromesaPago" class="form-label">Fecha Prometida</label>
+                                    <input asp-for="FechaPromesaPago" class="form-control" type="date" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="MontoPromesaPago" class="form-label">Monto Prometido</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input asp-for="MontoPromesaPago" class="form-control" type="number" step="0.01" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="@backUrl" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-lg me-2"></i>Registrar Contacto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('selectResultado')?.addEventListener('change', function() {
+            var seccionPromesa = document.getElementById('seccionPromesa');
+            // ResultadoContacto.PromesaPago = 4
+            if (this.value === '4') {
+                seccionPromesa.style.display = 'block';
+            } else {
+                seccionPromesa.style.display = 'none';
+            }
+        });
+        
+        // Ejecutar al cargar
+        document.getElementById('selectResultado')?.dispatchEvent(new Event('change'));
+    </script>
+}

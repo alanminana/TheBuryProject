@@ -18,6 +18,10 @@
 </head>
 
 <body>
+    @{
+        var cleanedQuery = QueryString.Create(Context.Request.Query.Where(kvp => !string.Equals(kvp.Key, "returnUrl", StringComparison.OrdinalIgnoreCase)));
+        var currentUrl = Context.Request.Path + cleanedQuery;
+    }
     <div class="layout-container">
 
         <!-- SIDEBAR -->
@@ -91,26 +95,26 @@
                         <i class="bi bi-arrow-return-left"></i>
                         <span>Devoluciones</span>
                     </a>
-                    <a class="nav-link" asp-controller="Autorizacion" asp-action="Index">
+                    <a class="nav-link" asp-controller="Autorizacion" asp-action="Index" asp-route-returnUrl="@currentUrl">
                         <i class="bi bi-shield-check"></i>
                         <span>Autorizaciones</span>
                     </a>
 
                     <!-- ADMINISTRACIÓN -->
                     <div class="section-title">Administración</div>
-                    <a class="nav-link" asp-controller="Usuarios" asp-action="Index">
+                    <a class="nav-link" asp-controller="Usuarios" asp-action="Index" asp-route-returnUrl="@currentUrl">
                         <i class="bi bi-people"></i>
                         <span>Usuarios</span>
                     </a>
-                    <a class="nav-link" asp-controller="Roles" asp-action="Index">
+                    <a class="nav-link" asp-controller="Roles" asp-action="Index" asp-route-returnUrl="@currentUrl">
                         <i class="bi bi-shield"></i>
                         <span>Roles</span>
                     </a>
-                    <a class="nav-link" asp-controller="Modulos" asp-action="Index">
+                    <a class="nav-link" asp-controller="Modulos" asp-action="Index" asp-route-returnUrl="@currentUrl">
                         <i class="bi bi-grid"></i>
                         <span>Módulos</span>
                     </a>
-                    <a class="nav-link" asp-controller="Acciones" asp-action="Index">
+                    <a class="nav-link" asp-controller="Acciones" asp-action="Index" asp-route-returnUrl="@currentUrl">
                         <i class="bi bi-lightning"></i>
                         <span>Acciones</span>
                     </a>
@@ -153,10 +157,10 @@
 
                     <!-- Notificaciones -->
                     <div class="dropdown">
-                        <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown">
+                        <button type="button" class="nav-link position-relative btn btn-link p-0 border-0" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-bell fs-5"></i>
                             <span id="notificacionesBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none">0</span>
-                        </a>
+                        </button>
                         <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow" style="width: 350px; max-height: 400px; overflow-y: auto;">
                             <li class="dropdown-header d-flex justify-content-between align-items-center">
                                 <span class="fw-semibold">Notificaciones</span>
@@ -174,20 +178,20 @@
 
                     <!-- Usuario -->
                     <div class="dropdown">
-                        <a class="nav-link d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
+                        <button type="button" class="nav-link d-flex align-items-center gap-2 btn btn-link p-0 border-0" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle fs-5"></i>
                             <span class="d-none d-md-inline">@User.Identity?.Name</span>
-                        </a>
+                        </button>
                         <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
                             <li>
-                                <a class="dropdown-item" href="#">
+                                <button type="button" class="dropdown-item" disabled aria-disabled="true">
                                     <i class="bi bi-person me-2"></i>Mi Perfil
-                                </a>
+                                </button>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="#">
+                                <button type="button" class="dropdown-item" disabled aria-disabled="true">
                                     <i class="bi bi-gear me-2"></i>Configuración
-                                </a>
+                                </button>
                             </li>
                             <li><hr class="dropdown-divider" /></li>
                             <li>
@@ -214,6 +218,9 @@
         </div>
     </div>
 
+    <!-- Modals (fuera del layout-container para evitar problemas de z-index/transform) -->
+    @await RenderSectionAsync("Modals", required: false)
+
     <!-- Vendor JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
@@ -221,6 +228,9 @@
 
     <!-- App JS -->
     <script src="~/js/shared-ui.js" asp-append-version="true"></script>
+    <!-- Temporalmente deshabilitado para debug:
+    <script src="~/js/modal-form-submit.js" asp-append-version="true"></script>
+    -->
     <script src="~/js/notificaciones.js" asp-append-version="true"></script>
 
     <script src="~/js/layout.js" asp-append-version="true"></script>

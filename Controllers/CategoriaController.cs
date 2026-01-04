@@ -17,6 +17,21 @@ namespace TheBuryProject.Controllers
         private readonly ILogger<CategoriaController> _logger;
         private readonly IMapper _mapper;  // ✅ MOVER AQUÍ
 
+        private string? GetSafeReturnUrl(string? returnUrl)
+        {
+            return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+                ? returnUrl
+                : null;
+        }
+
+        private IActionResult RedirectToReturnUrlOrIndex(string? returnUrl)
+        {
+            var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+            return safeReturnUrl != null
+                ? LocalRedirect(safeReturnUrl)
+                : RedirectToAction(nameof(Index));
+        }
+
         public CategoriaController(
             ICategoriaService categoriaService,
             ILogger<CategoriaController> logger,
@@ -30,10 +45,13 @@ namespace TheBuryProject.Controllers
          string? searchTerm = null,
          bool soloActivos = false,
          string? orderBy = null,
-         string? orderDirection = "asc")
+         string? orderDirection = "asc",
+         string? returnUrl = null)
         {
             try
             {
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
                 // Ejecutar búsqueda con filtros
                 var categorias = await _categoriaService.SearchAsync(
                     searchTerm,
@@ -65,8 +83,9 @@ namespace TheBuryProject.Controllers
             }
         }
         // GET: Categoria/Create
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
             await CargarCategoriasParaDropdown();
             return View(new CategoriaViewModel
             {
@@ -77,8 +96,9 @@ namespace TheBuryProject.Controllers
         // POST: Categoria/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CategoriaViewModel viewModel)
+        public async Task<IActionResult> Create(CategoriaViewModel viewModel, string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
             if (ModelState.IsValid)
             {
                 try
@@ -103,7 +123,7 @@ namespace TheBuryProject.Controllers
 
                     await _categoriaService.CreateAsync(categoria);
                     TempData["Success"] = "Categoría creada exitosamente";
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToReturnUrlOrIndex(returnUrl);
                 }
                 catch (Exception ex)
                 {
@@ -116,13 +136,56 @@ namespace TheBuryProject.Controllers
             return View(viewModel);
         }
 
-        // GET: Categoria/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        // GET: Categoria/Details/5
+        public async Task<IActionResult> Details(int? id, string? returnUrl = null)
         {
             if (id == null)
             {
                 return NotFound();
             }
+
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
+            try
+            {
+                var categoria = await _categoriaService.GetByIdAsync(id.Value);
+                if (categoria == null)
+                {
+                    return NotFound();
+                }
+
+                var viewModel = new CategoriaViewModel
+                {
+                    Id = categoria.Id,
+                    Codigo = categoria.Codigo,
+                    Nombre = categoria.Nombre,
+                    Descripcion = categoria.Descripcion,
+                    ParentId = categoria.ParentId,
+                    ParentNombre = categoria.Parent != null && !categoria.Parent.IsDeleted ? categoria.Parent.Nombre : null,
+                    ControlSerieDefault = categoria.ControlSerieDefault,
+                    Activo = categoria.Activo,
+                    RowVersion = categoria.RowVersion
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener detalles de categoría {Id}", id);
+                TempData["Error"] = "Error al cargar los detalles. Por favor, intente nuevamente.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: Categoria/Edit/5
+        public async Task<IActionResult> Edit(int? id, string? returnUrl = null)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
             try
             {
@@ -158,12 +221,14 @@ namespace TheBuryProject.Controllers
         // POST: Categoria/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, CategoriaViewModel viewModel)
+        public async Task<IActionResult> Edit(int id, CategoriaViewModel viewModel, string? returnUrl = null)
         {
             if (id != viewModel.Id)
             {
                 return NotFound();
             }
+
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
             if (ModelState.IsValid)
             {
@@ -199,7 +264,7 @@ namespace TheBuryProject.Controllers
 
                     await _categoriaService.UpdateAsync(categoria);
                     TempData["Success"] = "Categoría actualizada exitosamente";
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToReturnUrlOrIndex(returnUrl);
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -218,12 +283,14 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Categoria/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(int? id, string? returnUrl = null)
         {
             if (id == null)
             {
                 return NotFound();
             }
+
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
             try
             {
@@ -257,7 +324,7 @@ namespace TheBuryProject.Controllers
         // POST: Categoria/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id, string? returnUrl = null)
         {
             try
             {
@@ -282,7 +349,7 @@ namespace TheBuryProject.Controllers
                 TempData["Error"] = "Error al eliminar la categoría. Por favor, intente nuevamente.";
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToReturnUrlOrIndex(returnUrl);
         }
 
         /// <summary>

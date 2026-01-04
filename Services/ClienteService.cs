@@ -84,6 +84,15 @@ namespace TheBuryProject.Services
             clienteExistente.TipoDocumento = cliente.TipoDocumento;
             clienteExistente.NumeroDocumento = cliente.NumeroDocumento;
             clienteExistente.FechaNacimiento = cliente.FechaNacimiento;
+            clienteExistente.EstadoCivil = cliente.EstadoCivil;
+
+            // Datos de cónyuge (opcionales)
+            clienteExistente.ConyugeNombreCompleto = cliente.ConyugeNombreCompleto;
+            clienteExistente.ConyugeTipoDocumento = cliente.ConyugeTipoDocumento;
+            clienteExistente.ConyugeNumeroDocumento = cliente.ConyugeNumeroDocumento;
+            clienteExistente.ConyugeTelefono = cliente.ConyugeTelefono;
+            clienteExistente.ConyugeSueldo = cliente.ConyugeSueldo;
+
             clienteExistente.Telefono = cliente.Telefono;
             clienteExistente.Email = cliente.Email;
             clienteExistente.Domicilio = cliente.Domicilio;

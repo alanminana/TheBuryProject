@@ -57,8 +57,13 @@ namespace TheBuryProject.Data
         public DbSet<VentaCreditoCuota> VentaCreditoCuotas { get; set; }
 
         public DbSet<ConfiguracionMora> ConfiguracionesMora { get; set; }
+        public DbSet<ConfiguracionCredito> ConfiguracionesCredito { get; set; }
         public DbSet<LogMora> LogsMora { get; set; }
         public DbSet<AlertaCobranza> AlertasCobranza { get; set; }
+        public DbSet<HistorialContacto> HistorialContactos { get; set; }
+        public DbSet<AcuerdoPago> AcuerdosPago { get; set; }
+        public DbSet<CuotaAcuerdo> CuotasAcuerdo { get; set; }
+        public DbSet<PlantillaNotificacionMora> PlantillasNotificacionMora { get; set; }
         public DbSet<AlertaStock> AlertasStock { get; set; }
 
         public DbSet<UmbralAutorizacion> UmbralesAutorizacion { get; set; }
@@ -440,6 +445,7 @@ namespace TheBuryProject.Data
                     .HasFilter("IsDeleted = 0");
 
                 entity.Property(e => e.Sueldo).HasPrecision(18, 2);
+                entity.Property(e => e.ConyugeSueldo).HasPrecision(18, 2);
 
                 entity.Property(e => e.TieneReciboSueldo)
                     .IsRequired()
@@ -765,7 +771,91 @@ namespace TheBuryProject.Data
                 entity.ToTable("AlertasCobranza");
                 entity.HasKey(e => e.Id);
 
+                // Propiedades de precisión decimal
                 entity.Property(e => e.MontoVencido).HasPrecision(18, 2);
+                entity.Property(e => e.MontoMoraCalculada).HasPrecision(18, 2);
+                entity.Property(e => e.MontoTotal).HasPrecision(18, 2);
+                entity.Property(e => e.MontoPromesaPago).HasPrecision(18, 2);
+
+                // Ignorar propiedades calculadas
+                entity.Ignore(e => e.Leida);
+                entity.Ignore(e => e.DiasDesdeAlerta);
+                entity.Ignore(e => e.PromesaVencida);
+
+                // Relaciones
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Credito)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreditoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Cuota)
+                    .WithMany()
+                    .HasForeignKey(e => e.CuotaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Índices
+                entity.HasIndex(e => e.FechaAlerta);
+                entity.HasIndex(e => e.Tipo);
+                entity.HasIndex(e => e.Prioridad);
+                entity.HasIndex(e => e.Resuelta);
+                entity.HasIndex(e => e.EstadoGestion);
+                entity.HasIndex(e => e.GestorAsignadoId);
+                entity.HasIndex(e => new { e.ClienteId, e.Resuelta });
+                entity.HasIndex(e => new { e.CreditoId, e.Tipo, e.Resuelta })
+                    .HasDatabaseName("IX_AlertasCobranza_Credito_Tipo_Resuelta");
+            });
+
+            // =======================
+            // HistorialContacto
+            // =======================
+            modelBuilder.Entity<HistorialContacto>(entity =>
+            {
+                entity.ToTable("HistorialContactos");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.MontoPromesaPago).HasPrecision(18, 2);
+
+                entity.HasOne(e => e.AlertaCobranza)
+                    .WithMany(a => a.HistorialContactos)
+                    .HasForeignKey(e => e.AlertaCobranzaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Cliente)
+                    .WithMany()
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.AlertaCobranzaId);
+                entity.HasIndex(e => e.ClienteId);
+                entity.HasIndex(e => e.FechaContacto);
+                entity.HasIndex(e => e.TipoContacto);
+                entity.HasIndex(e => e.Resultado);
+            });
+
+            // =======================
+            // AcuerdoPago
+            // =======================
+            modelBuilder.Entity<AcuerdoPago>(entity =>
+            {
+                entity.ToTable("AcuerdosPago");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.MontoDeudaOriginal).HasPrecision(18, 2);
+                entity.Property(e => e.MontoMoraOriginal).HasPrecision(18, 2);
+                entity.Property(e => e.MontoCondonado).HasPrecision(18, 2);
+                entity.Property(e => e.MontoTotalAcuerdo).HasPrecision(18, 2);
+                entity.Property(e => e.MontoEntregaInicial).HasPrecision(18, 2);
+                entity.Property(e => e.MontoCuotaAcuerdo).HasPrecision(18, 2);
+
+                entity.HasOne(e => e.AlertaCobranza)
+                    .WithMany(a => a.Acuerdos)
+                    .HasForeignKey(e => e.AlertaCobranzaId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e => e.Cliente)
                     .WithMany()
@@ -777,11 +867,47 @@ namespace TheBuryProject.Data
                     .HasForeignKey(e => e.CreditoId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasIndex(e => e.FechaAlerta);
-                entity.HasIndex(e => e.Tipo);
-                entity.HasIndex(e => e.Prioridad);
-                entity.HasIndex(e => e.Resuelta);
+                entity.HasIndex(e => e.NumeroAcuerdo).IsUnique();
+                entity.HasIndex(e => e.AlertaCobranzaId);
+                entity.HasIndex(e => e.ClienteId);
+                entity.HasIndex(e => e.Estado);
+                entity.HasIndex(e => e.FechaCreacion);
+            });
 
+            // =======================
+            // CuotaAcuerdo
+            // =======================
+            modelBuilder.Entity<CuotaAcuerdo>(entity =>
+            {
+                entity.ToTable("CuotasAcuerdo");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.MontoCapital).HasPrecision(18, 2);
+                entity.Property(e => e.MontoMora).HasPrecision(18, 2);
+                entity.Property(e => e.MontoTotal).HasPrecision(18, 2);
+                entity.Property(e => e.MontoPagado).HasPrecision(18, 2);
+
+                entity.HasOne(e => e.AcuerdoPago)
+                    .WithMany(a => a.Cuotas)
+                    .HasForeignKey(e => e.AcuerdoPagoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.AcuerdoPagoId);
+                entity.HasIndex(e => e.Estado);
+                entity.HasIndex(e => e.FechaVencimiento);
+                entity.HasIndex(e => new { e.AcuerdoPagoId, e.NumeroCuota }).IsUnique();
+            });
+
+            // =======================
+            // PlantillaNotificacionMora
+            // =======================
+            modelBuilder.Entity<PlantillaNotificacionMora>(entity =>
+            {
+                entity.ToTable("PlantillasNotificacionMora");
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => new { e.Tipo, e.Canal, e.Activa });
+                entity.HasIndex(e => e.Activa);
             });
 
             // =======================
@@ -826,8 +952,32 @@ namespace TheBuryProject.Data
                 entity.ToTable("ConfiguracionesMora");
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.PorcentajeRecargo).HasPrecision(5, 2);
+                // Cálculo de mora
+                entity.Property(e => e.TasaMoraBase).HasPrecision(8, 4);
+                entity.Property(e => e.TasaPrimerMes).HasPrecision(8, 4);
+                entity.Property(e => e.TasaSegundoMes).HasPrecision(8, 4);
+                entity.Property(e => e.TasaTercerMesEnAdelante).HasPrecision(8, 4);
+                entity.Property(e => e.ValorTopeMora).HasPrecision(18, 2);
+                entity.Property(e => e.MoraMinima).HasPrecision(18, 2);
 
+                // Clasificación
+                entity.Property(e => e.MontoParaPrioridadMedia).HasPrecision(18, 2);
+                entity.Property(e => e.MontoParaPrioridadAlta).HasPrecision(18, 2);
+                entity.Property(e => e.MontoParaPrioridadCritica).HasPrecision(18, 2);
+
+                // Gestión
+                entity.Property(e => e.PorcentajeMinimoEntrega).HasPrecision(5, 2);
+                entity.Property(e => e.PorcentajeMaximoCondonacion).HasPrecision(5, 2);
+
+                // Bloqueos
+                entity.Property(e => e.MontoMoraParaBloquear).HasPrecision(18, 2);
+
+                // Score
+                entity.Property(e => e.PuntosRestarPorDiaMora).HasPrecision(8, 4);
+                entity.Property(e => e.PorcentajeRecuperacionScore).HasPrecision(5, 2);
+
+                // Campos deprecated (compatibilidad)
+                entity.Property(e => e.PorcentajeRecargo).HasPrecision(5, 2);
             });
 
             // =======================

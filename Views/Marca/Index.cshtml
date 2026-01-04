@@ -1,6 +1,10 @@
 ﻿@model TheBuryProject.ViewModels.MarcaFilterViewModel
 @{
     ViewData["Title"] = "Marcas";
+    var filtrosActivos = !string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos;
+    var originReturnUrl = ViewData["ReturnUrl"] as string;
+    var backToCatalogoUrl = originReturnUrl ?? Url.Action("Index", "Catalogo")!;
+    var listReturnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 
 <section class="container-fluid py-4 text-light">
@@ -12,7 +16,7 @@
             <p class="text-secondary mb-0">Administrá las marcas de productos registradas</p>
         </div>
         <div class="col-auto d-flex gap-2">
-            <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-light fw-semibold shadow-sm">
+            <a href="@backToCatalogoUrl" class="btn btn-outline-light fw-semibold shadow-sm">
                 <i class="bi bi-arrow-left me-2"></i>Volver al Catálogo
             </a>
             <a asp-action="Create" class="btn btn-info text-dark fw-semibold btn-lg shadow-sm">
@@ -38,22 +42,20 @@
     }
 
     <!-- Filtros -->
-    <div class="card bg-dark border-0 shadow-sm mb-4">
-        <div class="card-header bg-secondary text-light border-bottom">
-            <button class="btn btn-link text-decoration-none text-light w-100 text-start p-0"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#filtrosCollapse">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">
-                        <i class="bi bi-funnel me-2"></i>Búsqueda y Filtros
-                    </h6>
-                    <i class="bi bi-chevron-down"></i>
-                </div>
-            </button>
-        </div>
+    <div class="card bg-dark border-0 shadow-sm mb-4 filter-card">
+        <button class="card-header bg-secondary text-light d-flex justify-content-between align-items-center @(filtrosActivos ? string.Empty : "collapsed")"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#filtrosCollapse"
+                aria-expanded="@(filtrosActivos.ToString().ToLower())">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-funnel"></i>
+                <span class="fw-semibold">Búsqueda y filtros</span>
+            </div>
+            <i class="bi bi-chevron-down chevron"></i>
+        </button>
 
-        <div class="collapse show" id="filtrosCollapse">
+        <div class="collapse @(filtrosActivos ? "show" : "")" id="filtrosCollapse">
             <div class="card-body">
                 <form asp-action="Index" method="get">
                     <div class="row g-3">
@@ -84,16 +86,16 @@
                         <div class="col-md-2">
                             <label class="form-label fw-semibold"><i class="bi bi-sort-down me-1"></i>Ordenar</label>
                             <select class="form-select bg-body-secondary text-light border-0" name="orderBy">
-                                <option value="nombre" selected="@(Model.OrderBy == "nombre" || string.IsNullOrEmpty(Model.OrderBy))">Nombre</option>
-                                <option value="descripcion" selected="@(Model.OrderBy == "descripcion")">Descripción</option>
+                                <option value="nombre" selected="@((Model.OrderBy == "nombre" || string.IsNullOrEmpty(Model.OrderBy)) ? "selected" : null)">Nombre</option>
+                                <option value="descripcion" selected="@(Model.OrderBy == "descripcion" ? "selected" : null)">Descripción</option>
                             </select>
                         </div>
 
                         <div class="col-md-1">
                             <label class="form-label fw-semibold">Dirección</label>
                             <select class="form-select bg-body-secondary text-light border-0" name="orderDirection">
-                                <option value="asc" selected="@(Model.OrderDirection == "asc" || string.IsNullOrEmpty(Model.OrderDirection))">Asc</option>
-                                <option value="desc" selected="@(Model.OrderDirection == "desc")">Desc</option>
+                                <option value="asc" selected="@((Model.OrderDirection == "asc" || string.IsNullOrEmpty(Model.OrderDirection)) ? "selected" : null)">Asc</option>
+                                <option value="desc" selected="@(Model.OrderDirection == "desc" ? "selected" : null)">Desc</option>
                             </select>
                         </div>
 
@@ -177,14 +179,17 @@
                                 <td class="text-center px-4">
                                     <div class="btn-group btn-group-sm">
                                         <a asp-action="Details" asp-route-id="@marca.Id"
+                                                         asp-route-returnUrl="@listReturnUrl"
                                            class="btn btn-outline-info" title="Detalles">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <a asp-action="Edit" asp-route-id="@marca.Id"
+                                                         asp-route-returnUrl="@listReturnUrl"
                                            class="btn btn-outline-warning" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <a asp-action="Delete" asp-route-id="@marca.Id"
+                                                         asp-route-returnUrl="@listReturnUrl"
                                            class="btn btn-outline-danger" title="Eliminar">
                                             <i class="bi bi-trash"></i>
                                         </a>
@@ -230,3 +235,7 @@
         </div>
     }
 </section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/catalogo.css" asp-append-version="true" />
+}

@@ -27,9 +27,27 @@
             <button type="button" class="btn btn-primary btn-sm" id="imprimirCierre">
                 <i class="bi bi-printer me-1"></i>Imprimir
             </button>
-            <a asp-action="Historial" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-clock-history me-1"></i>Ver historial
-            </a>
+            @{
+                var returnUrl = ViewBag.ReturnUrl as string;
+            }
+            @if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl.Contains("/Caja/DetallesApertura", StringComparison.OrdinalIgnoreCase))
+            {
+                <a href="@returnUrl" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Volver a la apertura
+                </a>
+            }
+            @if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl.Contains("/Caja/Historial", StringComparison.OrdinalIgnoreCase))
+            {
+                <a href="@returnUrl" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-clock-history me-1"></i>Ver historial
+                </a>
+            }
+            else
+            {
+                <a asp-action="Historial" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-clock-history me-1"></i>Ver historial
+                </a>
+            }
             <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left me-1"></i>Volver al listado
             </a>

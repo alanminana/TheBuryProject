@@ -1,22 +1,27 @@
 ﻿@model TheBuryProject.ViewModels.DocumentoClienteViewModel
 @{
+    Layout = "_ModuleLayout";
     ViewData["Title"] = "Detalles del Documento";
+    ViewData["PageTitle"] = "Detalles del Documento";
+    ViewData["PageSubtitle"] = $"{Model.TipoDocumentoNombre} - {Model.ClienteNombre}";
+    
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index")!;
+    var clienteDetailsUrl = Url.Action("Details", "Cliente", new { id = Model.ClienteId, tab = "documentos" })!;
 }
 
-<section class="container py-4">
+@section PageActions {
+    <a href="@backUrl" class="btn btn-outline-light me-2">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+    <a asp-action="Descargar" asp-route-id="@Model.Id" asp-route-returnUrl="@returnUrl" class="btn btn-success">
+        <i class="bi bi-download me-2"></i>Descargar
+    </a>
+}
+
+<section class="container-fluid">
     <div class="row">
         <div class="col-md-10 mx-auto">
-            <div class="d-flex align-items-center mb-4">
-                <a asp-action="Index" class="btn btn-outline-light me-3">
-                    <i class="bi bi-arrow-left"></i>
-                </a>
-                <div>
-                    <h1 class="h3 fw-bold text-light mb-0">
-                        <i class="bi bi-file-earmark-text text-info"></i> Detalles del Documento
-                    </h1>
-                    <p class="text-secondary mb-0">@Model.TipoDocumentoNombre - @Model.ClienteNombre</p>
-                </div>
-            </div>
 
             @if (TempData["Success"] != null)
             {
@@ -44,7 +49,7 @@
                             <dl class="row mb-0">
                                 <dt class="col-sm-4">Cliente:</dt>
                                 <dd class="col-sm-8">
-                                    <a asp-controller="Cliente" asp-action="Details" asp-route-id="@Model.ClienteId" class="text-info">
+                                    <a asp-controller="Cliente" asp-action="Details" asp-route-id="@Model.ClienteId" asp-route-tab="documentos" class="text-info">
                                         @Model.ClienteNombre
                                     </a>
                                 </dd>
@@ -135,10 +140,6 @@
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                <a asp-action="Descargar" asp-route-id="@Model.Id" class="btn btn-success">
-                                    <i class="bi bi-download me-2"></i>Descargar Archivo
-                                </a>
-
                                 @if (Model.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
                                 {
                                     <button type="button" class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#verificarModal">
@@ -150,22 +151,23 @@
                                     </button>
 
                                     <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
-                                          onsubmit="return confirm('¿Está seguro de eliminar este documento?')">
+                                          data-confirm="¿Está seguro de eliminar este documento?">
                                         @Html.AntiForgeryToken()
+                                        <input type="hidden" name="returnUrl" value="@returnUrl" />
                                         <button type="submit" class="btn btn-danger w-100">
                                             <i class="bi bi-trash me-2"></i>Eliminar
                                         </button>
                                     </form>
                                 }
 
-                                <a asp-controller="Cliente" asp-action="Details" asp-route-id="@Model.ClienteId" class="btn btn-outline-light">
+                                <a href="@clienteDetailsUrl" class="btn btn-outline-light">
                                     <i class="bi bi-person me-2"></i>Ver Cliente
                                 </a>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Preview (si es imagen) -->
+                    <!-- Preview (si es imagen o PDF) -->
                     @if (Model.TipoMIME?.StartsWith("image/") == true)
                     {
                         <div class="card bg-dark border-0 shadow-sm">
@@ -177,68 +179,95 @@
                             </div>
                         </div>
                     }
+                    else if (Model.TipoMIME == "application/pdf")
+                    {
+                        <div class="card bg-dark border-0 shadow-sm">
+                            <div class="card-header bg-secondary text-light">
+                                <h5 class="mb-0"><i class="bi bi-file-pdf me-2"></i>Vista Previa PDF</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <embed src="/@Model.RutaArchivo" type="application/pdf" width="100%" height="400px" class="rounded" />
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Modal Verificar -->
-<div class="modal fade" id="verificarModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark">
-            <form asp-action="Verificar" asp-route-id="@Model.Id" method="post">
-                @Html.AntiForgeryToken()
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title text-light">
-                        <i class="bi bi-check-circle text-success me-2"></i>Verificar Documento
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-light">¿Confirma que el documento es correcto y está verificado?</p>
-                    <div class="mb-3">
-                        <label class="form-label text-light">Observaciones (opcional)</label>
-                        <textarea name="observaciones" class="form-control bg-body-secondary text-light border-0" rows="3"></textarea>
+@section Modals {
+    <!-- Modal Verificar -->
+    <div class="modal fade" id="verificarModal" tabindex="-1" aria-labelledby="verificarModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <form asp-action="Verificar" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title text-light" id="verificarModalLabel">
+                            <i class="bi bi-check-circle text-success me-2"></i>Verificar Documento
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle me-2"></i>Verificar
-                    </button>
-                </div>
-            </form>
+                    <div class="modal-body">
+                        <p class="text-light">¿Confirma que el documento es correcto y está verificado?</p>
+                        <div class="mb-3">
+                            <label class="form-label text-light">Observaciones (opcional)</label>
+                            <textarea name="observaciones" class="form-control bg-body-secondary text-light border-0" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-2"></i>Verificar
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Modal Rechazar -->
-<div class="modal fade" id="rechazarModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content bg-dark">
-            <form asp-action="Rechazar" asp-route-id="@Model.Id" method="post">
-                @Html.AntiForgeryToken()
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title text-light">
-                        <i class="bi bi-x-circle text-danger me-2"></i>Rechazar Documento
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-light">Indique el motivo del rechazo:</p>
-                    <div class="mb-3">
-                        <label class="form-label text-light">Motivo *</label>
-                        <textarea name="motivo" class="form-control bg-body-secondary text-light border-0" rows="3" required></textarea>
+    <!-- Modal Rechazar -->
+    <div class="modal fade" id="rechazarModal" tabindex="-1" aria-labelledby="rechazarModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <form asp-action="Rechazar" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title text-light" id="rechazarModalLabel">
+                            <i class="bi bi-x-circle text-danger me-2"></i>Rechazar Documento
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-x-circle me-2"></i>Rechazar
-                    </button>
-                </div>
-            </form>
+                    <div class="modal-body">
+                        <p class="text-light">Indique el motivo del rechazo:</p>
+                        <div class="mb-3">
+                            <label class="form-label text-light">Motivo *</label>
+                            <textarea name="motivo" class="form-control bg-body-secondary text-light border-0" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-x-circle me-2"></i>Rechazar
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
+}
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('form[data-confirm]').forEach(form => {
+            form.addEventListener('submit', e => {
+                if (!confirm(form.dataset.confirm)) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+}

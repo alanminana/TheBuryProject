@@ -2,6 +2,15 @@
 @using TheBuryProject.Models.Enums
 @using TheBuryProject.Helpers
 
+@{
+    var listReturnUrl = ViewData["ReturnUrl"] as string;
+    var returnToClienteDocumentosUrl = Url.Action(
+        "Details",
+        "Cliente",
+        new { id = Model.Cliente.Id, tab = "documentos", returnUrl = listReturnUrl })!;
+    var pendientesCount = Model.Documentos.Count(d => d.Estado == EstadoDocumento.Pendiente);
+}
+
 <!-- Estado de Documentación -->
 @if (!Model.EvaluacionCredito.TieneDocumentosCompletos)
 {
@@ -33,13 +42,38 @@ else
     </div>
 }
 
+<!-- Barra de Acciones Masivas (oculta por defecto) -->
+<div id="barraAccionesMasivas" class="alert alert-info border-0 mb-3 d-none">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <i class="bi bi-check2-square me-2"></i>
+            <span id="contadorSeleccionados">0</span> documento(s) seleccionado(s)
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success btn-sm" id="btnVerificarSeleccionados">
+                <i class="bi bi-check-circle me-1"></i>Verificar Seleccionados
+            </button>
+            <button type="button" class="btn btn-warning btn-sm" id="btnRechazarSeleccionados">
+                <i class="bi bi-x-circle me-1"></i>Rechazar Seleccionados
+            </button>
+            <button type="button" class="btn btn-outline-light btn-sm" id="btnCancelarSeleccion">
+                <i class="bi bi-x me-1"></i>Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Lista de Documentos -->
 @if (Model.Documentos.Any())
 {
     <div class="table-responsive">
-        <table class="table table-dark table-hover align-middle mb-0">
+        <table class="table table-dark table-hover align-middle mb-0" id="tablaDocumentos">
             <thead>
                 <tr class="text-secondary small">
+                    <th class="text-center" style="width: 40px;">
+                        <input type="checkbox" class="form-check-input" id="checkTodos" 
+                               title="Seleccionar todos los pendientes" @(pendientesCount == 0 ? "disabled" : "")>
+                    </th>
                     <th>Tipo</th>
                     <th>Archivo</th>
                     <th class="text-center">Estado</th>
@@ -47,14 +81,23 @@ else
                     <th class="text-end">Acciones</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="tbodyDocumentos">
                 @foreach (var doc in Model.Documentos.OrderByDescending(d => d.FechaSubida))
                 {
                     var vencido = doc.FechaVencimiento.HasValue && doc.FechaVencimiento.Value < DateTime.Now;
                     var porVencer = doc.FechaVencimiento.HasValue && 
                                     doc.FechaVencimiento.Value >= DateTime.Now && 
                                     (doc.FechaVencimiento.Value - DateTime.Now).Days <= 30;
-                    <tr>
+                    var esPendiente = doc.Estado == EstadoDocumento.Pendiente;
+                    <tr data-doc-id="@doc.Id" data-doc-estado="@doc.Estado">
+                        <td class="text-center">
+                            @if (esPendiente)
+                            {
+                                <input type="checkbox" class="form-check-input check-documento" 
+                                       data-doc-id="@doc.Id" data-doc-nombre="@doc.NombreArchivo"
+                                       data-doc-tipo="@doc.TipoDocumentoNombre">
+                            }
+                        </td>
                         <td>
                             <span class="badge bg-secondary">@doc.TipoDocumentoNombre</span>
                         </td>
@@ -101,19 +144,34 @@ else
                         <td class="text-end">
                             <div class="btn-group btn-group-sm">
                                 <a asp-controller="DocumentoCliente" asp-action="Descargar" asp-route-id="@doc.Id"
+                                   asp-route-returnUrl="@returnToClienteDocumentosUrl"
                                    class="btn btn-outline-success" title="Descargar">
                                     <i class="bi bi-download"></i>
                                 </a>
                                 <a asp-controller="DocumentoCliente" asp-action="Details" asp-route-id="@doc.Id"
+                                   asp-route-returnUrl="@returnToClienteDocumentosUrl"
                                    class="btn btn-outline-info" title="Ver detalles">
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 @if (doc.Estado == EstadoDocumento.Pendiente)
                                 {
+                                    <button type="button" class="btn btn-outline-success btn-verificar-doc"
+                                            data-doc-id="@doc.Id" data-doc-nombre="@doc.NombreArchivo"
+                                            data-doc-tipo="@doc.TipoDocumentoNombre"
+                                            title="Verificar documento">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning btn-rechazar-doc"
+                                            data-doc-id="@doc.Id" data-doc-nombre="@doc.NombreArchivo"
+                                            data-doc-tipo="@doc.TipoDocumentoNombre"
+                                            title="Rechazar documento">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
                                     <form asp-controller="DocumentoCliente" asp-action="Delete" asp-route-id="@doc.Id"
                                           method="post" class="d-inline"
-                                          onsubmit="return confirm('¿Eliminar este documento?')">
+                                          data-confirm="¿Eliminar este documento?">
                                         @Html.AntiForgeryToken()
+                                        <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
                                         <button type="submit" class="btn btn-outline-danger" title="Eliminar">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -130,13 +188,13 @@ else
     <!-- Resumen rápido -->
     <div class="d-flex gap-4 mt-3 pt-3 border-top border-secondary">
         <small class="text-secondary">
-            <span class="badge bg-success me-1">@Model.Documentos.Count(d => d.Estado == EstadoDocumento.Verificado)</span> Verificados
+            <span class="badge bg-success me-1" id="contadorVerificados">@Model.Documentos.Count(d => d.Estado == EstadoDocumento.Verificado)</span> Verificados
         </small>
         <small class="text-secondary">
-            <span class="badge bg-warning text-dark me-1">@Model.Documentos.Count(d => d.Estado == EstadoDocumento.Pendiente)</span> Pendientes
+            <span class="badge bg-warning text-dark me-1" id="contadorPendientes">@Model.Documentos.Count(d => d.Estado == EstadoDocumento.Pendiente)</span> Pendientes
         </small>
         <small class="text-secondary">
-            <span class="badge bg-danger me-1">@Model.Documentos.Count(d => d.Estado == EstadoDocumento.Rechazado)</span> Rechazados
+            <span class="badge bg-danger me-1" id="contadorRechazados">@Model.Documentos.Count(d => d.Estado == EstadoDocumento.Rechazado)</span> Rechazados
         </small>
     </div>
 }
@@ -154,67 +212,452 @@ else
 <!-- Botón flotante para subir -->
 @if (Model.Documentos.Any())
 {
-    <div class="mt-4">
+    <div class="mt-4 d-flex gap-2">
         <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#subirDocumentoModal">
             <i class="bi bi-plus-circle me-2"></i>Agregar Documento
         </button>
+        @if (pendientesCount > 0)
+        {
+            <button type="button" class="btn btn-success" id="btnVerificarTodos" data-bs-toggle="modal" data-bs-target="#verificarTodosModal">
+                <i class="bi bi-check-all me-2"></i>Verificar Todos (@pendientesCount)
+            </button>
+        }
     </div>
 }
 
-<!-- Modal Subir Documento -->
-<div class="modal fade" id="subirDocumentoModal" tabindex="-1">
+<!-- Modal Verificar Documento Individual -->
+<div class="modal fade" id="verificarDocumentoModal" tabindex="-1" aria-labelledby="verificarDocumentoModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-            <form asp-controller="DocumentoCliente" asp-action="Upload" method="post" enctype="multipart/form-data">
+        <div class="modal-content bg-dark">
+            <form asp-controller="DocumentoCliente" asp-action="Verificar" method="post" id="formVerificarDocumento">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="ClienteId" value="@Model.Cliente.Id" />
-                <input type="hidden" name="ReturnToDetails" value="true" />
-                
+                <input type="hidden" name="id" id="verificarDocId" />
+                <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title">
-                        <i class="bi bi-upload me-2"></i>Subir Documento
+                    <h5 class="modal-title text-light" id="verificarDocumentoModalLabel">
+                        <i class="bi bi-check-circle text-success me-2"></i>Verificar Documento
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Tipo de Documento *</label>
-                        <select name="TipoDocumento" class="form-select bg-body-secondary text-light border-0" required>
-                            <option value="">Seleccione...</option>
-                            @foreach (TipoDocumentoCliente tipo in Enum.GetValues(typeof(TipoDocumentoCliente)))
-                            {
-                                <option value="@((int)tipo)">@tipo.GetDisplayName()</option>
-                            }
-                        </select>
+                    <p class="text-light">¿Confirma que el documento es correcto?</p>
+                    <div class="alert alert-secondary">
+                        <strong id="verificarDocTipo"></strong><br />
+                        <small id="verificarDocNombre" class="text-muted"></small>
                     </div>
-                    
                     <div class="mb-3">
-                        <label class="form-label">Archivo *</label>
-                        <input type="file" name="Archivo" class="form-control bg-body-secondary text-light border-0"
-                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required />
-                        <small class="text-secondary">PDF, JPG, PNG, DOC, DOCX (Max 5MB)</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Vencimiento</label>
-                        <input type="date" name="FechaVencimiento" class="form-control bg-body-secondary text-light border-0" />
-                    </div>
-                    
-                    <div class="mb-0">
-                        <label class="form-label">Observaciones</label>
-                        <textarea name="Observaciones" class="form-control bg-body-secondary text-light border-0"
-                                  rows="2" placeholder="Opcional"></textarea>
+                        <label class="form-label text-light">Observaciones (opcional)</label>
+                        <textarea name="observaciones" class="form-control bg-body-secondary text-light border-0" rows="2"></textarea>
                     </div>
                 </div>
-                
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-info">
-                        <i class="bi bi-upload me-2"></i>Subir
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-2"></i>Verificar
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Modal Rechazar Documento Individual -->
+<div class="modal fade" id="rechazarDocumentoModal" tabindex="-1" aria-labelledby="rechazarDocumentoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <form asp-controller="DocumentoCliente" asp-action="Rechazar" method="post" id="formRechazarDocumento">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="rechazarDocId" />
+                <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light" id="rechazarDocumentoModalLabel">
+                        <i class="bi bi-x-circle text-danger me-2"></i>Rechazar Documento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-secondary">
+                        <strong id="rechazarDocTipo"></strong><br />
+                        <small id="rechazarDocNombre" class="text-muted"></small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-light">Motivo del rechazo *</label>
+                        <textarea name="motivo" class="form-control bg-body-secondary text-light border-0" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle me-2"></i>Rechazar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Verificar Todos -->
+<div class="modal fade" id="verificarTodosModal" tabindex="-1" aria-labelledby="verificarTodosModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <form asp-controller="DocumentoCliente" asp-action="VerificarTodos" method="post" id="formVerificarTodos">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="clienteId" value="@Model.Cliente.Id" />
+                <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light" id="verificarTodosModalLabel">
+                        <i class="bi bi-check-all text-success me-2"></i>Verificar Todos los Documentos
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-light">Se verificarán los siguientes documentos pendientes:</p>
+                    <ul class="list-group list-group-flush bg-transparent">
+                        @foreach (var doc in Model.Documentos.Where(d => d.Estado == EstadoDocumento.Pendiente))
+                        {
+                            <li class="list-group-item bg-dark text-light border-secondary">
+                                <i class="bi bi-file-earmark text-info me-2"></i>
+                                <strong>@doc.TipoDocumentoNombre</strong> - @doc.NombreArchivo
+                            </li>
+                        }
+                    </ul>
+                    <div class="mb-3 mt-3">
+                        <label class="form-label text-light">Observaciones para todos (opcional)</label>
+                        <textarea name="observaciones" class="form-control bg-body-secondary text-light border-0" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-all me-2"></i>Verificar Todos
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const clienteId = @Model.Cliente.Id;
+        const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        
+        // === SELECCIÓN MASIVA ===
+        const checkTodos = document.getElementById('checkTodos');
+        const barraAcciones = document.getElementById('barraAccionesMasivas');
+        const contadorSeleccionados = document.getElementById('contadorSeleccionados');
+        
+        function getCheckboxesSeleccionados() {
+            return document.querySelectorAll('.check-documento:checked');
+        }
+        
+        function getIdsSeleccionados() {
+            return Array.from(getCheckboxesSeleccionados()).map(cb => parseInt(cb.dataset.docId));
+        }
+        
+        function actualizarBarraAcciones() {
+            const seleccionados = getCheckboxesSeleccionados().length;
+            contadorSeleccionados.textContent = seleccionados;
+            
+            if (seleccionados > 0) {
+                barraAcciones.classList.remove('d-none');
+            } else {
+                barraAcciones.classList.add('d-none');
+            }
+            
+            // Actualizar estado del checkbox "todos"
+            const totalCheckboxes = document.querySelectorAll('.check-documento').length;
+            if (checkTodos) {
+                checkTodos.checked = seleccionados > 0 && seleccionados === totalCheckboxes;
+                checkTodos.indeterminate = seleccionados > 0 && seleccionados < totalCheckboxes;
+            }
+        }
+        
+        // Checkbox "Seleccionar todos"
+        if (checkTodos) {
+            checkTodos.addEventListener('change', function() {
+                document.querySelectorAll('.check-documento').forEach(cb => {
+                    cb.checked = this.checked;
+                });
+                actualizarBarraAcciones();
+            });
+        }
+        
+        // Checkboxes individuales
+        document.querySelectorAll('.check-documento').forEach(cb => {
+            cb.addEventListener('change', actualizarBarraAcciones);
+        });
+        
+        // Cancelar selección
+        document.getElementById('btnCancelarSeleccion')?.addEventListener('click', function() {
+            document.querySelectorAll('.check-documento').forEach(cb => cb.checked = false);
+            if (checkTodos) checkTodos.checked = false;
+            actualizarBarraAcciones();
+        });
+        
+        // === TOAST / ALERTAS ===
+        function mostrarToast(mensaje, tipo = 'success') {
+            // Crear toast dinámico
+            const toastContainer = document.getElementById('toastContainer') || crearToastContainer();
+            const toastId = 'toast_' + Date.now();
+            const iconos = {
+                success: 'bi-check-circle-fill text-success',
+                error: 'bi-x-circle-fill text-danger',
+                warning: 'bi-exclamation-triangle-fill text-warning',
+                info: 'bi-info-circle-fill text-info'
+            };
+            
+            const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center bg-dark border-${tipo}" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="bi ${iconos[tipo] || iconos.info} me-2"></i>${mensaje}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>`;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+            const toastEl = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+            toast.show();
+            
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+        
+        function crearToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            container.style.zIndex = '1100';
+            document.body.appendChild(container);
+            return container;
+        }
+        
+        // === OPERACIONES BATCH AJAX ===
+        async function ejecutarBatchAjax(url, ids, datos = {}) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': antiForgeryToken
+                    },
+                    body: JSON.stringify({ ids, ...datos })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Error en la operación');
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Error en batch AJAX:', error);
+                throw error;
+            }
+        }
+        
+        async function refrescarGrilla() {
+            try {
+                const response = await fetch(`/DocumentoCliente/GetDocumentosPartial?clienteId=${clienteId}`);
+                if (!response.ok) throw new Error('Error al refrescar');
+                
+                const documentos = await response.json();
+                actualizarTablaDocumentos(documentos);
+                actualizarContadores(documentos);
+                actualizarBarraAcciones();
+            } catch (error) {
+                console.error('Error al refrescar grilla:', error);
+                // Si falla, recargar la página
+                location.reload();
+            }
+        }
+        
+        function actualizarTablaDocumentos(documentos) {
+            const tbody = document.getElementById('tbodyDocumentos');
+            if (!tbody) return;
+            
+            tbody.innerHTML = documentos.map(doc => `
+                <tr data-doc-id="${doc.id}" data-doc-estado="${doc.estado}">
+                    <td class="text-center">
+                        ${doc.esPendiente ? `<input type="checkbox" class="form-check-input check-documento" 
+                            data-doc-id="${doc.id}" data-doc-nombre="${doc.nombreArchivo}" 
+                            data-doc-tipo="${doc.tipoDocumentoNombre}">` : ''}
+                    </td>
+                    <td><span class="badge bg-secondary">${doc.tipoDocumentoNombre}</span></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-file-earmark text-info me-2"></i>
+                            <div>
+                                <span class="d-block">${doc.nombreArchivo}</span>
+                                <small class="text-secondary">${doc.tamanoFormateado} · ${doc.fechaSubida}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-${doc.estadoColor}">
+                            <i class="bi ${doc.estadoIcono} me-1"></i>${doc.estadoNombre}
+                        </span>
+                    </td>
+                    <td>
+                        ${doc.fechaVencimiento ? 
+                            (doc.vencido ? `<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>Vencido</span>` :
+                             doc.porVencer ? `<span class="text-warning">${doc.fechaVencimiento}<small class="d-block">Próximo a vencer</small></span>` :
+                             `<span>${doc.fechaVencimiento}</span>`) 
+                            : '<span class="text-secondary">-</span>'}
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="/DocumentoCliente/Descargar/${doc.id}" class="btn btn-outline-success" title="Descargar">
+                                <i class="bi bi-download"></i>
+                            </a>
+                            <a href="/DocumentoCliente/Details/${doc.id}" class="btn btn-outline-info" title="Ver detalles">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            ${doc.esPendiente ? `
+                                <button type="button" class="btn btn-outline-success btn-verificar-doc"
+                                        data-doc-id="${doc.id}" data-doc-nombre="${doc.nombreArchivo}"
+                                        data-doc-tipo="${doc.tipoDocumentoNombre}" title="Verificar documento">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-rechazar-doc"
+                                        data-doc-id="${doc.id}" data-doc-nombre="${doc.nombreArchivo}"
+                                        data-doc-tipo="${doc.tipoDocumentoNombre}" title="Rechazar documento">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // Re-bind eventos
+            bindEventosDocumentos();
+        }
+        
+        function actualizarContadores(documentos) {
+            const verificados = documentos.filter(d => d.estado === 'Verificado').length;
+            const pendientes = documentos.filter(d => d.estado === 'Pendiente').length;
+            const rechazados = documentos.filter(d => d.estado === 'Rechazado').length;
+            
+            const contVerificados = document.getElementById('contadorVerificados');
+            const contPendientes = document.getElementById('contadorPendientes');
+            const contRechazados = document.getElementById('contadorRechazados');
+            
+            if (contVerificados) contVerificados.textContent = verificados;
+            if (contPendientes) contPendientes.textContent = pendientes;
+            if (contRechazados) contRechazados.textContent = rechazados;
+            
+            // Actualizar checkbox "todos"
+            if (checkTodos) {
+                checkTodos.disabled = pendientes === 0;
+            }
+        }
+        
+        function bindEventosDocumentos() {
+            // Re-bind checkboxes
+            document.querySelectorAll('.check-documento').forEach(cb => {
+                cb.addEventListener('change', actualizarBarraAcciones);
+            });
+            
+            // Re-bind botones verificar individual
+            document.querySelectorAll('.btn-verificar-doc').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.getElementById('verificarDocId').value = this.dataset.docId;
+                    document.getElementById('verificarDocNombre').textContent = this.dataset.docNombre;
+                    document.getElementById('verificarDocTipo').textContent = this.dataset.docTipo;
+                    // Usar abrirModal() global para evitar instancias duplicadas
+                    window.abrirModal('verificarDocumentoModal');
+                });
+            });
+            
+            // Re-bind botones rechazar individual
+            document.querySelectorAll('.btn-rechazar-doc').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.getElementById('rechazarDocId').value = this.dataset.docId;
+                    document.getElementById('rechazarDocNombre').textContent = this.dataset.docNombre;
+                    document.getElementById('rechazarDocTipo').textContent = this.dataset.docTipo;
+                    // Usar abrirModal() global para evitar instancias duplicadas
+                    window.abrirModal('rechazarDocumentoModal');
+                });
+            });
+        }
+        
+        // === VERIFICAR SELECCIONADOS ===
+        document.getElementById('btnVerificarSeleccionados')?.addEventListener('click', async function() {
+            const ids = getIdsSeleccionados();
+            if (ids.length === 0) return;
+            
+            const observaciones = prompt('Observaciones para los documentos verificados (opcional):');
+            if (observaciones === null) return; // Canceló
+            
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Verificando...';
+            
+            try {
+                const resultado = await ejecutarBatchAjax('/DocumentoCliente/VerificarBatch', ids, { observaciones });
+                mostrarToast(resultado.message, resultado.success ? 'success' : 'warning');
+                
+                if (resultado.errores?.length > 0) {
+                    resultado.errores.forEach(err => {
+                        mostrarToast(`Doc #${err.id}: ${err.mensaje}`, 'error');
+                    });
+                }
+                
+                await refrescarGrilla();
+            } catch (error) {
+                mostrarToast('Error al verificar documentos: ' + error.message, 'error');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-check-circle me-1"></i>Verificar Seleccionados';
+            }
+        });
+        
+        // === RECHAZAR SELECCIONADOS ===
+        document.getElementById('btnRechazarSeleccionados')?.addEventListener('click', async function() {
+            const ids = getIdsSeleccionados();
+            if (ids.length === 0) return;
+            
+            const motivo = prompt('Motivo del rechazo (obligatorio):');
+            if (!motivo) {
+                if (motivo === null) return; // Canceló
+                mostrarToast('Debe especificar el motivo del rechazo', 'error');
+                return;
+            }
+            
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Rechazando...';
+            
+            try {
+                const resultado = await ejecutarBatchAjax('/DocumentoCliente/RechazarBatch', ids, { motivo });
+                mostrarToast(resultado.message, resultado.success ? 'success' : 'warning');
+                
+                if (resultado.errores?.length > 0) {
+                    resultado.errores.forEach(err => {
+                        mostrarToast(`Doc #${err.id}: ${err.mensaje}`, 'error');
+                    });
+                }
+                
+                await refrescarGrilla();
+            } catch (error) {
+                mostrarToast('Error al rechazar documentos: ' + error.message, 'error');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-x-circle me-1"></i>Rechazar Seleccionados';
+            }
+        });
+        
+        // === EVENTOS INDIVIDUALES (binding inicial) ===
+        bindEventosDocumentos();
+
+        // Confirmar eliminación
+        document.querySelectorAll('form[data-confirm]').forEach(form => {
+            form.addEventListener('submit', e => {
+                if (!confirm(form.dataset.confirm)) {
+                    e.preventDefault();
+                }
+            });
+        });
+    });
+</script>

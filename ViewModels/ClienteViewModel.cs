@@ -34,6 +34,22 @@ namespace TheBuryProject.ViewModels
 
         public string? EstadoCivil { get; set; }
 
+        // ✅ DATOS DE CÓNYUGE (opcionales)
+        [StringLength(200)]
+        public string? ConyugeNombreCompleto { get; set; }
+
+        [StringLength(20)]
+        public string? ConyugeTipoDocumento { get; set; }
+
+        [StringLength(20)]
+        public string? ConyugeNumeroDocumento { get; set; }
+
+        [StringLength(20)]
+        public string? ConyugeTelefono { get; set; }
+
+        [Range(0, 999999999.99)]
+        public decimal? ConyugeSueldo { get; set; }
+
         [Required(ErrorMessage = "El teléfono es requerido")]
         [StringLength(20)]
         public string Telefono { get; set; } = string.Empty;

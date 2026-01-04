@@ -18,6 +18,21 @@ public class ModulosController : Controller
     private readonly IRolService _rolService;
     private readonly ILogger<ModulosController> _logger;
 
+    private string? GetSafeReturnUrl(string? returnUrl)
+        => !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : null;
+
+    private IActionResult RedirectToReturnUrlOrIndex(string? returnUrl)
+    {
+        var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        return safeReturnUrl != null ? LocalRedirect(safeReturnUrl) : RedirectToAction(nameof(Index));
+    }
+
+    private IActionResult RedirectToReturnUrlOrDetails(int id, string? returnUrl)
+    {
+        var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        return safeReturnUrl != null ? LocalRedirect(safeReturnUrl) : RedirectToAction(nameof(Details), new { id });
+    }
+
     public ModulosController(
         IRolService rolService,
         ILogger<ModulosController> logger)
@@ -30,7 +45,7 @@ public class ModulosController : Controller
     /// Lista todos los módulos del sistema
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? returnUrl)
     {
         try
         {
@@ -61,8 +76,10 @@ public class ModulosController : Controller
     /// Muestra detalles de un módulo con sus acciones
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Details(int id)
+    public async Task<IActionResult> Details(int id, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         try
         {
             var modulo = await _rolService.GetModuloByIdAsync(id);
@@ -107,8 +124,9 @@ public class ModulosController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "modulos", Accion = "create")]
-    public IActionResult Create()
+    public IActionResult Create(string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
         return View(new CrearModuloViewModel());
     }
 
@@ -118,8 +136,10 @@ public class ModulosController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "modulos", Accion = "create")]
-    public async Task<IActionResult> Create(CrearModuloViewModel model)
+    public async Task<IActionResult> Create(CrearModuloViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -143,7 +163,7 @@ public class ModulosController : Controller
             _logger.LogInformation("Módulo creado: {ModuloNombre} por usuario {User}",
                 model.Nombre, User.Identity?.Name);
             TempData["Success"] = $"Módulo '{model.Nombre}' creado exitosamente";
-            return RedirectToAction(nameof(Index));
+            return RedirectToReturnUrlOrIndex(returnUrl);
         }
         catch (Exception ex)
         {
@@ -159,8 +179,10 @@ public class ModulosController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "modulos", Accion = "update")]
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(int id, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         try
         {
             var modulo = await _rolService.GetModuloByIdAsync(id);
@@ -197,8 +219,10 @@ public class ModulosController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "modulos", Accion = "update")]
-    public async Task<IActionResult> Edit(EditarModuloViewModel model)
+    public async Task<IActionResult> Edit(EditarModuloViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -231,7 +255,7 @@ public class ModulosController : Controller
             _logger.LogInformation("Módulo actualizado: {ModuloId} por usuario {User}",
                 model.Id, User.Identity?.Name);
             TempData["Success"] = $"Módulo '{model.Nombre}' actualizado exitosamente";
-            return RedirectToAction(nameof(Index));
+            return RedirectToReturnUrlOrDetails(model.Id, returnUrl);
         }
         catch (Exception ex)
         {
@@ -247,8 +271,10 @@ public class ModulosController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "modulos", Accion = "delete")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         try
         {
             var modulo = await _rolService.GetModuloByIdAsync(id);
@@ -281,7 +307,7 @@ public class ModulosController : Controller
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "modulos", Accion = "delete")]
-    public async Task<IActionResult> DeleteConfirmed(int id)
+    public async Task<IActionResult> DeleteConfirmed(int id, string? returnUrl)
     {
         try
         {
@@ -310,6 +336,6 @@ public class ModulosController : Controller
             TempData["Error"] = "Error al eliminar el módulo";
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToReturnUrlOrIndex(returnUrl);
     }
 }

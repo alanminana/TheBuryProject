@@ -25,6 +25,7 @@ namespace TheBuryProject.Services
         private readonly IVentaValidator _validator;
         private readonly VentaNumberGenerator _numberGenerator;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IValidacionVentaService _validacionVentaService;
 
         public VentaService(
             AppDbContext context,
@@ -37,7 +38,8 @@ namespace TheBuryProject.Services
             IVentaValidator validator,
             VentaNumberGenerator numberGenerator,
             IPrecioService precioService,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            IValidacionVentaService validacionVentaService)
         {
             _context = context;
             _mapper = mapper;
@@ -50,6 +52,7 @@ namespace TheBuryProject.Services
             _numberGenerator = numberGenerator;
             _precioService = precioService;
             _httpContextAccessor = httpContextAccessor;
+            _validacionVentaService = validacionVentaService;
         }
 
         #region Consultas
@@ -99,6 +102,12 @@ namespace TheBuryProject.Services
 
             var viewModel = _mapper.Map<VentaViewModel>(venta);
 
+            // Mapear estado del crédito para control de flujo en la vista
+            if (venta.Credito != null)
+            {
+                viewModel.CreditoEstado = venta.Credito.Estado;
+            }
+
             if (venta.TipoPago == TipoPago.CreditoPersonall &&
                 venta.CreditoId.HasValue &&
                 venta.VentaCreditoCuotas.Any())
@@ -129,17 +138,55 @@ namespace TheBuryProject.Services
 
                 CalcularTotales(venta);
 
-                await VerificarAutorizacionSiCorrespondeAsync(venta, viewModel);
+                // Validación unificada para crédito personal
+                ValidacionVentaResult? validacion = null;
+                if (viewModel.TipoPago == TipoPago.CreditoPersonall)
+                {
+                    validacion = await _validacionVentaService.ValidarVentaCreditoPersonalAsync(
+                        viewModel.ClienteId, 
+                        venta.Total, 
+                        viewModel.CreditoId);
+
+                    // E2: Si NoViable, rechazar guardado completamente
+                    if (validacion.NoViable)
+                    {
+                        throw new InvalidOperationException(
+                            $"No es posible crear la venta con crédito personal. {validacion.MensajeResumen}");
+                    }
+
+                    await AplicarResultadoValidacionAsync(venta, validacion);
+                }
+                else
+                {
+                    await VerificarAutorizacionSiCorrespondeAsync(venta, viewModel);
+                }
 
                 _context.Ventas.Add(venta);
                 await _context.SaveChangesAsync();
 
-                await GuardarDatosAdicionales(venta.Id, viewModel);
+                // Para crédito personal, crear el crédito inmediatamente después de guardar la venta
+                if (viewModel.TipoPago == TipoPago.CreditoPersonall && 
+                    venta.Estado == EstadoVenta.PendienteFinanciacion &&
+                    !venta.CreditoId.HasValue)
+                {
+                    await CrearCreditoPendienteParaVentaAsync(venta);
+                }
+
+                // Solo guardar datos adicionales de crédito si no hay requisitos pendientes
+                if (venta.Estado != EstadoVenta.PendienteRequisitos && 
+                    venta.Estado != EstadoVenta.PendienteFinanciacion)
+                {
+                    await GuardarDatosAdicionales(venta.Id, viewModel);
+                }
 
                 await transaction.CommitAsync();
 
-                _logger.LogInformation("Venta {Numero} creada exitosamente", venta.Numero);
-                return _mapper.Map<VentaViewModel>(venta);
+                var resultado = _mapper.Map<VentaViewModel>(venta);
+                resultado.ValidacionCredito = validacion;
+                resultado.CreditoId = venta.CreditoId; // Asegurar que el CreditoId se propague
+
+                _logger.LogInformation("Venta {Numero} creada exitosamente. Estado: {Estado}", venta.Numero, venta.Estado);
+                return resultado;
             }
             catch (Exception ex)
             {
@@ -147,6 +194,93 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al crear venta");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Aplica el resultado de la validación de crédito a la venta.
+        /// NOTA: Si NoViable=true, esta función no debe ser llamada (se rechaza antes).
+        /// Para crédito personal aprobable:
+        /// - Crea el crédito en estado PendienteConfiguracion
+        /// - Pone la venta en estado PendienteFinanciacion
+        /// </summary>
+        private async Task AplicarResultadoValidacionAsync(Venta venta, ValidacionVentaResult validacion)
+        {
+            // Seguridad: NoViable nunca debería llegar aquí, pero por si acaso
+            if (validacion.NoViable)
+            {
+                throw new InvalidOperationException(
+                    $"Error interno: Se intentó aplicar validación NoViable. {validacion.MensajeResumen}");
+            }
+
+            if (validacion.RequiereAutorizacion)
+            {
+                // E2: Guardar venta en estado PendienteAutorizacion con razones persistidas
+                venta.RequiereAutorizacion = true;
+                venta.Estado = EstadoVenta.PendienteFinanciacion; // También PendienteFinanciacion
+                venta.EstadoAutorizacion = EstadoAutorizacionVenta.PendienteAutorizacion;
+                venta.FechaSolicitudAutorizacion = DateTime.Now;
+                venta.RazonesAutorizacionJson = System.Text.Json.JsonSerializer.Serialize(
+                    validacion.RazonesAutorizacion.Select(r => new { r.Tipo, r.Descripcion, r.DetalleAdicional }));
+
+                _logger.LogInformation(
+                    "Venta requiere autorización. Razones: {Razones}",
+                    validacion.MensajeResumen);
+            }
+            else
+            {
+                // Aprobable - Crear crédito y poner venta en PendienteFinanciacion
+                venta.RequiereAutorizacion = false;
+                venta.EstadoAutorizacion = EstadoAutorizacionVenta.NoRequiere;
+                venta.Estado = EstadoVenta.PendienteFinanciacion;
+                
+                _logger.LogInformation(
+                    "Venta con crédito personal aprobable. Estado: {Estado}. Crédito será creado después de persistir.",
+                    venta.Estado);
+            }
+
+            await Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Crea el crédito para una venta con CreditoPersonal después de que la venta fue guardada.
+        /// </summary>
+        private async Task CrearCreditoPendienteParaVentaAsync(Venta venta)
+        {
+            // Generar número de crédito
+            var ultimoCredito = await _context.Creditos
+                .OrderByDescending(c => c.Id)
+                .FirstOrDefaultAsync();
+            var numeroSecuencial = ultimoCredito != null ? ultimoCredito.Id + 1 : 1;
+            var numeroCredito = $"CRE-{DateTime.Now:yyyyMM}-{numeroSecuencial:D6}";
+
+            // Obtener puntaje de riesgo del cliente
+            var cliente = await _context.Clientes.FindAsync(venta.ClienteId);
+            var puntajeRiesgo = cliente?.PuntajeRiesgo ?? 0;
+
+            var credito = new Credito
+            {
+                ClienteId = venta.ClienteId,
+                Numero = numeroCredito,
+                MontoSolicitado = venta.Total,
+                MontoAprobado = venta.Total,
+                SaldoPendiente = venta.Total,
+                TasaInteres = 0, // Se configurará después
+                CantidadCuotas = 0, // Se configurará después
+                Estado = EstadoCredito.PendienteConfiguracion,
+                FechaSolicitud = DateTime.Now,
+                PuntajeRiesgoInicial = puntajeRiesgo
+            };
+
+            _context.Creditos.Add(credito);
+            await _context.SaveChangesAsync();
+
+            // Asociar crédito a la venta
+            venta.CreditoId = credito.Id;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Crédito {NumeroCredito} (PendienteConfiguracion) creado y asociado a venta {VentaId}",
+                numeroCredito, venta.Id);
         }
 
         public async Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel)
@@ -218,21 +352,56 @@ namespace TheBuryProject.Services
                 if (venta == null)
                     return false;
 
+                // Validación previa del estado
                 _validator.ValidarEstadoParaConfirmacion(venta);
-                _validator.ValidarAutorizacion(venta);
                 _validator.ValidarStock(venta);
+
+                // Para crédito personal, re-validar requisitos antes de confirmar
+                if (venta.TipoPago == TipoPago.CreditoPersonall)
+                {
+                    var validacion = await _validacionVentaService.ValidarConfirmacionVentaAsync(id);
+                    
+                    if (validacion.PendienteRequisitos)
+                    {
+                        throw new InvalidOperationException(
+                            $"No se puede confirmar la venta. {validacion.MensajeResumen}");
+                    }
+
+                    if (validacion.RequiereAutorizacion && venta.EstadoAutorizacion != EstadoAutorizacionVenta.Autorizada)
+                    {
+                        throw new InvalidOperationException(
+                            $"La venta requiere autorización. {validacion.MensajeResumen}");
+                    }
+                }
+                else
+                {
+                    _validator.ValidarAutorizacion(venta);
+                }
 
                 await DescontarStockYRegistrarMovimientos(venta);
 
-                if (venta.TipoPago == TipoPago.CreditoPersonall && venta.CreditoId.HasValue)
+                // E4: Procesar crédito personal solo si hay datos JSON y la venta está autorizada
+                if (venta.TipoPago == TipoPago.CreditoPersonall && 
+                    !string.IsNullOrEmpty(venta.DatosCreditoPersonallJson))
                 {
-                    await ProcesarCreditoPersonallVentaAsync(venta);
+                    // Verificar que la venta esté autorizada (o no requiera autorización)
+                    if (venta.RequiereAutorizacion && venta.EstadoAutorizacion != EstadoAutorizacionVenta.Autorizada)
+                    {
+                        throw new InvalidOperationException(
+                            "No se puede crear el crédito: la venta requiere autorización y no está autorizada.");
+                    }
+
+                    // E4: Crear cuotas y asignar CreditoId desde JSON (solo al confirmar post-autorización)
+                    await CrearCreditoDefinitivoDesdeJsonAsync(venta);
                 }
 
                 await GenerarAlertasStockBajo(venta);
 
                 venta.Estado = EstadoVenta.Confirmada;
                 venta.FechaConfirmacion = DateTime.Now;
+                // Limpiar requisitos pendientes y datos temporales al confirmar
+                venta.RequisitosPendientesJson = null;
+                venta.DatosCreditoPersonallJson = null;
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -246,6 +415,119 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al confirmar venta {Id}", id);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Confirma una venta con crédito personal ya configurado: genera cuotas y marca crédito como Generado.
+        /// Este método asume que el crédito ya pasó por ConfigurarVenta (estado = Configurado).
+        /// </summary>
+        public async Task<bool> ConfirmarVentaCreditoAsync(int id)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var venta = await CargarVentaCompleta(id);
+                if (venta == null)
+                    return false;
+
+                if (venta.TipoPago != TipoPago.CreditoPersonall)
+                    throw new InvalidOperationException("Esta venta no es de tipo Crédito Personal.");
+
+                if (!venta.CreditoId.HasValue)
+                    throw new InvalidOperationException("La venta no tiene un crédito asociado.");
+
+                var credito = await _context.Creditos.FindAsync(venta.CreditoId.Value);
+                if (credito == null)
+                    throw new InvalidOperationException("Crédito no encontrado.");
+
+                // Permitir confirmar si el crédito está Configurado O si la venta tiene el flag
+                if (credito.Estado != EstadoCredito.Configurado && !venta.FechaConfiguracionCredito.HasValue)
+                    throw new InvalidOperationException(
+                        $"El crédito debe estar en estado Configurado para confirmar. Estado actual: {credito.Estado}");
+
+                // Si el crédito no está en Configurado pero la venta tiene el flag, corregir el estado
+                if (credito.Estado != EstadoCredito.Configurado && venta.FechaConfiguracionCredito.HasValue)
+                {
+                    _logger.LogWarning(
+                        "Corrigiendo estado de crédito {CreditoId} de {EstadoActual} a Configurado (flag presente en venta)",
+                        credito.Id, credito.Estado);
+                    credito.Estado = EstadoCredito.Configurado;
+                }
+
+                // Validar stock antes de confirmar
+                _validator.ValidarStock(venta);
+                _validator.ValidarAutorizacion(venta);
+
+                await DescontarStockYRegistrarMovimientos(venta);
+
+                // Generar las cuotas del crédito
+                await GenerarCuotasCreditoAsync(credito, venta.Total);
+
+                // Marcar crédito como Generado
+                credito.Estado = EstadoCredito.Generado;
+                credito.FechaAprobacion = DateTime.Now;
+
+                await GenerarAlertasStockBajo(venta);
+
+                venta.Estado = EstadoVenta.Confirmada;
+                venta.FechaConfirmacion = DateTime.Now;
+                venta.RequisitosPendientesJson = null;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    "Venta {VentaId} confirmada con crédito {CreditoId} generado ({Cuotas} cuotas)",
+                    id, credito.Id, credito.CantidadCuotas);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error al confirmar venta con crédito {Id}", id);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Genera las cuotas del crédito según la configuración del plan
+        /// </summary>
+        private async Task GenerarCuotasCreditoAsync(Credito credito, decimal montoVenta)
+        {
+            // Calcular cuota usando el servicio financiero
+            var montoFinanciado = credito.MontoAprobado > 0 ? credito.MontoAprobado : montoVenta;
+            var tasaDecimal = credito.TasaInteres / 100m;
+            var cuotaMensual = _financialService.ComputePmt(tasaDecimal, credito.CantidadCuotas, montoFinanciado);
+
+            // Calcular componentes de la cuota (sistema francés simplificado)
+            var interesTotal = (cuotaMensual * credito.CantidadCuotas) - montoFinanciado;
+            var capitalPorCuota = montoFinanciado / credito.CantidadCuotas;
+            var interesPorCuota = interesTotal / credito.CantidadCuotas;
+
+            credito.MontoCuota = cuotaMensual;
+            credito.TotalAPagar = cuotaMensual * credito.CantidadCuotas;
+            credito.SaldoPendiente = credito.TotalAPagar;
+
+            // Crear las cuotas
+            var fechaCuota = credito.FechaPrimeraCuota ?? DateTime.Today.AddMonths(1);
+            for (int i = 1; i <= credito.CantidadCuotas; i++)
+            {
+                var cuota = new Cuota
+                {
+                    CreditoId = credito.Id,
+                    NumeroCuota = i,
+                    MontoCapital = capitalPorCuota,
+                    MontoInteres = interesPorCuota,
+                    MontoTotal = cuotaMensual,
+                    FechaVencimiento = fechaCuota,
+                    Estado = EstadoCuota.Pendiente
+                };
+                _context.Cuotas.Add(cuota);
+                fechaCuota = fechaCuota.AddMonths(1);
+            }
+
+            await Task.CompletedTask;
         }
 
         public async Task AsociarCreditoAVentaAsync(int ventaId, int creditoId)
@@ -278,7 +560,16 @@ namespace TheBuryProject.Services
 
                 if (venta.TipoPago == TipoPago.CreditoPersonall)
                 {
-                    await RestaurarCreditoPersonall(venta);
+                    // Si la venta fue confirmada, restaurar el crédito
+                    if (venta.Estado == EstadoVenta.Confirmada || venta.Estado == EstadoVenta.Facturada)
+                    {
+                        await RestaurarCreditoPersonall(venta);
+                    }
+                    else
+                    {
+                        // Si la venta nunca fue confirmada, solo limpiar datos temporales
+                        await LimpiarDatosCreditoVentaAsync(venta);
+                    }
                 }
 
                 venta.Estado = EstadoVenta.Cancelada;
@@ -371,25 +662,33 @@ namespace TheBuryProject.Services
 
         public async Task<bool> AutorizarVentaAsync(int id, string usuarioAutoriza, string motivo)
         {
+            // E3: Motivo/observación es obligatorio
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                throw new ArgumentException(
+                    "El motivo/observación es obligatorio para autorizar una venta.",
+                    nameof(motivo));
+            }
+
+            // E3: Solo se puede autorizar si está en PendienteAutorizacion
             var venta = await ObtenerVentaPendienteAutorizacionAsync(id);
             if (venta == null)
                 return false;
 
+            // E3: Registrar auditoría completa
             venta.EstadoAutorizacion = EstadoAutorizacionVenta.Autorizada;
             venta.UsuarioAutoriza = usuarioAutoriza;
             venta.FechaAutorizacion = DateTime.Now;
-
-            if (!string.IsNullOrWhiteSpace(motivo))
-            {
-                var prefijo = $"[Autorización {DateTime.Now:dd/MM/yyyy HH:mm} por {usuarioAutoriza}] ";
-                venta.Observaciones = string.IsNullOrWhiteSpace(venta.Observaciones)
-                    ? prefijo + motivo.Trim()
-                    : venta.Observaciones.TrimEnd() + Environment.NewLine + prefijo + motivo.Trim();
-            }
+            venta.MotivoAutorizacion = motivo.Trim();
+            
+            // Las razones autorizadas ya están en RazonesAutorizacionJson (guardadas al crear)
+            // No se modifican, quedan como registro de qué se autorizó
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Venta {Id} autorizada por {Usuario}", id, usuarioAutoriza);
+            _logger.LogInformation(
+                "Venta {Id} autorizada por {Usuario}. Motivo: {Motivo}. Razones: {Razones}",
+                id, usuarioAutoriza, motivo, venta.RazonesAutorizacionJson ?? "N/A");
             return true;
         }
 
@@ -404,10 +703,40 @@ namespace TheBuryProject.Services
             venta.FechaAutorizacion = DateTime.Now;
             venta.MotivoRechazo = motivo;
 
+            // Limpiar datos de crédito al rechazar para evitar "créditos fantasma"
+            await LimpiarDatosCreditoVentaAsync(venta);
+
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Venta {Id} rechazada por {Usuario}. Motivo: {Motivo}", id, usuarioAutoriza, motivo);
             return true;
+        }
+
+        /// <summary>
+        /// Limpia todos los datos de crédito asociados a una venta rechazada o cancelada.
+        /// </summary>
+        private async Task LimpiarDatosCreditoVentaAsync(Venta venta)
+        {
+            // Limpiar plan de crédito JSON temporal
+            venta.DatosCreditoPersonallJson = null;
+
+            // Eliminar cuotas si existen (no deberían existir si el flujo es correcto)
+            var cuotasExistentes = await _context.VentaCreditoCuotas
+                .Where(c => c.VentaId == venta.Id)
+                .ToListAsync();
+
+            if (cuotasExistentes.Any())
+            {
+                _context.VentaCreditoCuotas.RemoveRange(cuotasExistentes);
+                _logger.LogWarning(
+                    "Se eliminaron {Count} cuotas huérfanas de la venta rechazada {VentaId}",
+                    cuotasExistentes.Count, venta.Id);
+            }
+
+            // Limpiar asociación con crédito
+            venta.CreditoId = null;
+
+            _logger.LogInformation("Datos de crédito limpiados para venta {VentaId}", venta.Id);
         }
 
         public async Task<bool> RequiereAutorizacionAsync(VentaViewModel viewModel)
@@ -937,9 +1266,166 @@ namespace TheBuryProject.Services
                 await GuardarDatosChequeAsync(ventaId, viewModel.DatosCheque);
             }
 
+            // Para crédito personal: guardar plan como JSON, NO crear cuotas todavía
+            // Las cuotas se crean solo al confirmar la venta
             if (viewModel.DatosCreditoPersonall != null && viewModel.TipoPago == TipoPago.CreditoPersonall)
             {
-                await GuardarCuotasCreditoPersonallAsync(ventaId, viewModel.DatosCreditoPersonall);
+                await GuardarPlanCreditoPersonallAsync(ventaId, viewModel.DatosCreditoPersonall);
+            }
+        }
+
+        /// <summary>
+        /// Guarda el plan de crédito personal como JSON para usarlo al confirmar.
+        /// NO crea cuotas ni modifica el saldo del crédito.
+        /// </summary>
+        private async Task GuardarPlanCreditoPersonallAsync(int ventaId, DatosCreditoPersonallViewModel datos)
+        {
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
+            if (venta == null)
+                throw new InvalidOperationException(VentaConstants.ErrorMessages.VENTA_NO_ENCONTRADA);
+
+            // Serializar el plan de crédito para usarlo al confirmar
+            venta.DatosCreditoPersonallJson = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                datos.CreditoId,
+                datos.MontoAFinanciar,
+                datos.CantidadCuotas,
+                datos.MontoCuota,
+                datos.TotalAPagar,
+                datos.TasaInteresMensual,
+                datos.FechaPrimeraCuota,
+                datos.InteresTotal
+            });
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Plan de crédito personal guardado para venta {VentaId}. CreditoId: {CreditoId}, Monto: {Monto}, Cuotas: {Cuotas}",
+                ventaId, datos.CreditoId, datos.MontoAFinanciar, datos.CantidadCuotas);
+        }
+
+        /// <summary>
+        /// Crea las cuotas desde el plan JSON almacenado. Solo se llama al confirmar la venta.
+        /// </summary>
+        private async Task CrearCuotasDesdeJsonAsync(Venta venta)
+        {
+            if (string.IsNullOrEmpty(venta.DatosCreditoPersonallJson))
+            {
+                _logger.LogWarning("No hay datos de crédito JSON para la venta {VentaId}", venta.Id);
+                return;
+            }
+
+            try
+            {
+                var planJson = System.Text.Json.JsonDocument.Parse(venta.DatosCreditoPersonallJson);
+                var root = planJson.RootElement;
+
+                var creditoId = root.GetProperty("CreditoId").GetInt32();
+                var montoAFinanciar = root.GetProperty("MontoAFinanciar").GetDecimal();
+                var cantidadCuotas = root.GetProperty("CantidadCuotas").GetInt32();
+                var montoCuota = root.GetProperty("MontoCuota").GetDecimal();
+                var fechaPrimeraCuota = root.GetProperty("FechaPrimeraCuota").GetDateTime();
+
+                // Crear las cuotas
+                for (int i = 0; i < cantidadCuotas; i++)
+                {
+                    var cuota = new VentaCreditoCuota
+                    {
+                        VentaId = venta.Id,
+                        CreditoId = creditoId,
+                        NumeroCuota = i + 1,
+                        FechaVencimiento = fechaPrimeraCuota.AddMonths(i),
+                        Monto = montoCuota,
+                        Saldo = montoAFinanciar, // Saldo original de la venta
+                        Pagada = false
+                    };
+                    _context.VentaCreditoCuotas.Add(cuota);
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Cuotas creadas para venta {VentaId}: {CantidadCuotas} cuotas de {MontoCuota:C2}",
+                    venta.Id, cantidadCuotas, montoCuota);
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                _logger.LogError(ex, "Error al deserializar datos de crédito JSON para venta {VentaId}", venta.Id);
+                throw new InvalidOperationException("Error al procesar los datos del plan de crédito");
+            }
+        }
+
+        /// <summary>
+        /// E4: Crea el crédito definitivo, cuotas y descuenta del cupo.
+        /// Solo se llama al confirmar una venta autorizada (o que no requiere autorización).
+        /// </summary>
+        private async Task CrearCreditoDefinitivoDesdeJsonAsync(Venta venta)
+        {
+            if (string.IsNullOrEmpty(venta.DatosCreditoPersonallJson))
+            {
+                throw new InvalidOperationException(
+                    "No hay datos del plan de crédito para crear el crédito definitivo.");
+            }
+
+            try
+            {
+                var planJson = System.Text.Json.JsonDocument.Parse(venta.DatosCreditoPersonallJson);
+                var root = planJson.RootElement;
+
+                var creditoId = root.GetProperty("CreditoId").GetInt32();
+                var montoAFinanciar = root.GetProperty("MontoAFinanciar").GetDecimal();
+                var cantidadCuotas = root.GetProperty("CantidadCuotas").GetInt32();
+                var montoCuota = root.GetProperty("MontoCuota").GetDecimal();
+                var fechaPrimeraCuota = root.GetProperty("FechaPrimeraCuota").GetDateTime();
+
+                // Obtener el crédito y validar saldo disponible
+                var credito = await _context.Creditos
+                    .FirstOrDefaultAsync(c => c.Id == creditoId && !c.IsDeleted);
+                
+                if (credito == null)
+                {
+                    throw new InvalidOperationException(VentaConstants.ErrorMessages.CREDITO_NO_ENCONTRADO);
+                }
+
+                if (credito.SaldoPendiente < montoAFinanciar)
+                {
+                    throw new InvalidOperationException(
+                        $"Saldo de crédito insuficiente. Disponible: ${credito.SaldoPendiente:N2}, Requerido: ${montoAFinanciar:N2}");
+                }
+
+                // E4: Asignar CreditoId a la venta (ahora sí, post-autorización)
+                venta.CreditoId = creditoId;
+
+                // Crear las cuotas
+                for (int i = 0; i < cantidadCuotas; i++)
+                {
+                    var cuota = new VentaCreditoCuota
+                    {
+                        VentaId = venta.Id,
+                        CreditoId = creditoId,
+                        NumeroCuota = i + 1,
+                        FechaVencimiento = fechaPrimeraCuota.AddMonths(i),
+                        Monto = montoCuota,
+                        Saldo = montoAFinanciar,
+                        Pagada = false
+                    };
+                    _context.VentaCreditoCuotas.Add(cuota);
+                }
+
+                // E4: Descontar del cupo del crédito
+                credito.SaldoPendiente -= montoAFinanciar;
+                _context.Creditos.Update(credito);
+
+                _logger.LogInformation(
+                    "E4: Crédito definitivo creado para venta {VentaId}. CreditoId: {CreditoId}, " +
+                    "Monto: {Monto:C2}, Cuotas: {Cuotas}, Nuevo saldo disponible: {SaldoDisponible:C2}",
+                    venta.Id, creditoId, montoAFinanciar, cantidadCuotas, credito.SaldoPendiente);
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                _logger.LogError(ex, "Error al deserializar datos de crédito JSON para venta {VentaId}", venta.Id);
+                throw new InvalidOperationException("Error al procesar los datos del plan de crédito");
             }
         }
 

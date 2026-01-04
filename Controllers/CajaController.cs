@@ -282,11 +282,13 @@ namespace TheBuryProject.Controllers
         #region Cierre de Caja
 
         [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
-        public async Task<IActionResult> Cerrar(int aperturaId)
+        public async Task<IActionResult> Cerrar(int aperturaId, string? returnUrl = null)
         {
             try
             {
                 var detalles = await _cajaService.ObtenerDetallesAperturaAsync(aperturaId);
+
+                ViewBag.ReturnUrl = returnUrl;
 
                 var model = new CerrarCajaViewModel
                 {
@@ -314,11 +316,12 @@ namespace TheBuryProject.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
-        public async Task<IActionResult> Cerrar(CerrarCajaViewModel model)
+        public async Task<IActionResult> Cerrar(CerrarCajaViewModel model, string? returnUrl = null)
         {
             if (!ModelState.IsValid)
             {
                 await TryPopulateCerrarModelAsync(model);
+                ViewBag.ReturnUrl = returnUrl;
                 return View(model);
             }
 
@@ -336,12 +339,17 @@ namespace TheBuryProject.Controllers
                     TempData["Success"] = "Caja cerrada exitosamente sin diferencias";
                 }
 
-                return RedirectToAction(nameof(DetallesCierre), new { id = cierre.Id });
+                var safeReturnUrl = (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    ? returnUrl
+                    : null;
+
+                return RedirectToAction(nameof(DetallesCierre), new { id = cierre.Id, returnUrl = safeReturnUrl });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al cerrar caja");
                 await TryPopulateCerrarModelAsync(model);
+                ViewBag.ReturnUrl = returnUrl;
                 TempData["Error"] = ex.Message;
                 return View(model);
             }
@@ -368,7 +376,7 @@ namespace TheBuryProject.Controllers
         }
 
         [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
-        public async Task<IActionResult> DetallesCierre(int id)
+        public async Task<IActionResult> DetallesCierre(int id, string? returnUrl = null)
         {
             var cierre = await _cajaService.ObtenerCierrePorIdAsync(id);
             if (cierre == null)
@@ -376,6 +384,8 @@ namespace TheBuryProject.Controllers
                 TempData["Error"] = "Cierre no encontrado";
                 return RedirectToAction(nameof(Historial));
             }
+
+            ViewBag.ReturnUrl = returnUrl;
 
             return View(cierre);
         }

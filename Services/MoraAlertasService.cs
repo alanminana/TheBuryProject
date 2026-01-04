@@ -62,7 +62,7 @@ namespace TheBuryProject.Services
                     return;
                 }
 
-                var diasGracia = config.DiasGracia;
+                var diasGracia = config.DiasGracia ?? 0;
                 var fechaGracia = DateTime.Now.AddDays(-diasGracia);
 
                 // Obtener cuotas vencidas que no tienen mora calculada

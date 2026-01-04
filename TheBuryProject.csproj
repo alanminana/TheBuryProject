@@ -18,7 +18,6 @@
   <ItemGroup>
     <None Include="Models\Entities\AlertaStock.cs" />
     <None Include="Views\Cliente\_DocumentacionCliente.cshtml" />
-    <None Include="Views\Cliente\_SolicitarCredito.cshtml" />
   </ItemGroup>
 
   <!-- Excluir carpeta tests del proyecto principal -->

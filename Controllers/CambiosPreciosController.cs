@@ -159,6 +159,28 @@ public class CambiosPreciosController : Controller
                 return View(viewModel);
             }
 
+            if ((viewModel.ProductosIds == null || !viewModel.ProductosIds.Any())
+                && !string.IsNullOrWhiteSpace(viewModel.ProductoIdsText))
+            {
+                var parsedIds = new List<int>();
+                var tokens = viewModel.ProductoIdsText
+                    .Split(new[] { ',', ';', '\n', '\r', '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                foreach (var token in tokens)
+                {
+                    if (!int.TryParse(token, out var id) || id <= 0)
+                    {
+                        ModelState.AddModelError(nameof(viewModel.ProductoIdsText), "Hay IDs de producto inválidos. Use números enteros positivos separados por comas.");
+                        await CargarDatosParaSimulacion();
+                        return View(viewModel);
+                    }
+
+                    parsedIds.Add(id);
+                }
+
+                viewModel.ProductosIds = parsedIds.Distinct().ToList();
+            }
+
             var batch = await _precioService.SimularCambioMasivoAsync(
                 nombre: viewModel.Nombre,
                 tipoCambio: viewModel.TipoCambio,

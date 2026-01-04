@@ -53,11 +53,11 @@
                             <label class="form-label small mb-1">Filtrar por lista</label>
                             <select name="listaId"
                                     class="form-select form-select-sm"
-                                    onchange="this.form.submit()">
+                                    data-auto-submit="true">
                                 <option value="">Todas las listas</option>
                                 @foreach (var lista in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.Listas)
                                 {
-                                    <option value="@lista.Value" selected="@lista.Selected">@lista.Text</option>
+                                    <option value="@lista.Value" selected="@(lista.Selected ? "selected" : null)">@lista.Text</option>
                                 }
                             </select>
                         </div>

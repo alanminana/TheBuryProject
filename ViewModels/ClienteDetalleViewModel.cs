@@ -17,6 +17,11 @@ namespace TheBuryProject.ViewModels
 
         public EvaluacionCreditoResult EvaluacionCredito { get; set; } = new();
 
+        /// <summary>
+        /// Resultado de la evaluación de aptitud crediticia (semáforo)
+        /// </summary>
+        public AptitudCrediticiaViewModel AptitudCrediticia { get; set; } = new();
+
         public string TabActivo { get; set; } = "informacion";
     }
 

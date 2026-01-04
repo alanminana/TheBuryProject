@@ -10,6 +10,10 @@
         onChange: function () {
             actualizarTablaProductos();
             calcularTotales();
+            // Resetear prevalidación cuando cambian los productos
+            if (tipoPagoSelect?.value === 'CreditoPersonall') {
+                resetEstadoPrevalidacion();
+            }
         }
     });
 
@@ -17,6 +21,7 @@
     const calcularCuotasUrl = form.dataset.calcularCuotasUrl;
     const getPrecioProductoUrl = form.dataset.getPrecioProductoUrl;
     const calcularTotalesUrl = form.dataset.calcularTotalesUrl;
+    const prevalidarCreditoUrl = form.dataset.prevalidarCreditoUrl;
     const descuentoEsPorcentaje = form.dataset.descuentoEsPorcentaje === 'true';
     const antiforgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
@@ -33,6 +38,23 @@
     const tipoPagoSelect = document.getElementById('tipoPagoSelect');
     const productosBody = document.getElementById('productosBody');
     const descuentoGeneralInput = document.getElementById('descuentoGeneral');
+    const clienteSelect = document.getElementById('clienteSelect');
+    
+    // Elementos de prevalidación de crédito
+    const prevalidacionRow = document.getElementById('prevalidacionRow');
+    const btnVerificarAptitud = document.getElementById('btnVerificarAptitud');
+    const prevalidacionPendiente = document.getElementById('prevalidacionPendiente');
+    const prevalidacionCargando = document.getElementById('prevalidacionCargando');
+    const prevalidacionResultado = document.getElementById('prevalidacionResultado');
+    const prevalidacionBadge = document.getElementById('prevalidacionBadge');
+    const prevalidacionTexto = document.getElementById('prevalidacionTexto');
+    
+    // Estado de prevalidación
+    let estadoPrevalidacion = {
+        verificado: false,
+        permiteGuardar: false,
+        resultado: null
+    };
 
     const tarjetaHandlers = VentaCommon.initTarjetaHandlers({
         tipoPagoSelect: tipoPagoSelect,
@@ -52,6 +74,8 @@
         tarjetaHandlers.bindEvents();
         tarjetaHandlers.handleTipoPagoChange(tipoPagoSelect?.value);
         bindEvents();
+        bindPrevalidacionEvents();
+        handleTipoPagoChangeForPrevalidacion(tipoPagoSelect?.value);
     }
 
     function bindEvents() {
@@ -81,8 +105,228 @@
             if (detalleManager.getAll().length === 0) {
                 e.preventDefault();
                 alert('Debe agregar al menos un producto a la venta');
+                return;
+            }
+            
+            // Validar prevalidación para Crédito Personal
+            if (tipoPagoSelect?.value === 'CreditoPersonall') {
+                if (!estadoPrevalidacion.verificado) {
+                    e.preventDefault();
+                    alert('Debe verificar la aptitud crediticia del cliente antes de continuar.');
+                    return;
+                }
+                if (!estadoPrevalidacion.permiteGuardar) {
+                    e.preventDefault();
+                    alert('El cliente no tiene aptitud crediticia para esta operación. Revise los motivos en el panel de verificación.');
+                    return;
+                }
             }
         });
+        
+        // Cuando cambia el tipo de pago, resetear prevalidación si es necesario
+        tipoPagoSelect?.addEventListener('change', function () {
+            handleTipoPagoChangeForPrevalidacion(this.value);
+        });
+        
+        // Cuando cambia el cliente, resetear prevalidación
+        clienteSelect?.addEventListener('change', function () {
+            resetEstadoPrevalidacion();
+        });
+    }
+    
+    function bindPrevalidacionEvents() {
+        btnVerificarAptitud?.addEventListener('click', verificarAptitudCrediticia);
+    }
+    
+    function handleTipoPagoChangeForPrevalidacion(tipoPago) {
+        const avisoCreditoPersonal = document.getElementById('avisoCreditoPersonal');
+        
+        if (tipoPago === 'CreditoPersonall') {
+            prevalidacionRow?.classList.remove('d-none');
+            avisoCreditoPersonal?.classList.remove('d-none');
+            actualizarBotonVerificar();
+            actualizarBotonGuardar();
+        } else {
+            prevalidacionRow?.classList.add('d-none');
+            avisoCreditoPersonal?.classList.add('d-none');
+            resetEstadoPrevalidacion();
+            actualizarBotonGuardar();
+        }
+    }
+    
+    function actualizarBotonVerificar() {
+        const tieneCliente = clienteSelect?.value && parseInt(clienteSelect.value) > 0;
+        const tieneProductos = detalleManager.getAll().length > 0;
+        const totalVenta = parseFloat(document.getElementById('hiddenTotal')?.value) || 0;
+        
+        if (btnVerificarAptitud) {
+            btnVerificarAptitud.disabled = !tieneCliente || !tieneProductos || totalVenta <= 0;
+        }
+    }
+    
+    function resetEstadoPrevalidacion() {
+        estadoPrevalidacion = {
+            verificado: false,
+            permiteGuardar: false,
+            resultado: null
+        };
+        
+        if (prevalidacionPendiente) prevalidacionPendiente.classList.remove('d-none');
+        if (prevalidacionCargando) prevalidacionCargando.classList.add('d-none');
+        if (prevalidacionResultado) prevalidacionResultado.classList.add('d-none');
+        actualizarBotonVerificar();
+        actualizarBotonGuardar();
+    }
+    
+    async function verificarAptitudCrediticia() {
+        if (!prevalidarCreditoUrl) {
+            console.error('URL de prevalidación no configurada');
+            return;
+        }
+        
+        const clienteId = clienteSelect?.value;
+        const monto = parseFloat(document.getElementById('hiddenTotal')?.value) || 0;
+        
+        if (!clienteId || monto <= 0) {
+            alert('Seleccione un cliente y agregue productos antes de verificar.');
+            return;
+        }
+        
+        // Mostrar estado de carga
+        if (prevalidacionPendiente) prevalidacionPendiente.classList.add('d-none');
+        if (prevalidacionCargando) prevalidacionCargando.classList.remove('d-none');
+        if (prevalidacionResultado) prevalidacionResultado.classList.add('d-none');
+        
+        try {
+            const params = new URLSearchParams({ clienteId: clienteId, monto: monto });
+            const response = await fetch(`${prevalidarCreditoUrl}?${params.toString()}`);
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Error al verificar aptitud');
+            }
+            
+            const resultado = await response.json();
+            mostrarResultadoPrevalidacion(resultado);
+            
+        } catch (error) {
+            console.error('Error en prevalidación:', error);
+            if (prevalidacionCargando) prevalidacionCargando.classList.add('d-none');
+            if (prevalidacionPendiente) prevalidacionPendiente.classList.remove('d-none');
+            alert('Error al verificar aptitud crediticia: ' + error.message);
+        }
+    }
+    
+    function mostrarResultadoPrevalidacion(resultado) {
+        estadoPrevalidacion = {
+            verificado: true,
+            permiteGuardar: resultado.permiteGuardar,
+            resultado: resultado
+        };
+        
+        if (prevalidacionCargando) prevalidacionCargando.classList.add('d-none');
+        if (prevalidacionResultado) prevalidacionResultado.classList.remove('d-none');
+        
+        // Configurar badge con el color correcto
+        if (prevalidacionBadge) {
+            const badgeColor = resultado.resultado === 0 ? 'bg-success' : 
+                               resultado.resultado === 1 ? 'bg-warning text-dark' : 'bg-danger';
+            prevalidacionBadge.className = `badge fs-6 me-3 ${badgeColor}`;
+            prevalidacionBadge.innerHTML = `<i class="${resultado.icono || 'bi bi-question-circle'} me-1"></i>${resultado.textoEstado || 'Desconocido'}`;
+        }
+        
+        if (prevalidacionTexto) {
+            if (resultado.resultado === 0) { // Aprobable
+                prevalidacionTexto.textContent = 'El cliente tiene aptitud para esta operación de crédito.';
+            } else if (resultado.resultado === 1) { // RequiereAutorizacion
+                prevalidacionTexto.textContent = 'Esta operación requerirá autorización de un supervisor.';
+            } else { // NoViable
+                prevalidacionTexto.textContent = 'No es posible realizar esta operación de crédito.';
+            }
+        }
+        
+        // Mostrar detalles financieros
+        const formatCurrency = (n) => '$' + (n || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const limiteEl = document.getElementById('prevalidacionLimite');
+        const cupoEl = document.getElementById('prevalidacionCupo');
+        const montoEl = document.getElementById('prevalidacionMonto');
+        
+        if (limiteEl) limiteEl.textContent = formatCurrency(resultado.limiteCredito);
+        if (cupoEl) cupoEl.textContent = formatCurrency(resultado.cupoDisponible);
+        if (montoEl) montoEl.textContent = formatCurrency(parseFloat(document.getElementById('hiddenTotal')?.value) || 0);
+        
+        // Mostrar mora si existe
+        const moraDiv = document.getElementById('prevalidacionMora');
+        if (resultado.tieneMora && moraDiv) {
+            moraDiv.classList.remove('d-none');
+            document.getElementById('prevalidacionMoraTexto').textContent = 
+                `El cliente tiene mora activa de ${resultado.diasMora || 0} días.`;
+        } else if (moraDiv) {
+            moraDiv.classList.add('d-none');
+        }
+        
+        // Mostrar motivos
+        const motivosDiv = document.getElementById('prevalidacionMotivos');
+        if (motivosDiv && resultado.motivos && resultado.motivos.length > 0) {
+            let html = '<div class="mt-2">';
+            resultado.motivos.forEach(function (motivo) {
+                const alertClass = motivo.esBloqueante ? 'alert-danger' : 'alert-warning';
+                const icon = motivo.esBloqueante ? 'bi-x-circle' : 'bi-exclamation-triangle';
+                const titulo = motivo.titulo || (motivo.esBloqueante ? 'Bloqueante' : 'Advertencia');
+                html += `
+                    <div class="alert ${alertClass} py-2 mb-2 d-flex align-items-start">
+                        <i class="bi ${icon} me-2 mt-1"></i>
+                        <div>
+                            <strong>${titulo}</strong>
+                            <p class="mb-0 small">${motivo.descripcion || ''}</p>
+                            ${motivo.accionSugerida ? `<small class="text-muted"><i class="bi bi-lightbulb me-1"></i>${motivo.accionSugerida}</small>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            motivosDiv.innerHTML = html;
+        } else if (motivosDiv) {
+            motivosDiv.innerHTML = '';
+        }
+        
+        // Actualizar estado del botón Guardar
+        actualizarBotonGuardar();
+    }
+    
+    function actualizarBotonGuardar() {
+        const btnGuardar = form?.querySelector('button[type="submit"]');
+        if (!btnGuardar) return;
+        
+        const esCreditoPersonal = tipoPagoSelect?.value === 'CreditoPersonall';
+        
+        if (esCreditoPersonal) {
+            if (!estadoPrevalidacion.verificado) {
+                // No verificado aún - deshabilitar con mensaje
+                btnGuardar.disabled = true;
+                btnGuardar.classList.remove('btn-primary', 'btn-success');
+                btnGuardar.classList.add('btn-secondary');
+                btnGuardar.title = 'Debe verificar la aptitud crediticia antes de guardar';
+            } else if (!estadoPrevalidacion.permiteGuardar) {
+                // NoViable - deshabilitar
+                btnGuardar.disabled = true;
+                btnGuardar.classList.remove('btn-primary', 'btn-success');
+                btnGuardar.classList.add('btn-danger');
+                btnGuardar.title = 'El cliente no tiene aptitud crediticia para esta operación';
+            } else {
+                // Aprobable o RequiereAutorizacion - habilitar
+                btnGuardar.disabled = false;
+                btnGuardar.classList.remove('btn-secondary', 'btn-danger');
+                btnGuardar.classList.add('btn-primary');
+                btnGuardar.title = '';
+            }
+        } else {
+            // No es crédito personal - habilitar
+            btnGuardar.disabled = false;
+            btnGuardar.classList.remove('btn-secondary', 'btn-danger');
+            btnGuardar.classList.add('btn-primary');
+            btnGuardar.title = '';
+        }
     }
 
     function cargarPrecioProducto(productoId) {
