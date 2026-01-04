@@ -55,6 +55,8 @@ builder.Services.AddSingleton<IMapper>(sp =>
 // 5. Servicios (DI)
 builder.Services.AddCoreServices();
 builder.Services.AddVentaServices();
+builder.Services.AddMoraServices();
+builder.Services.AddCreditoServices();
 
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
@@ -145,6 +147,13 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         logger.LogError(ex, "Error durante la inicialización de la base de datos");
+
+        // En desarrollo es mejor fallar rápido: evita que la app quede "arrancada" pero rota
+        // (background services y pantallas van a seguir fallando sin DB).
+        if (app.Environment.IsDevelopment())
+        {
+            throw;
+        }
     }
 }
 

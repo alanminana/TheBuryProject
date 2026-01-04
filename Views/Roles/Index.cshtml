@@ -3,6 +3,8 @@
 
 @{
     ViewData["Title"] = "Gestión de Roles";
+    var cleanedQuery = QueryString.Create(Context.Request.Query.Where(kvp => !string.Equals(kvp.Key, "returnUrl", StringComparison.OrdinalIgnoreCase)));
+    var listReturnUrl = Context.Request.Path + cleanedQuery;
 }
 
 <div class="container-fluid">
@@ -12,7 +14,7 @@
             <p class="text-muted">Administra los roles del sistema y sus permisos</p>
         </div>
         <div class="col-md-4 text-end">
-            <a asp-action="Create" class="btn btn-primary">
+            <a asp-action="Create" asp-route-returnUrl="@listReturnUrl" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-1"></i>Crear Rol
             </a>
         </div>
@@ -39,9 +41,9 @@
             @if (Model == null || !Model.Any())
             {
                 <div class="text-center py-5">
-                    <i class="bi bi-shield-x" style="font-size: 4rem; color: #6c757d;"></i>
+                    <i class="bi bi-shield-x fs-1 text-muted"></i>
                     <p class="mt-3 text-muted">No hay roles configurados en el sistema</p>
-                    <a asp-action="Create" class="btn btn-primary">
+                    <a asp-action="Create" asp-route-returnUrl="@listReturnUrl" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-1"></i>Crear Primer Rol
                     </a>
                 </div>
@@ -67,7 +69,7 @@
                                     <td class="text-center">
                                         @if (rol.CantidadUsuarios > 0)
                                         {
-                                            <a asp-action="Usuarios" asp-route-id="@rol.Id" class="badge bg-primary">
+                                            <a asp-action="Usuarios" asp-route-id="@rol.Id" asp-route-returnUrl="@listReturnUrl" class="badge bg-primary">
                                                 @rol.CantidadUsuarios usuario@(rol.CantidadUsuarios != 1 ? "s" : "")
                                             </a>
                                         }
@@ -78,24 +80,24 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group" role="group">
-                                            <a asp-action="Details" asp-route-id="@rol.Id"
+                                            <a asp-action="Details" asp-route-id="@rol.Id" asp-route-returnUrl="@listReturnUrl"
                                                class="btn btn-sm btn-outline-info"
                                                title="Ver detalles">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <a asp-action="AsignarPermisos" asp-route-id="@rol.Id"
+                                            <a asp-action="AsignarPermisos" asp-route-id="@rol.Id" asp-route-returnUrl="@listReturnUrl"
                                                class="btn btn-sm btn-outline-warning"
                                                title="Asignar permisos">
                                                 <i class="bi bi-key"></i>
                                             </a>
-                                            <a asp-action="Edit" asp-route-id="@rol.Id"
+                                            <a asp-action="Edit" asp-route-id="@rol.Id" asp-route-returnUrl="@listReturnUrl"
                                                class="btn btn-sm btn-outline-primary"
                                                title="Editar">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                             @if (rol.Nombre != Roles.SuperAdmin)
                                             {
-                                                <a asp-action="Delete" asp-route-id="@rol.Id"
+                                                <a asp-action="Delete" asp-route-id="@rol.Id" asp-route-returnUrl="@listReturnUrl"
                                                    class="btn btn-sm btn-outline-danger"
                                                    title="Eliminar">
                                                     <i class="bi bi-trash"></i>

@@ -131,7 +131,7 @@ namespace TheBuryProject.Controllers
         // POST: AlertaStock/Resolver/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Resolver(int id, string? observaciones, byte[]? rowVersion)
+        public async Task<IActionResult> Resolver(int id, string? observaciones, byte[]? rowVersion, string? returnUrl)
         {
             return await ProcesarAccionAlerta(
                 id,
@@ -140,13 +140,14 @@ namespace TheBuryProject.Controllers
                 _alertaStockService.ResolverAlertaAsync,
                 "La alerta se resolvió exitosamente",
                 "No se pudo resolver la alerta",
-                "resolver");
+                "resolver",
+                returnUrl);
         }
 
         // POST: AlertaStock/Ignorar/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Ignorar(int id, string? observaciones, byte[]? rowVersion)
+        public async Task<IActionResult> Ignorar(int id, string? observaciones, byte[]? rowVersion, string? returnUrl)
         {
             return await ProcesarAccionAlerta(
                 id,
@@ -155,7 +156,8 @@ namespace TheBuryProject.Controllers
                 _alertaStockService.IgnorarAlertaAsync,
                 "La alerta se ignoró exitosamente",
                 "No se pudo ignorar la alerta",
-                "ignorar");
+                "ignorar",
+                returnUrl);
         }
 
         // POST: AlertaStock/GenerarAlertas
@@ -217,7 +219,8 @@ namespace TheBuryProject.Controllers
             Func<int, string, string?, byte[]?, Task<bool>> accion,
             string mensajeExito,
             string mensajeError,
-            string accionLog)
+            string accionLog,
+            string? returnUrl)
         {
             try
             {
@@ -229,6 +232,11 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al {Accion} alerta {AlertaId}", accionLog, id);
                 TempData["Error"] = $"Error al {accionLog} la alerta: {ex.Message}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
             }
 
             return RedirectToAction(nameof(Index));

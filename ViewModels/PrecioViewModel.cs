@@ -181,6 +181,10 @@ public class SimularCambioMasivoViewModel
     [Display(Name = "Productos Específicos")]
     public List<int>? ProductosIds { get; set; }
 
+    [StringLength(2000)]
+    [Display(Name = "IDs de Productos (texto)")]
+    public string? ProductoIdsText { get; set; }
+
     [Display(Name = "Fecha de Vigencia")]
     public DateTime? FechaVigencia { get; set; }
 

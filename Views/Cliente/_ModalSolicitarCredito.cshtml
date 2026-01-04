@@ -4,14 +4,18 @@
     var eval = Model.EvaluacionCredito;
     var puedeAprobarNormal = eval.CumpleRequisitos;
     var requiereExcepcion = !eval.CumpleRequisitos && eval.PuedeAprobarConExcepcion;
+    var returnUrl = ViewData["ReturnUrl"] as string;
 }
 
 <div class="modal fade" id="solicitarCreditoModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg">
         <div class="modal-content bg-dark text-light">
-            <form asp-controller="Cliente" asp-action="SolicitarCredito" method="post" id="formSolicitarCredito">
+        <form asp-controller="Cliente" asp-action="SolicitarCredito" method="post" id="formSolicitarCredito"
+            data-capacidad-pago="@eval.CapacidadPagoMensual.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
+            data-calculo-credito-url="@Url.Action("CalcularCreditoPreview", "Cliente")">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="ClienteId" value="@Model.Cliente.Id" />
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
                 
                 <div class="modal-header border-secondary">
                     <h5 class="modal-title">
@@ -180,55 +184,3 @@
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const montoInput = document.getElementById('montoSolicitado');
-        const cuotasSelect = document.getElementById('cantidadCuotas');
-        const tasaInput = document.getElementById('tasaInteres');
-        const cuotaDisplay = document.getElementById('cuotaMensual');
-        const totalDisplay = document.getElementById('montoTotalConInteres');
-        const capacidadPago = @eval.CapacidadPagoMensual.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
-
-        function calcularCuota() {
-            const monto = parseFloat(montoInput?.value) || 0;
-            const cuotas = parseInt(cuotasSelect?.value) || 1;
-            const tasaMensual = (parseFloat(tasaInput?.value) || 0) / 100;
-
-            if (monto > 0 && cuotas > 0) {
-                let cuotaMensual;
-                if (tasaMensual > 0) {
-                    const factor = Math.pow(1 + tasaMensual, cuotas);
-                    cuotaMensual = monto * (tasaMensual * factor) / (factor - 1);
-                } else {
-                    cuotaMensual = monto / cuotas;
-                }
-
-                const montoTotal = cuotaMensual * cuotas;
-
-                cuotaDisplay.textContent = cuotaMensual.toLocaleString('es-AR', {
-                    style: 'currency', currency: 'ARS', maximumFractionDigits: 0
-                });
-
-                totalDisplay.textContent = montoTotal.toLocaleString('es-AR', {
-                    style: 'currency', currency: 'ARS', maximumFractionDigits: 0
-                });
-
-                // Alerta visual si excede capacidad
-                if (cuotaMensual > capacidadPago) {
-                    cuotaDisplay.classList.remove('text-success');
-                    cuotaDisplay.classList.add('text-danger');
-                } else {
-                    cuotaDisplay.classList.remove('text-danger');
-                    cuotaDisplay.classList.add('text-success');
-                }
-            }
-        }
-
-        montoInput?.addEventListener('input', calcularCuota);
-        cuotasSelect?.addEventListener('change', calcularCuota);
-        tasaInput?.addEventListener('input', calcularCuota);
-        
-        calcularCuota();
-    });
-</script>

@@ -119,7 +119,7 @@
 
                             <button type="submit"
                                     class="btn btn-danger btn-sm"
-                                    onclick="return confirm('¿Está ABSOLUTAMENTE SEGURO de revertir este cambio?\n\nEsta acción restaurará los precios anteriores para ' + @Model.CantidadProductos + ' productos.');">
+                                    data-confirm="¿Está ABSOLUTAMENTE SEGURO de revertir este cambio?\n\nEsta acción restaurará los precios anteriores para @Model.CantidadProductos productos.">
                                 <i class="bi bi-arrow-counterclockwise me-1"></i>Revertir cambio ahora
                             </button>
                         </div>

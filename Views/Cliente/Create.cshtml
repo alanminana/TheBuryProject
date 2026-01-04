@@ -6,10 +6,13 @@
     ViewData["PageSubtitle"] = "Carga inicial del cliente, contacto y domicilio";
     ViewData["MostrarToggleActivo"] = true;
     ViewData["MensajeDocumentacion"] = "<strong>Documentación:</strong> Los documentos del cliente se cargan después de crear el registro, en la sección de \"Documentación\" en los detalles del cliente.";
+
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index")!;
 }
 
 @section PageActions {
-    <a asp-action="Index" class="btn btn-outline-light">
+    <a href="@backUrl" class="btn btn-outline-light">
         <i class="bi bi-arrow-left"></i> Volver
     </a>
 }
@@ -26,8 +29,10 @@
                 <form asp-action="Create" method="post" class="needs-validation" novalidate>
                     @Html.AntiForgeryToken()
 
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+
                     <div asp-validation-summary="ModelOnly"
-                         class="alert alert-danger d-none"
+                         class="alert alert-danger @(ViewData.ModelState.ErrorCount == 0 ? "d-none" : "")"
                          role="alert">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
                         Por favor, corregí los errores antes de continuar.
@@ -38,7 +43,7 @@
                     <hr class="border-secondary mt-4" />
 
                     <div class="d-flex justify-content-end gap-2 mt-3">
-                        <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
+                        <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
                             <i class="bi bi-x-circle me-2"></i>Cancelar
                         </a>
                         <button type="submit" class="btn btn-success btn-lg px-4">

@@ -4,10 +4,19 @@
     ViewData["Title"] = "Subir Documento";
     ViewData["PageTitle"] = "Subir Documento";
     ViewData["PageSubtitle"] = "Adjuntar documentación del cliente";
+
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index")!;
 }
 
 @section PageActions {
-    @if (Model.ReturnToVentaId.HasValue)
+    @if (!string.IsNullOrWhiteSpace(returnUrl))
+    {
+        <a href="@backUrl" class="btn btn-outline-light me-2">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    }
+    else if (Model.ReturnToVentaId.HasValue)
     {
         <a asp-action="Index"
            asp-route-returnToVentaId="@Model.ReturnToVentaId"
@@ -18,7 +27,7 @@
     }
     else
     {
-        <a asp-action="Index" class="btn btn-outline-light me-2">
+        <a href="@backUrl" class="btn btn-outline-light me-2">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
     }
@@ -43,6 +52,7 @@
               enctype="multipart/form-data"
               data-documentos-url="@Url.Action("GetDocumentosByCliente", "DocumentoCliente")"
               data-documento-seleccionado="@Model.DocumentoAReemplazarId">
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
             @if (Model.ReturnToVentaId.HasValue)
             {
                 <input type="hidden" name="ReturnToVentaId" value="@Model.ReturnToVentaId" />
@@ -53,21 +63,7 @@
                 <button type="submit" class="btn btn-info text-dark fw-semibold">
                     <i class="bi bi-upload me-2"></i>Subir Documento
                 </button>
-                @if (Model.ReturnToVentaId.HasValue)
-                {
-                    <a asp-action="Index"
-                       asp-route-returnToVentaId="@Model.ReturnToVentaId"
-                       asp-route-clienteId="@Model.ClienteId"
-                       class="btn btn-outline-light">
-                        Cancelar
-                    </a>
-                }
-                else
-                {
-                    <a asp-action="Index" class="btn btn-outline-light">
-                        Cancelar
-                    </a>
-                }
+                <a href="@backUrl" class="btn btn-outline-light">Cancelar</a>
             </div>
         </form>
     </div>

@@ -1,0 +1,297 @@
+@model BandejaClientesMoraViewModel
+@using TheBuryProject.Models.Enums
+@using TheBuryProject.ViewModels.Mora
+
+@{
+    ViewData["Title"] = "Clientes en Mora";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var listReturnUrl = Context.Request.Path + Context.Request.QueryString;
+    var conteoPrioridad = ViewBag.ConteoPrioridad as Dictionary<string, int> ?? new Dictionary<string, int>();
+}
+
+<div class="container-fluid mora-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-people-fill me-2"></i>Clientes en Mora</h2>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Resumen -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card text-white bg-dark shadow-sm">
+                <div class="card-body text-center py-2">
+                    <h6 class="mb-0">Críticos</h6>
+                    <h3 class="mb-0">@conteoPrioridad.GetValueOrDefault("Critica", 0)</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-white bg-danger shadow-sm">
+                <div class="card-body text-center py-2">
+                    <h6 class="mb-0">Alta</h6>
+                    <h3 class="mb-0">@conteoPrioridad.GetValueOrDefault("Alta", 0)</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-white bg-warning shadow-sm">
+                <div class="card-body text-center py-2">
+                    <h6 class="mb-0">Media</h6>
+                    <h3 class="mb-0">@conteoPrioridad.GetValueOrDefault("Media", 0)</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-white bg-secondary shadow-sm">
+                <div class="card-body text-center py-2">
+                    <h6 class="mb-0">Baja</h6>
+                    <h3 class="mb-0">@conteoPrioridad.GetValueOrDefault("Baja", 0)</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-white bg-info shadow-sm">
+                <div class="card-body text-center py-2">
+                    <h6 class="mb-0">Promesas</h6>
+                    <h3 class="mb-0">@Model.ClientesConPromesa</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-white bg-primary shadow-sm">
+                <div class="card-body text-center py-2">
+                    <h6 class="mb-0">Acuerdos</h6>
+                    <h3 class="mb-0">@Model.ClientesConAcuerdo</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form asp-action="ClientesMora" method="get" id="filtrosForm">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Prioridad</label>
+                        <select name="prioridad" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">Todas</option>
+                            <option value="@((int)PrioridadAlerta.Critica)" selected="@(Model.Filtros.Prioridad == PrioridadAlerta.Critica)">Crítica</option>
+                            <option value="@((int)PrioridadAlerta.Alta)" selected="@(Model.Filtros.Prioridad == PrioridadAlerta.Alta)">Alta</option>
+                            <option value="@((int)PrioridadAlerta.Media)" selected="@(Model.Filtros.Prioridad == PrioridadAlerta.Media)">Media</option>
+                            <option value="@((int)PrioridadAlerta.Baja)" selected="@(Model.Filtros.Prioridad == PrioridadAlerta.Baja)">Baja</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Estado Gestión</label>
+                        <select name="estadoGestion" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">Todos</option>
+                            <option value="@((int)EstadoGestionCobranza.Pendiente)" selected="@(Model.Filtros.EstadoGestion == EstadoGestionCobranza.Pendiente)">Pendiente</option>
+                            <option value="@((int)EstadoGestionCobranza.EnGestion)" selected="@(Model.Filtros.EstadoGestion == EstadoGestionCobranza.EnGestion)">En Gestión</option>
+                            <option value="@((int)EstadoGestionCobranza.PromesaPago)" selected="@(Model.Filtros.EstadoGestion == EstadoGestionCobranza.PromesaPago)">Promesa Pago</option>
+                            <option value="@((int)EstadoGestionCobranza.AcuerdoActivo)" selected="@(Model.Filtros.EstadoGestion == EstadoGestionCobranza.AcuerdoActivo)">Acuerdo Activo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Días Atraso</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="diasMinAtraso" class="form-control" placeholder="Min" value="@Model.Filtros.DiasMinAtraso">
+                            <span class="input-group-text">-</span>
+                            <input type="number" name="diasMaxAtraso" class="form-control" placeholder="Max" value="@Model.Filtros.DiasMaxAtraso">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Búsqueda</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="busqueda" class="form-control" placeholder="Nombre o documento..." value="@Model.Filtros.Busqueda">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Ordenar por</label>
+                        <select name="ordenamiento" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="PrioridadDesc" selected="@(Model.Filtros.Ordenamiento == "PrioridadDesc")">Prioridad ↓</option>
+                            <option value="DiasAtrasoDesc" selected="@(Model.Filtros.Ordenamiento == "DiasAtrasoDesc")">Días Atraso ↓</option>
+                            <option value="MontoDesc" selected="@(Model.Filtros.Ordenamiento == "MontoDesc")">Monto ↓</option>
+                            <option value="NombreAsc" selected="@(Model.Filtros.Ordenamiento == "NombreAsc")">Nombre ↑</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <a asp-action="ClientesMora" class="btn btn-outline-secondary btn-sm w-100">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-auto">
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" name="conPromesaActiva" value="true" class="form-check-input" id="chkPromesa" @(Model.Filtros.ConPromesaActiva == true ? "checked" : "") onchange="this.form.submit()">
+                            <label class="form-check-label" for="chkPromesa">Con promesa activa</label>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" name="conAcuerdoActivo" value="true" class="form-check-input" id="chkAcuerdo" @(Model.Filtros.ConAcuerdoActivo == true ? "checked" : "") onchange="this.form.submit()">
+                            <label class="form-check-label" for="chkAcuerdo">Con acuerdo activo</label>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" name="sinContactoReciente" value="true" class="form-check-input" id="chkSinContacto" @(Model.Filtros.SinContactoReciente == true ? "checked" : "") onchange="this.form.submit()">
+                            <label class="form-check-label" for="chkSinContacto">Sin contacto en</label>
+                        </div>
+                        <input type="number" name="diasSinContacto" class="form-control form-control-sm d-inline-block" style="width: 60px;" value="@(Model.Filtros.DiasSinContacto ?? 7)" @(Model.Filtros.SinContactoReciente != true ? "disabled" : "")> días
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Clientes -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-list me-2"></i>@Model.TotalClientes Clientes en Mora</h5>
+            <span>Monto Total: $@Model.MontoTotalVencido.ToString("N2") + Mora: $@Model.MontoTotalMora.ToString("N2")</span>
+        </div>
+        <div class="card-body p-0">
+            @if (!Model.Clientes.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-check-circle fs-1 text-success"></i>
+                    <p class="text-muted mt-3">No hay clientes en mora con los filtros seleccionados</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Prioridad</th>
+                                <th>Cliente</th>
+                                <th>Días Atraso</th>
+                                <th>Monto Vencido</th>
+                                <th>Mora</th>
+                                <th>Estado</th>
+                                <th>Último Contacto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cliente in Model.Clientes)
+                            {
+                                var prioridadColor = cliente.PrioridadMaxima switch
+                                {
+                                    PrioridadAlerta.Critica => "dark",
+                                    PrioridadAlerta.Alta => "danger",
+                                    PrioridadAlerta.Media => "warning",
+                                    _ => "secondary"
+                                };
+                                var estadoNombre = cliente.EstadoGestion switch
+                                {
+                                    EstadoGestionCobranza.Pendiente => "Pendiente",
+                                    EstadoGestionCobranza.EnGestion => "En Gestión",
+                                    EstadoGestionCobranza.PromesaPago => "Promesa",
+                                    EstadoGestionCobranza.AcuerdoActivo => "Acuerdo",
+                                    EstadoGestionCobranza.Regularizado => "Regularizado",
+                                    _ => "Otro"
+                                };
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-@prioridadColor">
+                                            @cliente.PrioridadMaxima
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>@cliente.Nombre</strong><br>
+                                        <small class="text-muted">@cliente.Documento</small>
+                                        @if (cliente.TienePromesaActiva)
+                                        {
+                                            <span class="badge bg-info ms-1" title="Promesa para @cliente.FechaPromesa?.ToString("dd/MM")">
+                                                <i class="bi bi-calendar-check"></i>
+                                            </span>
+                                        }
+                                        @if (cliente.TieneAcuerdoActivo)
+                                        {
+                                            <span class="badge bg-primary ms-1" title="Acuerdo activo">
+                                                <i class="bi bi-file-earmark-text"></i>
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold @(cliente.DiasMaxAtraso > 30 ? "text-danger" : cliente.DiasMaxAtraso > 15 ? "text-warning" : "")">
+                                            @cliente.DiasMaxAtraso días
+                                        </span>
+                                        <br>
+                                        <small class="text-muted">@cliente.CuotasVencidas cuota(s)</small>
+                                    </td>
+                                    <td>$@cliente.MontoVencido.ToString("N2")</td>
+                                    <td>$@cliente.MontoMora.ToString("N2")</td>
+                                    <td>
+                                        <span class="badge bg-@(cliente.EstadoGestion == EstadoGestionCobranza.Pendiente ? "secondary" : "primary")">
+                                            @estadoNombre
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (cliente.UltimoContacto.HasValue)
+                                        {
+                                            var diasSinContacto = (DateTime.Today - cliente.UltimoContacto.Value.Date).Days;
+                                            <span class="@(diasSinContacto > 7 ? "text-danger" : "")">
+                                                @cliente.UltimoContacto.Value.ToString("dd/MM/yyyy")
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">hace @diasSinContacto días</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Sin contacto</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="FichaCliente" asp-route-id="@cliente.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-primary" title="Ver Ficha">
+                                                <i class="bi bi-person-lines-fill"></i>
+                                            </a>
+                                            <a asp-action="RegistrarContacto" asp-route-clienteId="@cliente.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-success" title="Registrar Contacto">
+                                                <i class="bi bi-telephone"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                @if (Model.TotalPaginas > 1)
+                {
+                    <nav class="p-3">
+                        <ul class="pagination justify-content-center mb-0">
+                            @for (int i = 1; i <= Model.TotalPaginas; i++)
+                            {
+                                <li class="page-item @(i == Model.Filtros.Pagina ? "active" : "")">
+                                    <a class="page-link" asp-action="ClientesMora"
+                                       asp-route-pagina="@i"
+                                       asp-route-prioridad="@((int?)Model.Filtros.Prioridad)"
+                                       asp-route-estadoGestion="@((int?)Model.Filtros.EstadoGestion)"
+                                       asp-route-busqueda="@Model.Filtros.Busqueda"
+                                       asp-route-ordenamiento="@Model.Filtros.Ordenamiento">@i</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+        </div>
+    </div>
+</div>

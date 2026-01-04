@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Cerrar Caja";
+    var returnUrl = ViewBag.ReturnUrl as string;
 }
 
 <div class="container-fluid px-0" data-monto-esperado="@Model.MontoEsperadoSistema.ToString(System.Globalization.CultureInfo.InvariantCulture)">
@@ -18,11 +19,20 @@
             </p>
         </div>
 
-        <a asp-action="DetallesApertura"
-           asp-route-id="@Model.AperturaCajaId"
-           class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver a la apertura
-        </a>
+        @if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl.Contains("/Caja/DetallesApertura", StringComparison.OrdinalIgnoreCase))
+        {
+            <a href="@returnUrl" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Volver a la apertura
+            </a>
+        }
+        else
+        {
+            <a asp-action="DetallesApertura"
+               asp-route-id="@Model.AperturaCajaId"
+               class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Volver a la apertura
+            </a>
+        }
     </div>
 
     <div class="row">
@@ -99,6 +109,11 @@
 
                     <form asp-action="Cerrar" method="post" novalidate>
                         @Html.AntiForgeryToken()
+
+                        @if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                        {
+                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        }
 
                         <input type="hidden" asp-for="AperturaCajaId" />
                         <input type="hidden" asp-for="MontoInicialSistema" />
@@ -234,7 +249,8 @@
                                class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle me-1"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-warning" id="btnCerrar">
+                            <button type="submit" class="btn btn-warning" id="btnCerrar"
+                                    data-confirm="¿Cerrar la caja y registrar el arqueo? Esta acción dejará el cierre guardado.">
                                 <i class="bi bi-lock me-1"></i>Cerrar caja
                             </button>
                         </div>

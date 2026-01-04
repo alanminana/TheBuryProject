@@ -80,7 +80,7 @@
                                 <textarea id="notas" name="notas" class="form-control form-control-sm" rows="2"></textarea>
                             </div>
 
-                            <button type="submit" class="btn btn-primary" onclick="return confirm('¿Aprobar este batch?');">
+                            <button type="submit" class="btn btn-primary" data-confirm="¿Aprobar este batch?">
                                 <i class="bi bi-check2-circle me-1"></i>Aprobar
                             </button>
                         </form>
@@ -95,7 +95,7 @@
                                 <textarea id="motivo" name="motivo" class="form-control form-control-sm" rows="3" required></textarea>
                             </div>
 
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Rechazar este batch?');">
+                            <button type="submit" class="btn btn-danger" data-confirm="¿Rechazar este batch?">
                                 <i class="bi bi-x-circle me-1"></i>Rechazar
                             </button>
                         </form>
@@ -110,7 +110,7 @@
                                 <textarea id="motivoCancelar" name="motivo" class="form-control form-control-sm" rows="2"></textarea>
                             </div>
 
-                            <button type="submit" class="btn btn-outline-secondary" onclick="return confirm('¿Cancelar este batch?');">
+                            <button type="submit" class="btn btn-outline-secondary" data-confirm="¿Cancelar este batch?">
                                 <i class="bi bi-ban me-1"></i>Cancelar
                             </button>
                         </form>

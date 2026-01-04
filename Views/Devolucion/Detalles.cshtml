@@ -219,7 +219,7 @@
                             <form asp-action="Aprobar" asp-route-id="@Model.Devolucion.Id" method="post" class="mb-2">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="rowVersion" value="@rowVersionBase64" />
-                                <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Aprobar esta devolución? Se generará una nota de crédito.');">
+                                <button type="submit" class="btn btn-success w-100" data-confirm="¿Aprobar esta devolución? Se generará una nota de crédito.">
                                     <i class="bi bi-check-circle me-1"></i>Aprobar Devolución
                                 </button>
                             </form>
@@ -234,7 +234,7 @@
                             <form asp-action="Completar" asp-route-id="@Model.Devolucion.Id" method="post" class="mb-2">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="rowVersion" value="@rowVersionBase64" />
-                                <button type="submit" class="btn btn-primary w-100" onclick="return confirm('¿Completar esta devolución? Se procesará el stock según las acciones definidas.');">
+                                <button type="submit" class="btn btn-primary w-100" data-confirm="¿Completar esta devolución? Se procesará el stock según las acciones definidas.">
                                     <i class="bi bi-check2-all me-1"></i>Completar Devolución
                                 </button>
                             </form>

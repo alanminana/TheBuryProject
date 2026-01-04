@@ -42,6 +42,53 @@
     </div>
 </div>
 
+@{
+    var tieneDatosConyuge =
+        !string.IsNullOrWhiteSpace(Model.ConyugeNombreCompleto)
+        || !string.IsNullOrWhiteSpace(Model.ConyugeTipoDocumento)
+        || !string.IsNullOrWhiteSpace(Model.ConyugeNumeroDocumento)
+        || !string.IsNullOrWhiteSpace(Model.ConyugeTelefono)
+        || Model.ConyugeSueldo.HasValue;
+}
+
+@if (tieneDatosConyuge)
+{
+    <div class="card bg-dark border-0 shadow-sm shared-panel mt-3">
+        <div class="card-header bg-secondary shared-panel-header">
+            <h5 class="mb-0 text-light">
+                <i class="bi bi-people me-2"></i>Datos del Cónyuge
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="text-secondary small text-uppercase">Nombre completo</label>
+                    <p class="fw-bold text-light mb-0">@(Model.ConyugeNombreCompleto ?? "-")</p>
+                </div>
+                <div class="col-md-3">
+                    <label class="text-secondary small text-uppercase">Documento</label>
+                    <p class="fw-bold text-light mb-0">
+                        @(!string.IsNullOrWhiteSpace(Model.ConyugeTipoDocumento) || !string.IsNullOrWhiteSpace(Model.ConyugeNumeroDocumento)
+                            ? $"{Model.ConyugeTipoDocumento}: {Model.ConyugeNumeroDocumento}"
+                            : "-")
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <label class="text-secondary small text-uppercase">Teléfono</label>
+                    <p class="fw-bold text-light mb-0">@(Model.ConyugeTelefono ?? "-")</p>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="text-secondary small text-uppercase">Ingreso mensual</label>
+                    <p class="fw-bold text-success mb-0">
+                        @(Model.ConyugeSueldo.HasValue ? Model.ConyugeSueldo.Value.ToString("C") : "-")
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <!-- Domicilio -->
 <div class="card bg-dark border-0 shadow-sm shared-panel mt-3">
     <div class="card-header bg-secondary shared-panel-header">

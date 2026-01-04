@@ -45,6 +45,7 @@
                   data-calcular-cuotas-url="@Url.Action("CalcularCuotasTarjeta", "VentaApi")"
                   data-get-precio-producto-url="@Url.Action("GetPrecioProducto", "VentaApi")"
                   data-calcular-totales-url="@Url.Action("CalcularTotalesVenta", "VentaApi")"
+                  data-prevalidar-credito-url="@Url.Action("PrevalidarCredito", "Venta")"
                 data-descuento-es-porcentaje="false">
                 @Html.AntiForgeryToken()
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
@@ -127,13 +128,26 @@
                             <option value="">Seleccione tipo de pago...</option>
                         </select>
                         <span asp-validation-for="TipoPago" class="text-danger small"></span>
-                        <small class="text-muted">El cálculo de crédito se hace en el paso siguiente.</small>
                     </div>
 
                     <div class="col-md-2">
                         <label asp-for="Descuento" class="form-label"></label>
                         <input asp-for="Descuento" class="form-control bg-body-secondary text-light border-0" type="number" step="0.01" id="descuentoGeneral" />
                         <span asp-validation-for="Descuento" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <!-- Aviso CréditoPersonal: se muestra dinámicamente cuando se selecciona -->
+                <div class="alert alert-info mt-3 d-none" id="avisoCreditoPersonal">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-credit-card-2-front fs-4"></i>
+                        <div>
+                            <strong>Crédito Personal seleccionado</strong>
+                            <p class="mb-0 mt-1">
+                                <i class="bi bi-arrow-right me-1"></i>
+                                La configuración del financiamiento (cuotas, tasa, anticipo) se realizará en el <strong>siguiente paso</strong> después de crear la venta.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -199,6 +213,69 @@
                     <div class="col-md-3">
                         <label class="form-label" for="chequeFechaVencimiento">Fecha vencimiento</label>
                         <input type="date" id="chequeFechaVencimiento" class="form-control bg-body-secondary text-light border-0" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Prevalidación de Crédito Personal -->
+        <div class="card bg-dark border-0 shadow-sm mb-3 d-none" id="prevalidacionRow">
+            <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-shield-check me-1"></i> Verificación de Aptitud Crediticia</h5>
+                <button type="button" class="btn btn-sm btn-outline-dark" id="btnVerificarAptitud" disabled>
+                    <i class="bi bi-search"></i> Verificar Aptitud
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="prevalidacionPendiente" class="text-muted">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Agregue productos al carrito y haga clic en "Verificar Aptitud" para evaluar la capacidad crediticia del cliente.
+                </div>
+                <div id="prevalidacionCargando" class="d-none text-center py-3">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Verificando...</span>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">Verificando aptitud crediticia...</p>
+                </div>
+                <div id="prevalidacionResultado" class="d-none">
+                    <div class="d-flex align-items-center mb-3">
+                        <span id="prevalidacionBadge" class="badge fs-6 me-3"></span>
+                        <span id="prevalidacionTexto" class="fw-bold"></span>
+                    </div>
+                    <div id="prevalidacionDetalles">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card bg-body-secondary border-0">
+                                    <div class="card-body py-2">
+                                        <small class="text-muted">Límite de Crédito</small>
+                                        <div class="fw-bold" id="prevalidacionLimite">$0.00</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-body-secondary border-0">
+                                    <div class="card-body py-2">
+                                        <small class="text-muted">Cupo Disponible</small>
+                                        <div class="fw-bold" id="prevalidacionCupo">$0.00</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-body-secondary border-0">
+                                    <div class="card-body py-2">
+                                        <small class="text-muted">Monto Solicitado</small>
+                                        <div class="fw-bold" id="prevalidacionMonto">$0.00</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="prevalidacionMora" class="alert alert-warning mt-3 d-none">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <span id="prevalidacionMoraTexto"></span>
+                        </div>
+                        <div id="prevalidacionMotivos" class="mt-3">
+                            <!-- Los motivos se cargarán dinámicamente -->
+                        </div>
                     </div>
                 </div>
             </div>

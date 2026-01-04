@@ -102,12 +102,15 @@
                                     <div class="border rounded p-2" style="max-height: 220px; overflow-y: auto;">
                                         @foreach (var lista in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Listas)
                                         {
+                                            var listaId = int.TryParse(lista.Value, out var parsedListaId) ? parsedListaId : (int?)null;
+                                            var isChecked = listaId.HasValue && Model.ListasIds != null && Model.ListasIds.Contains(listaId.Value);
                                             <div class="form-check small">
                                                 <input type="checkbox"
                                                        name="ListasIds"
                                                        value="@lista.Value"
                                                        class="form-check-input"
-                                                       id="lista_@lista.Value" />
+                                                       id="lista_@lista.Value"
+                                                       @(isChecked ? "checked" : null) />
                                                 <label class="form-check-label" for="lista_@lista.Value">
                                                     @lista.Text
                                                 </label>
@@ -138,13 +141,15 @@
 
                                 <div class="mb-3">
                                     <label class="form-label small fw-semibold">Categorías</label>
-                                    <select name="CategoriaIds"
+                                    <select name="CategoriasIds"
                                             class="form-select form-select-sm"
                                             multiple
                                             size="6">
                                         @foreach (var categoria in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Categorias)
                                         {
-                                            <option value="@categoria.Value">@categoria.Text</option>
+                                            var categoriaId = int.TryParse(categoria.Value, out var parsedCategoriaId) ? parsedCategoriaId : (int?)null;
+                                            var isSelected = categoriaId.HasValue && Model.CategoriasIds != null && Model.CategoriasIds.Contains(categoriaId.Value);
+                                            <option value="@categoria.Value" selected="@(isSelected ? "selected" : null)">@categoria.Text</option>
                                         }
                                     </select>
                                     <small class="text-muted d-block mt-1">
@@ -154,13 +159,15 @@
 
                                 <div class="mb-3">
                                     <label class="form-label small fw-semibold">Marcas</label>
-                                    <select name="MarcaIds"
+                                    <select name="MarcasIds"
                                             class="form-select form-select-sm"
                                             multiple
                                             size="6">
                                         @foreach (var marca in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Marcas)
                                         {
-                                            <option value="@marca.Value">@marca.Text</option>
+                                            var marcaId = int.TryParse(marca.Value, out var parsedMarcaId) ? parsedMarcaId : (int?)null;
+                                            var isSelected = marcaId.HasValue && Model.MarcasIds != null && Model.MarcasIds.Contains(marcaId.Value);
+                                            <option value="@marca.Value" selected="@(isSelected ? "selected" : null)">@marca.Text</option>
                                         }
                                     </select>
                                     <small class="text-muted d-block mt-1">
@@ -173,7 +180,8 @@
                                     <textarea name="ProductoIdsText"
                                               class="form-control form-control-sm"
                                               rows="3"
-                                              placeholder="Ingrese IDs separados por comas: 1,2,3,4"></textarea>
+                                              placeholder="Ingrese IDs separados por comas: 1,2,3,4">@Model.ProductoIdsText</textarea>
+                                    <span asp-validation-for="ProductoIdsText" class="text-danger small"></span>
                                     <small class="text-muted d-block mt-1">
                                         Opcional: limita la simulación a un conjunto concreto de productos.
                                     </small>

@@ -4,10 +4,13 @@
     ViewData["Title"] = "Eliminar Cliente";
     ViewData["PageTitle"] = "Eliminar Cliente";
     ViewData["PageSubtitle"] = "Confirmá la eliminación del cliente";
+
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index")!;
 }
 
 @section PageActions {
-    <a asp-action="Index" class="btn btn-outline-light">
+    <a href="@backUrl" class="btn btn-outline-light">
         <i class="bi bi-arrow-left"></i> Volver
     </a>
 }
@@ -25,7 +28,7 @@
                 <div class="card-body">
                     <div class="alert alert-danger bg-opacity-25 border-danger text-light shadow-sm">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <strong>¡Atención!</strong> Esta acción es irreversible. El cliente será marcado como eliminado.
+                        <strong>¡Atención!</strong> El cliente será marcado como eliminado y dejará de estar disponible en los listados.
                     </div>
 
                     <div class="card bg-dark border-secondary shadow-sm">
@@ -52,12 +55,15 @@
                     </div>
 
                     <form asp-action="Delete" method="post" class="mt-4">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="Id" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
                         <div class="d-flex justify-content-between">
-                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-light">
+                            <a href="@backUrl" class="btn btn-outline-light">
                                 <i class="bi bi-arrow-left me-2"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-danger fw-semibold">
+                            <button type="submit" class="btn btn-danger fw-semibold"
+                                    data-confirm="¿Eliminar este cliente? Esta acción lo marcará como eliminado.">
                                 <i class="bi bi-trash me-2"></i>Eliminar Cliente
                             </button>
                         </div>
@@ -68,6 +74,4 @@
     </div>
 </section>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+

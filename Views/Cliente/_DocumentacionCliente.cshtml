@@ -2,6 +2,14 @@
 @using TheBuryProject.Models.Enums
 @using TheBuryProject.Helpers
 
+@{
+    var listReturnUrl = ViewData["ReturnUrl"] as string;
+    var returnToClienteDocumentosUrl = Url.Action(
+        "Details",
+        "Cliente",
+        new { id = Model.Cliente.Id, tab = "documentos", returnUrl = listReturnUrl })!;
+}
+
 <!-- Alertas de documentación -->
 @if (!Model.EvaluacionCredito.TieneDocumentosCompletos)
 {
@@ -36,6 +44,7 @@ else
             @Html.AntiForgeryToken()
             <input type="hidden" name="ClienteId" value="@Model.Cliente.Id" />
             <input type="hidden" name="ReturnToDetails" value="true" />
+            <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
 
             <div class="row g-3">
                 <div class="col-md-4">
@@ -157,10 +166,12 @@ else
                                 <td class="text-center px-4">
                                     <div class="btn-group btn-group-sm">
                                         <a asp-controller="DocumentoCliente" asp-action="Details" asp-route-id="@doc.Id"
+                                           asp-route-returnUrl="@returnToClienteDocumentosUrl"
                                            class="btn btn-outline-info" title="Ver detalles">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <a asp-controller="DocumentoCliente" asp-action="Descargar" asp-route-id="@doc.Id"
+                                           asp-route-returnUrl="@returnToClienteDocumentosUrl"
                                            class="btn btn-outline-success" title="Descargar">
                                             <i class="bi bi-download"></i>
                                         </a>
@@ -168,8 +179,9 @@ else
                                         {
                                             <form asp-controller="DocumentoCliente" asp-action="Delete" asp-route-id="@doc.Id"
                                                   method="post" class="d-inline"
-                                                  onsubmit="return confirm('¿Está seguro de eliminar este documento?')">
+                                                  data-confirm="¿Está seguro de eliminar este documento?">
                                                 @Html.AntiForgeryToken()
+                                                <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
                                                 <button type="submit" class="btn btn-outline-danger" title="Eliminar">
                                                     <i class="bi bi-trash"></i>
                                                 </button>

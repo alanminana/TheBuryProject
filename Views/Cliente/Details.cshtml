@@ -1,23 +1,34 @@
 @model TheBuryProject.ViewModels.ClienteDetalleViewModel
+@using TheBuryProject.Models.Constants
+@using TheBuryProject.Models.Enums
+@using TheBuryProject.Helpers
 
 @{
     ViewData["Title"] = Model.Cliente.NombreCompleto;
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Cliente")!;
     
     // Determinar estado general del cliente para el workflow
     var tieneDocumentosCompletos = Model.EvaluacionCredito.TieneDocumentosCompletos;
-    var puedesolicitarCredito = Model.EvaluacionCredito.CumpleRequisitos || Model.EvaluacionCredito.PuedeAprobarConExcepcion;
     var scoreClass = Model.EvaluacionCredito.ScoreCrediticio >= 700 ? "success" 
                    : Model.EvaluacionCredito.ScoreCrediticio >= 500 ? "warning" 
                    : "danger";
+    
+    // Semáforo de aptitud crediticia
+    var aptitud = Model.AptitudCrediticia;
 }
 
 <section class="container-fluid py-4 text-light">
     
-    <!-- Header del Cliente -->
+    <!-- Header del Cliente con Semáforo -->
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h2 class="fw-bold mb-1">
                 <i class="bi bi-person-circle text-info me-2"></i>@Model.Cliente.NombreCompleto
+                <!-- Semáforo de Aptitud Crediticia -->
+                <span class="badge bg-@aptitud.ColorSemaforo ms-2" title="@aptitud.Motivo">
+                    <i class="bi @aptitud.Icono me-1"></i>@aptitud.TextoEstado
+                </span>
             </h2>
             <div class="d-flex gap-3 text-secondary">
                 <span><i class="bi bi-card-text me-1"></i>@Model.Cliente.TipoDocumento: @Model.Cliente.NumeroDocumento</span>
@@ -31,14 +42,23 @@
             </div>
         </div>
         <div class="d-flex gap-2">
-            <a asp-action="Edit" asp-route-id="@Model.Cliente.Id" class="btn btn-outline-warning">
+            <a asp-action="Edit" asp-route-id="@Model.Cliente.Id" asp-route-returnUrl="@returnUrl" class="btn btn-outline-warning">
                 <i class="bi bi-pencil me-1"></i>Editar
             </a>
-            <a asp-action="Index" class="btn btn-outline-light">
+            <a href="@backUrl" class="btn btn-outline-light">
                 <i class="bi bi-arrow-left me-1"></i>Volver
             </a>
         </div>
     </div>
+
+    <!-- Alerta de Configuración Incompleta -->
+    @if (!aptitud.ConfiguracionCompleta)
+    {
+        <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-gear-fill me-2"></i><strong>Configuración incompleta:</strong> @aptitud.AdvertenciaConfiguracion
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     <!-- Alertas -->
     @if (TempData["Success"] != null)
@@ -55,6 +75,101 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
+
+    <!-- Panel de Aptitud Crediticia (Semáforo detallado) -->
+    <div class="card bg-dark border-@aptitud.ColorSemaforo mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi @aptitud.Icono text-@aptitud.ColorSemaforo me-2"></i>
+                Aptitud Crediticia: <span class="text-@aptitud.ColorSemaforo">@aptitud.TextoEstado</span>
+            </h5>
+            <small class="text-muted">Evaluado: @aptitud.FechaEvaluacion.ToString("dd/MM/yyyy HH:mm")</small>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <!-- Documentación -->
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start">
+                        <i class="bi @(aptitud.Documentacion.Completa ? "bi-file-earmark-check text-success" : "bi-file-earmark-x text-danger") fs-4 me-2"></i>
+                        <div>
+                            <strong>Documentación</strong>
+                            <p class="mb-0 small text-secondary">@aptitud.Documentacion.Mensaje</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Cupo -->
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start">
+                        <i class="bi @(aptitud.Cupo.CupoSuficiente ? "bi-wallet2 text-success" : "bi-wallet2 text-danger") fs-4 me-2"></i>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <strong>Cupo / Límite de Crédito</strong>
+                                @if (User.IsInRole(Roles.SuperAdmin) || User.IsInRole(Roles.Gerente))
+                                {
+                                    <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" 
+                                            data-bs-toggle="modal" data-bs-target="#asignarLimiteCreditoModal"
+                                            title="Asignar límite de crédito">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                }
+                            </div>
+                            @if (aptitud.Cupo.TieneCupoAsignado)
+                            {
+                                <p class="mb-0 small text-secondary">
+                                    Disponible: @aptitud.Cupo.CupoDisponible.ToString("C0") de @aptitud.Cupo.LimiteCredito?.ToString("C0")
+                                    (@(100 - aptitud.Cupo.PorcentajeUtilizado).ToString("F0")% libre)
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="mb-0 small text-warning">Sin límite asignado</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <!-- Mora -->
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start">
+                        @if (!aptitud.Mora.TieneMora)
+                        {
+                            <i class="bi bi-check-circle text-success fs-4 me-2"></i>
+                        }
+                        else if (aptitud.Mora.EsBloqueante)
+                        {
+                            <i class="bi bi-exclamation-octagon text-danger fs-4 me-2"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-clock-history text-warning fs-4 me-2"></i>
+                        }
+                        <div>
+                            <strong>Estado de Mora</strong>
+                            <p class="mb-0 small text-secondary">@aptitud.Mora.Mensaje</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Detalles adicionales si hay problemas -->
+            @if (aptitud.Detalles.Any())
+            {
+                <hr class="my-3 border-secondary" />
+                <div class="row">
+                    @foreach (var detalle in aptitud.Detalles)
+                    {
+                        <div class="col-md-6 mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi @detalle.Icono text-@detalle.Color me-2"></i>
+                                <span class="small">
+                                    <strong>@detalle.Categoria:</strong> @detalle.Descripcion
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
 
     <!-- Panel de Estado Crediticio (siempre visible) -->
     <div class="row g-3 mb-4">
@@ -106,28 +221,48 @@
         </div>
     </div>
 
-    <!-- Call to Action principal -->
+    <!-- Call to Action principal - basado en semáforo de aptitud -->
     @if (Model.Cliente.Activo)
     {
         <div class="mb-4">
-            @if (puedesolicitarCredito && tieneDocumentosCompletos)
+            @if (aptitud.Estado == TheBuryProject.Models.Enums.EstadoCrediticioCliente.Apto)
             {
-                <button type="button" class="btn btn-success btn-lg px-4" data-bs-toggle="modal" data-bs-target="#solicitarCreditoModal">
-                    <i class="bi bi-cash-coin me-2"></i>Solicitar Crédito
-                </button>
+                <a asp-controller="Venta" asp-action="Create" asp-route-clienteId="@Model.Cliente.Id" class="btn btn-success btn-lg px-4">
+                    <i class="bi bi-cart-plus me-2"></i>Nueva Venta a Crédito
+                </a>
+                <span class="ms-3 text-success">
+                    <i class="bi bi-check-circle me-1"></i>Cliente apto para crédito - Cupo disponible: @aptitud.Cupo.CupoDisponible.ToString("C0")
+                </span>
             }
-            else if (puedesolicitarCredito && !tieneDocumentosCompletos)
+            else if (aptitud.Estado == TheBuryProject.Models.Enums.EstadoCrediticioCliente.RequiereAutorizacion)
             {
-                <div class="alert alert-warning border-0 d-inline-flex align-items-center mb-0 py-2 px-3">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <span>Complete la <a href="#documentos" class="alert-link" data-bs-toggle="tab">documentación</a> para solicitar crédito</span>
+                <div class="d-flex align-items-center gap-3">
+                    <a asp-controller="Venta" asp-action="Create" asp-route-clienteId="@Model.Cliente.Id" class="btn btn-warning btn-lg px-4">
+                        <i class="bi bi-shield-exclamation me-2"></i>Nueva Venta (Requiere Autorización)
+                    </a>
+                    <span class="text-warning small">
+                        <i class="bi bi-info-circle me-1"></i>@aptitud.Motivo
+                    </span>
+                </div>
+            }
+            else if (aptitud.Estado == TheBuryProject.Models.Enums.EstadoCrediticioCliente.NoApto)
+            {
+                <div class="alert alert-danger border-0 d-inline-flex align-items-center mb-0 py-2 px-3">
+                    <i class="bi bi-x-circle me-2"></i>
+                    <span><strong>No Apto para Crédito:</strong> @aptitud.Motivo</span>
+                    @if (!aptitud.Cupo.TieneCupoAsignado && (User.IsInRole(Roles.SuperAdmin) || User.IsInRole(Roles.Gerente)))
+                    {
+                        <button type="button" class="btn btn-outline-light btn-sm ms-3" data-bs-toggle="modal" data-bs-target="#asignarLimiteCreditoModal">
+                            <i class="bi bi-wallet2 me-1"></i>Asignar Cupo
+                        </button>
+                    }
                 </div>
             }
             else
             {
-                <div class="alert alert-danger border-0 d-inline-flex align-items-center mb-0 py-2 px-3">
-                    <i class="bi bi-x-circle me-2"></i>
-                    <span>El cliente no cumple los requisitos mínimos para crédito</span>
+                <div class="alert alert-secondary border-0 d-inline-flex align-items-center mb-0 py-2 px-3">
+                    <i class="bi bi-question-circle me-2"></i>
+                    <span>Cliente sin evaluar. @(aptitud.AdvertenciaConfiguracion ?? "Complete los datos para evaluación.")</span>
                 </div>
             }
         </div>
@@ -192,27 +327,126 @@
     </div>
 </section>
 
-<!-- Modal Solicitar Crédito -->
-<partial name="~/Views/Cliente/_ModalSolicitarCredito.cshtml" model="Model" />
+@section Modals {
+    @* Modal Solicitar Crédito removido - los créditos se generan desde Ventas *@
+    
+    <!-- Modal Asignar Límite de Crédito -->
+    <div class="modal fade" id="asignarLimiteCreditoModal" tabindex="-1" aria-labelledby="asignarLimiteCreditoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <form asp-action="AsignarLimiteCredito" method="post">
+                    <input type="hidden" name="clienteId" value="@Model.Cliente.Id" />
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title" id="asignarLimiteCreditoModalLabel"><i class="bi bi-wallet2 me-2"></i>Asignar Límite de Crédito</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Límite de Crédito Actual</label>
+                            <p class="form-control-plaintext text-info fs-5">
+                                @(aptitud.Cupo.LimiteCredito?.ToString("C0") ?? "Sin asignar")
+                            </p>
+                        </div>
+                        <div class="mb-3">
+                            <label for="limiteCredito" class="form-label">Nuevo Límite de Crédito <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="limiteCredito" name="limiteCredito" 
+                                       step="1000" min="0" value="@(aptitud.Cupo.LimiteCredito ?? 50000)" required />
+                            </div>
+                            <div class="form-text">Ingrese el límite máximo de crédito para este cliente</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="motivo" class="form-label">Motivo del cambio</label>
+                            <textarea class="form-control" id="motivo" name="motivo" rows="2" 
+                                      placeholder="Opcional: Describa el motivo del cambio"></textarea>
+                        </div>
+                        @if (aptitud.Cupo.CreditoUtilizado > 0)
+                        {
+                            <div class="alert alert-info py-2 mb-0">
+                                <i class="bi bi-info-circle me-1"></i>
+                                <small>Crédito utilizado actualmente: @aptitud.Cupo.CreditoUtilizado.ToString("C0")</small>
+                            </div>
+                        }
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Subir Documento -->
+    @{
+        var returnToClienteDocumentosUrl = Url.Action(
+            "Details",
+            "Cliente",
+            new { id = Model.Cliente.Id, tab = "documentos", returnUrl = ViewData["ReturnUrl"] })!;
+    }
+    <div class="modal fade" id="subirDocumentoModal" tabindex="-1" aria-labelledby="subirDocumentoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <form asp-controller="DocumentoCliente" asp-action="Upload" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ClienteId" value="@Model.Cliente.Id" />
+                    <input type="hidden" name="ReturnToDetails" value="true" />
+                    <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
+                    
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title" id="subirDocumentoModalLabel">
+                            <i class="bi bi-upload me-2"></i>Subir Documento
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Documento *</label>
+                            <select name="TipoDocumento" class="form-select bg-body-secondary text-light border-0" required>
+                                <option value="">Seleccione...</option>
+                                @foreach (TipoDocumentoCliente tipo in Enum.GetValues(typeof(TipoDocumentoCliente)))
+                                {
+                                    <option value="@((int)tipo)">@tipo.GetDisplayName()</option>
+                                }
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Archivo *</label>
+                            <input type="file" name="Archivo" class="form-control bg-body-secondary text-light border-0"
+                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required />
+                            <small class="text-secondary">PDF, JPG, PNG, DOC, DOCX (Max 5MB)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Vencimiento</label>
+                            <input type="date" name="FechaVencimiento" class="form-control bg-body-secondary text-light border-0" />
+                        </div>
+                        
+                        <div class="mb-0">
+                            <label class="form-label">Observaciones</label>
+                            <textarea name="Observaciones" class="form-control bg-body-secondary text-light border-0"
+                                      rows="2" placeholder="Opcional"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-info">
+                            <i class="bi bi-upload me-2"></i>Subir
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
 
 @section Scripts {
-    <script>
-        // Mantener la pestaña activa en la URL para navegación
-        document.querySelectorAll('#clienteTabs button').forEach(function(tab) {
-            tab.addEventListener('shown.bs.tab', function(e) {
-                const tabId = e.target.getAttribute('data-bs-target').replace('#', '');
-                history.replaceState(null, null, '?tab=' + tabId);
-            });
-        });
-
-        // Activar tab desde URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const tabParam = urlParams.get('tab');
-        if (tabParam) {
-            const tabButton = document.querySelector(`[data-bs-target="#${tabParam}"]`);
-            if (tabButton) {
-                new bootstrap.Tab(tabButton).show();
-            }
-        }
-    </script>
+    <script src="~/js/cliente-details.js" asp-append-version="true"></script>
 }

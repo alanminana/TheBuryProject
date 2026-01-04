@@ -39,11 +39,88 @@
                 }
             }
 
-            @if (Model.DebeAlertarAutorizacionPendiente)
+            @if (TempData["Info"] != null)
             {
-                <div class="alert alert-warning d-flex align-items-center gap-2">
-                    <i class="bi bi-shield-exclamation"></i>
-                    <div>Pendiente de autorización: excede el límite de crédito del cliente.</div>
+                <div class="alert alert-info alert-dismissible fade show">
+                    <i class="bi bi-info-circle"></i>
+                    @TempData["Info"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (Model.TieneRequisitosPendientes)
+            {
+                <div class="alert alert-warning d-flex align-items-start gap-2">
+                    <i class="bi bi-exclamation-triangle fs-4"></i>
+                    <div>
+                        <strong>Venta con requisitos pendientes</strong>
+                        <p class="mb-2">Esta venta no puede confirmarse hasta completar los siguientes requisitos:</p>
+                        @if (Model.ValidacionCredito?.RequisitosPendientes?.Any() == true)
+                        {
+                            <ul class="mb-0">
+                                @foreach (var req in Model.ValidacionCredito.RequisitosPendientes)
+                                {
+                                    <li>
+                                        @req.Descripcion
+                                        @if (!string.IsNullOrEmpty(req.AccionRequerida))
+                                        {
+                                            <span class="text-muted">- @req.AccionRequerida</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Model.EsPendienteFinanciacion && Model.TipoPago != TheBuryProject.Models.Enums.TipoPago.CreditoPersonall)
+            {
+                @* Solo mostrar si NO es CreditoPersonal (el stepper lo maneja) *@
+                <div class="alert alert-info d-flex align-items-start gap-2">
+                    <i class="bi bi-credit-card fs-4"></i>
+                    <div>
+                        <strong>Pendiente de configuración de financiamiento</strong>
+                        <p class="mb-2">Esta venta requiere que configure el plan de cuotas antes de confirmar.</p>
+                        @if (Model.CreditoId.HasValue)
+                        {
+                            <a asp-controller="Credito" asp-action="ConfigurarVenta" 
+                               asp-route-id="@Model.CreditoId" asp-route-ventaId="@Model.Id"
+                               asp-route-returnUrl="@Url.Action("Details", "Venta", new { id = Model.Id })"
+                               class="btn btn-info btn-sm">
+                                <i class="bi bi-gear"></i> Configurar Plan de Financiamiento
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Model.DebeAlertarAutorizacionPendiente && Model.TipoPago != TheBuryProject.Models.Enums.TipoPago.CreditoPersonall)
+            {
+                <div class="alert alert-warning d-flex align-items-start gap-2">
+                    <i class="bi bi-shield-exclamation fs-4"></i>
+                    <div>
+                        <strong>Pendiente de autorización</strong>
+                        @if (Model.ValidacionCredito?.RazonesAutorizacion?.Any() == true)
+                        {
+                            <ul class="mb-0 mt-2">
+                                @foreach (var razon in Model.ValidacionCredito.RazonesAutorizacion)
+                                {
+                                    <li>
+                                        @razon.Descripcion
+                                        @if (!string.IsNullOrEmpty(razon.DetalleAdicional))
+                                        {
+                                            <span class="text-muted">- @razon.DetalleAdicional</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="mb-0 mt-1">La venta requiere autorización de un supervisor antes de confirmar.</p>
+                        }
+                    </div>
                 </div>
             }
 
@@ -62,6 +139,118 @@
                 </div>
             }
         </div>
+
+        @* ========== PANEL DE PROGRESO PARA CRÉDITO PERSONAL ========== *@
+        @if (Model.TipoPago == TheBuryProject.Models.Enums.TipoPago.CreditoPersonall)
+        {
+            var paso1Completo = true; // Venta siempre creada si llegamos aquí
+            var paso2Completo = Model.FinanciamientoConfigurado || Model.CreditoConfigurado;
+            var paso3Completo = Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Confirmada || Model.CreditoGenerado;
+            
+            <div class="col-12">
+                <div class="card bg-dark border-0 shadow-sm mb-4">
+                    <div class="card-header bg-primary text-light">
+                        <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i> Progreso de la Venta con Crédito</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center position-relative" style="max-width: 600px; margin: 0 auto;">
+                            @* Línea de conexión *@
+                            <div class="position-absolute top-50 start-0 end-0" style="height: 3px; background: linear-gradient(to right, 
+                                @(paso1Completo ? "#198754" : "#6c757d") 0%, 
+                                @(paso1Completo ? "#198754" : "#6c757d") 33%, 
+                                @(paso2Completo ? "#198754" : "#6c757d") 33%, 
+                                @(paso2Completo ? "#198754" : "#6c757d") 66%, 
+                                @(paso3Completo ? "#198754" : "#6c757d") 66%, 
+                                @(paso3Completo ? "#198754" : "#6c757d") 100%); z-index: 0;"></div>
+                            
+                            @* Paso 1: Creada *@
+                            <div class="text-center position-relative" style="z-index: 1;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 @(paso1Completo ? "bg-success" : "bg-secondary")" style="width: 48px; height: 48px;">
+                                    <i class="bi @(paso1Completo ? "bi-check-lg" : "bi-1-circle") text-white fs-5"></i>
+                                </div>
+                                <small class="d-block fw-semibold @(paso1Completo ? "text-success" : "text-muted")">Creada</small>
+                                <small class="text-muted">Venta registrada</small>
+                            </div>
+                            
+                            @* Paso 2: Financiación *@
+                            <div class="text-center position-relative" style="z-index: 1;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 @(paso2Completo ? "bg-success" : paso1Completo && !paso3Completo ? "bg-info" : "bg-secondary")" style="width: 48px; height: 48px;">
+                                    @if (paso2Completo)
+                                    {
+                                        <i class="bi bi-check-lg text-white fs-5"></i>
+                                    }
+                                    else if (paso1Completo && !paso3Completo)
+                                    {
+                                        <i class="bi bi-gear text-white fs-5"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-2-circle text-white fs-5"></i>
+                                    }
+                                </div>
+                                <small class="d-block fw-semibold @(paso2Completo ? "text-success" : paso1Completo && !paso3Completo ? "text-info" : "text-muted")">Financiación</small>
+                                <small class="text-muted">Plan de cuotas</small>
+                            </div>
+                            
+                            @* Paso 3: Confirmada *@
+                            <div class="text-center position-relative" style="z-index: 1;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 @(paso3Completo ? "bg-success" : "bg-secondary")" style="width: 48px; height: 48px;">
+                                    <i class="bi @(paso3Completo ? "bi-check-lg" : "bi-3-circle") text-white fs-5"></i>
+                                </div>
+                                <small class="d-block fw-semibold @(paso3Completo ? "text-success" : "text-muted")">Confirmada</small>
+                                <small class="text-muted">Crédito generado</small>
+                            </div>
+                        </div>
+                        
+                        @* Acción principal según el paso actual *@
+                        <div class="text-center mt-4 pt-3 border-top border-secondary">
+                            @if (paso3Completo)
+                            {
+                                <div class="alert alert-success d-inline-flex align-items-center gap-2 mb-0">
+                                    <i class="bi bi-check-circle-fill fs-4"></i>
+                                    <span><strong>¡Venta completada!</strong> El crédito ha sido generado con sus cuotas.</span>
+                                </div>
+                            }
+                            else if (paso2Completo)
+                            {
+                                <p class="text-muted mb-3">La financiación está configurada. Confirme la venta para generar el crédito.</p>
+                                <form asp-action="Confirmar" asp-route-id="@Model.Id" method="post" class="d-inline"
+                                      data-confirm="¿Confirmar venta y generar cuotas del crédito?">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="bi bi-check-circle me-2"></i> Confirmar Venta y Generar Crédito
+                                    </button>
+                                </form>
+                            }
+                            else if (Model.DebeAlertarAutorizacionPendiente)
+                            {
+                                <div class="alert alert-warning d-inline-flex align-items-center gap-2 mb-0">
+                                    <i class="bi bi-shield-exclamation fs-4"></i>
+                                    <span>Esperando autorización de un supervisor antes de continuar.</span>
+                                </div>
+                            }
+                            else if (Model.CreditoId.HasValue)
+                            {
+                                <p class="text-muted mb-3">Configure el plan de financiamiento: cuotas, tasa e intereses.</p>
+                                <a asp-controller="Credito" asp-action="ConfigurarVenta" 
+                                   asp-route-id="@Model.CreditoId" asp-route-ventaId="@Model.Id"
+                                   asp-route-returnUrl="@Url.Action("Details", "Venta", new { id = Model.Id })"
+                                   class="btn btn-info btn-lg">
+                                    <i class="bi bi-gear me-2"></i> Configurar Financiación
+                                </a>
+                            }
+                            else
+                            {
+                                <div class="alert alert-danger d-inline-flex align-items-center gap-2 mb-0">
+                                    <i class="bi bi-exclamation-triangle fs-4"></i>
+                                    <span>Error: No hay crédito asociado a esta venta.</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
 
         <div class="col-12">
             <div class="card bg-dark border-0 shadow-sm mb-4">
@@ -166,48 +355,105 @@
                     <h5 class="mb-0"><i class="bi bi-gear"></i> Acciones</h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex flex-wrap gap-2">
-                        @if (Model.PuedeEditar)
-                        {
-                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning"><i class="bi bi-pencil"></i> Editar</a>
-                        }
+                    @* Para Crédito Personal: mostrar acciones simplificadas *@
+                    @if (Model.TipoPago == TheBuryProject.Models.Enums.TipoPago.CreditoPersonall)
+                    {
+                        <div class="d-flex flex-wrap gap-2">
+                            @* Autorización (si aplica) *@
+                            @if (Model.PuedeAutorizar)
+                            {
+                                <a asp-action="Autorizar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-check-lg"></i> Autorizar</a>
+                                <a asp-action="Rechazar" asp-route-id="@Model.Id" class="btn btn-danger"><i class="bi bi-x-lg"></i> Rechazar</a>
+                            }
 
-                        @if (Model.PuedeAutorizar)
-                        {
-                            <a asp-action="Autorizar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-check-lg"></i> Autorizar</a>
-                            <a asp-action="Rechazar" asp-route-id="@Model.Id" class="btn btn-danger"><i class="bi bi-x-lg"></i> Rechazar</a>
-                        }
+                            @* Indicador si crédito ya generado *@
+                            @if (Model.CreditoGenerado)
+                            {
+                                <span class="badge bg-success py-2 px-3">
+                                    <i class="bi bi-check-circle-fill"></i> Crédito Generado
+                                </span>
+                            }
 
-                        @if (Model.PuedeConfirmar)
-                        {
-                            <form asp-action="Confirmar" asp-route-id="@Model.Id" method="post" class="d-inline" onsubmit="return confirm('¿Confirmar esta venta? Se descontará el stock.');">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> Confirmar</button>
-                            </form>
-                        }
+                            @if (Model.PuedeFacturar)
+                            {
+                                <a asp-action="Facturar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-receipt"></i> Facturar</a>
+                            }
 
-                        @if (Model.PuedeFacturar)
-                        {
-                            <a asp-action="Facturar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-receipt"></i> Facturar</a>
-                        }
+                            @if (Model.PuedeCrearDevolucion)
+                            {
+                                <a asp-controller="Devolucion" asp-action="Create" asp-route-ventaId="@Model.Id" class="btn btn-outline-warning">
+                                    <i class="bi bi-arrow-return-left"></i> Crear Devolución
+                                </a>
+                            }
 
-                        @if (Model.PuedeCrearDevolucion)
-                        {
-                            <a asp-controller="Devolucion" asp-action="Create" asp-route-ventaId="@Model.Id" class="btn btn-outline-warning">
-                                <i class="bi bi-arrow-return-left"></i> Crear Devolución
-                            </a>
-                        }
+                            @if (Model.PuedeCancelar && !Model.CreditoGenerado)
+                            {
+                                <a asp-action="Cancelar" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar</a>
+                            }
 
-                        @if (Model.PuedeCancelar)
-                        {
-                            <a asp-action="Cancelar" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar</a>
-                        }
+                            @* Editar desprioritizado: solo como link secundario *@
+                            @if (Model.PuedeEditar && !Model.CreditoGenerado)
+                            {
+                                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm ms-auto">
+                                    <i class="bi bi-pencil"></i> Corregir datos
+                                </a>
+                            }
 
-                        @if (Model.PuedeEditar)
-                        {
-                            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</a>
-                        }
-                    </div>
+                            @if (Model.PuedeEditar && !Model.CreditoGenerado)
+                            {
+                                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        @* Para otros tipos de pago: acciones normales *@
+                        <div class="d-flex flex-wrap gap-2">
+                            @if (Model.PuedeEditar)
+                            {
+                                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning"><i class="bi bi-pencil"></i> Editar</a>
+                            }
+
+                            @if (Model.PuedeAutorizar)
+                            {
+                                <a asp-action="Autorizar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-check-lg"></i> Autorizar</a>
+                                <a asp-action="Rechazar" asp-route-id="@Model.Id" class="btn btn-danger"><i class="bi bi-x-lg"></i> Rechazar</a>
+                            }
+
+                            @if (Model.PuedeConfirmar)
+                            {
+                                <form asp-action="Confirmar" asp-route-id="@Model.Id" method="post" class="d-inline" 
+                                      data-confirm="¿Confirmar esta venta? Se descontará el stock.">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Confirmar
+                                    </button>
+                                </form>
+                            }
+
+                            @if (Model.PuedeFacturar)
+                            {
+                                <a asp-action="Facturar" asp-route-id="@Model.Id" class="btn btn-success"><i class="bi bi-receipt"></i> Facturar</a>
+                            }
+
+                            @if (Model.PuedeCrearDevolucion)
+                            {
+                                <a asp-controller="Devolucion" asp-action="Create" asp-route-ventaId="@Model.Id" class="btn btn-outline-warning">
+                                    <i class="bi bi-arrow-return-left"></i> Crear Devolución
+                                </a>
+                            }
+
+                            @if (Model.PuedeCancelar)
+                            {
+                                <a asp-action="Cancelar" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar</a>
+                            }
+
+                            @if (Model.PuedeEditar)
+                            {
+                                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</a>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
         </div>

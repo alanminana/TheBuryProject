@@ -52,11 +52,11 @@
                     <label class="form-label small mb-1">Estado</label>
                     <select name="estado"
                             class="form-select form-select-sm"
-                            onchange="this.form.submit()">
+                            data-auto-submit="true">
                         <option value="">Todos los estados</option>
                         @foreach (var estado in Enum.GetValues<TheBuryProject.Models.Enums.EstadoBatch>())
                         {
-                            <option value="@((int)estado)" selected="@(Model.EstadoFiltro == estado)">
+                            <option value="@((int)estado)" selected="@(Model.EstadoFiltro == estado ? "selected" : null)">
                                 @estado
                             </option>
                         }
@@ -196,7 +196,7 @@
                                             @* Autorizar (solo estado Simulado) *@
                                             @if (batch.Estado == TheBuryProject.Models.Enums.EstadoBatch.Simulado)
                                             {
-                                                if (User.HasClaim("Permission", "precios:authorize"))
+                                                if (User.HasClaim("Permission", "precios:approve"))
                                                 {
                                                     <a asp-action="Autorizar"
                                                        asp-route-id="@batch.Id"

@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "Detalles del Módulo";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Modulos")!;
+    var pageReturnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 
 <div class="container-fluid">
@@ -9,7 +12,7 @@
         <div class="col-md-12">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a asp-action="Index">Módulos</a></li>
+                    <li class="breadcrumb-item"><a href="@backUrl">Módulos</a></li>
                     <li class="breadcrumb-item active">Detalles</li>
                 </ol>
             </nav>
@@ -31,10 +34,10 @@
                     }
                 </h2>
                 <div>
-                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" asp-route-returnUrl="@pageReturnUrl" class="btn btn-warning">
                         <i class="bi bi-pencil me-1"></i>Editar
                     </a>
-                    <a asp-action="Index" class="btn btn-secondary">
+                    <a href="@backUrl" class="btn btn-secondary">
                         <i class="bi bi-arrow-left me-1"></i>Volver
                     </a>
                 </div>
@@ -119,9 +122,9 @@
                     else
                     {
                         <div class="text-center py-4 text-muted">
-                            <i class="bi bi-lightning" style="font-size: 3rem;"></i>
+                            <i class="bi bi-lightning fs-1"></i>
                             <p class="mt-2">No hay acciones configuradas para este módulo</p>
-                            <a asp-controller="Acciones" asp-action="Create" class="btn btn-sm btn-primary">
+                            <a asp-controller="Acciones" asp-action="Create" asp-route-returnUrl="@pageReturnUrl" class="btn btn-sm btn-primary">
                                 <i class="bi bi-plus-circle me-1"></i>Crear Acción
                             </a>
                         </div>

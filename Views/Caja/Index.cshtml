@@ -147,7 +147,8 @@
                                 <tbody>
                                     @foreach (var caja in Model.CajasActivas.OrderBy(c => c.Codigo))
                                     {
-                                        var estaAbierta = Model.AperturasAbiertas.Any(a => a.CajaId == caja.Id && !a.Cerrada);
+                                        var aperturaAbierta = Model.AperturasAbiertas.FirstOrDefault(a => a.CajaId == caja.Id && !a.Cerrada);
+                                        var estaAbierta = aperturaAbierta != null;
                                         <tr>
                                             <td class="small">
                                                 <strong>@caja.Codigo</strong>
@@ -170,7 +171,7 @@
                                                     @if (estaAbierta)
                                                     {
                                                         <a asp-action="DetallesApertura"
-                                                           asp-route-id="@Model.AperturasAbiertas.First(a => a.CajaId == caja.Id && !a.Cerrada).Id"
+                                                           asp-route-id="@aperturaAbierta!.Id"
                                                            class="btn btn-outline-primary">
                                                             <i class="bi bi-eye"></i>
                                                         </a>
@@ -196,7 +197,8 @@
                                                             @Html.AntiForgeryToken()
                                                             <input type="hidden" name="id" value="@caja.Id" />
                                                             <input type="hidden" name="rowVersion" value="@(caja.RowVersion != null ? Convert.ToBase64String(caja.RowVersion) : "")" />
-                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar"
+                                                                    data-confirm="¿Eliminar esta caja? Esta acción no se puede deshacer.">
                                                                 <i class="bi bi-trash"></i>
                                                             </button>
                                                         </form>
@@ -276,7 +278,8 @@
                                                             @Html.AntiForgeryToken()
                                                             <input type="hidden" name="id" value="@caja.Id" />
                                                             <input type="hidden" name="rowVersion" value="@(caja.RowVersion != null ? Convert.ToBase64String(caja.RowVersion) : "")" />
-                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar"
+                                                                    data-confirm="¿Eliminar esta caja? Esta acción no se puede deshacer.">
                                                                 <i class="bi bi-trash"></i>
                                                             </button>
                                                         </form>

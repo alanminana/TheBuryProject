@@ -26,7 +26,8 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="Id" />
                     <input type="hidden" asp-for="RowVersion" />
-                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar">
+                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar"
+                            data-confirm="¿Eliminar esta caja? Esta acción no se puede deshacer.">
                         <i class="bi bi-trash me-1"></i>Eliminar
                     </button>
                 </form>

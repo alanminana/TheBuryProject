@@ -80,7 +80,7 @@
             <div class="d-flex flex-wrap gap-2">
                 @if (Model.Estado == TheBuryProject.Models.Enums.EstadoBatch.Simulado)
                 {
-                    if (User.HasClaim("Permission", "precios:authorize"))
+                    if (User.HasClaim("Permission", "precios:approve"))
                     {
                         <a asp-action="Autorizar" asp-route-id="@Model.BatchId" class="btn btn-warning btn-sm">
                             <i class="bi bi-shield-check me-1"></i>Autorizar
@@ -93,7 +93,7 @@
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@Model.BatchId" />
                             <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(Model.RowVersion ?? Array.Empty<byte>())" />
-                            <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="return confirm('¿Cancelar este batch?');">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm" data-confirm="¿Cancelar este batch?">
                                 <i class="bi bi-ban me-1"></i>Cancelar
                             </button>
                         </form>

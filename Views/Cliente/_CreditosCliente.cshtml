@@ -4,13 +4,97 @@
     var tieneCreditos = Model.CreditosActivos?.Any() == true;
     var creditosActivos = Model.CreditosActivos?.Where(c => 
         c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Activo || 
-        c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Aprobado).ToList() ?? new List<TheBuryProject.ViewModels.CreditoViewModel>();
+        c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Aprobado ||
+        c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Generado).ToList() ?? new List<TheBuryProject.ViewModels.CreditoViewModel>();
     var creditosFinalizados = Model.CreditosActivos?.Where(c => 
         c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Finalizado ||
         c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Cancelado ||
         c.Estado == TheBuryProject.Models.Enums.EstadoCredito.Rechazado).ToList() ?? new List<TheBuryProject.ViewModels.CreditoViewModel>();
+    
+    var aptitud = Model.AptitudCrediticia;
+    var tieneLimite = aptitud.Cupo.TieneCupoAsignado;
+    var limiteAsignado = aptitud.Cupo.LimiteCredito ?? 0;
+    var cupoDisponible = aptitud.Cupo.CupoDisponible;
+    var cupoUsado = limiteAsignado - cupoDisponible;
+    var porcentajeUsado = limiteAsignado > 0 ? (cupoUsado / limiteAsignado * 100) : 0;
 }
 
+<!-- ========== PANEL DE CUPO / LÍMITE DE CRÉDITO ========== -->
+<div class="card bg-body-secondary border-0 mb-4">
+    <div class="card-header bg-primary text-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-wallet2 me-2"></i>Límite de Crédito</h5>
+        @if (User.IsInRole(TheBuryProject.Models.Constants.Roles.SuperAdmin) || User.IsInRole(TheBuryProject.Models.Constants.Roles.Gerente))
+        {
+            <button type="button" class="btn btn-light btn-sm" 
+                    data-bs-toggle="modal" data-bs-target="#asignarLimiteCreditoModal">
+                <i class="bi bi-pencil-square me-1"></i>@(tieneLimite ? "Editar Límite" : "Asignar Límite")
+            </button>
+        }
+    </div>
+    <div class="card-body">
+        @if (tieneLimite)
+        {
+            <div class="row text-center mb-3">
+                <div class="col-md-4">
+                    <div class="p-3 rounded bg-dark">
+                        <small class="text-secondary d-block mb-1">Límite Asignado</small>
+                        <h3 class="fw-bold text-light mb-0">@limiteAsignado.ToString("C0")</h3>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 rounded bg-dark">
+                        <small class="text-secondary d-block mb-1">Cupo Usado</small>
+                        <h3 class="fw-bold text-warning mb-0">@cupoUsado.ToString("C0")</h3>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 rounded bg-dark">
+                        <small class="text-secondary d-block mb-1">Cupo Disponible</small>
+                        <h3 class="fw-bold text-success mb-0">@cupoDisponible.ToString("C0")</h3>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Barra de progreso de uso -->
+            <div class="mb-2">
+                <div class="d-flex justify-content-between small text-secondary mb-1">
+                    <span>Utilización del cupo</span>
+                    <span>@porcentajeUsado.ToString("F0")% usado</span>
+                </div>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar @(porcentajeUsado > 80 ? "bg-danger" : porcentajeUsado > 50 ? "bg-warning" : "bg-success")" 
+                         style="width: @porcentajeUsado%"></div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Los créditos se generan automáticamente al confirmar ventas con forma de pago "Crédito Personal"
+                </small>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-4">
+                <i class="bi bi-wallet text-warning" style="font-size: 3rem;"></i>
+                <p class="text-warning mt-3 mb-2"><strong>Sin límite de crédito asignado</strong></p>
+                <p class="text-secondary small mb-3">
+                    Asigne un límite de crédito para que el cliente pueda realizar compras con financiamiento.
+                </p>
+                @if (User.IsInRole(TheBuryProject.Models.Constants.Roles.SuperAdmin) || User.IsInRole(TheBuryProject.Models.Constants.Roles.Gerente))
+                {
+                    <button type="button" class="btn btn-primary" 
+                            data-bs-toggle="modal" data-bs-target="#asignarLimiteCreditoModal">
+                        <i class="bi bi-wallet2 me-2"></i>Asignar Límite de Crédito
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ========== CRÉDITOS NACIDOS DE VENTAS ========== -->
 @if (tieneCreditos)
 {
     <!-- Créditos Activos -->
@@ -129,60 +213,33 @@
             </div>
         </div>
     }
-}
-else
-{
-    <!-- Sin créditos -->
-    <div class="text-center py-5">
-        <i class="bi bi-credit-card-2-front text-secondary" style="font-size: 3rem;"></i>
-        <p class="text-secondary mt-3 mb-2">El cliente no tiene créditos registrados</p>
-        
-        @if (Model.EvaluacionCredito.CumpleRequisitos || Model.EvaluacionCredito.PuedeAprobarConExcepcion)
-        {
-            <p class="text-secondary small mb-4">
-                Capacidad de crédito disponible: <strong class="text-success">@Model.EvaluacionCredito.MontoMaximoDisponible.ToString("C0")</strong>
-            </p>
-            
-            @if (Model.EvaluacionCredito.TieneDocumentosCompletos)
-            {
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#solicitarCreditoModal">
-                    <i class="bi bi-cash-coin me-2"></i>Solicitar Primer Crédito
-                </button>
-            }
-            else
-            {
-                <button type="button" class="btn btn-warning" onclick="document.querySelector('[data-bs-target=\"#documentos\"]')?.click();">
-                    <i class="bi bi-folder me-2"></i>Completar Documentación
-                </button>
-            }
-        }
-        else
-        {
-            <p class="text-danger small">
-                <i class="bi bi-exclamation-circle me-1"></i>
-                No cumple requisitos mínimos para crédito
-            </p>
-        }
-    </div>
-}
-
-<!-- Resumen de actividad -->
-@if (tieneCreditos)
-{
-    <div class="mt-4 pt-4 border-top border-secondary">
-        <div class="row text-center">
-            <div class="col-4">
-                <small class="text-secondary d-block">Total Otorgado</small>
-                <strong class="text-light">@((Model.CreditosActivos?.Sum(c => c.MontoAprobado) ?? 0).ToString("C0"))</strong>
-            </div>
-            <div class="col-4">
-                <small class="text-secondary d-block">Créditos Totales</small>
-                <strong class="text-light">@(Model.CreditosActivos?.Count ?? 0)</strong>
-            </div>
-            <div class="col-4">
-                <small class="text-secondary d-block">Activos</small>
-                <strong class="text-info">@creditosActivos.Count</strong>
+    <!-- Resumen de actividad -->
+    @if (tieneCreditos)
+    {
+        <div class="mt-4 pt-4 border-top border-secondary">
+            <div class="row text-center">
+                <div class="col-4">
+                    <small class="text-secondary d-block">Total Otorgado</small>
+                    <strong class="text-light">@((Model.CreditosActivos?.Sum(c => c.MontoAprobado) ?? 0).ToString("C0"))</strong>
+                </div>
+                <div class="col-4">
+                    <small class="text-secondary d-block">Créditos Totales</small>
+                    <strong class="text-light">@(Model.CreditosActivos?.Count ?? 0)</strong>
+                </div>
+                <div class="col-4">
+                    <small class="text-secondary d-block">Activos</small>
+                    <strong class="text-info">@creditosActivos.Count</strong>
+                </div>
             </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <!-- Sin créditos aún -->
+        <div class="text-center py-4">
+            <i class="bi bi-credit-card-2-front text-secondary" style="font-size: 2rem;"></i>
+            <p class="text-secondary mt-2 mb-0">El cliente aún no tiene créditos.</p>
+            <small class="text-muted">Se generan automáticamente desde ventas con "Crédito Personal"</small>
+        </div>
+    }
 }

@@ -350,6 +350,44 @@ namespace TheBuryProject.Services
             }
         }
 
+        public async Task<int> VerificarTodosAsync(int clienteId, string verificadoPor, string? observaciones = null)
+        {
+            try
+            {
+                var documentosPendientes = await _context.Set<DocumentoCliente>()
+                    .Where(d => d.ClienteId == clienteId 
+                             && !d.IsDeleted 
+                             && d.Estado == EstadoDocumento.Pendiente)
+                    .ToListAsync();
+
+                if (!documentosPendientes.Any())
+                    return 0;
+
+                var ahora = DateTime.Now;
+                foreach (var documento in documentosPendientes)
+                {
+                    documento.Estado = EstadoDocumento.Verificado;
+                    documento.FechaVerificacion = ahora;
+                    documento.VerificadoPor = verificadoPor;
+                    if (!string.IsNullOrEmpty(observaciones))
+                        documento.Observaciones = observaciones;
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Se verificaron {Cantidad} documentos del cliente {ClienteId} por {Usuario}",
+                    documentosPendientes.Count, clienteId, verificadoPor);
+
+                return documentosPendientes.Count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al verificar todos los documentos del cliente {ClienteId}", clienteId);
+                throw;
+            }
+        }
+
         public async Task MarcarVencidosAsync()
         {
             try
@@ -371,6 +409,163 @@ namespace TheBuryProject.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al marcar documentos vencidos");
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<BatchOperacionResultado> VerificarBatchAsync(
+            IEnumerable<int> ids, 
+            string verificadoPor, 
+            string? observaciones = null)
+        {
+            var resultado = new BatchOperacionResultado();
+            var idsList = ids.Distinct().ToList();
+            
+            if (!idsList.Any())
+                return resultado;
+
+            try
+            {
+                var documentos = await _context.Set<DocumentoCliente>()
+                    .Where(d => idsList.Contains(d.Id) && !d.IsDeleted)
+                    .ToListAsync();
+
+                var ahora = DateTime.Now;
+                
+                foreach (var id in idsList)
+                {
+                    var doc = documentos.FirstOrDefault(d => d.Id == id);
+                    
+                    if (doc == null)
+                    {
+                        resultado.Fallidos++;
+                        resultado.Errores.Add(new BatchItemError 
+                        { 
+                            Id = id, 
+                            Mensaje = "Documento no encontrado" 
+                        });
+                        continue;
+                    }
+
+                    if (doc.Estado != EstadoDocumento.Pendiente)
+                    {
+                        resultado.Fallidos++;
+                        resultado.Errores.Add(new BatchItemError 
+                        { 
+                            Id = id, 
+                            Mensaje = $"No se puede verificar: estado actual es {doc.Estado}" 
+                        });
+                        continue;
+                    }
+
+                    doc.Estado = EstadoDocumento.Verificado;
+                    doc.FechaVerificacion = ahora;
+                    doc.VerificadoPor = verificadoPor;
+                    if (!string.IsNullOrEmpty(observaciones))
+                        doc.Observaciones = observaciones;
+
+                    resultado.Exitosos++;
+                }
+
+                if (resultado.Exitosos > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation(
+                        "Se verificaron {Exitosos} documentos en batch por {Usuario}. Fallidos: {Fallidos}",
+                        resultado.Exitosos, verificadoPor, resultado.Fallidos);
+                }
+
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al verificar documentos en batch");
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<BatchOperacionResultado> RechazarBatchAsync(
+            IEnumerable<int> ids, 
+            string motivo, 
+            string rechazadoPor)
+        {
+            var resultado = new BatchOperacionResultado();
+            var idsList = ids.Distinct().ToList();
+            
+            if (!idsList.Any())
+                return resultado;
+
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                foreach (var id in idsList)
+                {
+                    resultado.Fallidos++;
+                    resultado.Errores.Add(new BatchItemError 
+                    { 
+                        Id = id, 
+                        Mensaje = "Debe especificar el motivo del rechazo" 
+                    });
+                }
+                return resultado;
+            }
+
+            try
+            {
+                var documentos = await _context.Set<DocumentoCliente>()
+                    .Where(d => idsList.Contains(d.Id) && !d.IsDeleted)
+                    .ToListAsync();
+
+                var ahora = DateTime.Now;
+                
+                foreach (var id in idsList)
+                {
+                    var doc = documentos.FirstOrDefault(d => d.Id == id);
+                    
+                    if (doc == null)
+                    {
+                        resultado.Fallidos++;
+                        resultado.Errores.Add(new BatchItemError 
+                        { 
+                            Id = id, 
+                            Mensaje = "Documento no encontrado" 
+                        });
+                        continue;
+                    }
+
+                    if (doc.Estado != EstadoDocumento.Pendiente)
+                    {
+                        resultado.Fallidos++;
+                        resultado.Errores.Add(new BatchItemError 
+                        { 
+                            Id = id, 
+                            Mensaje = $"No se puede rechazar: estado actual es {doc.Estado}" 
+                        });
+                        continue;
+                    }
+
+                    doc.Estado = EstadoDocumento.Rechazado;
+                    doc.FechaVerificacion = ahora;
+                    doc.VerificadoPor = rechazadoPor;
+                    doc.MotivoRechazo = motivo;
+
+                    resultado.Exitosos++;
+                }
+
+                if (resultado.Exitosos > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation(
+                        "Se rechazaron {Exitosos} documentos en batch por {Usuario}. Motivo: {Motivo}. Fallidos: {Fallidos}",
+                        resultado.Exitosos, rechazadoPor, motivo, resultado.Fallidos);
+                }
+
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al rechazar documentos en batch");
                 throw;
             }
         }

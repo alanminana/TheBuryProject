@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using TheBuryProject.Data;
 using TheBuryProject.Helpers;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -18,24 +19,41 @@ using TheBuryProject.ViewModels.Requests;
 
 namespace TheBuryProject.Controllers
 {
-    [AllowAnonymous]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
     public class ClienteController : Controller
     {
         private readonly IClienteService _clienteService;
         private readonly IDocumentoClienteService _documentoService;
         private readonly ICreditoService _creditoService;
         private readonly IEvaluacionCreditoService _evaluacionService;
+        private readonly IClienteAptitudService _aptitudService;
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly IFinancialCalculationService _financialService;
         private readonly IMapper _mapper;
         private readonly ILogger<ClienteController> _logger;
         private readonly IClienteLookupService _clienteLookup;
 
+        private string? GetSafeReturnUrl(string? returnUrl)
+        {
+            return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+                ? returnUrl
+                : null;
+        }
+
+        private IActionResult RedirectToReturnUrlOrIndex(string? returnUrl)
+        {
+            var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+            return safeReturnUrl != null
+                ? LocalRedirect(safeReturnUrl)
+                : RedirectToAction(nameof(Index));
+        }
+
         public ClienteController(
             IClienteService clienteService,
             IDocumentoClienteService documentoService,
             ICreditoService creditoService,
             IEvaluacionCreditoService evaluacionService,
+            IClienteAptitudService aptitudService,
             IDbContextFactory<AppDbContext> contextFactory,
             IFinancialCalculationService financialService,
             IMapper mapper,
@@ -46,6 +64,7 @@ namespace TheBuryProject.Controllers
             _documentoService = documentoService;
             _creditoService = creditoService;
             _evaluacionService = evaluacionService;
+            _aptitudService = aptitudService;
             _contextFactory = contextFactory;
             _financialService = financialService;
             _mapper = mapper;
@@ -53,10 +72,12 @@ namespace TheBuryProject.Controllers
             _clienteLookup = clienteLookup;
         }
 
-        public async Task<IActionResult> Index(ClienteFilterViewModel filter)
+        public async Task<IActionResult> Index(ClienteFilterViewModel filter, string? returnUrl = null)
         {
             try
             {
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
                 var clientes = await _clienteService.SearchAsync(
                     searchTerm: filter.SearchTerm,
                     tipoDocumento: filter.TipoDocumento,
@@ -83,13 +104,15 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        public async Task<IActionResult> Details(int id, string? tab)
+        public async Task<IActionResult> Details(int id, string? tab, string? returnUrl = null)
         {
             try
             {
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
                 var cliente = await _clienteService.GetByIdAsync(id);
                 if (!ClienteValidationHelper.ClienteExiste(cliente))
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToReturnUrlOrIndex(returnUrl);
 
                 var detalleViewModel = await ConstructDetalleViewModel(cliente!, tab);
                 return View(detalleViewModel);
@@ -98,22 +121,25 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al obtener cliente {Id}", id);
                 TempData["Error"] = "Error al cargar el cliente";
-                return RedirectToAction(nameof(Index));
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
         }
 
-        public IActionResult Create()
+        public IActionResult Create(string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
             CargarDropdowns();
             return View(new ClienteViewModel());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ClienteViewModel viewModel)
+        public async Task<IActionResult> Create(ClienteViewModel viewModel, string? returnUrl = null)
         {
             try
             {
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
                 if (!ModelState.IsValid)
                 {
                     CargarDropdowns();
@@ -124,7 +150,7 @@ namespace TheBuryProject.Controllers
                 await _clienteService.CreateAsync(cliente);
 
                 TempData["Success"] = $"Cliente {cliente.NombreCompleto} creado exitosamente";
-                return RedirectToAction(nameof(Details), new { id = cliente.Id });
+                return RedirectToAction(nameof(Details), new { id = cliente.Id, returnUrl = GetSafeReturnUrl(returnUrl) });
             }
             catch (InvalidOperationException ex)
             {
@@ -141,13 +167,15 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(int id, string? returnUrl = null)
         {
             try
             {
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
                 var cliente = await _clienteService.GetByIdAsync(id);
                 if (!ClienteValidationHelper.ClienteExiste(cliente))
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToReturnUrlOrIndex(returnUrl);
 
                 var viewModel = _mapper.Map<ClienteViewModel>(cliente!);
                 CargarDropdowns();
@@ -157,19 +185,21 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al cargar cliente {Id} para edición", id);
                 TempData["Error"] = "Error al cargar el cliente";
-                return RedirectToAction(nameof(Index));
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, ClienteViewModel viewModel)
+        public async Task<IActionResult> Edit(int id, ClienteViewModel viewModel, string? returnUrl = null)
         {
             if (id != viewModel.Id)
                 return NotFound();
 
             try
             {
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
                 if (!ModelState.IsValid)
                 {
                     CargarDropdowns();
@@ -180,7 +210,7 @@ namespace TheBuryProject.Controllers
                 await _clienteService.UpdateAsync(cliente);
 
                 TempData["Success"] = "Cliente actualizado exitosamente";
-                return RedirectToAction(nameof(Details), new { id });
+                return RedirectToAction(nameof(Details), new { id, returnUrl = GetSafeReturnUrl(returnUrl) });
             }
             catch (InvalidOperationException ex)
             {
@@ -197,13 +227,15 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, string? returnUrl = null)
         {
             try
             {
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
                 var cliente = await _clienteService.GetByIdAsync(id);
                 if (!ClienteValidationHelper.ClienteExiste(cliente))
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToReturnUrlOrIndex(returnUrl);
 
                 var viewModel = _mapper.Map<ClienteViewModel>(cliente!);
                 return View(viewModel);
@@ -212,41 +244,107 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al cargar cliente {Id} para eliminación", id);
                 TempData["Error"] = "Error al cargar el cliente";
-                return RedirectToAction(nameof(Index));
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id, string? returnUrl = null)
         {
             try
             {
                 await _clienteService.DeleteAsync(id);
                 TempData["Success"] = "Cliente eliminado exitosamente";
-                return RedirectToAction(nameof(Index));
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
             catch (InvalidOperationException ex)
             {
                 TempData["Error"] = ex.Message;
-                return RedirectToAction(nameof(Delete), new { id });
+                return RedirectToAction(nameof(Delete), new { id, returnUrl = GetSafeReturnUrl(returnUrl) });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al eliminar cliente {Id}", id);
                 TempData["Error"] = "Error al eliminar el cliente";
-                return RedirectToAction(nameof(Delete), new { id });
+                return RedirectToAction(nameof(Delete), new { id, returnUrl = GetSafeReturnUrl(returnUrl) });
             }
         }
 
+        /// <summary>
+        /// Asigna o actualiza el límite de crédito (cupo) de un cliente.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SolicitarCredito(SolicitudCreditoViewModel model)
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+        public async Task<IActionResult> AsignarLimiteCredito(int clienteId, decimal limiteCredito, string? motivo = null, string? returnUrl = null)
+        {
+            try
+            {
+                if (limiteCredito < 0)
+                {
+                    TempData["Error"] = "El límite de crédito no puede ser negativo";
+                    return RedirectToAction(nameof(Details), new { id = clienteId, returnUrl = GetSafeReturnUrl(returnUrl) });
+                }
+
+                var exito = await _aptitudService.AsignarLimiteCreditoAsync(clienteId, limiteCredito, motivo);
+
+                if (exito)
+                {
+                    // Re-evaluar aptitud después de asignar cupo
+                    await _aptitudService.EvaluarAptitudAsync(clienteId, guardarResultado: true);
+                    TempData["Success"] = $"Límite de crédito actualizado a {limiteCredito:C0}";
+                }
+                else
+                {
+                    TempData["Error"] = "Error al actualizar el límite de crédito";
+                }
+
+                return RedirectToAction(nameof(Details), new { id = clienteId, returnUrl = GetSafeReturnUrl(returnUrl) });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al asignar límite de crédito al cliente {ClienteId}", clienteId);
+                TempData["Error"] = "Error al actualizar el límite de crédito";
+                return RedirectToAction(nameof(Details), new { id = clienteId, returnUrl = GetSafeReturnUrl(returnUrl) });
+            }
+        }
+
+        /// <summary>
+        /// Recalcula la aptitud crediticia del cliente.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecalcularAptitud(int clienteId, string? returnUrl = null)
+        {
+            try
+            {
+                await _aptitudService.EvaluarAptitudAsync(clienteId, guardarResultado: true);
+                TempData["Success"] = "Aptitud crediticia recalculada";
+                return RedirectToAction(nameof(Details), new { id = clienteId, returnUrl = GetSafeReturnUrl(returnUrl) });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al recalcular aptitud del cliente {ClienteId}", clienteId);
+                TempData["Error"] = "Error al recalcular aptitud";
+                return RedirectToAction(nameof(Details), new { id = clienteId, returnUrl = GetSafeReturnUrl(returnUrl) });
+            }
+        }
+
+        /// <summary>
+        /// [OBSOLETO] Este action ya no se usa en el flujo actual.
+        /// Los créditos ahora se generan automáticamente desde ventas con TipoPago = CreditoPersonal.
+        /// Mantenido temporalmente por si hay referencias externas pendientes de migrar.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Obsolete("Los créditos se generan automáticamente desde ventas. Este action será removido en futuras versiones.")]
+        public async Task<IActionResult> SolicitarCredito(SolicitudCreditoViewModel model, string? returnUrl = null)
         {
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "Por favor complete todos los campos requeridos";
-                return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
+                return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion", returnUrl = GetSafeReturnUrl(returnUrl) });
             }
 
             var calculos = CalcularParametrosCredito(model.MontoSolicitado, model.TasaInteres, model.CantidadCuotas);
@@ -322,8 +420,13 @@ namespace TheBuryProject.Controllers
             return RedirectToAction(nameof(Details), new { id = model.ClienteId, tab = "evaluacion" });
         }
 
+        /// <summary>
+        /// [OBSOLETO] Usado por el formulario de solicitar crédito que ya no existe.
+        /// Los créditos ahora se generan automáticamente desde ventas.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Obsolete("Los créditos se generan automáticamente desde ventas. Este action será removido en futuras versiones.")]
         public IActionResult CalcularCreditoPreview([FromBody] CalcularCreditoPreviewRequest request)
         {
             try
@@ -404,6 +507,9 @@ namespace TheBuryProject.Controllers
                 .ToList();
 
             detalleViewModel.EvaluacionCredito = await EvaluarCapacidadCrediticia(cliente.Id, detalleViewModel);
+
+            // Evaluar aptitud crediticia (semáforo)
+            detalleViewModel.AptitudCrediticia = await _aptitudService.EvaluarAptitudAsync(cliente.Id, guardarResultado: true);
 
             return detalleViewModel;
         }

@@ -1,6 +1,8 @@
 ﻿@model TheBuryProject.ViewModels.CreditoViewModel
 @{
     ViewData["Title"] = "Eliminar Crédito";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Credito")!;
 }
 
 <section class="container-fluid py-4 text-light">
@@ -8,7 +10,7 @@
         <h2 class="fw-bold text-danger mb-0">
             <i class="bi bi-trash3-fill me-2"></i>Eliminar Crédito
         </h2>
-        <a asp-action="Index" class="btn btn-outline-light">
+        <a href="@backUrl" class="btn btn-outline-light">
             <i class="bi bi-arrow-left me-2"></i>Volver
         </a>
     </div>
@@ -50,11 +52,12 @@
         <div class="card-footer bg-dark border-0 d-flex justify-content-end gap-2 py-3">
             <form asp-action="Delete" method="post" class="d-inline">
                 <input type="hidden" asp-for="Id" />
-                <button type="submit" class="btn btn-danger btn-lg px-4 fw-semibold">
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <button type="submit" class="btn btn-danger btn-lg px-4 fw-semibold" data-confirm="¿Eliminar este crédito? Esta acción es irreversible.">
                     <i class="bi bi-trash3-fill me-2"></i>Confirmar Eliminación
                 </button>
             </form>
-            <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
+            <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
                 <i class="bi bi-x-circle me-2"></i>Cancelar
             </a>
         </div>

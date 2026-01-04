@@ -209,6 +209,7 @@
                                     <td class="text-end">
                                         <a asp-action="DetallesCierre"
                                            asp-route-id="@cierre.Id"
+                                           asp-route-returnUrl="@(Context.Request.Path + Context.Request.QueryString)"
                                            class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i>
                                         </a>

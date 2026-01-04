@@ -3,12 +3,19 @@
 @using TheBuryProject.ViewModels
 @{
     ViewData["Title"] = "Alertas de Cobranza";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Mora")!;
+    var listReturnUrl = Context.Request.Path + Context.Request.QueryString;
+
+    string? qTipo = Context.Request.Query["tipo"].FirstOrDefault();
+    string? qPrioridad = Context.Request.Query["prioridad"].FirstOrDefault();
+    string? qEstado = Context.Request.Query["estado"].FirstOrDefault();
 }
 
 <div class="container-fluid mora-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-bell-fill me-2"></i>Alertas de Cobranza</h2>
-        <a asp-action="Index" class="btn btn-outline-secondary">
+        <a href="@backUrl" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-2"></i>Volver al Dashboard
         </a>
     </div>
@@ -17,36 +24,37 @@
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <form method="get" asp-action="Alertas" id="filtrosForm">
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
                 <div class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label">Tipo de Alerta</label>
                         <select name="tipo" class="form-select" data-auto-submit="true">
                             <option value="">Todas</option>
-                            <option value="0">Próximo a Vencer</option>
-                            <option value="1">Vencida</option>
-                            <option value="2">Mora Leve</option>
-                            <option value="3">Mora Moderada</option>
-                            <option value="4">Mora Grave</option>
-                            <option value="5">Mora Crítica</option>
+                            <option value="0" selected="@(qTipo == "0")">Próximo a Vencer</option>
+                            <option value="1" selected="@(qTipo == "1")">Vencida</option>
+                            <option value="2" selected="@(qTipo == "2")">Mora Leve</option>
+                            <option value="3" selected="@(qTipo == "3")">Mora Moderada</option>
+                            <option value="4" selected="@(qTipo == "4")">Mora Grave</option>
+                            <option value="5" selected="@(qTipo == "5")">Mora Crítica</option>
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Prioridad</label>
                         <select name="prioridad" class="form-select" data-auto-submit="true">
                             <option value="">Todas</option>
-                            <option value="1">Baja</option>
-                            <option value="2">Media</option>
-                            <option value="3">Alta</option>
+                            <option value="1" selected="@(qPrioridad == "1")">Baja</option>
+                            <option value="2" selected="@(qPrioridad == "2")">Media</option>
+                            <option value="3" selected="@(qPrioridad == "3")">Alta</option>
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Estado</label>
                         <select name="estado" class="form-select" data-auto-submit="true">
                             <option value="">Todas</option>
-                            <option value="noLeidas">No Leídas</option>
-                            <option value="leidas">Leídas</option>
-                            <option value="noResueltas">No Resueltas</option>
-                            <option value="resueltas">Resueltas</option>
+                            <option value="noLeidas" selected="@(qEstado == "noLeidas")">No Leídas</option>
+                            <option value="leidas" selected="@(qEstado == "leidas")">Leídas</option>
+                            <option value="noResueltas" selected="@(qEstado == "noResueltas")">No Resueltas</option>
+                            <option value="resueltas" selected="@(qEstado == "resueltas")">Resueltas</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -59,7 +67,7 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-search me-2"></i>Filtrar
                         </button>
-                        <a asp-action="Alertas" class="btn btn-secondary">
+                        <a asp-action="Alertas" asp-route-returnUrl="@returnUrl" class="btn btn-secondary">
                             <i class="bi bi-x-circle me-2"></i>Limpiar Filtros
                         </a>
                     </div>
@@ -76,9 +84,9 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title mb-0">Críticas</h6>
-                            <h3 class="mb-0">@Model.Count(a => a.Prioridad == PrioridadAlerta.Alta && !a.Resuelta)</h3>
+                            <h3 class="mb-0">@Model.Count(a => a.Prioridad == PrioridadAlerta.Critica && !a.Resuelta)</h3>
                         </div>
-                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <i class="bi bi-exclamation-triangle-fill fs-2 opacity-50"></i>
                     </div>
                 </div>
             </div>
@@ -91,7 +99,7 @@
                             <h6 class="card-title mb-0">Media Prioridad</h6>
                             <h3 class="mb-0">@Model.Count(a => a.Prioridad == PrioridadAlerta.Media && !a.Resuelta)</h3>
                         </div>
-                        <i class="bi bi-exclamation-circle-fill" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <i class="bi bi-exclamation-circle-fill fs-2 opacity-50"></i>
                     </div>
                 </div>
             </div>
@@ -104,7 +112,7 @@
                             <h6 class="card-title mb-0">Baja Prioridad</h6>
                             <h3 class="mb-0">@Model.Count(a => a.Prioridad == PrioridadAlerta.Baja && !a.Resuelta)</h3>
                         </div>
-                        <i class="bi bi-info-circle-fill" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <i class="bi bi-info-circle-fill fs-2 opacity-50"></i>
                     </div>
                 </div>
             </div>
@@ -117,7 +125,7 @@
                             <h6 class="card-title mb-0">Resueltas</h6>
                             <h3 class="mb-0">@Model.Count(a => a.Resuelta)</h3>
                         </div>
-                        <i class="bi bi-check-circle-fill" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <i class="bi bi-check-circle-fill fs-2 opacity-50"></i>
                     </div>
                 </div>
             </div>
@@ -224,23 +232,27 @@
                                         <div class="btn-group btn-group-sm" role="group">
                                             @if (!alerta.Leida)
                                             {
-                                                <a asp-action="MarcarLeida"
-                                                   asp-route-id="@alerta.Id"
-                                                   asp-route-rowVersion="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")"
-                                                   class="btn btn-outline-primary" title="Marcar como leída">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
+                                                <form asp-action="MarcarLeida" asp-route-id="@alerta.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="rowVersion" value="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")" />
+                                                    <input type="hidden" name="returnUrl" value="@listReturnUrl" />
+                                                    <button type="submit" class="btn btn-outline-primary" title="Marcar como leída">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </form>
                                             }
                                             @if (!alerta.Resuelta)
                                             {
-                                                <a asp-action="Resolver"
-                                                   asp-route-id="@alerta.Id"
-                                                   asp-route-rowVersion="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")"
-                                                   class="btn btn-outline-success" title="Resolver">
-                                                    <i class="bi bi-check-lg"></i>
-                                                </a>
+                                                <form asp-action="Resolver" asp-route-id="@alerta.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="rowVersion" value="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")" />
+                                                    <input type="hidden" name="returnUrl" value="@listReturnUrl" />
+                                                    <button type="submit" class="btn btn-outline-success" title="Resolver" data-confirm="¿Resolver esta alerta?">
+                                                        <i class="bi bi-check-lg"></i>
+                                                    </button>
+                                                </form>
                                             }
-                                            <a asp-controller="Creditos" asp-action="Details" asp-route-id="@alerta.CreditoId" class="btn btn-outline-info" title="Ver Crédito">
+                                            <a asp-controller="Credito" asp-action="Details" asp-route-id="@alerta.CreditoId" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-info" title="Ver Crédito">
                                                 <i class="bi bi-info-circle"></i>
                                             </a>
                                         </div>

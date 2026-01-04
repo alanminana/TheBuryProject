@@ -6,10 +6,13 @@
     ViewData["PageSubtitle"] = "Actualizá datos personales, de contacto y domicilio";
     ViewData["MensajeDocumentacion"] = "<strong>Documentación:</strong> Los documentos se gestionan en la pestaña \"Documentos\" del detalle del cliente y se usan en las evaluaciones crediticias.";
     ViewData["MostrarToggleActivo"] = true; // opcional, el switch igual se muestra por esEdicion
+
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backToDetailsUrl = Url.Action("Details", new { id = Model.Id, returnUrl })!;
 }
 
 @section PageActions {
-    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-light">
+    <a href="@backToDetailsUrl" class="btn btn-outline-light">
         <i class="bi bi-arrow-left"></i> Volver
     </a>
 }
@@ -19,12 +22,13 @@
         <form asp-action="Edit" method="post" class="needs-validation" novalidate>
             <input type="hidden" asp-for="Id" />
             <input type="hidden" asp-for="RowVersion" />
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
             @* IMPORTANTE: ya no mandamos Activo como hidden *@
 
             <partial name="~/Views/Shared/Cliente/_ClienteFormFields.cshtml" model="Model" />
 
             <div class="d-flex justify-content-end gap-3 mt-4">
-                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-light px-4">
+                <a href="@backToDetailsUrl" class="btn btn-outline-light px-4">
                     <i class="bi bi-x-circle me-1"></i>Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary px-4">
