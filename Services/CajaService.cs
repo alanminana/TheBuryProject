@@ -22,8 +22,8 @@ namespace TheBuryProject.Services
         private readonly ILogger<CajaService> _logger;
         private readonly INotificacionService _notificacionService;
 
-        // Constantes de configuración (TODO: Hacer configurables en DB)
-        private const decimal TOLERANCIA_DIFERENCIA = 0.01m;
+        // ✅ Usar constante compartida desde CajaConstants
+        private const decimal TOLERANCIA_DIFERENCIA = CajaConstants.TOLERANCIA_DIFERENCIA;
 
         public CajaService(
             AppDbContext context,
@@ -83,7 +83,7 @@ namespace TheBuryProject.Services
 
                 var caja = _mapper.Map<Caja>(model);
                 caja.Estado = EstadoCaja.Cerrada;
-                caja.CreatedAt = DateTime.Now;
+                caja.CreatedAt = DateTime.UtcNow;
 
                 _context.Cajas.Add(caja);
                 await _context.SaveChangesAsync();
@@ -133,7 +133,7 @@ namespace TheBuryProject.Services
                 }
 
                 _mapper.Map(model, caja);
-                caja.UpdatedAt = DateTime.Now;
+                caja.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
@@ -178,7 +178,7 @@ namespace TheBuryProject.Services
                 }
 
                 caja.IsDeleted = true;
-                caja.UpdatedAt = DateTime.Now;
+                caja.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
@@ -248,14 +248,14 @@ namespace TheBuryProject.Services
                     UsuarioApertura = usuario,
                     ObservacionesApertura = model.ObservacionesApertura,
                     Cerrada = false,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 _context.AperturasCaja.Add(apertura);
 
                 // Actualizar estado de la caja
                 caja.Estado = EstadoCaja.Abierta;
-                caja.UpdatedAt = DateTime.Now;
+                caja.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
@@ -353,6 +353,21 @@ namespace TheBuryProject.Services
             }
         }
 
+        /// <inheritdoc/>
+        public async Task<bool> ExisteAlgunaCajaAbiertaAsync()
+        {
+            try
+            {
+                return await _context.AperturasCaja
+                    .AnyAsync(a => !a.Cerrada && !a.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al verificar si existe alguna caja abierta");
+                throw;
+            }
+        }
+
         #endregion
 
         #region Movimientos de Caja
@@ -383,7 +398,7 @@ namespace TheBuryProject.Services
                     Referencia = model.Referencia,
                     Usuario = usuario,
                     Observaciones = model.Observaciones,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 _context.MovimientosCaja.Add(movimiento);
@@ -440,6 +455,210 @@ namespace TheBuryProject.Services
             }
         }
 
+        /// <inheritdoc/>
+        public async Task<AperturaCaja?> ObtenerAperturaActivaParaVentaAsync()
+        {
+            try
+            {
+                // Obtener la primera caja abierta (ordenada por Id para consistencia)
+                return await _context.AperturasCaja
+                    .Where(a => !a.Cerrada && !a.IsDeleted)
+                    .OrderBy(a => a.Id)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener apertura activa para venta");
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<MovimientoCaja?> RegistrarMovimientoVentaAsync(
+            int ventaId,
+            string ventaNumero,
+            decimal monto,
+            TipoPago tipoPago,
+            string usuario)
+        {
+            try
+            {
+                // Las ventas a crédito personal no generan ingreso inmediato en caja
+                // El dinero ingresa cuando el cliente paga las cuotas
+                if (tipoPago == TipoPago.CreditoPersonal || tipoPago == TipoPago.CuentaCorriente)
+                {
+                    _logger.LogDebug(
+                        "Venta {VentaNumero} es a crédito/cuenta corriente, no se registra movimiento de caja inmediato",
+                        ventaNumero);
+                    return null;
+                }
+
+                // Obtener apertura de caja activa
+                var apertura = await ObtenerAperturaActivaParaVentaAsync();
+                if (apertura == null)
+                {
+                    _logger.LogWarning(
+                        "No hay caja abierta para registrar movimiento de venta {VentaNumero}",
+                        ventaNumero);
+                    return null;
+                }
+
+                // Determinar el concepto según el tipo de pago
+                // Nota: CreditoPersonal y CuentaCorriente ya fueron filtrados arriba
+                var concepto = tipoPago switch
+                {
+                    TipoPago.Efectivo => ConceptoMovimientoCaja.VentaEfectivo,
+                    TipoPago.TarjetaDebito or TipoPago.TarjetaCredito or TipoPago.Tarjeta => ConceptoMovimientoCaja.VentaTarjeta,
+                    TipoPago.Cheque => ConceptoMovimientoCaja.VentaCheque,
+                    TipoPago.Transferencia or TipoPago.MercadoPago => ConceptoMovimientoCaja.VentaEfectivo, // Transferencias se registran como efectivo
+                    TipoPago.CreditoPersonal or TipoPago.CuentaCorriente => throw new InvalidOperationException(
+                        $"Los pagos a crédito no deben llegar aquí, fueron filtrados previamente: {tipoPago}"),
+                    _ => throw new NotSupportedException($"Tipo de pago no soportado para movimiento de caja: {tipoPago}")
+                };
+
+                var movimiento = new MovimientoCaja
+                {
+                    AperturaCajaId = apertura.Id,
+                    FechaMovimiento = DateTime.UtcNow,
+                    Tipo = TipoMovimientoCaja.Ingreso,
+                    Concepto = concepto,
+                    Monto = monto,
+                    Descripcion = $"Venta {ventaNumero}",
+                    Referencia = ventaNumero,
+                    ReferenciaId = ventaId,
+                    Usuario = usuario,
+                    Observaciones = $"Pago: {tipoPago}",
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.MovimientosCaja.Add(movimiento);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Movimiento de caja registrado para venta {VentaNumero}: ${Monto:N2} ({TipoPago})",
+                    ventaNumero, monto, tipoPago);
+
+                return movimiento;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al registrar movimiento de venta {VentaNumero}", ventaNumero);
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<MovimientoCaja?> RegistrarMovimientoCuotaAsync(
+            int cuotaId,
+            string creditoNumero,
+            int numeroCuota,
+            decimal monto,
+            string medioPago,
+            string usuario)
+        {
+            try
+            {
+                // Obtener apertura de caja activa
+                var apertura = await ObtenerAperturaActivaParaVentaAsync();
+                if (apertura == null)
+                {
+                    _logger.LogWarning(
+                        "No hay caja abierta para registrar cobro de cuota {CreditoNumero} #{NumeroCuota}",
+                        creditoNumero, numeroCuota);
+                    return null;
+                }
+
+                var movimiento = new MovimientoCaja
+                {
+                    AperturaCajaId = apertura.Id,
+                    FechaMovimiento = DateTime.UtcNow,
+                    Tipo = TipoMovimientoCaja.Ingreso,
+                    Concepto = ConceptoMovimientoCaja.CobroCuota,
+                    Monto = monto,
+                    Descripcion = $"Cobro cuota #{numeroCuota} - Crédito {creditoNumero}",
+                    Referencia = $"{creditoNumero}-C{numeroCuota}",
+                    ReferenciaId = cuotaId,
+                    Usuario = usuario,
+                    Observaciones = $"Medio de pago: {medioPago}",
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.MovimientosCaja.Add(movimiento);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Movimiento de caja registrado para cuota #{NumeroCuota} de crédito {CreditoNumero}: ${Monto:N2}",
+                    numeroCuota, creditoNumero, monto);
+
+                return movimiento;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, 
+                    "Error al registrar movimiento de cuota #{NumeroCuota} del crédito {CreditoNumero}", 
+                    numeroCuota, creditoNumero);
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<MovimientoCaja?> RegistrarMovimientoAnticipoAsync(
+            int creditoId,
+            string creditoNumero,
+            decimal montoAnticipo,
+            string usuario)
+        {
+            try
+            {
+                // Si no hay anticipo, no registrar nada
+                if (montoAnticipo <= 0)
+                {
+                    return null;
+                }
+
+                // Obtener apertura de caja activa
+                var apertura = await ObtenerAperturaActivaParaVentaAsync();
+                if (apertura == null)
+                {
+                    _logger.LogWarning(
+                        "No hay caja abierta para registrar anticipo del crédito {CreditoNumero}",
+                        creditoNumero);
+                    return null;
+                }
+
+                var movimiento = new MovimientoCaja
+                {
+                    AperturaCajaId = apertura.Id,
+                    FechaMovimiento = DateTime.UtcNow,
+                    Tipo = TipoMovimientoCaja.Ingreso,
+                    Concepto = ConceptoMovimientoCaja.AnticipoCredito,
+                    Monto = montoAnticipo,
+                    Descripcion = $"Anticipo de crédito {creditoNumero}",
+                    Referencia = $"{creditoNumero}-ANT",
+                    ReferenciaId = creditoId,
+                    Usuario = usuario,
+                    Observaciones = "Pago inicial que reduce el monto a financiar",
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.MovimientosCaja.Add(movimiento);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Movimiento de caja registrado para anticipo de crédito {CreditoNumero}: ${Monto:N2}",
+                    creditoNumero, montoAnticipo);
+
+                return movimiento;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, 
+                    "Error al registrar movimiento de anticipo del crédito {CreditoNumero}", 
+                    creditoNumero);
+                throw;
+            }
+        }
+
         #endregion
 
         #region Cierre de Caja
@@ -489,18 +708,18 @@ namespace TheBuryProject.Services
                     UsuarioCierre = usuario,
                     ObservacionesCierre = model.ObservacionesCierre,
                     DetalleArqueo = model.DetalleArqueo,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 _context.CierresCaja.Add(cierre);
 
                 // Marcar apertura como cerrada
                 apertura.Cerrada = true;
-                apertura.UpdatedAt = DateTime.Now;
+                apertura.UpdatedAt = DateTime.UtcNow;
 
                 // Actualizar estado de la caja
                 apertura.Caja.Estado = EstadoCaja.Cerrada;
-                apertura.Caja.UpdatedAt = DateTime.Now;
+                apertura.Caja.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
@@ -733,27 +952,14 @@ namespace TheBuryProject.Services
             return (ingresos, egresos);
         }
 
-        // ✅ NUEVO: Validación centralizada
-        private void ValidarCaja(CajaViewModel model)
+        // ✅ Validación de negocio (las validaciones de formato están en el ViewModel con DataAnnotations)
+        private static void ValidarCaja(CajaViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(model.Codigo))
+            // Las validaciones [Required] y [StringLength] ya se hacen en el controller via ModelState
+            // Aquí solo agregamos validaciones de negocio adicionales si fueran necesarias
+            if (string.IsNullOrWhiteSpace(model.Codigo) || string.IsNullOrWhiteSpace(model.Nombre))
             {
-                throw new InvalidOperationException("El código de caja es obligatorio");
-            }
-
-            if (string.IsNullOrWhiteSpace(model.Nombre))
-            {
-                throw new InvalidOperationException("El nombre de caja es obligatorio");
-            }
-
-            if (model.Codigo.Length > 50)
-            {
-                throw new InvalidOperationException("El código no puede exceder 50 caracteres");
-            }
-
-            if (model.Nombre.Length > 100)
-            {
-                throw new InvalidOperationException("El nombre no puede exceder 100 caracteres");
+                throw new InvalidOperationException("El código y nombre de caja son obligatorios");
             }
         }
 

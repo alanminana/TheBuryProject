@@ -99,7 +99,17 @@ namespace TheBuryProject.Models.Entities
         public bool TieneReciboSueldo { get; set; } = false;
 
         // Control de Riesgo
-        public decimal PuntajeRiesgo { get; set; } = 5.0m; // 0 a 10 (5 = neutro, manual)
+        /// <summary>
+        /// Nivel de riesgo crediticio (1-5). 
+        /// 1=Rechazado, 2=Rechazado(Revisar), 3=Aprobado Condicional, 4=Aprobado Limitado, 5=Aprobado Total
+        /// </summary>
+        public NivelRiesgoCredito NivelRiesgo { get; set; } = NivelRiesgoCredito.AprobadoCondicional;
+
+        /// <summary>
+        /// Puntaje de riesgo numérico para cálculos y compatibilidad (derivado del NivelRiesgo * 2).
+        /// Rango efectivo: 2, 4, 6, 8, 10
+        /// </summary>
+        public decimal PuntajeRiesgo { get; set; } = 6.0m; // Valor por defecto = NivelRiesgo.AprobadoCondicional (3) * 2
 
         // Aptitud Crediticia (semáforo)
         /// <summary>

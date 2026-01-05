@@ -816,6 +816,88 @@ namespace TheBuryProject.Controllers
             return View(modelo);
         }
 
+        // GET: Credito/AdelantarCuota/5
+        public async Task<IActionResult> AdelantarCuota(int id, string? returnUrl = null)
+        {
+            try
+            {
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
+                var credito = await _creditoService.GetByIdAsync(id);
+                if (credito == null)
+                {
+                    TempData["Error"] = "Crédito no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Obtener la ÚLTIMA cuota pendiente (la que se cancela al adelantar)
+                var ultimaCuota = await _creditoService.GetUltimaCuotaPendienteAsync(id);
+                if (ultimaCuota == null)
+                {
+                    TempData["Warning"] = "No hay cuotas pendientes para adelantar.";
+                    return RedirectToAction(nameof(Details), new { id, returnUrl = GetSafeReturnUrl(returnUrl) });
+                }
+
+                var modelo = new PagarCuotaViewModel
+                {
+                    CreditoId = credito.Id,
+                    CuotaId = ultimaCuota.Id,
+                    NumeroCuota = ultimaCuota.NumeroCuota,
+                    MontoCuota = ultimaCuota.MontoTotal,
+                    MontoPunitorio = 0, // No hay punitorio en adelanto
+                    TotalAPagar = ultimaCuota.MontoTotal,
+                    MontoPagado = ultimaCuota.MontoTotal,
+                    ClienteNombre = credito.ClienteNombre,
+                    NumeroCreditoTexto = credito.Numero,
+                    FechaVencimiento = ultimaCuota.FechaVencimiento,
+                    EstaVencida = false,
+                    DiasAtraso = 0,
+                    FechaPago = DateTime.UtcNow
+                };
+
+                return View(modelo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar adelanto de cuota: {Id}", id);
+                TempData["Error"] = "Error al cargar el formulario";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // POST: Credito/AdelantarCuota
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AdelantarCuota(PagarCuotaViewModel modelo, string? returnUrl = null)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+                    return View(modelo);
+                }
+
+                var resultado = await _creditoService.AdelantarCuotaAsync(modelo);
+
+                if (resultado)
+                {
+                    TempData["Success"] = $"Cuota #{modelo.NumeroCuota} adelantada exitosamente. Se ha reducido el plazo del crédito.";
+                    return RedirectToReturnUrlOrDetails(returnUrl, modelo.CreditoId);
+                }
+
+                ModelState.AddModelError(string.Empty, "No se pudo registrar el adelanto");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al adelantar cuota");
+                ModelState.AddModelError("", "Error al registrar el adelanto: " + ex.Message);
+            }
+
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+            return View(modelo);
+        }
+
         // GET: API endpoint para evaluar crédito en tiempo real
         [HttpGet]
         public async Task<IActionResult> EvaluarCredito(int clienteId, decimal montoSolicitado, int? garanteId = null)

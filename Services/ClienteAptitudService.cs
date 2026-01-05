@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TheBuryProject.Data;
+using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -17,14 +18,6 @@ namespace TheBuryProject.Services
     {
         private readonly AppDbContext _context;
         private readonly ILogger<ClienteAptitudService> _logger;
-
-        // Documentos requeridos por defecto si no hay configuración
-        private static readonly TipoDocumentoCliente[] DefaultDocumentosRequeridos = new[]
-        {
-            TipoDocumentoCliente.DNI,
-            TipoDocumentoCliente.ReciboSueldo,
-            TipoDocumentoCliente.Servicio
-        };
 
         public ClienteAptitudService(
             AppDbContext context,
@@ -57,7 +50,7 @@ namespace TheBuryProject.Services
         {
             var resultado = new AptitudCrediticiaViewModel
             {
-                FechaEvaluacion = DateTime.Now
+                FechaEvaluacion = DateTime.UtcNow
             };
 
             // Obtener configuración
@@ -297,7 +290,7 @@ namespace TheBuryProject.Services
 
             var faltantes = new List<string>();
             var vencidos = new List<string>();
-            var hoy = DateTime.Today;
+            var hoy = DateTime.UtcNow.Date;
             var diasGracia = config.DiasGraciaVencimientoDocumento ?? 0;
 
             foreach (var tipo in tiposRequeridos)
@@ -344,16 +337,16 @@ namespace TheBuryProject.Services
         private List<TipoDocumentoCliente> ObtenerTiposDocumentoRequeridos(ConfiguracionCredito config)
         {
             if (string.IsNullOrWhiteSpace(config.TiposDocumentoRequeridos))
-                return DefaultDocumentosRequeridos.ToList();
+                return DropdownConstants.DocumentosClienteRequeridos.ToList();
 
             try
             {
                 return JsonSerializer.Deserialize<List<TipoDocumentoCliente>>(config.TiposDocumentoRequeridos)
-                    ?? DefaultDocumentosRequeridos.ToList();
+                    ?? DropdownConstants.DocumentosClienteRequeridos.ToList();
             }
             catch
             {
-                return DefaultDocumentosRequeridos.ToList();
+                return DropdownConstants.DocumentosClienteRequeridos.ToList();
             }
         }
 
@@ -438,7 +431,7 @@ namespace TheBuryProject.Services
                 return resultado;
             }
 
-            var hoy = DateTime.Today;
+            var hoy = DateTime.UtcNow.Date;
 
             // Buscar cuotas vencidas del cliente
             var cuotasVencidas = await _context.Cuotas
@@ -557,7 +550,7 @@ namespace TheBuryProject.Services
             config.DiasValidezEvaluacion = viewModel.DiasValidezEvaluacion;
             config.AuditoriaActiva = viewModel.AuditoriaActiva;
 
-            config.FechaUltimaModificacion = DateTime.Now;
+            config.FechaUltimaModificacion = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             _logger.LogInformation("Configuración de crédito actualizada");

@@ -655,7 +655,9 @@ namespace TheBuryProject.Data
 
                 entity.Property(e => e.CAE).HasMaxLength(50);
 
-                entity.HasIndex(e => e.Numero).IsUnique();
+                entity.HasIndex(e => e.Numero)
+                    .IsUnique()
+                    .HasFilter("IsDeleted = 0");
                 entity.HasIndex(e => e.CAE);
 
                 entity.HasOne(e => e.Venta)
@@ -976,8 +978,10 @@ namespace TheBuryProject.Data
                 entity.Property(e => e.PuntosRestarPorDiaMora).HasPrecision(8, 4);
                 entity.Property(e => e.PorcentajeRecuperacionScore).HasPrecision(5, 2);
 
-                // Campos deprecated (compatibilidad)
+                // Campos deprecated (compatibilidad con DB existente)
+#pragma warning disable CS0618 // Type or member is obsolete
                 entity.Property(e => e.PorcentajeRecargo).HasPrecision(5, 2);
+#pragma warning restore CS0618
             });
 
             // =======================
@@ -1184,6 +1188,13 @@ namespace TheBuryProject.Data
                 entity.HasIndex(e => e.FechaSolicitud);
                 entity.HasIndex(e => e.FechaAplicacion);
                 entity.HasIndex(e => e.SolicitadoPor);
+                entity.HasIndex(e => e.BatchPadreId);
+
+                // Relación self-referencing para reversiones
+                entity.HasOne(e => e.BatchPadre)
+                    .WithOne(e => e.BatchReversion)
+                    .HasForeignKey<PriceChangeBatch>(e => e.BatchPadreId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
             });
 

@@ -30,12 +30,10 @@
                         <label class="form-label">Tipo de Alerta</label>
                         <select name="tipo" class="form-select" data-auto-submit="true">
                             <option value="">Todas</option>
-                            <option value="0" selected="@(qTipo == "0")">Próximo a Vencer</option>
-                            <option value="1" selected="@(qTipo == "1")">Vencida</option>
-                            <option value="2" selected="@(qTipo == "2")">Mora Leve</option>
-                            <option value="3" selected="@(qTipo == "3")">Mora Moderada</option>
-                            <option value="4" selected="@(qTipo == "4")">Mora Grave</option>
-                            <option value="5" selected="@(qTipo == "5")">Mora Crítica</option>
+                            <option value="1" selected="@(qTipo == "1")">Cuota Vencida</option>
+                            <option value="2" selected="@(qTipo == "2")">Próximo Vencimiento</option>
+                            <option value="3" selected="@(qTipo == "3")">Mora Elevada</option>
+                            <option value="4" selected="@(qTipo == "4")">Cliente Riesgo</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -45,6 +43,7 @@
                             <option value="1" selected="@(qPrioridad == "1")">Baja</option>
                             <option value="2" selected="@(qPrioridad == "2")">Media</option>
                             <option value="3" selected="@(qPrioridad == "3")">Alta</option>
+                            <option value="4" selected="@(qPrioridad == "4")">Crítica</option>
                         </select>
                     </div>
                     <div class="col-md-3">

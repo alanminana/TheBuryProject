@@ -1,4 +1,6 @@
 ﻿@model TheBuryProject.ViewModels.ClienteFilterViewModel
+@using TheBuryProject.Models.Enums
+@using TheBuryProject.Helpers
 @{
     ViewData["Title"] = "Clientes";
     var listReturnUrl = Context.Request.Path + Context.Request.QueryString;
@@ -130,11 +132,17 @@
                                 <tbody>
                                     @foreach (var cliente in Model.Clientes)
                                     {
-                                        var badgeClass = cliente.PuntajeRiesgo >= 7
-                                        ? "bg-success"
-                                        : cliente.PuntajeRiesgo >= 4
-                                        ? "bg-warning text-dark"
-                                        : "bg-danger";
+                                        // Determinar badge según NivelRiesgo enum
+                                        var badgeClass = cliente.NivelRiesgo switch
+                                        {
+                                            NivelRiesgoCredito.AprobadoTotal => "bg-success",
+                                            NivelRiesgoCredito.AprobadoLimitado => "bg-info",
+                                            NivelRiesgoCredito.AprobadoCondicional => "bg-warning text-dark",
+                                            NivelRiesgoCredito.RechazadoRevisar => "bg-warning text-dark",
+                                            NivelRiesgoCredito.Rechazado => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                        var nivelTexto = EnumHelper.GetDisplayName(cliente.NivelRiesgo);
 
                                         <tr>
                                             <td>
@@ -167,8 +175,8 @@
                                                 }
                                             </td>
                                             <td class="text-center">
-                                                <span class="badge @badgeClass fs-6">
-                                                    @cliente.PuntajeRiesgo.ToString("F1")
+                                                <span class="badge @badgeClass fs-6" title="Puntaje: @cliente.PuntajeRiesgo.ToString("F1")">
+                                                    @nivelTexto
                                                 </span>
                                             </td>
                                             <td class="text-center">

@@ -1,7 +1,9 @@
+using TheBuryProject.Models.Enums;
+
 namespace TheBuryProject.Helpers
 {
     /// <summary>
-    /// Contiene constantes para listas desplegables reutilizables en toda la aplicaci髇
+    /// Contiene constantes para listas desplegables reutilizables en toda la aplicaci贸n
     /// </summary>
     public static class DropdownConstants
     {
@@ -9,26 +11,40 @@ namespace TheBuryProject.Helpers
 
         public static readonly string[] EstadosCiviles = 
         {
-            "Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a", "Uni髇 de hecho"
+            "Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a", "Uni贸n de hecho"
         };
 
         public static readonly string[] TiposEmpleo = 
         {
-            "Relaci髇 de dependencia", "Aut髇omo", "Monotributista", "Informal"
+            "Relaci贸n de dependencia", "Aut贸nomo", "Monotributista", "Informal"
         };
 
         public static readonly string[] Provincias = 
         {   
-            "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "C髍doba",
-            "Corrientes", "Entre R韔s", "Formosa", "Jujuy", "La Pampa", "La Rioja",
-            "Mendoza", "Misiones", "Neuqu閚", "R韔 Negro", "Salta", "San Juan",
+            "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "C贸rdoba",
+            "Corrientes", "Entre R铆os", "Formosa", "Jujuy", "La Pampa", "La Rioja",
+            "Mendoza", "Misiones", "Neuqu茅n", "R铆o Negro", "Salta", "San Juan",
             "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero",
-            "Tierra del Fuego", "Tucum醤"
+            "Tierra del Fuego", "Tucum谩n"
         };
 
+        /// <summary>
+        /// Documentos obligatorios para aprobar cr茅dito.
+        /// Nota: Veraz/CUIL son opcionales (dan puntos extra pero no son requisito).
+        /// </summary>
+        public static readonly TipoDocumentoCliente[] DocumentosClienteRequeridos =
+        {
+            TipoDocumentoCliente.DNI,
+            TipoDocumentoCliente.ReciboSueldo,
+            TipoDocumentoCliente.Servicio
+        };
+
+        /// <summary>
+        /// Nombres de documentos requeridos (para UI).
+        /// </summary>
         public static readonly string[] DocumentosRequeridos = 
         {
-            "DNI", "Recibo de Sueldo", "Servicio (Luz/Gas/Agua)", "Veraz"
+            "DNI", "Recibo de Sueldo", "Servicio (Luz/Gas/Agua)"
         };
     }
 }

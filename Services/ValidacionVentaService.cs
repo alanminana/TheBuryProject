@@ -37,29 +37,13 @@ namespace TheBuryProject.Services
                 "Iniciando prevalidación para cliente {ClienteId}, monto {Monto}",
                 clienteId, monto);
 
-            var resultado = new PrevalidacionResultViewModel
-            {
-                ClienteId = clienteId,
-                MontoSolicitado = monto,
-                Timestamp = DateTime.UtcNow
-            };
-
             try
             {
-                // 1. Evaluar aptitud crediticia (sin guardar)
-                var aptitud = await _aptitudService.EvaluarAptitudSinGuardarAsync(clienteId);
-
-                // 2. Poblar información básica del resultado
-                PoblarDatosBasicosPrevalidacion(resultado, aptitud);
-
-                // 3. Evaluar según estado de aptitud
-                EvaluarEstadoAptitud(resultado, aptitud, monto);
-
-                // 4. Si pasó las validaciones básicas, verificar cupo para el monto específico
-                if (resultado.Resultado != ResultadoPrevalidacion.NoViable)
-                {
-                    await VerificarCupoParaMontoPrevalidacion(resultado, clienteId, monto);
-                }
+                // Usar evaluación unificada
+                var evaluacion = await EvaluarCreditoUnificadoAsync(clienteId, monto);
+                
+                // Mapear a PrevalidacionResultViewModel
+                var resultado = MapearAPrevalidacion(evaluacion);
 
                 _logger.LogInformation(
                     "Prevalidación completada para cliente {ClienteId}: {Resultado}",
@@ -71,485 +55,323 @@ namespace TheBuryProject.Services
             {
                 _logger.LogError(ex, "Error en prevalidación para cliente {ClienteId}", clienteId);
 
-                resultado.Resultado = ResultadoPrevalidacion.NoViable;
-                resultado.Motivos.Add(new MotivoPrevalidacion
+                return new PrevalidacionResultViewModel
                 {
-                    Categoria = CategoriaMotivo.Configuracion,
-                    Descripcion = "Error al evaluar aptitud crediticia",
-                    EsBloqueante = true
-                });
-
-                return resultado;
-            }
-        }
-
-        private void PoblarDatosBasicosPrevalidacion(
-            PrevalidacionResultViewModel resultado,
-            AptitudCrediticiaViewModel aptitud)
-        {
-            // Documentación
-            if (aptitud.Documentacion != null)
-            {
-                resultado.DocumentacionCompleta = aptitud.Documentacion.Completa;
-                resultado.DocumentosFaltantes = aptitud.Documentacion.DocumentosFaltantes ?? new List<string>();
-                resultado.DocumentosVencidos = aptitud.Documentacion.DocumentosVencidos ?? new List<string>();
-            }
-
-            // Cupo
-            if (aptitud.Cupo != null)
-            {
-                resultado.LimiteCredito = aptitud.Cupo.LimiteCredito;
-                resultado.CupoDisponible = aptitud.Cupo.CupoDisponible;
-                resultado.CreditoUtilizado = aptitud.Cupo.CreditoUtilizado;
-            }
-
-            // Mora
-            if (aptitud.Mora != null)
-            {
-                resultado.TieneMora = aptitud.Mora.TieneMora;
-                resultado.DiasMora = aptitud.Mora.DiasMaximoMora;
-                resultado.MontoMora = aptitud.Mora.MontoTotalMora;
-            }
-        }
-
-        private void EvaluarEstadoAptitud(
-            PrevalidacionResultViewModel resultado,
-            AptitudCrediticiaViewModel aptitud,
-            decimal monto)
-        {
-            // Verificar configuración del sistema
-            if (!aptitud.ConfiguracionCompleta)
-            {
-                resultado.Resultado = ResultadoPrevalidacion.NoViable;
-                resultado.Motivos.Add(new MotivoPrevalidacion
-                {
-                    Categoria = CategoriaMotivo.Configuracion,
-                    Titulo = "Configuración del sistema",
-                    Descripcion = aptitud.AdvertenciaConfiguracion ?? "Sistema de crédito no configurado",
-                    AccionSugerida = "Contactar al administrador",
-                    EsBloqueante = true
-                });
-                return;
-            }
-
-            switch (aptitud.Estado)
-            {
-                case EstadoCrediticioCliente.NoEvaluado:
-                    EvaluarClienteNoEvaluado(resultado, aptitud);
-                    break;
-
-                case EstadoCrediticioCliente.NoApto:
-                    EvaluarClienteNoApto(resultado, aptitud);
-                    break;
-
-                case EstadoCrediticioCliente.RequiereAutorizacion:
-                    EvaluarClienteRequiereAutorizacion(resultado, aptitud);
-                    break;
-
-                case EstadoCrediticioCliente.Apto:
-                    resultado.Resultado = ResultadoPrevalidacion.Aprobable;
-                    break;
-            }
-        }
-
-        private void EvaluarClienteNoEvaluado(
-            PrevalidacionResultViewModel resultado,
-            AptitudCrediticiaViewModel aptitud)
-        {
-            resultado.Resultado = ResultadoPrevalidacion.NoViable;
-
-            // Analizar qué falta para estar evaluado
-            if (aptitud.Documentacion != null && !aptitud.Documentacion.Completa)
-            {
-                var faltantes = string.Join(", ", aptitud.Documentacion.DocumentosFaltantes);
-                resultado.Motivos.Add(new MotivoPrevalidacion
-                {
-                    Categoria = CategoriaMotivo.Documentacion,
-                    Titulo = "Documentación incompleta",
-                    Descripcion = $"Documentación faltante: {faltantes}",
-                    AccionSugerida = "Cargar documentación obligatoria",
-                    UrlAccion = $"/DocumentoCliente/Index?clienteId={resultado.ClienteId}",
-                    EsBloqueante = true
-                });
-            }
-
-            if (aptitud.Cupo != null && !aptitud.Cupo.TieneCupoAsignado)
-            {
-                resultado.Motivos.Add(new MotivoPrevalidacion
-                {
-                    Categoria = CategoriaMotivo.Cupo,
-                    Titulo = "Sin límite de crédito",
-                    Descripcion = "El cliente no tiene límite de crédito asignado.",
-                    AccionSugerida = "Asignar límite de crédito desde la ficha del cliente",
-                    UrlAccion = $"/Cliente/Details/{resultado.ClienteId}",
-                    EsBloqueante = true
-                });
-            }
-
-            // Si no hay motivos específicos, agregar uno genérico
-            if (!resultado.Motivos.Any())
-            {
-                resultado.Motivos.Add(new MotivoPrevalidacion
-                {
-                    Categoria = CategoriaMotivo.EstadoCliente,
-                    Titulo = "Cliente sin evaluar",
-                    Descripcion = "El cliente no ha sido evaluado crediticiamente.",
-                    AccionSugerida = "Completar evaluación del cliente",
-                    UrlAccion = $"/Cliente/Details/{resultado.ClienteId}",
-                    EsBloqueante = true
-                });
-            }
-        }
-
-        private void EvaluarClienteNoApto(
-            PrevalidacionResultViewModel resultado,
-            AptitudCrediticiaViewModel aptitud)
-        {
-            resultado.Resultado = ResultadoPrevalidacion.NoViable;
-
-            // Analizar los detalles para determinar qué bloquea
-            foreach (var detalle in aptitud.Detalles.Where(d => d.EsBloqueo))
-            {
-                var motivo = new MotivoPrevalidacion
-                {
-                    Descripcion = detalle.Descripcion,
-                    EsBloqueante = true
-                };
-
-                switch (detalle.Categoria)
-                {
-                    case "Documentación":
-                        motivo.Categoria = CategoriaMotivo.Documentacion;
-                        motivo.Titulo = "Documentación";
-                        motivo.AccionSugerida = "Actualizar documentación";
-                        motivo.UrlAccion = $"/DocumentoCliente/Index?clienteId={resultado.ClienteId}";
-                        break;
-
-                    case "Cupo":
-                        motivo.Categoria = CategoriaMotivo.Cupo;
-                        motivo.Titulo = "Cupo";
-                        motivo.AccionSugerida = "Asignar o aumentar límite de crédito";
-                        motivo.UrlAccion = $"/Cliente/Details/{resultado.ClienteId}";
-                        break;
-
-                    case "Mora":
-                        motivo.Categoria = CategoriaMotivo.Mora;
-                        motivo.Titulo = "Mora activa";
-                        motivo.AccionSugerida = "Regularizar mora antes de continuar";
-                        motivo.UrlAccion = $"/Mora/FichaCliente/{resultado.ClienteId}";
-                        break;
-
-                    default:
-                        motivo.Categoria = CategoriaMotivo.EstadoCliente;
-                        motivo.Titulo = "Estado del cliente";
-                        break;
-                }
-
-                resultado.Motivos.Add(motivo);
-            }
-
-            // Si no hay detalles específicos, usar el motivo general
-            if (!resultado.Motivos.Any())
-            {
-                resultado.Motivos.Add(new MotivoPrevalidacion
-                {
-                    Categoria = CategoriaMotivo.EstadoCliente,
-                    Titulo = "Cliente no apto",
-                    Descripcion = aptitud.Motivo ?? "Cliente no apto para crédito",
-                    AccionSugerida = "Revisar estado del cliente",
-                    UrlAccion = $"/Cliente/Details/{resultado.ClienteId}",
-                    EsBloqueante = true
-                });
-            }
-        }
-
-        private void EvaluarClienteRequiereAutorizacion(
-            PrevalidacionResultViewModel resultado,
-            AptitudCrediticiaViewModel aptitud)
-        {
-            resultado.Resultado = ResultadoPrevalidacion.RequiereAutorizacion;
-
-            // Analizar razones de por qué requiere autorización
-            foreach (var detalle in aptitud.Detalles.Where(d => !d.EsBloqueo))
-            {
-                var motivo = new MotivoPrevalidacion
-                {
-                    Descripcion = detalle.Descripcion,
-                    EsBloqueante = false
-                };
-
-                switch (detalle.Categoria)
-                {
-                    case "Mora":
-                        motivo.Categoria = CategoriaMotivo.Mora;
-                        motivo.Titulo = "Mora no bloqueante";
-                        motivo.AccionSugerida = "Supervisor debe autorizar venta";
-                        break;
-
-                    default:
-                        motivo.Categoria = CategoriaMotivo.EstadoCliente;
-                        motivo.Titulo = "Requiere revisión";
-                        break;
-                }
-
-                resultado.Motivos.Add(motivo);
-            }
-
-            // Si no hay detalles específicos, agregar razón genérica
-            if (!resultado.Motivos.Any())
-            {
-                resultado.Motivos.Add(new MotivoPrevalidacion
-                {
-                    Categoria = CategoriaMotivo.EstadoCliente,
-                    Titulo = "Requiere autorización",
-                    Descripcion = aptitud.Motivo ?? "Cliente requiere autorización para crédito",
-                    AccionSugerida = "La venta requerirá aprobación de un supervisor",
-                    EsBloqueante = false
-                });
-            }
-        }
-
-        private async Task VerificarCupoParaMontoPrevalidacion(
-            PrevalidacionResultViewModel resultado,
-            int clienteId,
-            decimal monto)
-        {
-            // Obtener cupo disponible actual
-            var cupoDisponible = await _aptitudService.GetCupoDisponibleAsync(clienteId);
-            resultado.CupoDisponible = cupoDisponible;
-
-            if (monto > cupoDisponible)
-            {
-                // Si ya es NoViable, no cambiar
-                if (resultado.Resultado == ResultadoPrevalidacion.NoViable)
-                    return;
-
-                // Si excede cupo pero hay cupo asignado, requiere autorización
-                if (resultado.LimiteCredito.HasValue && resultado.LimiteCredito.Value > 0)
-                {
-                    resultado.Resultado = ResultadoPrevalidacion.RequiereAutorizacion;
-                    resultado.Motivos.Add(new MotivoPrevalidacion
+                    ClienteId = clienteId,
+                    MontoSolicitado = monto,
+                    Timestamp = DateTime.UtcNow,
+                    Resultado = ResultadoPrevalidacion.NoViable,
+                    Motivos = new List<MotivoPrevalidacion>
                     {
-                        Categoria = CategoriaMotivo.Cupo,
-                        Titulo = "Cupo insuficiente",
-                        Descripcion = $"El monto solicitado ({monto:C0}) excede el cupo disponible ({cupoDisponible:C0}).",
-                        AccionSugerida = "Supervisor debe autorizar exceso de cupo",
-                        EsBloqueante = false
-                    });
-                }
-                else
-                {
-                    // Sin cupo asignado, es bloqueante
-                    resultado.Resultado = ResultadoPrevalidacion.NoViable;
-                    resultado.Motivos.Add(new MotivoPrevalidacion
-                    {
-                        Categoria = CategoriaMotivo.Cupo,
-                        Titulo = "Sin límite de crédito",
-                        Descripcion = "El cliente no tiene límite de crédito asignado.",
-                        AccionSugerida = "Asignar límite de crédito al cliente",
-                        UrlAccion = $"/Cliente/Details/{clienteId}",
-                        EsBloqueante = true
-                    });
-                }
+                        new()
+                        {
+                            Categoria = CategoriaMotivo.Configuracion,
+                            Descripcion = "Error al evaluar aptitud crediticia",
+                            EsBloqueante = true
+                        }
+                    }
+                };
             }
         }
 
         #endregion
 
-        #region Validación de Venta (Métodos existentes)
+        #region Validación de Venta
 
         public async Task<ValidacionVentaResult> ValidarVentaCreditoPersonalAsync(
             int clienteId,
             decimal montoVenta,
             int? creditoId = null)
         {
-            var resultado = new ValidacionVentaResult();
-
-            // 1. Evaluar aptitud crediticia del cliente (sin guardar aún)
-            var aptitud = await _aptitudService.EvaluarAptitudSinGuardarAsync(clienteId);
-            resultado.EstadoAptitud = aptitud.Estado;
-
-            // 2. Procesar según estado de aptitud
-            switch (aptitud.Estado)
-            {
-                case EstadoCrediticioCliente.NoEvaluado:
-                    await ProcesarClienteNoEvaluado(resultado, clienteId, aptitud);
-                    break;
-
-                case EstadoCrediticioCliente.NoApto:
-                    ProcesarClienteNoApto(resultado, aptitud);
-                    break;
-
-                case EstadoCrediticioCliente.RequiereAutorizacion:
-                    await ProcesarClienteRequiereAutorizacion(resultado, clienteId, montoVenta, aptitud, creditoId);
-                    break;
-
-                case EstadoCrediticioCliente.Apto:
-                    await ProcesarClienteApto(resultado, clienteId, montoVenta, creditoId);
-                    break;
-            }
-
-            return resultado;
+            // Usar evaluación unificada
+            var evaluacion = await EvaluarCreditoUnificadoAsync(clienteId, montoVenta, creditoId);
+            
+            // Mapear a ValidacionVentaResult
+            return MapearAValidacionVenta(evaluacion);
         }
 
-        private async Task ProcesarClienteNoEvaluado(
-            ValidacionVentaResult resultado,
-            int clienteId,
+        #endregion
+
+        #region Evaluación Unificada (Core)
+
+        /// <summary>
+        /// Evaluación unificada de crédito que puede mapearse a cualquier ViewModel de resultado.
+        /// </summary>
+        private async Task<EvaluacionCrediticiaIntermedia> EvaluarCreditoUnificadoAsync(
+            int clienteId, 
+            decimal monto, 
+            int? creditoId = null)
+        {
+            var evaluacion = new EvaluacionCrediticiaIntermedia
+            {
+                ClienteId = clienteId,
+                MontoSolicitado = monto
+            };
+
+            // 1. Evaluar aptitud crediticia del cliente
+            var aptitud = await _aptitudService.EvaluarAptitudSinGuardarAsync(clienteId);
+
+            // 2. Poblar datos básicos
+            PoblarDatosBasicos(evaluacion, aptitud);
+
+            // 3. Evaluar según estado de aptitud
+            EvaluarSegunEstadoAptitud(evaluacion, aptitud);
+
+            // 4. Verificar cupo para el monto específico (si no es NoViable)
+            if (!evaluacion.EsNoViable)
+            {
+                await VerificarCupoUnificado(evaluacion, clienteId, monto, creditoId);
+            }
+
+            return evaluacion;
+        }
+
+        private void PoblarDatosBasicos(
+            EvaluacionCrediticiaIntermedia evaluacion,
             AptitudCrediticiaViewModel aptitud)
         {
-            // Cliente NoEvaluado = NoViable (no puede guardarse venta)
-            resultado.NoViable = true;
-            resultado.PendienteRequisitos = true;
+            // Estado de aptitud
+            evaluacion.EstadoAptitud = aptitud.Estado;
+            
+            // Documentación
+            if (aptitud.Documentacion != null)
+            {
+                evaluacion.DocumentacionCompleta = aptitud.Documentacion.Completa;
+                evaluacion.DocumentosFaltantes = aptitud.Documentacion.DocumentosFaltantes ?? new List<string>();
+                evaluacion.DocumentosVencidos = aptitud.Documentacion.DocumentosVencidos ?? new List<string>();
+            }
 
-            // Verificar si es por falta de configuración
+            // Cupo
+            if (aptitud.Cupo != null)
+            {
+                evaluacion.LimiteCredito = aptitud.Cupo.LimiteCredito;
+                evaluacion.CupoDisponible = aptitud.Cupo.CupoDisponible;
+                evaluacion.CreditoUtilizado = aptitud.Cupo.CreditoUtilizado;
+            }
+
+            // Mora
+            if (aptitud.Mora != null)
+            {
+                evaluacion.TieneMora = aptitud.Mora.TieneMora;
+                evaluacion.DiasMora = aptitud.Mora.DiasMaximoMora;
+                evaluacion.MontoMora = aptitud.Mora.MontoTotalMora;
+            }
+        }
+
+        private void EvaluarSegunEstadoAptitud(
+            EvaluacionCrediticiaIntermedia evaluacion,
+            AptitudCrediticiaViewModel aptitud)
+        {
+            // Verificar configuración del sistema
             if (!aptitud.ConfiguracionCompleta)
             {
-                resultado.RequisitosPendientes.Add(new RequisitoPendiente
+                evaluacion.Resultado = ResultadoPrevalidacion.NoViable;
+                evaluacion.Problemas.Add(new ProblemaCredito
                 {
-                    Tipo = TipoRequisitoPendiente.SinEvaluacionCrediticia,
-                    Descripcion = "Sistema de crédito no configurado",
-                    AccionRequerida = aptitud.AdvertenciaConfiguracion ?? "Contactar al administrador"
+                    Categoria = CategoriaMotivo.Configuracion,
+                    Titulo = "Configuración del sistema",
+                    Descripcion = aptitud.AdvertenciaConfiguracion ?? "Sistema de crédito no configurado",
+                    AccionSugerida = "Contactar al administrador",
+                    EsBloqueante = true,
+                    TipoRequisito = TipoRequisitoPendiente.SinEvaluacionCrediticia
                 });
                 return;
             }
 
-            // Verificar documentación
+            switch (aptitud.Estado)
+            {
+                case EstadoCrediticioCliente.NoEvaluado:
+                    EvaluarClienteNoEvaluadoUnificado(evaluacion, aptitud);
+                    break;
+
+                case EstadoCrediticioCliente.NoApto:
+                    EvaluarClienteNoAptoUnificado(evaluacion, aptitud);
+                    break;
+
+                case EstadoCrediticioCliente.RequiereAutorizacion:
+                    EvaluarClienteRequiereAutorizacionUnificado(evaluacion, aptitud);
+                    break;
+
+                case EstadoCrediticioCliente.Apto:
+                    evaluacion.Resultado = ResultadoPrevalidacion.Aprobable;
+                    break;
+            }
+        }
+
+        private void EvaluarClienteNoEvaluadoUnificado(
+            EvaluacionCrediticiaIntermedia evaluacion,
+            AptitudCrediticiaViewModel aptitud)
+        {
+            evaluacion.Resultado = ResultadoPrevalidacion.NoViable;
+
+            // Analizar qué falta para estar evaluado
             if (aptitud.Documentacion != null && !aptitud.Documentacion.Completa)
             {
                 var faltantes = string.Join(", ", aptitud.Documentacion.DocumentosFaltantes);
-                resultado.RequisitosPendientes.Add(new RequisitoPendiente
+                evaluacion.Problemas.Add(new ProblemaCredito
                 {
-                    Tipo = TipoRequisitoPendiente.DocumentacionFaltante,
+                    Categoria = CategoriaMotivo.Documentacion,
+                    Titulo = "Documentación incompleta",
                     Descripcion = $"Documentación faltante: {faltantes}",
-                    AccionRequerida = "Cargar documentación obligatoria",
-                    UrlAccion = $"/DocumentoCliente/Index?clienteId={clienteId}"
+                    AccionSugerida = "Cargar documentación obligatoria",
+                    UrlAccion = $"/DocumentoCliente/Index?clienteId={evaluacion.ClienteId}",
+                    EsBloqueante = true,
+                    TipoRequisito = TipoRequisitoPendiente.DocumentacionFaltante
                 });
             }
 
-            // Verificar límite de crédito
             if (aptitud.Cupo != null && !aptitud.Cupo.TieneCupoAsignado)
             {
-                resultado.RequisitosPendientes.Add(new RequisitoPendiente
+                evaluacion.Problemas.Add(new ProblemaCredito
                 {
-                    Tipo = TipoRequisitoPendiente.SinLimiteCredito,
-                    Descripcion = "Cliente sin límite de crédito asignado",
-                    AccionRequerida = "Asignar límite de crédito al cliente",
-                    UrlAccion = $"/Cliente/Details/{clienteId}"
+                    Categoria = CategoriaMotivo.Cupo,
+                    Titulo = "Sin límite de crédito",
+                    Descripcion = "El cliente no tiene límite de crédito asignado.",
+                    AccionSugerida = "Asignar límite de crédito desde la ficha del cliente",
+                    UrlAccion = $"/Cliente/Details/{evaluacion.ClienteId}",
+                    EsBloqueante = true,
+                    TipoRequisito = TipoRequisitoPendiente.SinLimiteCredito
                 });
             }
 
-            await Task.CompletedTask;
+            // Si no hay problemas específicos, agregar uno genérico
+            if (!evaluacion.Problemas.Any())
+            {
+                evaluacion.Problemas.Add(new ProblemaCredito
+                {
+                    Categoria = CategoriaMotivo.EstadoCliente,
+                    Titulo = "Cliente sin evaluar",
+                    Descripcion = "El cliente no ha sido evaluado crediticiamente.",
+                    AccionSugerida = "Completar evaluación del cliente",
+                    UrlAccion = $"/Cliente/Details/{evaluacion.ClienteId}",
+                    EsBloqueante = true,
+                    TipoRequisito = TipoRequisitoPendiente.SinEvaluacionCrediticia
+                });
+            }
         }
 
-        private void ProcesarClienteNoApto(
-            ValidacionVentaResult resultado,
+        private void EvaluarClienteNoAptoUnificado(
+            EvaluacionCrediticiaIntermedia evaluacion,
             AptitudCrediticiaViewModel aptitud)
         {
-            // Cliente NoApto = NoViable (no puede guardarse venta)
-            resultado.NoViable = true;
-            resultado.PendienteRequisitos = true;
+            evaluacion.Resultado = ResultadoPrevalidacion.NoViable;
 
             // Analizar los detalles para determinar qué bloquea
             foreach (var detalle in aptitud.Detalles.Where(d => d.EsBloqueo))
             {
+                var problema = new ProblemaCredito
+                {
+                    Descripcion = detalle.Descripcion,
+                    EsBloqueante = true
+                };
+
                 switch (detalle.Categoria)
                 {
                     case "Documentación":
-                        resultado.RequisitosPendientes.Add(new RequisitoPendiente
-                        {
-                            Tipo = detalle.Descripcion.Contains("vencido")
-                                ? TipoRequisitoPendiente.DocumentacionFaltante
-                                : TipoRequisitoPendiente.DocumentacionFaltante,
-                            Descripcion = detalle.Descripcion,
-                            AccionRequerida = "Actualizar documentación"
-                        });
+                        problema.Categoria = CategoriaMotivo.Documentacion;
+                        problema.Titulo = "Documentación";
+                        problema.AccionSugerida = "Actualizar documentación";
+                        problema.UrlAccion = $"/DocumentoCliente/Index?clienteId={evaluacion.ClienteId}";
+                        problema.TipoRequisito = TipoRequisitoPendiente.DocumentacionFaltante;
                         break;
 
                     case "Cupo":
-                        resultado.RequisitosPendientes.Add(new RequisitoPendiente
-                        {
-                            Tipo = TipoRequisitoPendiente.SinLimiteCredito,
-                            Descripcion = detalle.Descripcion,
-                            AccionRequerida = "Asignar o aumentar límite de crédito"
-                        });
+                        problema.Categoria = CategoriaMotivo.Cupo;
+                        problema.Titulo = "Cupo";
+                        problema.AccionSugerida = "Asignar o aumentar límite de crédito";
+                        problema.UrlAccion = $"/Cliente/Details/{evaluacion.ClienteId}";
+                        problema.TipoRequisito = TipoRequisitoPendiente.SinLimiteCredito;
                         break;
 
                     case "Mora":
-                        resultado.RequisitosPendientes.Add(new RequisitoPendiente
-                        {
-                            Tipo = TipoRequisitoPendiente.ClienteNoApto,
-                            Descripcion = detalle.Descripcion,
-                            AccionRequerida = "Regularizar mora antes de continuar"
-                        });
+                        problema.Categoria = CategoriaMotivo.Mora;
+                        problema.Titulo = "Mora activa";
+                        problema.AccionSugerida = "Regularizar mora antes de continuar";
+                        problema.UrlAccion = $"/Mora/FichaCliente/{evaluacion.ClienteId}";
+                        problema.TipoRequisito = TipoRequisitoPendiente.ClienteNoApto;
+                        break;
+
+                    default:
+                        problema.Categoria = CategoriaMotivo.EstadoCliente;
+                        problema.Titulo = "Estado del cliente";
+                        problema.TipoRequisito = TipoRequisitoPendiente.ClienteNoApto;
                         break;
                 }
+
+                evaluacion.Problemas.Add(problema);
             }
 
-            if (!resultado.RequisitosPendientes.Any())
+            // Si no hay detalles específicos, usar el motivo general
+            if (!evaluacion.Problemas.Any())
             {
-                resultado.RequisitosPendientes.Add(new RequisitoPendiente
+                evaluacion.Problemas.Add(new ProblemaCredito
                 {
-                    Tipo = TipoRequisitoPendiente.ClienteNoApto,
+                    Categoria = CategoriaMotivo.EstadoCliente,
+                    Titulo = "Cliente no apto",
                     Descripcion = aptitud.Motivo ?? "Cliente no apto para crédito",
-                    AccionRequerida = "Revisar estado del cliente"
+                    AccionSugerida = "Revisar estado del cliente",
+                    UrlAccion = $"/Cliente/Details/{evaluacion.ClienteId}",
+                    EsBloqueante = true,
+                    TipoRequisito = TipoRequisitoPendiente.ClienteNoApto
                 });
             }
         }
 
-        private async Task ProcesarClienteRequiereAutorizacion(
-            ValidacionVentaResult resultado,
-            int clienteId,
-            decimal montoVenta,
-            AptitudCrediticiaViewModel aptitud,
-            int? creditoId)
+        private void EvaluarClienteRequiereAutorizacionUnificado(
+            EvaluacionCrediticiaIntermedia evaluacion,
+            AptitudCrediticiaViewModel aptitud)
         {
-            // El cliente puede recibir crédito pero requiere autorización
-            resultado.RequiereAutorizacion = true;
+            evaluacion.Resultado = ResultadoPrevalidacion.RequiereAutorizacion;
 
-            // Agregar razones de autorización
+            // Analizar razones de por qué requiere autorización
             foreach (var detalle in aptitud.Detalles.Where(d => !d.EsBloqueo))
             {
-                if (detalle.Categoria == "Mora")
+                var problema = new ProblemaCredito
                 {
-                    resultado.RazonesAutorizacion.Add(new RazonAutorizacion
-                    {
-                        Tipo = TipoRazonAutorizacion.MoraActiva,
-                        Descripcion = "Cliente tiene mora activa",
-                        DetalleAdicional = detalle.Descripcion,
-                        ValorAsociado = aptitud.Mora?.DiasMaximoMora
-                    });
+                    Descripcion = detalle.Descripcion,
+                    EsBloqueante = false,
+                    ValorAsociado = aptitud.Mora?.DiasMaximoMora
+                };
+
+                switch (detalle.Categoria)
+                {
+                    case "Mora":
+                        problema.Categoria = CategoriaMotivo.Mora;
+                        problema.Titulo = "Mora no bloqueante";
+                        problema.AccionSugerida = "Supervisor debe autorizar venta";
+                        problema.DetalleAdicional = detalle.Descripcion; // Incluye "mora" y días
+                        problema.TipoRazon = TipoRazonAutorizacion.MoraActiva;
+                        break;
+
+                    default:
+                        problema.Categoria = CategoriaMotivo.EstadoCliente;
+                        problema.Titulo = "Requiere revisión";
+                        problema.TipoRazon = TipoRazonAutorizacion.ClienteRequiereAutorizacion;
+                        break;
                 }
+
+                evaluacion.Problemas.Add(problema);
             }
 
-            // Agregar razón genérica si corresponde
-            if (!resultado.RazonesAutorizacion.Any())
+            // Si no hay detalles específicos, agregar razón genérica
+            if (!evaluacion.Problemas.Any())
             {
-                resultado.RazonesAutorizacion.Add(new RazonAutorizacion
+                evaluacion.Problemas.Add(new ProblemaCredito
                 {
-                    Tipo = TipoRazonAutorizacion.ClienteRequiereAutorizacion,
-                    Descripcion = "Cliente requiere autorización para crédito",
-                    DetalleAdicional = aptitud.Motivo
+                    Categoria = CategoriaMotivo.EstadoCliente,
+                    Titulo = "Requiere autorización",
+                    Descripcion = aptitud.Motivo ?? "Cliente requiere autorización para crédito",
+                    AccionSugerida = "La venta requerirá aprobación de un supervisor",
+                    EsBloqueante = false,
+                    TipoRazon = TipoRazonAutorizacion.ClienteRequiereAutorizacion
                 });
             }
-
-            // Verificar también si el monto excede el cupo
-            await VerificarCupoParaMonto(resultado, clienteId, montoVenta, creditoId);
         }
 
-        private async Task ProcesarClienteApto(
-            ValidacionVentaResult resultado,
+        private async Task VerificarCupoUnificado(
+            EvaluacionCrediticiaIntermedia evaluacion,
             int clienteId,
-            decimal montoVenta,
-            int? creditoId)
-        {
-            // Cliente apto, verificar que el monto no exceda el cupo
-            await VerificarCupoParaMonto(resultado, clienteId, montoVenta, creditoId);
-        }
-
-        private async Task VerificarCupoParaMonto(
-            ValidacionVentaResult resultado,
-            int clienteId,
-            decimal montoVenta,
+            decimal monto,
             int? creditoId)
         {
             // Si se especifica un crédito, verificar contra ese crédito específico
@@ -561,36 +383,49 @@ namespace TheBuryProject.Services
 
                 if (credito == null)
                 {
-                    resultado.PendienteRequisitos = true;
-                    resultado.RequisitosPendientes.Add(new RequisitoPendiente
+                    evaluacion.Resultado = ResultadoPrevalidacion.NoViable;
+                    evaluacion.Problemas.Add(new ProblemaCredito
                     {
-                        Tipo = TipoRequisitoPendiente.SinCreditoAprobado,
-                        Descripcion = "El crédito especificado no existe o fue eliminado"
+                        Categoria = CategoriaMotivo.EstadoCliente,
+                        Titulo = "Crédito no encontrado",
+                        Descripcion = "El crédito especificado no existe o fue eliminado",
+                        EsBloqueante = true,
+                        TipoRequisito = TipoRequisitoPendiente.SinCreditoAprobado
                     });
                     return;
                 }
 
                 if (credito.Estado != EstadoCredito.Activo && credito.Estado != EstadoCredito.Aprobado)
                 {
-                    resultado.PendienteRequisitos = true;
-                    resultado.RequisitosPendientes.Add(new RequisitoPendiente
+                    evaluacion.Resultado = ResultadoPrevalidacion.NoViable;
+                    evaluacion.Problemas.Add(new ProblemaCredito
                     {
-                        Tipo = TipoRequisitoPendiente.SinCreditoAprobado,
-                        Descripcion = $"El crédito no está activo (estado: {credito.Estado})"
+                        Categoria = CategoriaMotivo.EstadoCliente,
+                        Titulo = "Crédito no activo",
+                        Descripcion = $"El crédito no está activo (estado: {credito.Estado})",
+                        EsBloqueante = true,
+                        TipoRequisito = TipoRequisitoPendiente.SinCreditoAprobado
                     });
                     return;
                 }
 
-                if (montoVenta > credito.SaldoPendiente)
+                if (monto > credito.SaldoPendiente)
                 {
-                    resultado.RequiereAutorizacion = true;
-                    resultado.RazonesAutorizacion.Add(new RazonAutorizacion
+                    // Marcar como RequiereAutorizacion si aún no es NoViable
+                    if (evaluacion.Resultado != ResultadoPrevalidacion.NoViable)
                     {
-                        Tipo = TipoRazonAutorizacion.ExcedeCupo,
+                        evaluacion.Resultado = ResultadoPrevalidacion.RequiereAutorizacion;
+                    }
+                    evaluacion.Problemas.Add(new ProblemaCredito
+                    {
+                        Categoria = CategoriaMotivo.Cupo,
+                        Titulo = "Excede saldo disponible",
                         Descripcion = "El monto excede el saldo disponible del crédito",
-                        ValorAsociado = montoVenta,
+                        AccionSugerida = "Supervisor debe autorizar exceso",
+                        ValorAsociado = monto,
                         ValorLimite = credito.SaldoPendiente,
-                        DetalleAdicional = $"Solicitado: {montoVenta:C0}, Disponible: {credito.SaldoPendiente:C0}"
+                        EsBloqueante = false,
+                        TipoRazon = TipoRazonAutorizacion.ExcedeCupo
                     });
                 }
                 return;
@@ -598,19 +433,132 @@ namespace TheBuryProject.Services
 
             // Verificar contra el cupo general del cliente
             var cupoDisponible = await _aptitudService.GetCupoDisponibleAsync(clienteId);
-            if (montoVenta > cupoDisponible)
+            evaluacion.CupoDisponible = cupoDisponible;
+
+            if (monto > cupoDisponible)
             {
-                resultado.RequiereAutorizacion = true;
-                resultado.RazonesAutorizacion.Add(new RazonAutorizacion
+                // Si ya es NoViable, no cambiar
+                if (evaluacion.Resultado == ResultadoPrevalidacion.NoViable)
+                    return;
+
+                // Verificar si hay cupo asignado (limite o cupo > 0)
+                var tieneCupoAsignado = (evaluacion.LimiteCredito.HasValue && evaluacion.LimiteCredito.Value > 0) 
+                                       || cupoDisponible > 0;
+                
+                // Si excede cupo pero hay cupo asignado, requiere autorización
+                if (tieneCupoAsignado)
                 {
-                    Tipo = TipoRazonAutorizacion.ExcedeCupo,
-                    Descripcion = "El monto excede el cupo disponible del cliente",
-                    ValorAsociado = montoVenta,
-                    ValorLimite = cupoDisponible,
-                    DetalleAdicional = $"Solicitado: {montoVenta:C0}, Disponible: {cupoDisponible:C0}"
-                });
+                    evaluacion.Resultado = ResultadoPrevalidacion.RequiereAutorizacion;
+                    evaluacion.Problemas.Add(new ProblemaCredito
+                    {
+                        Categoria = CategoriaMotivo.Cupo,
+                        Titulo = "Cupo insuficiente",
+                        Descripcion = $"El monto solicitado ({monto:C0}) excede el cupo disponible ({cupoDisponible:C0}).",
+                        AccionSugerida = "Supervisor debe autorizar exceso de cupo",
+                        ValorAsociado = monto,
+                        ValorLimite = cupoDisponible,
+                        EsBloqueante = false,
+                        TipoRazon = TipoRazonAutorizacion.ExcedeCupo
+                    });
+                }
+                else
+                {
+                    // Sin cupo asignado, es bloqueante
+                    evaluacion.Resultado = ResultadoPrevalidacion.NoViable;
+                    evaluacion.Problemas.Add(new ProblemaCredito
+                    {
+                        Categoria = CategoriaMotivo.Cupo,
+                        Titulo = "Sin límite de crédito",
+                        Descripcion = "El cliente no tiene límite de crédito asignado.",
+                        AccionSugerida = "Asignar límite de crédito al cliente",
+                        UrlAccion = $"/Cliente/Details/{clienteId}",
+                        EsBloqueante = true,
+                        TipoRequisito = TipoRequisitoPendiente.SinLimiteCredito
+                    });
+                }
             }
         }
+
+        #endregion
+
+        #region Mappers
+
+        private PrevalidacionResultViewModel MapearAPrevalidacion(EvaluacionCrediticiaIntermedia evaluacion)
+        {
+            var resultado = new PrevalidacionResultViewModel
+            {
+                ClienteId = evaluacion.ClienteId,
+                MontoSolicitado = evaluacion.MontoSolicitado,
+                Resultado = evaluacion.Resultado,
+                Timestamp = DateTime.UtcNow,
+                LimiteCredito = evaluacion.LimiteCredito,
+                CupoDisponible = evaluacion.CupoDisponible,
+                CreditoUtilizado = evaluacion.CreditoUtilizado,
+                TieneMora = evaluacion.TieneMora,
+                DiasMora = evaluacion.DiasMora,
+                MontoMora = evaluacion.MontoMora,
+                DocumentacionCompleta = evaluacion.DocumentacionCompleta,
+                DocumentosFaltantes = evaluacion.DocumentosFaltantes,
+                DocumentosVencidos = evaluacion.DocumentosVencidos
+            };
+
+            foreach (var problema in evaluacion.Problemas)
+            {
+                resultado.Motivos.Add(new MotivoPrevalidacion
+                {
+                    Categoria = problema.Categoria,
+                    Titulo = problema.Titulo,
+                    Descripcion = problema.Descripcion,
+                    AccionSugerida = problema.AccionSugerida,
+                    UrlAccion = problema.UrlAccion,
+                    EsBloqueante = problema.EsBloqueante
+                });
+            }
+
+            return resultado;
+        }
+
+        private ValidacionVentaResult MapearAValidacionVenta(EvaluacionCrediticiaIntermedia evaluacion)
+        {
+            var resultado = new ValidacionVentaResult
+            {
+                NoViable = evaluacion.EsNoViable,
+                RequiereAutorizacion = evaluacion.RequiereAutorizacion,
+                PendienteRequisitos = evaluacion.EsNoViable,
+                EstadoAptitud = evaluacion.EstadoAptitud
+            };
+
+            foreach (var problema in evaluacion.Problemas)
+            {
+                if (problema.EsBloqueante)
+                {
+                    resultado.RequisitosPendientes.Add(new RequisitoPendiente
+                    {
+                        Tipo = problema.TipoRequisito ?? TipoRequisitoPendiente.ClienteNoApto,
+                        Descripcion = problema.Descripcion,
+                        AccionRequerida = problema.AccionSugerida,
+                        UrlAccion = problema.UrlAccion
+                    });
+                }
+                else
+                {
+                    resultado.RazonesAutorizacion.Add(new RazonAutorizacion
+                    {
+                        Tipo = problema.TipoRazon ?? TipoRazonAutorizacion.ClienteRequiereAutorizacion,
+                        Descripcion = problema.Descripcion,
+                        DetalleAdicional = problema.DetalleAdicional ?? problema.AccionSugerida,
+                        ValorAsociado = problema.ValorAsociado,
+                        ValorLimite = problema.ValorLimite
+                    });
+                }
+            }
+
+            return resultado;
+        }
+
+        #endregion
+
+        #region Otros Métodos Públicos
 
         public async Task<ValidacionVentaResult> ValidarConfirmacionVentaAsync(int ventaId)
         {

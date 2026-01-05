@@ -105,7 +105,8 @@ public class VentaFacturacionAutorizacionFlowTests
             new VentaNumberGenerator(db.Context),
             precioService,
             db.HttpContextAccessor,
-            new NoopValidacionVentaService());
+            new NoopValidacionVentaService(),
+            new NoopCajaService());
 
         var okConfirmar = await ventaService.ConfirmarVentaAsync(venta.Id);
         Assert.True(okConfirmar);
@@ -238,7 +239,8 @@ public class VentaFacturacionAutorizacionFlowTests
             new VentaNumberGenerator(db.Context),
             precioService,
             db.HttpContextAccessor,
-            new NoopValidacionVentaService());
+            new NoopValidacionVentaService(),
+            new NoopCajaService());
 
         var okAutorizar = await ventaService.AutorizarVentaAsync(venta1.Id, "admin", "OK por excepcion");
         Assert.True(okAutorizar);

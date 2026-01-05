@@ -1,0 +1,30 @@
+@*
+    Partial: Badge unificado para EstadoBatch
+    Uso: <partial name="_BadgeEstadoBatch" model="batch.Estado" />
+*@
+@model TheBuryProject.Models.Enums.EstadoBatch
+
+@switch (Model)
+{
+    case TheBuryProject.Models.Enums.EstadoBatch.Simulado:
+        <span class="badge bg-info">Simulado</span>
+        break;
+    case TheBuryProject.Models.Enums.EstadoBatch.Aprobado:
+        <span class="badge bg-primary">Aprobado</span>
+        break;
+    case TheBuryProject.Models.Enums.EstadoBatch.Aplicado:
+        <span class="badge bg-success">Aplicado</span>
+        break;
+    case TheBuryProject.Models.Enums.EstadoBatch.Revertido:
+        <span class="badge bg-warning text-dark">Revertido</span>
+        break;
+    case TheBuryProject.Models.Enums.EstadoBatch.Rechazado:
+        <span class="badge bg-danger">Rechazado</span>
+        break;
+    case TheBuryProject.Models.Enums.EstadoBatch.Cancelado:
+        <span class="badge bg-secondary">Cancelado</span>
+        break;
+    default:
+        <span class="badge bg-dark">@Model</span>
+        break;
+}

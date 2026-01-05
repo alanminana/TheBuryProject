@@ -4,25 +4,17 @@
     ViewData["Title"] = "Simular cambio masivo de precios";
 }
 
-<div class="container-fluid px-0 py-4">
+<div class="container-fluid py-4">
 
-    <!-- Header página -->
-    <div class="d-flex align-items-start justify-content-between mb-4">
-        <div>
-            <div class="text-muted text-uppercase small mb-1">Gestión de precios · Cambios masivos</div>
-            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
-                <i class="bi bi-calculator"></i>
-                <span>Simular cambio masivo de precios</span>
-            </h1>
-            <p class="text-muted small mb-0">
-                Configure el escenario de aumento o rebaja y los filtros de productos para generar una simulación sin afectar aún los precios reales.
-            </p>
-        </div>
-
-        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver al listado
-        </a>
-    </div>
+    @* Header unificado *@
+    <partial name="_PageHeader" model='new PageHeaderModel {
+        Breadcrumb = "Gestión de precios · Cambios masivos",
+        Title = "Simular cambio masivo de precios",
+        Icon = "calculator",
+        Subtitle = "Configure el escenario de aumento o rebaja y los filtros de productos para generar una simulación sin afectar aún los precios reales.",
+        BackAction = "Index",
+        BackText = "Volver al listado"
+    }' />
 
     <div class="row justify-content-center">
         <div class="col-xxl-9 col-lg-10">
@@ -123,68 +115,65 @@
 
                             <!-- Filtros de productos -->
                             <div class="col-md-6 ps-md-4">
-                                <h5 class="mb-3 d-flex align-items-center gap-2">
-                                    <i class="bi bi-funnel"></i>
-                                    <span>Filtros de productos</span>
-                                </h5>
-
-                                <div class="alert alert-info small">
-                                    <div class="fw-semibold mb-1 d-flex align-items-center gap-2">
-                                        <i class="bi bi-info-circle"></i>
-                                        <span>Filtros opcionales</span>
+                                <div class="card bg-body-secondary border-0 h-100">
+                                    <div class="card-header bg-transparent border-0 pb-0">
+                                        <h5 class="mb-0 d-flex align-items-center gap-2">
+                                            <i class="bi bi-funnel"></i>
+                                            <span>Filtros de productos</span>
+                                        </h5>
+                                        <small class="text-muted d-block mt-1">
+                                            Si no aplica ningún filtro, se afectarán todos los productos de las listas seleccionadas.
+                                        </small>
                                     </div>
-                                    <p class="mb-0">
-                                        Si no aplica ningún filtro, la simulación se realizará sobre todos los productos
-                                        de las listas seleccionadas.
-                                    </p>
-                                </div>
+                                    <div class="card-body pt-3">
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-semibold">Categorías</label>
+                                            <select name="CategoriasIds"
+                                                    class="form-select form-select-sm"
+                                                    multiple
+                                                    size="5">
+                                                @foreach (var categoria in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Categorias)
+                                                {
+                                                    var categoriaId = int.TryParse(categoria.Value, out var parsedCategoriaId) ? parsedCategoriaId : (int?)null;
+                                                    var isSelected = categoriaId.HasValue && Model.CategoriasIds != null && Model.CategoriasIds.Contains(categoriaId.Value);
+                                                    <option value="@categoria.Value" selected="@(isSelected ? "selected" : null)">@categoria.Text</option>
+                                                }
+                                            </select>
+                                            <small class="text-muted d-block mt-1">
+                                                Mantenga Ctrl/Cmd para seleccionar múltiples.
+                                            </small>
+                                        </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label small fw-semibold">Categorías</label>
-                                    <select name="CategoriasIds"
-                                            class="form-select form-select-sm"
-                                            multiple
-                                            size="6">
-                                        @foreach (var categoria in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Categorias)
-                                        {
-                                            var categoriaId = int.TryParse(categoria.Value, out var parsedCategoriaId) ? parsedCategoriaId : (int?)null;
-                                            var isSelected = categoriaId.HasValue && Model.CategoriasIds != null && Model.CategoriasIds.Contains(categoriaId.Value);
-                                            <option value="@categoria.Value" selected="@(isSelected ? "selected" : null)">@categoria.Text</option>
-                                        }
-                                    </select>
-                                    <small class="text-muted d-block mt-1">
-                                        Mantenga Ctrl/Cmd para seleccionar múltiples opciones.
-                                    </small>
-                                </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-semibold">Marcas</label>
+                                            <select name="MarcasIds"
+                                                    class="form-select form-select-sm"
+                                                    multiple
+                                                    size="5">
+                                                @foreach (var marca in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Marcas)
+                                                {
+                                                    var marcaId = int.TryParse(marca.Value, out var parsedMarcaId) ? parsedMarcaId : (int?)null;
+                                                    var isSelected = marcaId.HasValue && Model.MarcasIds != null && Model.MarcasIds.Contains(marcaId.Value);
+                                                    <option value="@marca.Value" selected="@(isSelected ? "selected" : null)">@marca.Text</option>
+                                                }
+                                            </select>
+                                            <small class="text-muted d-block mt-1">
+                                                Mantenga Ctrl/Cmd para seleccionar múltiples.
+                                            </small>
+                                        </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label small fw-semibold">Marcas</label>
-                                    <select name="MarcasIds"
-                                            class="form-select form-select-sm"
-                                            multiple
-                                            size="6">
-                                        @foreach (var marca in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Marcas)
-                                        {
-                                            var marcaId = int.TryParse(marca.Value, out var parsedMarcaId) ? parsedMarcaId : (int?)null;
-                                            var isSelected = marcaId.HasValue && Model.MarcasIds != null && Model.MarcasIds.Contains(marcaId.Value);
-                                            <option value="@marca.Value" selected="@(isSelected ? "selected" : null)">@marca.Text</option>
-                                        }
-                                    </select>
-                                    <small class="text-muted d-block mt-1">
-                                        Mantenga Ctrl/Cmd para seleccionar múltiples opciones.
-                                    </small>
-                                </div>
-
-                                <div class="mb-0">
-                                    <label class="form-label small fw-semibold">IDs de productos específicos</label>
-                                    <textarea name="ProductoIdsText"
-                                              class="form-control form-control-sm"
-                                              rows="3"
-                                              placeholder="Ingrese IDs separados por comas: 1,2,3,4">@Model.ProductoIdsText</textarea>
-                                    <span asp-validation-for="ProductoIdsText" class="text-danger small"></span>
-                                    <small class="text-muted d-block mt-1">
-                                        Opcional: limita la simulación a un conjunto concreto de productos.
-                                    </small>
+                                        <div class="mb-0">
+                                            <label class="form-label small fw-semibold">IDs de productos específicos</label>
+                                            <textarea name="ProductoIdsText"
+                                                      class="form-control form-control-sm"
+                                                      rows="2"
+                                                      placeholder="IDs separados por comas: 1,2,3,4">@Model.ProductoIdsText</textarea>
+                                            <span asp-validation-for="ProductoIdsText" class="text-danger small"></span>
+                                            <small class="text-muted d-block mt-1">
+                                                Opcional: limita la simulación a productos específicos.
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

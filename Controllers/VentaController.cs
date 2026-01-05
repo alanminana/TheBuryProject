@@ -131,7 +131,7 @@ namespace TheBuryProject.Controllers
                 var venta = await _ventaService.CreateAsync(viewModel);
 
                 // Para CréditoPersonal: SIEMPRE redirigir a ConfigurarVenta
-                if (venta.TipoPago == TipoPago.CreditoPersonall && venta.CreditoId.HasValue)
+                if (venta.TipoPago == TipoPago.CreditoPersonal && venta.CreditoId.HasValue)
                 {
                     var returnToVentaDetailsUrl = Url.Action(nameof(Details), new { id = venta.Id });
                     
@@ -256,7 +256,7 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                if (resultado.TipoPago == TipoPago.CreditoPersonall)
+                if (resultado.TipoPago == TipoPago.CreditoPersonal)
                 {
                     var documentacion = await _documentacionService.ProcesarDocumentacionVentaAsync(resultado.Id);
 
@@ -338,7 +338,7 @@ namespace TheBuryProject.Controllers
 
             var safeReturnUrl = GetSafeReturnUrl(returnUrl) ?? Url.Action(nameof(Details), new { id = ventaId });
 
-            if (venta.TipoPago != TipoPago.CreditoPersonall)
+            if (venta.TipoPago != TipoPago.CreditoPersonal)
             {
                 TempData["Error"] = "La venta no utiliza crédito personal";
                 return RedirectToAction(nameof(Details), new { id = ventaId });
@@ -426,7 +426,7 @@ namespace TheBuryProject.Controllers
                 }
 
                 // Para crédito personal, flujo simplificado
-                if (venta.TipoPago == TipoPago.CreditoPersonall)
+                if (venta.TipoPago == TipoPago.CreditoPersonal)
                 {
                     var returnToVentaDetailsUrl = Url.Action(nameof(Details), new { id });
 

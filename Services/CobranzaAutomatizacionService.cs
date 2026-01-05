@@ -390,7 +390,7 @@ namespace TheBuryProject.Services
                     case TipoAccionAutomatica.MarcarPromesaIncumplida:
                         alerta.EstadoGestion = EstadoGestionCobranza.EnGestion;
                         alerta.Observaciones = (alerta.Observaciones ?? "") +
-                            $"\n[{DateTime.Now:yyyy-MM-dd}] Promesa de pago incumplida (automático)";
+                            $"\n[{DateTime.UtcNow:yyyy-MM-dd}] Promesa de pago incumplida (automático)";
                         resultado.Descripcion = "Promesa marcada como incumplida";
                         break;
 
@@ -422,7 +422,7 @@ namespace TheBuryProject.Services
 
                     case TipoAccionAutomatica.RegistrarNota:
                         alerta.Observaciones = (alerta.Observaciones ?? "") +
-                            $"\n[{DateTime.Now:yyyy-MM-dd}] {accion.Descripcion}";
+                            $"\n[{DateTime.UtcNow:yyyy-MM-dd}] {accion.Descripcion}";
                         break;
                 }
             }

@@ -4,27 +4,19 @@
     ViewData["Title"] = "Revertir cambio de precios";
 }
 
-<div class="container-fluid px-0 py-4">
+<div class="container-fluid py-4">
 
-    <!-- Header página -->
-    <div class="d-flex align-items-start justify-content-between mb-4">
-        <div>
-            <div class="text-muted text-uppercase small mb-1">Gestión de precios · Cambios masivos</div>
-            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
-                <i class="bi bi-arrow-counterclockwise"></i>
-                <span>Revertir cambio de precios</span>
-            </h1>
-            <p class="text-muted small mb-0">
-                Esta operación restaurará los precios anteriores para todos los productos afectados por este batch.
-            </p>
-        </div>
-
-        <a asp-action="Preview"
-           asp-route-id="@Model.BatchId"
-           class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver al detalle
-        </a>
-    </div>
+    @* Header unificado *@
+    <partial name="_PageHeader" model='new PageHeaderModel {
+        Breadcrumb = "Gestión de precios · Cambios masivos",
+        Title = "Revertir cambio de precios",
+        Icon = "arrow-counterclockwise",
+        Subtitle = "Esta operación restaurará los precios anteriores para todos los productos afectados por este batch.",
+        BackAction = "Preview",
+        BackController = "CambiosPrecios",
+        BackRouteId = Model.BatchId,
+        BackText = "Volver al detalle"
+    }' />
 
     <div class="row justify-content-center">
         <div class="col-lg-7 col-xl-6">

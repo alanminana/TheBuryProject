@@ -58,7 +58,7 @@ namespace TheBuryProject.Services
                     SueldoCliente = cliente.Sueldo,
                     PuntajeRiesgoCliente = cliente.PuntajeRiesgo,
                     TieneGarante = garanteId.HasValue,
-                    FechaEvaluacion = DateTime.Now,
+                    FechaEvaluacion = DateTime.UtcNow,
                     Reglas = new List<ReglaEvaluacionViewModel>()
                 };
 
@@ -360,7 +360,7 @@ namespace TheBuryProject.Services
                     TieneGarante = evaluacion.TieneGarante,
                     Motivo = evaluacion.Motivo,
                     Observaciones = evaluacion.Observaciones,
-                    FechaEvaluacion = DateTime.Now
+                    FechaEvaluacion = DateTime.UtcNow
                 };
 
                 _context.EvaluacionesCredito.Add(entidad);

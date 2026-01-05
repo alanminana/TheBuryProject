@@ -27,5 +27,13 @@ namespace TheBuryProject.Services.Interfaces
         /// <param name="anticipo">Anticipo ingresado.</param>
         /// <returns>Monto a financiar.</returns>
         decimal ComputeFinancedAmount(decimal total, decimal anticipo);
+
+        /// <summary>
+        /// Calcula el Costo Financiero Total Efectivo Anual (CFTEA) desde la tasa mensual.
+        /// CFTEA = ((1 + tasaMensual)^12 - 1) * 100
+        /// </summary>
+        /// <param name="tasaMensual">Tasa de interés mensual en valor decimal (0.05 = 5%).</param>
+        /// <returns>CFTEA como porcentaje.</returns>
+        decimal CalcularCFTEADesdeTasa(decimal tasaMensual);
     }
 }

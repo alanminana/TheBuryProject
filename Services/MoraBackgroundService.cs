@@ -35,7 +35,7 @@ namespace TheBuryProject.Services
                         var moraService = scope.ServiceProvider.GetRequiredService<IMoraService>();
                         var configuracion = await moraService.GetConfiguracionAsync();
 
-                        if (!configuracion.JobActivo)
+                        if (!configuracion.ProcesoAutomaticoActivo)
                         {
                             _logger.LogDebug("Job de mora desactivado, esperando...");
                             await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
@@ -43,8 +43,8 @@ namespace TheBuryProject.Services
                         }
 
                         // ✅ MEJORADO: Comparar solo horas y minutos
-                        var ahora = DateTime.Now;
-                        var horaEjecucion = configuracion.HoraEjecucion;
+                        var ahora = DateTime.UtcNow;
+                        var horaEjecucion = configuracion.HoraEjecucionDiaria ?? new TimeSpan(8, 0, 0);
                         var horaActual = new TimeSpan(ahora.Hour, ahora.Minute, 0);
                         var diferencia = (horaEjecucion - horaActual).TotalMinutes;
 
@@ -59,7 +59,7 @@ namespace TheBuryProject.Services
                                 try
                                 {
                                     await moraService.ProcesarMoraAsync();
-                                    _ultimaEjecucion = DateTime.Now;
+                                    _ultimaEjecucion = DateTime.UtcNow;
                                     
                                     _logger.LogInformation("Procesamiento de mora completado exitosamente");
                                 }

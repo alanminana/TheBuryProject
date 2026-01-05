@@ -1,3 +1,10 @@
+    /// <summary>
+    /// Aplica un cambio directo de precio a productos seleccionados o filtrados desde el catálogo.
+    /// Actualiza Producto.PrecioVenta, crea historial y permite revertir.
+    /// </summary>
+    /// <param name="model">Datos del cambio directo</param>
+    /// <returns>Resultado con éxito/error y conteo de actualizaciones</returns>
+    Task<ResultadoAplicacionPrecios> AplicarCambioPrecioDirectoAsync(AplicarCambioPrecioDirectoViewModel model);
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 

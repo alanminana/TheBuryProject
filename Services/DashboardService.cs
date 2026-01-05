@@ -41,10 +41,6 @@ namespace TheBuryProject.Services
                     .Where(v => !v.IsDeleted && v.FechaVenta >= inicioMes)
                     .SumAsync(v => (decimal?)v.Total) ?? 0,
 
-                TotalVentasMes = await _context.Ventas
-                    .Where(v => !v.IsDeleted && v.FechaVenta >= inicioMes)
-                    .SumAsync(v => (decimal?)v.Total),
-
                 CantidadVentasMes = await _context.Ventas
                     .CountAsync(v => !v.IsDeleted && v.FechaVenta >= inicioMes),
 
@@ -132,8 +128,6 @@ namespace TheBuryProject.Services
 
                 // KPIs de Stock
                 ProductosTotales = await _context.Productos.CountAsync(p => !p.IsDeleted),
-                ProductosBajoStock = await _context.Productos
-                    .CountAsync(p => !p.IsDeleted && p.StockActual < p.StockMinimo),
                 ProductosStockBajo = await _context.Productos
                     .CountAsync(p => !p.IsDeleted && p.StockActual < p.StockMinimo),
 
@@ -146,8 +140,16 @@ namespace TheBuryProject.Services
                 VentasUltimos12Meses = await GetVentasUltimos12MesesAsync(),
                 ProductosMasVendidos = await GetProductosMasVendidosAsync(),
                 CreditosPorEstado = await GetCreditosPorEstadoAsync(),
-                CobranzaUltimos6Meses = await GetCobranzaUltimos6MesesAsync()
+                CobranzaUltimos6Meses = await GetCobranzaUltimos6MesesAsync(),
+
+                // ✅ NUEVAS: Alertas de cuotas
+                CuotasProximasVencer = await GetCuotasProximasVencerAsync(),
+                CuotasVencidasLista = await GetCuotasVencidasListaAsync()
             };
+
+            // Calcular contadores adicionales
+            dashboard.CuotasProximasVencerCount = dashboard.CuotasProximasVencer.Count;
+            dashboard.MontoCuotasProximasVencer = dashboard.CuotasProximasVencer.Sum(c => c.Monto);
 
             return dashboard;
         }
@@ -356,6 +358,106 @@ namespace TheBuryProject.Services
                 .ToListAsync();
 
             return cobranza;
+        }
+
+        /// <summary>
+        /// Obtiene las cuotas que vencen en los próximos 7 días
+        /// </summary>
+        private async Task<List<CuotaProximaVencerDto>> GetCuotasProximasVencerAsync()
+        {
+            var hoy = DateTime.Today;
+            var en7Dias = hoy.AddDays(7);
+
+            // Consulta a la base de datos sin cálculos de fechas complejos
+            var cuotasDb = await _context.Cuotas
+                .Include(c => c.Credito)
+                    .ThenInclude(cr => cr.Cliente)
+                .Where(c => !c.IsDeleted &&
+                            c.Credito != null &&
+                            !c.Credito.IsDeleted &&
+                            c.Credito.Cliente != null &&
+                            !c.Credito.Cliente.IsDeleted &&
+                            (c.Estado == EstadoCuota.Pendiente || c.Estado == EstadoCuota.Parcial) &&
+                            c.FechaVencimiento >= hoy &&
+                            c.FechaVencimiento <= en7Dias)
+                .OrderBy(c => c.FechaVencimiento)
+                .Take(20)
+                .Select(c => new 
+                {
+                    c.Id,
+                    c.CreditoId,
+                    CreditoNumero = c.Credito.Numero,
+                    c.NumeroCuota,
+                    ClienteNombre = c.Credito.Cliente.Nombre + " " + c.Credito.Cliente.Apellido,
+                    ClienteId = c.Credito.ClienteId,
+                    c.FechaVencimiento,
+                    Monto = c.MontoTotal - c.MontoPagado
+                })
+                .ToListAsync();
+
+            // Calcular días en memoria
+            return cuotasDb.Select(c => new CuotaProximaVencerDto
+            {
+                CuotaId = c.Id,
+                CreditoId = c.CreditoId,
+                CreditoNumero = c.CreditoNumero,
+                NumeroCuota = c.NumeroCuota,
+                ClienteNombre = c.ClienteNombre,
+                ClienteId = c.ClienteId,
+                FechaVencimiento = c.FechaVencimiento,
+                Monto = c.Monto,
+                DiasParaVencer = (c.FechaVencimiento - hoy).Days
+            }).ToList();
+        }
+
+        /// <summary>
+        /// Obtiene las cuotas vencidas sin pagar (ordenadas por más días vencidas)
+        /// </summary>
+        private async Task<List<CuotaVencidaDto>> GetCuotasVencidasListaAsync()
+        {
+            var hoy = DateTime.Today;
+
+            // Consulta a la base de datos sin cálculos de fechas complejos
+            var cuotasDb = await _context.Cuotas
+                .Include(c => c.Credito)
+                    .ThenInclude(cr => cr.Cliente)
+                .Where(c => !c.IsDeleted &&
+                            c.Credito != null &&
+                            !c.Credito.IsDeleted &&
+                            c.Credito.Cliente != null &&
+                            !c.Credito.Cliente.IsDeleted &&
+                            (c.Estado == EstadoCuota.Pendiente || c.Estado == EstadoCuota.Vencida || c.Estado == EstadoCuota.Parcial) &&
+                            c.FechaVencimiento < hoy)
+                .OrderBy(c => c.FechaVencimiento) // Más antiguas primero
+                .Take(20)
+                .Select(c => new 
+                {
+                    c.Id,
+                    c.CreditoId,
+                    CreditoNumero = c.Credito.Numero,
+                    c.NumeroCuota,
+                    ClienteNombre = c.Credito.Cliente.Nombre + " " + c.Credito.Cliente.Apellido,
+                    ClienteId = c.Credito.ClienteId,
+                    c.FechaVencimiento,
+                    Monto = c.MontoTotal - c.MontoPagado,
+                    c.MontoPunitorio
+                })
+                .ToListAsync();
+
+            // Calcular días en memoria
+            return cuotasDb.Select(c => new CuotaVencidaDto
+            {
+                CuotaId = c.Id,
+                CreditoId = c.CreditoId,
+                CreditoNumero = c.CreditoNumero,
+                NumeroCuota = c.NumeroCuota,
+                ClienteNombre = c.ClienteNombre,
+                ClienteId = c.ClienteId,
+                FechaVencimiento = c.FechaVencimiento,
+                Monto = c.Monto,
+                DiasVencidos = (hoy - c.FechaVencimiento).Days,
+                MontoPunitorio = c.MontoPunitorio
+            }).ToList();
         }
     }
 }

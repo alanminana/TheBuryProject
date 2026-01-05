@@ -312,5 +312,14 @@ namespace TheBuryProject.Services
 
             return false;
         }
+
+        public async Task<IEnumerable<Categoria>> GetChildrenAsync(int parentId)
+        {
+            return await _context.Categorias
+                .AsNoTracking()
+                .Where(c => c.ParentId == parentId && !c.IsDeleted && c.Activo)
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
+        }
     }
 }

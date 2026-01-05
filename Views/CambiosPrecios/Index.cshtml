@@ -4,45 +4,22 @@
     ViewData["Title"] = "Cambios masivos de precios";
 }
 
-<div class="container-fluid px-0 py-4">
+<div class="container-fluid py-4">
 
-    <!-- Header página -->
-    <div class="d-flex align-items-start justify-content-between mb-4">
-        <div>
-            <div class="text-muted text-uppercase small mb-1">Gestión de precios · Cambios masivos</div>
-            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
-                <i class="bi bi-shuffle"></i>
-                <span>Cambios masivos de precios</span>
-            </h1>
-            <p class="text-muted small mb-0">
-                Simulaciones, aprobaciones y aplicación de cambios de precios sobre múltiples productos.
-            </p>
-        </div>
+    @* Header unificado *@
+    <partial name="_PageHeader" model='new PageHeaderModel {
+        Breadcrumb = "Gestión de precios · Cambios masivos",
+        Title = "Cambios masivos de precios",
+        Icon = "shuffle",
+        Subtitle = "Simulaciones, aprobaciones y aplicación de cambios de precios sobre múltiples productos.",
+        PrimaryAction = "Simular",
+        PrimaryActionText = "Nueva simulación",
+        PrimaryActionIcon = "calculator",
+        PrimaryActionRequiredClaim = "precios:simulate"
+    }' />
 
-        @if (User.HasClaim("Permission", "precios:simulate"))
-        {
-            <a asp-action="Simular" class="btn btn-primary btn-sm">
-                <i class="bi bi-calculator me-1"></i>Nueva simulación
-            </a>
-        }
-    </div>
-
-    <!-- Alertas -->
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-1"></i>@TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-1"></i>@TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+    @* Alertas unificadas *@
+    <partial name="_Alerts" />
 
     <!-- Filtros -->
     <div class="card card-animate border-0 mb-3">
@@ -154,27 +131,7 @@
                                     </td>
 
                                     <td class="text-center">
-                                        @switch (batch.Estado)
-                                        {
-                                            case TheBuryProject.Models.Enums.EstadoBatch.Simulado:
-                                                @:<span class="badge bg-info">Simulado</span>
-                                                break;
-                                            case TheBuryProject.Models.Enums.EstadoBatch.Aprobado:
-                                                @:<span class="badge bg-primary">Aprobado</span>
-                                                break;
-                                            case TheBuryProject.Models.Enums.EstadoBatch.Aplicado:
-                                                @:<span class="badge bg-success">Aplicado</span>
-                                                break;
-                                            case TheBuryProject.Models.Enums.EstadoBatch.Revertido:
-                                                @:<span class="badge bg-warning text-dark">Revertido</span>
-                                                break;
-                                            case TheBuryProject.Models.Enums.EstadoBatch.Rechazado:
-                                                @:<span class="badge bg-danger">Rechazado</span>
-                                                break;
-                                            case TheBuryProject.Models.Enums.EstadoBatch.Cancelado:
-                                                @:<span class="badge bg-secondary">Cancelado</span>
-                                                break;
-                                        }
+                                        <partial name="_BadgeEstadoBatch" model="batch.Estado" />
                                     </td>
 
                                     <td>

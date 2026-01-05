@@ -79,7 +79,7 @@ namespace TheBuryProject.Services
             configuracion.PorcentajeDescuentoMaximo = viewModel.PorcentajeDescuentoMaximo;
             configuracion.TieneRecargo = viewModel.TieneRecargo;
             configuracion.PorcentajeRecargo = viewModel.PorcentajeRecargo;
-            configuracion.UpdatedAt = DateTime.Now;
+            configuracion.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -94,7 +94,7 @@ namespace TheBuryProject.Services
                 return false;
 
             configuracion.IsDeleted = true;
-            configuracion.UpdatedAt = DateTime.Now;
+            configuracion.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return true;

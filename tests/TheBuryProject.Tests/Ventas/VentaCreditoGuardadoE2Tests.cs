@@ -54,7 +54,8 @@ public class VentaCreditoGuardadoE2Tests
             new VentaNumberGenerator(db.Context),
             precioService,
             db.HttpContextAccessor,
-            mockValidacionVenta.Object);
+            mockValidacionVenta.Object,
+            new NoopCajaService());
     }
 
     private static async Task<(Cliente cliente, Producto producto)> SetupTestDataAsync(SqliteInMemoryDb db)
@@ -291,7 +292,7 @@ public class VentaCreditoGuardadoE2Tests
     }
 
     [Fact]
-    public async Task CreateAsync_CreditoPersonal_RequiereAutorizacion_NoCreaCredito()
+    public async Task CreateAsync_CreditoPersonal_RequiereAutorizacion_CreaCreditoPendiente()
     {
         // Arrange
         using var db = new SqliteInMemoryDb(userName: "tester");
@@ -315,13 +316,18 @@ public class VentaCreditoGuardadoE2Tests
         // Act
         var resultado = await ventaService.CreateAsync(viewModel);
 
-        // Assert - No debe haber CreditoId asignado ni cuotas creadas
+        // Assert - Se crea crédito pendiente pero sin cuotas
         var ventaEnDb = await db.Context.Ventas
             .Include(v => v.VentaCreditoCuotas)
             .FirstOrDefaultAsync(v => v.Id == resultado.Id);
         
-        Assert.Null(ventaEnDb?.CreditoId);
-        Assert.Empty(ventaEnDb?.VentaCreditoCuotas ?? new List<VentaCreditoCuota>());
+        Assert.NotNull(ventaEnDb?.CreditoId); // SÍ se crea crédito pendiente
+        Assert.Empty(ventaEnDb?.VentaCreditoCuotas ?? new List<VentaCreditoCuota>()); // Sin cuotas aún
+        
+        // Verificar que el crédito está en estado pendiente
+        var credito = await db.Context.Creditos.FirstOrDefaultAsync(c => c.Id == ventaEnDb.CreditoId);
+        Assert.NotNull(credito);
+        Assert.Equal(EstadoCredito.PendienteConfiguracion, credito.Estado);
     }
 
     #endregion
@@ -361,7 +367,7 @@ public class VentaCreditoGuardadoE2Tests
     }
 
     [Fact]
-    public async Task CreateAsync_CreditoPersonal_Aprobable_NoCreaCredito()
+    public async Task CreateAsync_CreditoPersonal_Aprobable_CreaCreditoPendiente()
     {
         // Arrange
         using var db = new SqliteInMemoryDb(userName: "tester");
@@ -380,13 +386,18 @@ public class VentaCreditoGuardadoE2Tests
         // Act
         var resultado = await ventaService.CreateAsync(viewModel);
 
-        // Assert - No debe haber CreditoId ni cuotas creadas todavía
+        // Assert - Se crea crédito pendiente pero sin cuotas (cuotas se crean al confirmar)
         var ventaEnDb = await db.Context.Ventas
             .Include(v => v.VentaCreditoCuotas)
             .FirstOrDefaultAsync(v => v.Id == resultado.Id);
         
-        Assert.Null(ventaEnDb?.CreditoId);
-        Assert.Empty(ventaEnDb?.VentaCreditoCuotas ?? new List<VentaCreditoCuota>());
+        Assert.NotNull(ventaEnDb?.CreditoId); // SÍ se crea crédito pendiente
+        Assert.Empty(ventaEnDb?.VentaCreditoCuotas ?? new List<VentaCreditoCuota>()); // Sin cuotas aún
+        
+        // Verificar que el crédito está en estado pendiente de configuración
+        var credito = await db.Context.Creditos.FirstOrDefaultAsync(c => c.Id == ventaEnDb.CreditoId);
+        Assert.NotNull(credito);
+        Assert.Equal(EstadoCredito.PendienteConfiguracion, credito.Estado);
     }
 
     [Fact]

@@ -18,7 +18,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<Marca?> GetByIdAsync(int id);
 
         /// <summary>
-        /// Obtiene una marca por su código
+        /// Obtiene una marca por su cï¿½digo
         /// </summary>
         Task<Marca?> GetByCodigoAsync(string codigo);
 
@@ -38,7 +38,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<bool> DeleteAsync(int id);
 
         /// <summary>
-        /// Verifica si existe una marca con el código especificado
+        /// Verifica si existe una marca con el cï¿½digo especificado
         /// </summary>
         Task<bool> ExistsCodigoAsync(string codigo, int? excludeId = null);
 
@@ -47,5 +47,10 @@ namespace TheBuryProject.Services.Interfaces
     bool soloActivos = false,
     string? orderBy = null,
     string? orderDirection = "asc");
+
+        /// <summary>
+        /// Obtiene las submarcas (hijas) de una marca padre
+        /// </summary>
+        Task<IEnumerable<Marca>> GetChildrenAsync(int parentId);
     }
 }

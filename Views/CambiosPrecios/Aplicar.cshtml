@@ -4,27 +4,19 @@
     ViewData["Title"] = "Aplicar cambio de precios";
 }
 
-<div class="container-fluid px-0">
+<div class="container-fluid py-4">
 
-    <!-- Header de página -->
-    <div class="d-flex align-items-start justify-content-between mb-4">
-        <div>
-            <div class="text-muted text-uppercase small mb-1">Gestión de precios · Cambios masivos</div>
-            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
-                <i class="bi bi-check-circle"></i>
-                <span>Aplicar cambio de precios</span>
-            </h1>
-            <p class="text-muted small mb-0">
-                Este batch fue aprobado y está listo para impactar los precios de los productos afectados.
-            </p>
-        </div>
-
-        <a asp-action="Preview"
-           asp-route-id="@Model.BatchId"
-           class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver al detalle
-        </a>
-    </div>
+    @* Header unificado *@
+    <partial name="_PageHeader" model='new PageHeaderModel {
+        Breadcrumb = "Gestión de precios · Cambios masivos",
+        Title = "Aplicar cambio de precios",
+        Icon = "check-circle",
+        Subtitle = "Este batch fue aprobado y está listo para impactar los precios de los productos afectados.",
+        BackAction = "Preview",
+        BackController = "CambiosPrecios",
+        BackRouteId = Model.BatchId,
+        BackText = "Volver al detalle"
+    }' />
 
     <div class="row">
         <div class="col-12 col-lg-7 col-xl-5">

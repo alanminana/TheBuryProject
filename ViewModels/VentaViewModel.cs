@@ -186,7 +186,7 @@ namespace TheBuryProject.ViewModels
 
         #endregion
 
-        #region Estado del Crédito (para ventas con TipoPago = CreditoPersonall)
+        #region Estado del Crédito (para ventas con TipoPago = CreditoPersonal)
 
         /// <summary>
         /// Estado del crédito asociado a la venta.
@@ -209,7 +209,7 @@ namespace TheBuryProject.ViewModels
         /// Indica si el crédito está pendiente de configuración del plan
         /// </summary>
         public bool CreditoPendienteConfiguracion =>
-            TipoPago == TipoPago.CreditoPersonall &&
+            TipoPago == TipoPago.CreditoPersonal &&
             CreditoId.HasValue &&
             CreditoEstado == EstadoCredito.PendienteConfiguracion &&
             !FinanciamientoConfigurado; // Si ya está configurado, no mostrar como pendiente
@@ -219,7 +219,7 @@ namespace TheBuryProject.ViewModels
         /// Usa tanto el estado del crédito como el flag persistente.
         /// </summary>
         public bool CreditoConfigurado =>
-            TipoPago == TipoPago.CreditoPersonall &&
+            TipoPago == TipoPago.CreditoPersonal &&
             CreditoId.HasValue &&
             (CreditoEstado == EstadoCredito.Configurado || FinanciamientoConfigurado);
 
@@ -227,7 +227,7 @@ namespace TheBuryProject.ViewModels
         /// Indica si el crédito ya fue generado (cuotas creadas)
         /// </summary>
         public bool CreditoGenerado =>
-            TipoPago == TipoPago.CreditoPersonall &&
+            TipoPago == TipoPago.CreditoPersonal &&
             CreditoId.HasValue &&
             (CreditoEstado == EstadoCredito.Generado ||
              CreditoEstado == EstadoCredito.Activo ||
@@ -259,7 +259,7 @@ namespace TheBuryProject.ViewModels
                 var estadoValido = Estado == EstadoVenta.Presupuesto || Estado == EstadoVenta.PendienteRequisitos;
                 var autorizacionOk = !RequiereAutorizacion || EstadoAutorizacion == EstadoAutorizacionVenta.Autorizada;
 
-                if (TipoPago == TipoPago.CreditoPersonall)
+                if (TipoPago == TipoPago.CreditoPersonal)
                 {
                     // Solo puede confirmar si crédito está Configurado
                     return estadoValido && autorizacionOk && CreditoConfigurado;

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.ViewModels
 {
@@ -95,8 +96,18 @@ namespace TheBuryProject.ViewModels
         [StringLength(50)]
         public string? TiempoTrabajo { get; set; }
 
-        // ✅ PROPIEDADES DE CONTROL
-        public decimal PuntajeRiesgo { get; set; } = 5.0m;
+        // ✅ PROPIEDADES DE CONTROL DE RIESGO
+        
+        /// <summary>
+        /// Nivel de riesgo crediticio (1-5)
+        /// </summary>
+        [Display(Name = "Calificación Crediticia")]
+        public NivelRiesgoCredito NivelRiesgo { get; set; } = NivelRiesgoCredito.AprobadoCondicional;
+
+        /// <summary>
+        /// Puntaje numérico derivado del nivel de riesgo (para compatibilidad)
+        /// </summary>
+        public decimal PuntajeRiesgo { get; set; } = 6.0m;
 
         public bool Activo { get; set; } = true;
 

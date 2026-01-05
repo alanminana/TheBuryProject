@@ -62,6 +62,9 @@ namespace TheBuryProject.Services
             if (await ExisteDocumentoAsync(cliente.TipoDocumento, cliente.NumeroDocumento))
                 throw new InvalidOperationException("Ya existe un cliente con ese tipo y número de documento.");
 
+            // Calcular PuntajeRiesgo basado en NivelRiesgo (1-5 → 2-10)
+            cliente.PuntajeRiesgo = (int)cliente.NivelRiesgo * 2m;
+
             _context.Clientes.Add(cliente);
             await _context.SaveChangesAsync();
             return cliente;
@@ -106,8 +109,10 @@ namespace TheBuryProject.Services
             // FIX punto 4.3: antes estaba la asignación sin efecto.
             clienteExistente.TieneReciboSueldo = cliente.TieneReciboSueldo;
 
-            // PuntajeRiesgo es gestionado por el sistema (ver ActualizarPuntajeRiesgoAsync).
-            // No se actualiza desde el formulario de edición para evitar pisadas/tampering.
+            // Calificación crediticia manual (NivelRiesgo 1-5)
+            // Se actualiza desde el formulario y el PuntajeRiesgo se calcula automáticamente
+            clienteExistente.NivelRiesgo = cliente.NivelRiesgo;
+            clienteExistente.PuntajeRiesgo = (int)cliente.NivelRiesgo * 2m; // Convierte 1-5 a 2-10
 
             // Estado
             clienteExistente.Activo = cliente.Activo;

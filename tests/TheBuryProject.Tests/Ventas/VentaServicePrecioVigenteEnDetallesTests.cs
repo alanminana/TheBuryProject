@@ -102,7 +102,8 @@ public class VentaServicePrecioVigenteEnDetallesTests
             new VentaNumberGenerator(db.Context),
             precioService,
             db.HttpContextAccessor,
-            new NoopValidacionVentaService());
+            new NoopValidacionVentaService(),
+            new NoopCajaService());
 
         var vm = new VentaViewModel
         {
@@ -246,7 +247,8 @@ public class VentaServicePrecioVigenteEnDetallesTests
             new VentaNumberGenerator(db.Context),
             precioService,
             db.HttpContextAccessor,
-            new NoopValidacionVentaService());
+            new NoopValidacionVentaService(),
+            new NoopCajaService());
 
         var creada = await ventaService.CreateAsync(new VentaViewModel
         {
@@ -369,7 +371,8 @@ public class VentaServicePrecioVigenteEnDetallesTests
             new VentaNumberGenerator(db.Context),
             precioService,
             db.HttpContextAccessor,
-            new NoopValidacionVentaService());
+            new NoopValidacionVentaService(),
+            new NoopCajaService());
 
         var creada = await ventaService.CreateAsync(new VentaViewModel
         {

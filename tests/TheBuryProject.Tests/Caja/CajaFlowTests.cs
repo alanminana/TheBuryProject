@@ -1,15 +1,15 @@
 using AutoMapper;
 using Microsoft.Extensions.Logging.Abstractions;
 using TheBuryProject.Helpers;
-using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services;
 using TheBuryProject.Tests.TestDoubles;
 using TheBuryProject.Tests.TestHelpers;
 using TheBuryProject.ViewModels;
 using Xunit;
+using Caja = TheBuryProject.Models.Entities.Caja;
 
-namespace TheBuryProject.Tests.Cajas;
+namespace TheBuryProject.Tests.CajaTests;
 
 public class CajaFlowTests
 {

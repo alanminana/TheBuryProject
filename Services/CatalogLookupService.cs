@@ -35,5 +35,15 @@ namespace TheBuryProject.Services
 
             return (categorias, marcas, productos);
         }
+
+        public async Task<IEnumerable<Categoria>> GetSubcategoriasAsync(int categoriaId)
+        {
+            return await _categoriaService.GetChildrenAsync(categoriaId);
+        }
+
+        public async Task<IEnumerable<Marca>> GetSubmarcasAsync(int marcaId)
+        {
+            return await _marcaService.GetChildrenAsync(marcaId);
+        }
     }
 }

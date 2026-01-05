@@ -62,6 +62,7 @@ builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<ICatalogLookupService, CatalogLookupService>();
+builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 builder.Services.AddScoped<IPrecioHistoricoService, PrecioHistoricoService>();
 builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<IOrdenCompraService, OrdenCompraService>();

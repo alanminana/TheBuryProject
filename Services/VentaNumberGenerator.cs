@@ -24,7 +24,7 @@ namespace TheBuryProject.Services
                     ? VentaConstants.PREFIJO_COTIZACION
                     : VentaConstants.PREFIJO_VENTA;
 
-                var fecha = DateTime.Now;
+                var fecha = DateTime.UtcNow;
                 var periodo = fecha.ToString(VentaConstants.FORMATO_PERIODO);
                 var prefijoCompleto = $"{prefijo}-{periodo}";
 
@@ -58,7 +58,7 @@ namespace TheBuryProject.Services
             try
             {
                 var prefijo = ObtenerPrefijoFactura(tipo);
-                var fecha = DateTime.Now;
+                var fecha = DateTime.UtcNow;
                 var periodo = fecha.ToString(VentaConstants.FORMATO_PERIODO);
                 var prefijoCompleto = $"{prefijo}-{periodo}";
 

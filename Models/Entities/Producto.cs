@@ -37,10 +37,20 @@ namespace TheBuryProject.Models.Entities
         public int CategoriaId { get; set; }
 
         /// <summary>
+        /// ID de la subcategor�a (opcional, debe ser hija de CategoriaId)
+        /// </summary>
+        public int? SubcategoriaId { get; set; }
+
+        /// <summary>
         /// ID de la marca del producto
         /// </summary>
         [Required(ErrorMessage = "La marca es obligatoria")]
         public int MarcaId { get; set; }
+
+        /// <summary>
+        /// ID de la submarca (opcional, debe ser hija de MarcaId)
+        /// </summary>
+        public int? SubmarcaId { get; set; }
 
         /// <summary>
         /// Precio de compra del producto
@@ -91,8 +101,18 @@ namespace TheBuryProject.Models.Entities
         public virtual Categoria Categoria { get; set; } = null!;
 
         /// <summary>
+        /// Subcategor�a del producto (opcional)
+        /// </summary>
+        public virtual Categoria? Subcategoria { get; set; }
+
+        /// <summary>
         /// Marca del producto
         /// </summary>
         public virtual Marca Marca { get; set; } = null!;
+
+        /// <summary>
+        /// Submarca del producto (opcional)
+        /// </summary>
+        public virtual Marca? Submarca { get; set; }
     }
 }

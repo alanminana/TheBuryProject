@@ -324,3 +324,207 @@ public class BatchListViewModel
     public int TamanioPagina { get; set; } = 20;
     public int TotalItems { get; set; }
 }
+
+/// <summary>
+/// ViewModel para simular cambio de precios desde el Catálogo (modal de selección rápida)
+/// Soporta dos modos:
+/// 1. Seleccionados: ProductoIdsText con IDs específicos
+/// 2. Filtrados: FiltrosJson con los filtros actuales del catálogo
+/// </summary>
+public class SimularDesdeCatalogoViewModel
+{
+    /// <summary>
+    /// IDs de productos seleccionados separados por coma (modo Seleccionados)
+    /// </summary>
+    public string? ProductoIdsText { get; set; }
+
+    /// <summary>
+    /// JSON con los filtros actuales del catálogo (modo Filtrados)
+    /// </summary>
+    public string? FiltrosJson { get; set; }
+
+    /// <summary>
+    /// Alcance del cambio: "seleccionados" o "filtrados"
+    /// </summary>
+    public string Alcance { get; set; } = "seleccionados";
+
+    /// <summary>
+    /// Tipo de cambio: Porcentual o Fijo
+    /// </summary>
+    [Required]
+    public string TipoCambio { get; set; } = "Porcentual";
+
+    /// <summary>
+    /// Valor del cambio (positivo = aumento, negativo = disminución)
+    /// El signo se ajusta desde el frontend según la dirección seleccionada
+    /// </summary>
+    [Required(ErrorMessage = "El valor es requerido")]
+    public decimal ValorInput { get; set; }
+
+    /// <summary>
+    /// IDs de listas de precios a afectar
+    /// </summary>
+    [Required(ErrorMessage = "Debe seleccionar al menos una lista de precios")]
+    [MinLength(1, ErrorMessage = "Debe seleccionar al menos una lista de precios")]
+    public List<int> ListasPrecioIds { get; set; } = new();
+
+    /// <summary>
+    /// Nota o justificación del cambio
+    /// </summary>
+    [StringLength(1000)]
+    public string? Nota { get; set; }
+
+    /// <summary>
+    /// Indica si la solicitud viene desde el catálogo
+    /// </summary>
+    public bool OrigenCatalogo { get; set; } = true;
+
+    /// <summary>
+    /// Verifica si hay productos o filtros válidos para procesar
+    /// </summary>
+    public bool TieneDatosParaProcesar => 
+        !string.IsNullOrWhiteSpace(ProductoIdsText) || 
+        (!string.IsNullOrWhiteSpace(FiltrosJson) && Alcance == "filtrados");
+}
+
+/// <summary>
+/// Request para el endpoint AJAX SimularCambioRapido.
+/// Soporta dos modos: "seleccionados" (con ProductoIds) o "filtrados" (con filtros del catálogo).
+/// </summary>
+public class SimularCambioRapidoRequest
+{
+    /// <summary>
+    /// Modo de operación: "seleccionados" o "filtrados"
+    /// </summary>
+    public string Modo { get; set; } = "seleccionados";
+
+    /// <summary>
+    /// Porcentaje de cambio (positivo = aumento, negativo = descuento)
+    /// </summary>
+    public decimal Porcentaje { get; set; }
+
+    /// <summary>
+    /// IDs de productos cuando modo = "seleccionados"
+    /// </summary>
+    public List<int>? ProductoIds { get; set; }
+
+    /// <summary>
+    /// IDs de listas de precios a afectar. Si está vacío, se usa la predeterminada
+    /// </summary>
+    public List<int>? ListasPrecioIds { get; set; }
+
+    // ========================================
+    // Filtros (cuando modo = "filtrados")
+    // ========================================
+
+    /// <summary>
+    /// Filtrar por categoría
+    /// </summary>
+    public int? CategoriaId { get; set; }
+
+    /// <summary>
+    /// Filtrar por marca
+    /// </summary>
+    public int? MarcaId { get; set; }
+
+    /// <summary>
+    /// Buscar por texto en código/nombre/descripción
+    /// </summary>
+    public string? SearchTerm { get; set; }
+
+    /// <summary>
+    /// Solo productos activos
+    /// </summary>
+    public bool? SoloActivos { get; set; }
+
+    /// <summary>
+    /// Solo productos con stock bajo
+    /// </summary>
+    public bool? StockBajo { get; set; }
+}
+
+/// <summary>
+/// Request para aplicar cambio de precios directamente desde el Catálogo (AJAX)
+/// </summary>
+public class AplicarRapidoRequest
+{
+    /// <summary>
+    /// Modo de operación: "seleccionados" o "filtrados"
+    /// </summary>
+    public string Modo { get; set; } = "seleccionados";
+
+    /// <summary>
+    /// Porcentaje de cambio (positivo = aumento, negativo = descuento)
+    /// </summary>
+    public decimal Porcentaje { get; set; }
+
+    /// <summary>
+    /// IDs de productos (modo seleccionados)
+    /// </summary>
+    public List<int>? ProductoIds { get; set; }
+
+    /// <summary>
+    /// IDs de listas de precios a afectar
+    /// </summary>
+    public List<int>? ListasPrecioIds { get; set; }
+
+    /// <summary>
+    /// Filtros del catálogo (modo filtrados)
+    /// </summary>
+    public FiltrosRapidoDto? Filtros { get; set; }
+}
+
+/// <summary>
+/// DTO para filtros del catálogo en AplicarRapido
+/// </summary>
+public class FiltrosRapidoDto
+{
+    public int? CategoriaId { get; set; }
+    public int? MarcaId { get; set; }
+    public string? Busqueda { get; set; }
+    public bool? SoloActivos { get; set; }
+    public bool? StockBajo { get; set; }
+    public int? ListaPrecioId { get; set; }
+}
+
+/// <summary>
+/// Request para revertir un batch via AJAX
+/// </summary>
+public class RevertirApiRequest
+{
+    /// <summary>
+    /// ID del batch a revertir
+    /// </summary>
+    public int BatchId { get; set; }
+
+    /// <summary>
+    /// RowVersion en Base64 para control de concurrencia
+    /// </summary>
+    public string RowVersion { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Motivo de la reversión (requerido)
+    /// </summary>
+    [Required(ErrorMessage = "Debe indicar el motivo de la reversión")]
+    [StringLength(500)]
+    public string Motivo { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Request para POST /CambiosPrecios/Revertir/{id}
+/// </summary>
+public class RevertirPostRequest
+{
+    /// <summary>
+    /// Motivo de la reversión (requerido)
+    /// </summary>
+    [Required(ErrorMessage = "Debe indicar el motivo de la reversión")]
+    [StringLength(500)]
+    public string Motivo { get; set; } = string.Empty;
+
+    /// <summary>
+    /// RowVersion en Base64 para control de concurrencia (opcional)
+    /// Si no se proporciona, se usa el rowVersion actual del batch
+    /// </summary>
+    public string? RowVersion { get; set; }
+}

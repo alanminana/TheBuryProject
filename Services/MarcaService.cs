@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using System.Data;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
@@ -23,10 +22,10 @@ namespace TheBuryProject.Services
 
         public async Task<IEnumerable<Marca>> GetAllAsync()
         {
-            var shouldCloseConnection = await EnsureConnectionOpenAsync();
             try
             {
                 return await _context.Marcas
+                    .AsNoTracking()
                     .Where(m => !m.IsDeleted)
                     .Include(m => m.Parent)
                     .OrderBy(m => m.Nombre)
@@ -37,18 +36,14 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al obtener todas las marcas");
                 throw;
             }
-            finally
-            {
-                await CloseConnectionIfNeededAsync(shouldCloseConnection);
-            }
         }
 
         public async Task<Marca?> GetByIdAsync(int id)
         {
-            var shouldCloseConnection = await EnsureConnectionOpenAsync();
             try
             {
                 return await _context.Marcas
+                    .AsNoTracking()
                     .Include(m => m.Parent)
                     .Include(m => m.Children)
                     .FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
@@ -58,18 +53,14 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al obtener marca con Id {Id}", id);
                 throw;
             }
-            finally
-            {
-                await CloseConnectionIfNeededAsync(shouldCloseConnection);
-            }
         }
 
         public async Task<Marca?> GetByCodigoAsync(string codigo)
         {
-            var shouldCloseConnection = await EnsureConnectionOpenAsync();
             try
             {
                 return await _context.Marcas
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(m => m.Codigo == codigo && !m.IsDeleted);
             }
             catch (Exception ex)
@@ -77,15 +68,10 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al obtener marca con código {Codigo}", codigo);
                 throw;
             }
-            finally
-            {
-                await CloseConnectionIfNeededAsync(shouldCloseConnection);
-            }
         }
 
         public async Task<Marca> CreateAsync(Marca marca)
         {
-            var shouldCloseConnection = await EnsureConnectionOpenAsync();
             try
             {
                 // Validación de string vacío
@@ -133,15 +119,10 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al crear marca {Codigo}", marca.Codigo);
                 throw;
             }
-            finally
-            {
-                await CloseConnectionIfNeededAsync(shouldCloseConnection);
-            }
         }
 
         public async Task<Marca> UpdateAsync(Marca marca)
         {
-            var shouldCloseConnection = await EnsureConnectionOpenAsync();
             try
             {
                 // Validación de string vacío
@@ -221,15 +202,10 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al actualizar marca {Id}", marca.Id);
                 throw;
             }
-            finally
-            {
-                await CloseConnectionIfNeededAsync(shouldCloseConnection);
-            }
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var shouldCloseConnection = await EnsureConnectionOpenAsync();
             try
             {
                 var marca = await _context.Marcas
@@ -266,15 +242,10 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al eliminar marca {Id}", id);
                 throw;
             }
-            finally
-            {
-                await CloseConnectionIfNeededAsync(shouldCloseConnection);
-            }
         }
 
         public async Task<bool> ExistsCodigoAsync(string codigo, int? excludeId = null)
         {
-            var shouldCloseConnection = await EnsureConnectionOpenAsync();
             try
             {
                 var query = _context.Marcas.Where(m => m.Codigo == codigo && !m.IsDeleted);
@@ -291,10 +262,6 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al verificar existencia de código {Codigo}", codigo);
                 throw;
             }
-            finally
-            {
-                await CloseConnectionIfNeededAsync(shouldCloseConnection);
-            }
         }
 
         /// <summary>
@@ -305,69 +272,60 @@ namespace TheBuryProject.Services
         /// <returns>True si se crearía un ciclo, False en caso contrario</returns>
         private async Task<bool> WouldCreateCycleAsync(int? marcaId, int parentId)
         {
-            var shouldCloseConnection = await EnsureConnectionOpenAsync();
-            try
+            // Si no hay marcaId, es una creación nueva, no puede haber ciclo
+            if (!marcaId.HasValue)
             {
-                // Si no hay marcaId, es una creación nueva, no puede haber ciclo
-                if (!marcaId.HasValue)
-                {
-                    return false;
-                }
+                return false;
+            }
 
-                // Si intenta ser su propio padre
-                if (marcaId.Value == parentId)
+            // Si intenta ser su propio padre
+            if (marcaId.Value == parentId)
+            {
+                return true;
+            }
+
+            // Recorrer la jerarquía hacia arriba desde el parent propuesto
+            var currentParentId = (int?)parentId;
+            var visitedIds = new HashSet<int> { marcaId.Value };
+
+            while (currentParentId.HasValue)
+            {
+                // Si encontramos la marca original, hay un ciclo
+                if (visitedIds.Contains(currentParentId.Value))
                 {
                     return true;
                 }
 
-                // Recorrer la jerarquía hacia arriba desde el parent propuesto
-                var currentParentId = (int?)parentId;
-                var visitedIds = new HashSet<int> { marcaId.Value };
+                visitedIds.Add(currentParentId.Value);
 
-                while (currentParentId.HasValue)
+                // Obtener el padre del padre
+                var parent = await _context.Marcas
+                    .Where(m => m.Id == currentParentId.Value)
+                    .Select(m => new { m.ParentId })
+                    .FirstOrDefaultAsync();
+
+                if (parent == null)
                 {
-                    // Si encontramos la marca original, hay un ciclo
-                    if (visitedIds.Contains(currentParentId.Value))
-                    {
-                        return true;
-                    }
-
-                    visitedIds.Add(currentParentId.Value);
-
-                    // Obtener el padre del padre
-                    var parent = await _context.Marcas
-                        .Where(m => m.Id == currentParentId.Value)
-                        .Select(m => new { m.ParentId })
-                        .FirstOrDefaultAsync();
-
-                    if (parent == null)
-                    {
-                        break;
-                    }
-
-                    currentParentId = parent.ParentId;
+                    break;
                 }
 
-                return false;
+                currentParentId = parent.ParentId;
             }
-            finally
-            {
-                await CloseConnectionIfNeededAsync(shouldCloseConnection);
-            }
+
+            return false;
         }
 
         public async Task<IEnumerable<Marca>> SearchAsync(
-    string? searchTerm = null,
-    bool soloActivos = false,
-    string? orderBy = null,
-    string? orderDirection = "asc")
+            string? searchTerm = null,
+            bool soloActivos = false,
+            string? orderBy = null,
+            string? orderDirection = "asc")
         {
-            var shouldCloseConnection = await EnsureConnectionOpenAsync();
             try
             {
                 var query = _context.Marcas
-                    .Include(m => m.Parent)
                     .AsNoTracking()
+                    .Include(m => m.Parent)
                     .Where(m => !m.IsDeleted)
                     .AsQueryable();
 
@@ -410,37 +368,15 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al buscar marcas con filtros");
                 throw;
             }
-            finally
-            {
-                await CloseConnectionIfNeededAsync(shouldCloseConnection);
-            }
         }
 
-        /// <summary>
-        /// Abre la conexión de base de datos si está cerrada para evitar errores al ejecutar consultas.
-        /// Devuelve true si el método abrió la conexión y debe cerrarse manualmente.
-        /// </summary>
-        private async Task<bool> EnsureConnectionOpenAsync()
+        public async Task<IEnumerable<Marca>> GetChildrenAsync(int parentId)
         {
-            var connection = _context.Database.GetDbConnection();
-            if (connection.State == ConnectionState.Closed)
-            {
-                await connection.OpenAsync();
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Cierra la conexión de base de datos si fue abierta manualmente por <see cref="EnsureConnectionOpenAsync"/>.
-        /// </summary>
-        private async Task CloseConnectionIfNeededAsync(bool shouldClose)
-        {
-            if (shouldClose)
-            {
-                await _context.Database.CloseConnectionAsync();
-            }
+            return await _context.Marcas
+                .AsNoTracking()
+                .Where(m => m.ParentId == parentId && !m.IsDeleted && m.Activo)
+                .OrderBy(m => m.Nombre)
+                .ToListAsync();
         }
     }
 }

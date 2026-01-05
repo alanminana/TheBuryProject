@@ -9,3 +9,5 @@ Este proyecto está desarrollado en ASP.NET y ya contiene una cantidad considera
 7. No repitas código; si encontrás duplicación, aplicá principios como DRY, SOLID y patrones adecuados.
 
 Ejecutá estas tareas cada vez que analices, generes o edites código en este repositorio.
+
+siempre tene en cuenta el archivo automapper que existe 

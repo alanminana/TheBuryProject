@@ -1122,6 +1122,9 @@ namespace TheBuryProject.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<int>("NivelRiesgo")
+                        .HasColumnType("int");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -2567,7 +2570,8 @@ namespace TheBuryProject.Migrations
                     b.HasIndex("CAE");
 
                     b.HasIndex("Numero")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("IsDeleted = 0");
 
                     b.HasIndex("VentaId");
 
@@ -3715,6 +3719,9 @@ namespace TheBuryProject.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int?>("BatchPadreId")
+                        .HasColumnType("int");
+
                     b.Property<string>("CanceladoPor")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -3819,6 +3826,10 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BatchPadreId")
+                        .IsUnique()
+                        .HasFilter("[BatchPadreId] IS NOT NULL");
 
                     b.HasIndex("Estado");
 
@@ -4001,6 +4012,12 @@ namespace TheBuryProject.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("SubcategoriaId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SubmarcaId")
+                        .HasColumnType("int");
+
                     b.Property<string>("UnidadMedida")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -4023,6 +4040,10 @@ namespace TheBuryProject.Migrations
                         .HasFilter("IsDeleted = 0");
 
                     b.HasIndex("MarcaId");
+
+                    b.HasIndex("SubcategoriaId");
+
+                    b.HasIndex("SubmarcaId");
 
                     b.ToTable("Productos");
                 });
@@ -4670,6 +4691,9 @@ namespace TheBuryProject.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("FechaCancelacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaConfiguracionCredito")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("FechaConfirmacion")
@@ -5428,6 +5452,16 @@ namespace TheBuryProject.Migrations
                     b.Navigation("Producto");
                 });
 
+            modelBuilder.Entity("TheBuryProject.Models.Entities.PriceChangeBatch", b =>
+                {
+                    b.HasOne("TheBuryProject.Models.Entities.PriceChangeBatch", "BatchPadre")
+                        .WithOne("BatchReversion")
+                        .HasForeignKey("TheBuryProject.Models.Entities.PriceChangeBatch", "BatchPadreId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("BatchPadre");
+                });
+
             modelBuilder.Entity("TheBuryProject.Models.Entities.PriceChangeItem", b =>
                 {
                     b.HasOne("TheBuryProject.Models.Entities.PriceChangeBatch", "Batch")
@@ -5469,9 +5503,21 @@ namespace TheBuryProject.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("TheBuryProject.Models.Entities.Categoria", "Subcategoria")
+                        .WithMany()
+                        .HasForeignKey("SubcategoriaId");
+
+                    b.HasOne("TheBuryProject.Models.Entities.Marca", "Submarca")
+                        .WithMany()
+                        .HasForeignKey("SubmarcaId");
+
                     b.Navigation("Categoria");
 
                     b.Navigation("Marca");
+
+                    b.Navigation("Subcategoria");
+
+                    b.Navigation("Submarca");
                 });
 
             modelBuilder.Entity("TheBuryProject.Models.Entities.ProductoPrecioLista", b =>
@@ -5745,6 +5791,8 @@ namespace TheBuryProject.Migrations
 
             modelBuilder.Entity("TheBuryProject.Models.Entities.PriceChangeBatch", b =>
                 {
+                    b.Navigation("BatchReversion");
+
                     b.Navigation("Items");
                 });
 
