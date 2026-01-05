@@ -1,16 +1,23 @@
+    /// <summary>
+    /// Aplica un cambio directo de precio a productos seleccionados o filtrados desde el catÃ¡logo.
+    /// Actualiza Producto.PrecioVenta, crea historial y permite revertir.
+    /// </summary>
+    /// <param name="model">Datos del cambio directo</param>
+    /// <returns>Resultado con Ã©xito/error y conteo de actualizaciones</returns>
+    Task<ResultadoAplicacionPrecios> AplicarCambioPrecioDirectoAsync(AplicarCambioPrecioDirectoViewModel model);
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.Services.Interfaces;
 
 /// <summary>
-/// Servicio para gestión avanzada de precios con historial
-/// Soporta simulación, autorización, aplicación y reversión de cambios masivos
+/// Servicio para gestiï¿½n avanzada de precios con historial
+/// Soporta simulaciï¿½n, autorizaciï¿½n, aplicaciï¿½n y reversiï¿½n de cambios masivos
 /// </summary>
 public interface IPrecioService
 {
     // ============================================
-    // GESTIÓN DE LISTAS DE PRECIOS
+    // GESTIï¿½N DE LISTAS DE PRECIOS
     // ============================================
 
     /// <summary>
@@ -36,19 +43,19 @@ public interface IPrecioService
     /// <summary>
     /// Actualiza una lista de precios existente
     /// </summary>
-    Task<ListaPrecio> UpdateListaAsync(ListaPrecio lista);
+    Task<ListaPrecio> UpdateListaAsync(ListaPrecio lista, byte[] rowVersion);
 
     /// <summary>
     /// Elimina (soft delete) una lista de precios
     /// </summary>
-    Task<bool> DeleteListaAsync(int id);
+    Task<bool> DeleteListaAsync(int id, byte[] rowVersion);
 
     // ============================================
     // CONSULTA DE PRECIOS VIGENTES
     // ============================================
 
     /// <summary>
-    /// Obtiene el precio vigente de un producto en una lista específica
+    /// Obtiene el precio vigente de un producto en una lista especï¿½fica
     /// </summary>
     /// <param name="productoId">ID del producto</param>
     /// <param name="listaId">ID de la lista de precios</param>
@@ -66,7 +73,7 @@ public interface IPrecioService
     Task<List<ProductoPrecioLista>> GetHistorialPreciosAsync(int productoId, int listaId);
 
     // ============================================
-    // GESTIÓN DE PRECIOS INDIVIDUALES
+    // GESTIï¿½N DE PRECIOS INDIVIDUALES
     // ============================================
 
     /// <summary>
@@ -82,12 +89,12 @@ public interface IPrecioService
         string? notas = null);
 
     /// <summary>
-    /// Calcula el precio automático basado en costo y reglas de la lista
+    /// Calcula el precio automï¿½tico basado en costo y reglas de la lista
     /// </summary>
     Task<decimal> CalcularPrecioAutomaticoAsync(int productoId, int listaId, decimal costo);
 
     // ============================================
-    // CAMBIOS MASIVOS - SIMULACIÓN
+    // CAMBIOS MASIVOS - SIMULACIï¿½N
     // ============================================
 
     /// <summary>
@@ -95,12 +102,12 @@ public interface IPrecioService
     /// </summary>
     /// <param name="nombre">Nombre descriptivo del cambio</param>
     /// <param name="tipoCambio">Tipo de cambio a aplicar</param>
-    /// <param name="tipoAplicacion">Cómo se aplica el cambio</param>
+    /// <param name="tipoAplicacion">Cï¿½mo se aplica el cambio</param>
     /// <param name="valorCambio">Valor del cambio (% o absoluto)</param>
     /// <param name="listasIds">IDs de listas afectadas</param>
-    /// <param name="categoriaIds">IDs de categorías afectadas (null = todas)</param>
+    /// <param name="categoriaIds">IDs de categorï¿½as afectadas (null = todas)</param>
     /// <param name="marcaIds">IDs de marcas afectadas (null = todas)</param>
-    /// <param name="productoIds">IDs específicos de productos (null = por categoría/marca)</param>
+    /// <param name="productoIds">IDs especï¿½ficos de productos (null = por categorï¿½a/marca)</param>
     Task<PriceChangeBatch> SimularCambioMasivoAsync(
         string nombre,
         TipoCambio tipoCambio,
@@ -112,43 +119,43 @@ public interface IPrecioService
         List<int>? productoIds = null);
 
     /// <summary>
-    /// Obtiene el detalle de una simulación existente
+    /// Obtiene el detalle de una simulaciï¿½n existente
     /// </summary>
     Task<PriceChangeBatch?> GetSimulacionAsync(int batchId);
 
     /// <summary>
-    /// Obtiene los items de una simulación con paginación
+    /// Obtiene los items de una simulaciï¿½n con paginaciï¿½n
     /// </summary>
     Task<List<PriceChangeItem>> GetItemsSimulacionAsync(int batchId, int skip = 0, int take = 50);
 
     // ============================================
-    // CAMBIOS MASIVOS - AUTORIZACIÓN
+    // CAMBIOS MASIVOS - AUTORIZACIï¿½N
     /// ============================================
 
     /// <summary>
     /// Aprueba un batch de cambios de precios
     /// Cambia el estado a Aprobado
     /// </summary>
-    Task<PriceChangeBatch> AprobarBatchAsync(int batchId, string aprobadoPor, string? notas = null);
+    Task<PriceChangeBatch> AprobarBatchAsync(int batchId, string aprobadoPor, byte[] rowVersion, string? notas = null);
 
     /// <summary>
     /// Rechaza un batch de cambios de precios
     /// Cambia el estado a Rechazado
     /// </summary>
-    Task<PriceChangeBatch> RechazarBatchAsync(int batchId, string rechazadoPor, string motivo);
+    Task<PriceChangeBatch> RechazarBatchAsync(int batchId, string rechazadoPor, byte[] rowVersion, string motivo);
 
     /// <summary>
     /// Cancela un batch antes de aplicarlo
     /// </summary>
-    Task<PriceChangeBatch> CancelarBatchAsync(int batchId, string canceladoPor, string? motivo = null);
+    Task<PriceChangeBatch> CancelarBatchAsync(int batchId, string canceladoPor, byte[] rowVersion, string? motivo = null);
 
     /// <summary>
-    /// Verifica si un batch requiere autorización según umbrales configurados
+    /// Verifica si un batch requiere autorizaciï¿½n segï¿½n umbrales configurados
     /// </summary>
     Task<bool> RequiereAutorizacionAsync(int batchId);
 
     // ============================================
-    // CAMBIOS MASIVOS - APLICACIÓN
+    // CAMBIOS MASIVOS - APLICACIï¿½N
     // ============================================
 
     /// <summary>
@@ -156,16 +163,16 @@ public interface IPrecioService
     /// Genera nuevas vigencias para todos los productos afectados
     /// Transaccional: todo o nada
     /// </summary>
-    Task<PriceChangeBatch> AplicarBatchAsync(int batchId, string aplicadoPor, DateTime? fechaVigencia = null);
+    Task<PriceChangeBatch> AplicarBatchAsync(int batchId, string aplicadoPor, byte[] rowVersion, DateTime? fechaVigencia = null);
 
     /// <summary>
     /// Revierte un batch de cambios aplicado
     /// Restaura la vigencia anterior o crea una nueva con los precios previos
     /// </summary>
-    Task<PriceChangeBatch> RevertirBatchAsync(int batchId, string revertidoPor, string motivo);
+    Task<PriceChangeBatch> RevertirBatchAsync(int batchId, string revertidoPor, byte[] rowVersion, string motivo);
 
     // ============================================
-    // REPORTES Y ESTADÍSTICAS
+    // REPORTES Y ESTADï¿½STICAS
     // ============================================
 
     /// <summary>
@@ -179,7 +186,7 @@ public interface IPrecioService
         int take = 50);
 
     /// <summary>
-    /// Obtiene estadísticas de un batch aplicado
+    /// Obtiene estadï¿½sticas de un batch aplicado
     /// </summary>
     Task<Dictionary<string, object>> GetEstadisticasBatchAsync(int batchId);
 
@@ -193,7 +200,7 @@ public interface IPrecioService
     // ============================================
 
     /// <summary>
-    /// Valida que un precio cumpla con el margen mínimo configurado
+    /// Valida que un precio cumpla con el margen mï¿½nimo configurado
     /// </summary>
     Task<(bool esValido, string? mensaje)> ValidarMargenMinimoAsync(decimal precio, decimal costo, int listaId);
 
@@ -203,7 +210,7 @@ public interface IPrecioService
     decimal CalcularMargen(decimal precio, decimal costo);
 
     /// <summary>
-    /// Aplica redondeo según reglas de la lista
+    /// Aplica redondeo segï¿½n reglas de la lista
     /// </summary>
     decimal AplicarRedondeo(decimal precio, string? reglaRedondeo = null);
 }

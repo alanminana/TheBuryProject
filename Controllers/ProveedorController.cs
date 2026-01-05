@@ -1,8 +1,10 @@
-﻿using AutoMapper;
+﻿// ProveedorController.cs
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
@@ -10,7 +12,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Contador")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Contador)]
     public class ProveedorController : Controller
     {
         private readonly IProveedorService _proveedorService;
@@ -18,6 +20,7 @@ namespace TheBuryProject.Controllers
         private readonly IMapper _mapper;
         private readonly ICatalogLookupService _catalogLookupService;
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
+
         public ProveedorController(
             IProveedorService proveedorService,
             ICatalogLookupService catalogLookupService,
@@ -73,18 +76,12 @@ namespace TheBuryProject.Controllers
         // GET: Proveedor/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             try
             {
                 var proveedor = await _proveedorService.GetByIdAsync(id.Value);
-                if (proveedor == null)
-                {
-                    return NotFound();
-                }
+                if (proveedor == null) return NotFound();
 
                 var viewModel = _mapper.Map<ProveedorViewModel>(proveedor);
                 return View(viewModel);
@@ -97,12 +94,14 @@ namespace TheBuryProject.Controllers
             }
         }
 
+        // GET: Proveedor/Create
         public async Task<IActionResult> Create()
         {
             var viewModel = new ProveedorViewModel();
             await CargarAsociacionesAsync(viewModel);
             return View(viewModel);
         }
+
         // POST: Proveedor/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -112,12 +111,11 @@ namespace TheBuryProject.Controllers
             {
                 try
                 {
-                    // Verificar que el CUIT no exista
+                    // Verificar CUIT único (mensaje amigable)
                     if (await _proveedorService.ExistsCuitAsync(viewModel.Cuit))
                     {
                         ModelState.AddModelError("Cuit", "Ya existe un proveedor con este CUIT");
                         await CargarAsociacionesAsync(viewModel);
-
                         return View(viewModel);
                     }
 
@@ -138,26 +136,20 @@ namespace TheBuryProject.Controllers
                     ModelState.AddModelError("", "Error al crear el proveedor. Por favor, intente nuevamente.");
                 }
             }
-            await CargarAsociacionesAsync(viewModel);
 
+            await CargarAsociacionesAsync(viewModel);
             return View(viewModel);
         }
 
         // GET: Proveedor/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             try
             {
                 var proveedor = await _proveedorService.GetByIdAsync(id.Value);
-                if (proveedor == null)
-                {
-                    return NotFound();
-                }
+                if (proveedor == null) return NotFound();
 
                 var viewModel = _mapper.Map<ProveedorViewModel>(proveedor);
                 await CargarAsociacionesAsync(viewModel);
@@ -177,10 +169,7 @@ namespace TheBuryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ProveedorViewModel viewModel)
         {
-            if (id != viewModel.Id)
-            {
-                return NotFound();
-            }
+            if (id != viewModel.Id) return NotFound();
 
             if (ModelState.IsValid)
             {
@@ -190,6 +179,7 @@ namespace TheBuryProject.Controllers
                     if (await _proveedorService.ExistsCuitAsync(viewModel.Cuit, id))
                     {
                         ModelState.AddModelError("Cuit", "Ya existe otro proveedor con este CUIT");
+                        await CargarAsociacionesAsync(viewModel); // FIX: si no, los combos quedan vacíos
                         return View(viewModel);
                     }
 
@@ -210,26 +200,20 @@ namespace TheBuryProject.Controllers
                     ModelState.AddModelError("", "Error al actualizar el proveedor. Por favor, intente nuevamente.");
                 }
             }
-            await CargarAsociacionesAsync(viewModel);
 
+            await CargarAsociacionesAsync(viewModel);
             return View(viewModel);
         }
 
         // GET: Proveedor/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             try
             {
                 var proveedor = await _proveedorService.GetByIdAsync(id.Value);
-                if (proveedor == null)
-                {
-                    return NotFound();
-                }
+                if (proveedor == null) return NotFound();
 
                 var viewModel = _mapper.Map<ProveedorViewModel>(proveedor);
                 await CargarAsociacionesAsync(viewModel);
@@ -274,14 +258,13 @@ namespace TheBuryProject.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
         // API: Obtener productos del proveedor
         [HttpGet]
         public async Task<IActionResult> GetProductos(int id)
         {
             try
             {
-                _logger.LogInformation("=== OBTENER PRODUCTOS PROVEEDOR {Id} ===", id);
-
                 await using var context = await _contextFactory.CreateDbContextAsync();
 
                 var productosProveedor = await context.ProveedorProductos
@@ -289,15 +272,11 @@ namespace TheBuryProject.Controllers
                     .Where(pp => pp.ProveedorId == id && pp.IsDeleted == false)
                     .ToListAsync();
 
-                _logger.LogInformation("ProveedorProductos encontrados: {Count}", productosProveedor.Count);
-
                 if (!productosProveedor.Any())
                 {
-                    _logger.LogWarning("Proveedor {Id} no tiene productos asociados", id);
                     return Json(new List<object>());
                 }
 
-                // MODIFICADO: Mostrar productos activos E INACTIVOS (solo filtrar IsDeleted)
                 var productos = productosProveedor
                     .Where(pp => pp.Producto != null && pp.Producto.IsDeleted == false)
                     .Select(pp => new
@@ -307,12 +286,11 @@ namespace TheBuryProject.Controllers
                             ? pp.Producto.Nombre
                             : $"{pp.Producto.Codigo} - {pp.Producto.Nombre}",
                         precio = pp.Producto.PrecioCompra,
-                        activo = pp.Producto.Activo // Agregar para ver si está activo
+                        activo = pp.Producto.Activo
                     })
                     .OrderBy(p => p.nombre)
                     .ToList();
 
-                _logger.LogInformation("Productos retornados: {Count}", productos.Count);
                 return Json(productos);
             }
             catch (Exception ex)
@@ -322,8 +300,8 @@ namespace TheBuryProject.Controllers
             }
         }
 
-
-        // TEMPORAL: Endpoint de diagnóstico - Eliminar después de resolver el problema
+#if DEBUG
+        // TEMPORAL: Endpoint de diagnóstico - solo en DEBUG
         [HttpGet]
         public async Task<IActionResult> DiagnosticoProveedor(int id)
         {
@@ -358,9 +336,12 @@ namespace TheBuryProject.Controllers
 
             return Json(diagnostico);
         }
+#endif
+
         private async Task CargarAsociacionesAsync(ProveedorViewModel viewModel)
         {
             var (categorias, marcas, productos) = await _catalogLookupService.GetCategoriasMarcasYProductosAsync();
+
             viewModel.CategoriasDisponibles = categorias
                 .OrderBy(c => c.Nombre)
                 .Select(c => new SelectListItem

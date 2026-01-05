@@ -32,12 +32,15 @@
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span><i class="bi bi-list"></i> Listado de Listas de Precios</span>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="incluirInactivas"
-                       @(incluirInactivas ? "checked" : "")
-                       onchange="window.location.href='@Url.Action("Index")?incluirInactivas=' + this.checked">
-                <label class="form-check-label" for="incluirInactivas">Incluir inactivas</label>
-            </div>
+            <form asp-action="Index" method="get" class="m-0">
+                <div class="form-check form-switch">
+                    <input type="hidden" name="incluirInactivas" value="false" />
+                    <input class="form-check-input" type="checkbox" id="incluirInactivas" name="incluirInactivas" value="true"
+                           @(incluirInactivas ? "checked" : "")
+                           data-auto-submit="true">
+                    <label class="form-check-label" for="incluirInactivas">Incluir inactivas</label>
+                </div>
+            </form>
         </div>
         <div class="card-body">
             @if (Model.Any())

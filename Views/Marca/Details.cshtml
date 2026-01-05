@@ -1,13 +1,15 @@
 ﻿@model TheBuryProject.ViewModels.MarcaViewModel
 @{
     ViewData["Title"] = "Detalles de Marca";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index")!;
 }
 
 <section class="container-fluid py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="mb-4">
-                <a asp-action="Index" class="text-decoration-none text-light">
+                <a href="@backUrl" class="text-decoration-none text-light">
                     <i class="bi bi-arrow-left me-2"></i>Volver al listado
                 </a>
             </div>
@@ -83,13 +85,13 @@
                     <hr class="my-4" />
 
                     <div class="d-flex justify-content-end flex-wrap gap-2">
-                        <a asp-action="Index" class="btn btn-outline-light px-4">
+                        <a href="@backUrl" class="btn btn-outline-light px-4">
                             <i class="bi bi-arrow-left-circle me-2"></i>Volver
                         </a>
-                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning px-4">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" asp-route-returnUrl="@backUrl" class="btn btn-warning px-4">
                             <i class="bi bi-pencil me-2"></i>Editar
                         </a>
-                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger px-4">
+                        <a asp-action="Delete" asp-route-id="@Model.Id" asp-route-returnUrl="@backUrl" class="btn btn-danger px-4">
                             <i class="bi bi-trash me-2"></i>Eliminar
                         </a>
                     </div>
@@ -98,3 +100,7 @@
         </div>
     </div>
 </section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/catalogo.css" asp-append-version="true" />
+}

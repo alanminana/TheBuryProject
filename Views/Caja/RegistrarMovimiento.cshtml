@@ -71,14 +71,25 @@
                                 <label asp-for="Concepto" class="form-label small"></label>
                                 <select asp-for="Concepto" class="form-select form-select-sm">
                                     <option value="">-- Seleccione --</option>
-                                    <option value="0">Venta efectivo</option>
-                                    <option value="1">Pago de cuota</option>
-                                    <option value="2">Gasto operativo</option>
-                                    <option value="3">Extracción efectivo</option>
-                                    <option value="4">Depósito efectivo</option>
-                                    <option value="5">Devolución cliente</option>
-                                    <option value="6">Ajuste de caja</option>
-                                    <option value="99">Otro</option>
+                                    <optgroup label="Ingresos por ventas">
+                                        <option value="0">Venta efectivo</option>
+                                        <option value="1">Venta tarjeta</option>
+                                        <option value="2">Venta cheque</option>
+                                    </optgroup>
+                                    <optgroup label="Créditos">
+                                        <option value="3">Cobro de cuota</option>
+                                        <option value="4">Cancelación de crédito</option>
+                                    </optgroup>
+                                    <optgroup label="Operaciones">
+                                        <option value="10">Gasto operativo</option>
+                                        <option value="11">Extracción efectivo</option>
+                                        <option value="12">Depósito efectivo</option>
+                                    </optgroup>
+                                    <optgroup label="Otros">
+                                        <option value="20">Devolución cliente</option>
+                                        <option value="30">Ajuste de caja</option>
+                                        <option value="99">Otro</option>
+                                    </optgroup>
                                 </select>
                                 <span asp-validation-for="Concepto" class="text-danger small"></span>
                             </div>

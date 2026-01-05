@@ -4,28 +4,19 @@
     ViewData["Title"] = "Historial de precios - " + Model.ProductoNombre;
 }
 
-<div class="container-fluid px-0">
+<div class="container-fluid py-4">
 
-    <!-- Header de página -->
-    <div class="d-flex align-items-start justify-content-between mb-4">
-        <div>
-            <div class="text-muted text-uppercase small mb-1">Gestión de precios · Historial</div>
-            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
-                <i class="bi bi-clock-history"></i>
-                <span>Historial de precios</span>
-            </h1>
-            <p class="text-muted small mb-0">
-                Evolución de precios y márgenes del producto en las distintas listas.
-            </p>
-        </div>
-
-        <a asp-controller="Producto"
-           asp-action="Details"
-           asp-route-id="@Model.ProductoId"
-           class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver al producto
-        </a>
-    </div>
+    @* Header unificado *@
+    <partial name="_PageHeader" model='new PageHeaderModel {
+        Breadcrumb = "Gestión de precios · Historial",
+        Title = "Historial de precios",
+        Icon = "clock-history",
+        Subtitle = "Evolución de precios y márgenes del producto en las distintas listas.",
+        BackAction = "Details",
+        BackController = "Producto",
+        BackRouteId = Model.ProductoId,
+        BackText = "Volver al producto"
+    }' />
 
     <div class="card card-animate border-0">
         <div class="card-body">
@@ -53,11 +44,11 @@
                             <label class="form-label small mb-1">Filtrar por lista</label>
                             <select name="listaId"
                                     class="form-select form-select-sm"
-                                    onchange="this.form.submit()">
+                                    data-auto-submit="true">
                                 <option value="">Todas las listas</option>
                                 @foreach (var lista in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.Listas)
                                 {
-                                    <option value="@lista.Value" selected="@lista.Selected">@lista.Text</option>
+                                    <option value="@lista.Value" selected="@(lista.Selected ? "selected" : null)">@lista.Text</option>
                                 }
                             </select>
                         </div>

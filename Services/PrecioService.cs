@@ -1,4 +1,25 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿    /// <summary>
+    /// Aplica un cambio directo de precio a productos seleccionados o filtrados desde el catálogo.
+    /// Actualiza Producto.PrecioVenta, crea historial y permite revertir.
+    /// </summary>
+    public async Task<ResultadoAplicacionPrecios> AplicarCambioPrecioDirectoAsync(AplicarCambioPrecioDirectoViewModel model)
+    {
+        // TODO: Implementar lógica de cambio directo, historial y revertir
+        // 1. Determinar productos afectados (por IDs o filtros)
+        // 2. Para cada producto: actualizar PrecioVenta, crear PrecioHistorico
+        // 3. Soportar revertir (puedeRevertirse)
+        // 4. Retornar resultado
+        return new ResultadoAplicacionPrecios
+        {
+            Exitoso = false,
+            Mensaje = "No implementado",
+            BatchId = 0,
+            ProductosActualizados = 0,
+            FechaAplicacion = DateTime.UtcNow
+        };
+    }
+using ClosedXML.Excel;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 using TheBuryProject.Data;
@@ -37,7 +58,9 @@ public class PrecioService : IPrecioService
 
     public async Task<List<ListaPrecio>> GetAllListasAsync(bool soloActivas = true)
     {
-        var query = _context.ListasPrecios.AsQueryable();
+        var query = _context.ListasPrecios
+            .Where(l => !l.IsDeleted)
+            .AsQueryable();
 
         if (soloActivas)
             query = query.Where(l => l.Activa);
@@ -52,13 +75,13 @@ public class PrecioService : IPrecioService
     {
         return await _context.ListasPrecios
             .Include(l => l.Precios)
-            .FirstOrDefaultAsync(l => l.Id == id);
+            .FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted);
     }
 
     public async Task<ListaPrecio?> GetListaPredeterminadaAsync()
     {
         return await _context.ListasPrecios
-            .FirstOrDefaultAsync(l => l.EsPredeterminada && l.Activa);
+            .FirstOrDefaultAsync(l => l.EsPredeterminada && l.Activa && !l.IsDeleted);
     }
 
     public async Task<ListaPrecio> CreateListaAsync(ListaPrecio lista)
@@ -66,12 +89,15 @@ public class PrecioService : IPrecioService
         // Si es predeterminada, quitar flag de otras
         if (lista.EsPredeterminada)
         {
-            var otras = await _context.ListasPrecios
-                .Where(l => l.EsPredeterminada)
-                .ToListAsync();
+            var now = DateTime.UtcNow;
+            var user = GetCurrentUser();
 
-            foreach (var otra in otras)
-                otra.EsPredeterminada = false;
+            await _context.ListasPrecios
+                .Where(l => l.EsPredeterminada && !l.IsDeleted)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(l => l.EsPredeterminada, false)
+                    .SetProperty(l => l.UpdatedAt, now)
+                    .SetProperty(l => l.UpdatedBy, user));
         }
 
         _context.ListasPrecios.Add(lista);
@@ -83,21 +109,29 @@ public class PrecioService : IPrecioService
         return lista;
     }
 
-    public async Task<ListaPrecio> UpdateListaAsync(ListaPrecio lista)
+    public async Task<ListaPrecio> UpdateListaAsync(ListaPrecio lista, byte[] rowVersion)
     {
-        var existing = await _context.ListasPrecios.FindAsync(lista.Id);
+        var existing = await _context.ListasPrecios.FirstOrDefaultAsync(l => l.Id == lista.Id && !l.IsDeleted);
         if (existing == null)
             throw new InvalidOperationException($"Lista de precios {lista.Id} no encontrada");
+
+        if (rowVersion == null || rowVersion.Length == 0)
+            throw new InvalidOperationException("RowVersion es requerido para actualizar la lista de precios");
+
+        _context.Entry(existing).Property(e => e.RowVersion).OriginalValue = rowVersion;
 
         // Si se marca como predeterminada, quitar flag de otras
         if (lista.EsPredeterminada && !existing.EsPredeterminada)
         {
-            var otras = await _context.ListasPrecios
-                .Where(l => l.EsPredeterminada && l.Id != lista.Id)
-                .ToListAsync();
+            var now = DateTime.UtcNow;
+            var user = GetCurrentUser();
 
-            foreach (var otra in otras)
-                otra.EsPredeterminada = false;
+            await _context.ListasPrecios
+                .Where(l => l.EsPredeterminada && l.Id != lista.Id && !l.IsDeleted)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(l => l.EsPredeterminada, false)
+                    .SetProperty(l => l.UpdatedAt, now)
+                    .SetProperty(l => l.UpdatedBy, user));
         }
 
         existing.Nombre = lista.Nombre;
@@ -120,26 +154,25 @@ public class PrecioService : IPrecioService
         return existing;
     }
 
-    public async Task<bool> DeleteListaAsync(int id)
+    public async Task<bool> DeleteListaAsync(int id, byte[] rowVersion)
     {
-        var lista = await _context.ListasPrecios.FindAsync(id);
+        var lista = await _context.ListasPrecios.FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted);
         if (lista == null)
             return false;
+
+        if (rowVersion == null || rowVersion.Length == 0)
+            throw new InvalidOperationException("RowVersion es requerido para eliminar la lista de precios");
+
+        _context.Entry(lista).Property(e => e.RowVersion).OriginalValue = rowVersion;
 
         // Verificar si tiene precios asociados
         var tienePrecios = await _context.ProductosPrecios
             .AnyAsync(p => p.ListaId == id);
 
-        if (tienePrecios)
-        {
-            // Soft delete
-            lista.IsDeleted = true;
-            lista.Activa = false;
-        }
-        else
-        {
-            _context.ListasPrecios.Remove(lista);
-        }
+        // Soft delete (unificado)
+        lista.IsDeleted = true;
+        lista.Activa = false;
+        lista.EsPredeterminada = false;
 
         await _context.SaveChangesAsync();
 
@@ -167,7 +200,10 @@ public class PrecioService : IPrecioService
                      && p.ListaId == listaId
                      && p.VigenciaDesde <= fecha
                      && (p.VigenciaHasta == null || p.VigenciaHasta >= fecha)
-                     && p.EsVigente)
+                     && p.EsVigente
+                     && !p.IsDeleted
+                     && !p.Producto.IsDeleted
+                     && !p.Lista.IsDeleted)
             .OrderByDescending(p => p.VigenciaDesde)
             .FirstOrDefaultAsync();
     }
@@ -183,7 +219,11 @@ public class PrecioService : IPrecioService
             .Where(p => p.ProductoId == productoId
                      && p.VigenciaDesde <= fecha
                      && (p.VigenciaHasta == null || p.VigenciaHasta >= fecha)
-                     && p.EsVigente)
+                     && p.EsVigente
+                     && !p.IsDeleted
+                     && p.Producto != null
+                     && !p.Producto.IsDeleted
+                     && !p.Lista.IsDeleted)
             .OrderBy(p => p.Lista.Orden)
             .ToListAsync();
     }
@@ -195,7 +235,11 @@ public class PrecioService : IPrecioService
         return await _context.ProductosPrecios
             .Include(p => p.Lista)
             .Include(p => p.Batch)
-            .Where(p => p.ProductoId == productoId && p.ListaId == listaId)
+            .Where(p => p.ProductoId == productoId &&
+                        p.ListaId == listaId &&
+                        !p.IsDeleted &&
+                        p.Producto != null &&
+                        !p.Producto.IsDeleted)
             .OrderByDescending(p => p.VigenciaDesde)
             .ToListAsync();
     }
@@ -214,18 +258,30 @@ public class PrecioService : IPrecioService
     {
         vigenciaDesde ??= DateTime.UtcNow;
 
-        // Marcar como no vigente el precio anterior
-        var preciosAnteriores = await _context.ProductosPrecios
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        var now = DateTime.UtcNow;
+        var currentUser = GetCurrentUser();
+
+        var productoExiste = await _context.Productos.AnyAsync(p => p.Id == productoId && !p.IsDeleted);
+        if (!productoExiste)
+            throw new InvalidOperationException($"Producto {productoId} no encontrado");
+
+        var listaExiste = await _context.ListasPrecios.AnyAsync(l => l.Id == listaId && !l.IsDeleted);
+        if (!listaExiste)
+            throw new InvalidOperationException($"Lista {listaId} no encontrada");
+
+        // Persist updates first to avoid violating the unique vigente constraint
+        await _context.ProductosPrecios
             .Where(p => p.ProductoId == productoId
                      && p.ListaId == listaId
-                     && p.EsVigente)
-            .ToListAsync();
-
-        foreach (var anterior in preciosAnteriores)
-        {
-            anterior.EsVigente = false;
-            anterior.VigenciaHasta = vigenciaDesde.Value.AddSeconds(-1);
-        }
+                     && p.EsVigente
+                     && !p.IsDeleted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(p => p.EsVigente, false)
+                .SetProperty(p => p.VigenciaHasta, vigenciaDesde.Value.AddSeconds(-1))
+                .SetProperty(p => p.UpdatedAt, now)
+                .SetProperty(p => p.UpdatedBy, currentUser));
 
         // Crear nuevo precio
         var margenValor = precio - costo;
@@ -242,12 +298,14 @@ public class PrecioService : IPrecioService
             MargenPorcentaje = margenPorcentaje,
             EsManual = true,
             EsVigente = true,
-            CreadoPor = GetCurrentUser(),
+            CreadoPor = currentUser,
             Notas = notas
         };
 
         _context.ProductosPrecios.Add(nuevoPrecio);
         await _context.SaveChangesAsync();
+
+        await transaction.CommitAsync();
 
         _logger.LogInformation(
             "Precio manual establecido: Producto {ProductoId}, Lista {ListaId}, Precio {Precio} por {User}",
@@ -261,7 +319,8 @@ public class PrecioService : IPrecioService
         int listaId,
         decimal costo)
     {
-        var lista = await _context.ListasPrecios.FindAsync(listaId);
+        var lista = await _context.ListasPrecios
+            .FirstOrDefaultAsync(l => l.Id == listaId && !l.IsDeleted);
         if (lista == null)
             throw new InvalidOperationException($"Lista {listaId} no encontrada");
 
@@ -302,7 +361,9 @@ public class PrecioService : IPrecioService
         var currentUser = GetCurrentUser();
 
         // Obtener productos afectados
-        var query = _context.Productos.AsQueryable();
+        var query = _context.Productos
+            .Where(p => !p.IsDeleted)
+            .AsQueryable();
 
         if (productoIds != null && productoIds.Any())
         {
@@ -351,12 +412,15 @@ public class PrecioService : IPrecioService
                      && listasIds.Contains(p.ListaId)
                      && p.VigenciaDesde <= fechaActual
                      && (p.VigenciaHasta == null || p.VigenciaHasta >= fechaActual)
-                     && p.EsVigente)
+                     && p.EsVigente
+                     && !p.IsDeleted
+                     && !p.Producto.IsDeleted
+                     && !p.Lista.IsDeleted)
             .ToListAsync();
 
         // Crear diccionario para lookup rápido O(1)
         var preciosPorProductoYLista = preciosVigentes
-            .GroupBy(p => new { p.ProductoId, p.ListaId })
+            .GroupBy(p => (p.ProductoId, p.ListaId))
             .ToDictionary(
                 g => g.Key,
                 g => g.OrderByDescending(p => p.VigenciaDesde).First()
@@ -372,7 +436,7 @@ public class PrecioService : IPrecioService
             foreach (var listaId in listasIds)
             {
                 // Lookup en memoria O(1) en lugar de query
-                var key = new { ProductoId = producto.Id, ListaId = listaId };
+                var key = (ProductoId: producto.Id, ListaId: listaId);
                 if (!preciosPorProductoYLista.TryGetValue(key, out var precioActual))
                 {
                     _logger.LogWarning(
@@ -451,8 +515,8 @@ public class PrecioService : IPrecioService
         // Verificar si requiere autorización
         batch.RequiereAutorizacion = await RequiereAutorizacionAsync(batch.Id);
 
-        // Actualizar cantidad de productos con items reales
-        batch.CantidadProductos = items.Count;
+        // Cantidad de productos realmente afectados (distinct por ProductoId)
+        batch.CantidadProductos = items.Select(i => i.ProductoId).Distinct().Count();
 
         await _context.SaveChangesAsync();
 
@@ -517,8 +581,8 @@ public class PrecioService : IPrecioService
     public async Task<PriceChangeBatch?> GetSimulacionAsync(int batchId)
     {
         return await _context.PriceChangeBatches
-            .Include(b => b.Items)
-            .FirstOrDefaultAsync(b => b.Id == batchId);
+            .Include(b => b.Items.Where(i => !i.IsDeleted))
+            .FirstOrDefaultAsync(b => b.Id == batchId && !b.IsDeleted);
     }
 
     public async Task<List<PriceChangeItem>> GetItemsSimulacionAsync(
@@ -529,7 +593,10 @@ public class PrecioService : IPrecioService
         return await _context.PriceChangeItems
             .Include(i => i.Producto)
             .Include(i => i.Lista)
-            .Where(i => i.BatchId == batchId)
+            .Where(i => i.BatchId == batchId
+                     && !i.IsDeleted
+                     && !i.Producto.IsDeleted
+                     && !i.Lista.IsDeleted)
             .OrderBy(i => i.ProductoCodigo)
             .Skip(skip)
             .Take(take)
@@ -543,11 +610,18 @@ public class PrecioService : IPrecioService
     public async Task<PriceChangeBatch> AprobarBatchAsync(
         int batchId,
         string aprobadoPor,
+        byte[] rowVersion,
         string? notas = null)
     {
-        var batch = await _context.PriceChangeBatches.FindAsync(batchId);
+        var batch = await _context.PriceChangeBatches
+            .FirstOrDefaultAsync(b => b.Id == batchId && !b.IsDeleted);
         if (batch == null)
             throw new InvalidOperationException($"Batch {batchId} no encontrado");
+
+        if (rowVersion == null || rowVersion.Length == 0)
+            throw new InvalidOperationException("RowVersion es requerido para aprobar el batch");
+
+        _context.Entry(batch).Property(e => e.RowVersion).OriginalValue = rowVersion;
 
         if (batch.Estado != EstadoBatch.Simulado)
             throw new InvalidOperationException(
@@ -572,11 +646,18 @@ public class PrecioService : IPrecioService
     public async Task<PriceChangeBatch> RechazarBatchAsync(
         int batchId,
         string rechazadoPor,
+        byte[] rowVersion,
         string motivo)
     {
-        var batch = await _context.PriceChangeBatches.FindAsync(batchId);
+        var batch = await _context.PriceChangeBatches
+            .FirstOrDefaultAsync(b => b.Id == batchId && !b.IsDeleted);
         if (batch == null)
             throw new InvalidOperationException($"Batch {batchId} no encontrado");
+
+        if (rowVersion == null || rowVersion.Length == 0)
+            throw new InvalidOperationException("RowVersion es requerido para rechazar el batch");
+
+        _context.Entry(batch).Property(e => e.RowVersion).OriginalValue = rowVersion;
 
         if (batch.Estado != EstadoBatch.Simulado)
             throw new InvalidOperationException(
@@ -599,11 +680,18 @@ public class PrecioService : IPrecioService
     public async Task<PriceChangeBatch> CancelarBatchAsync(
         int batchId,
         string canceladoPor,
+        byte[] rowVersion,
         string? motivo = null)
     {
-        var batch = await _context.PriceChangeBatches.FindAsync(batchId);
+        var batch = await _context.PriceChangeBatches
+            .FirstOrDefaultAsync(b => b.Id == batchId && !b.IsDeleted);
         if (batch == null)
             throw new InvalidOperationException($"Batch {batchId} no encontrado");
+
+        if (rowVersion == null || rowVersion.Length == 0)
+            throw new InvalidOperationException("RowVersion es requerido para cancelar el batch");
+
+        _context.Entry(batch).Property(e => e.RowVersion).OriginalValue = rowVersion;
 
         if (batch.Estado == EstadoBatch.Aplicado)
             throw new InvalidOperationException(
@@ -623,7 +711,8 @@ public class PrecioService : IPrecioService
 
     public async Task<bool> RequiereAutorizacionAsync(int batchId)
     {
-        var batch = await _context.PriceChangeBatches.FindAsync(batchId);
+        var batch = await _context.PriceChangeBatches
+            .FirstOrDefaultAsync(b => b.Id == batchId && !b.IsDeleted);
         if (batch == null)
             return false;
 
@@ -641,11 +730,12 @@ public class PrecioService : IPrecioService
     public async Task<PriceChangeBatch> AplicarBatchAsync(
         int batchId,
         string aplicadoPor,
+        byte[] rowVersion,
         DateTime? fechaVigencia = null)
     {
         var batch = await _context.PriceChangeBatches
-            .Include(b => b.Items)
-            .FirstOrDefaultAsync(b => b.Id == batchId);
+            .Include(b => b.Items.Where(i => !i.IsDeleted))
+            .FirstOrDefaultAsync(b => b.Id == batchId && !b.IsDeleted);
 
         if (batch == null)
             throw new InvalidOperationException($"Batch {batchId} no encontrado");
@@ -654,26 +744,33 @@ public class PrecioService : IPrecioService
             throw new InvalidOperationException(
                 $"Batch {batchId} debe estar Aprobado para aplicarse (estado actual: {batch.Estado})");
 
+        if (rowVersion == null || rowVersion.Length == 0)
+            throw new InvalidOperationException("RowVersion es requerido para aplicar el batch");
+
+        _context.Entry(batch).Property(e => e.RowVersion).OriginalValue = rowVersion;
+
         fechaVigencia ??= DateTime.UtcNow;
 
         // Aplicar en transacción
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
+            var nuevosPrecios = new List<ProductoPrecioLista>();
+            var now = DateTime.UtcNow;
+
             foreach (var item in batch.Items)
             {
                 // Marcar precio actual como no vigente
-                var preciosAnteriores = await _context.ProductosPrecios
+                await _context.ProductosPrecios
                     .Where(p => p.ProductoId == item.ProductoId
                              && p.ListaId == item.ListaId
-                             && p.EsVigente)
-                    .ToListAsync();
-
-                foreach (var anterior in preciosAnteriores)
-                {
-                    anterior.EsVigente = false;
-                    anterior.VigenciaHasta = fechaVigencia.Value.AddSeconds(-1);
-                }
+                             && p.EsVigente
+                             && !p.IsDeleted)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(p => p.EsVigente, false)
+                        .SetProperty(p => p.VigenciaHasta, fechaVigencia.Value.AddSeconds(-1))
+                        .SetProperty(p => p.UpdatedAt, now)
+                        .SetProperty(p => p.UpdatedBy, aplicadoPor));
 
                 // Crear nuevo precio
                 var nuevoPrecio = new ProductoPrecioLista
@@ -692,11 +789,13 @@ public class PrecioService : IPrecioService
                     Notas = $"Aplicado desde batch: {batch.Nombre}"
                 };
 
-                _context.ProductosPrecios.Add(nuevoPrecio);
+                nuevosPrecios.Add(nuevoPrecio);
 
                 // Marcar item como aplicado
                 item.Aplicado = true;
             }
+
+            _context.ProductosPrecios.AddRange(nuevosPrecios);
 
             // Actualizar batch
             batch.Estado = EstadoBatch.Aplicado;
@@ -724,11 +823,12 @@ public class PrecioService : IPrecioService
     public async Task<PriceChangeBatch> RevertirBatchAsync(
         int batchId,
         string revertidoPor,
+        byte[] rowVersion,
         string motivo)
     {
         var batch = await _context.PriceChangeBatches
-            .Include(b => b.Items)
-            .FirstOrDefaultAsync(b => b.Id == batchId);
+            .Include(b => b.Items.Where(i => !i.IsDeleted))
+            .FirstOrDefaultAsync(b => b.Id == batchId && !b.IsDeleted);
 
         if (batch == null)
             throw new InvalidOperationException($"Batch {batchId} no encontrado");
@@ -737,26 +837,64 @@ public class PrecioService : IPrecioService
             throw new InvalidOperationException(
                 $"Solo se pueden revertir batches Aplicados (estado actual: {batch.Estado})");
 
+        if (rowVersion == null || rowVersion.Length == 0)
+            throw new InvalidOperationException("RowVersion es requerido para revertir el batch");
+
+        _context.Entry(batch).Property(e => e.RowVersion).OriginalValue = rowVersion;
+
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var fechaReversion = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+
+            // Crear batch de reversión para auditoría
+            var batchReversion = new PriceChangeBatch
+            {
+                Nombre = $"[REVERSIÓN] {batch.Nombre}",
+                TipoCambio = batch.TipoCambio,
+                TipoAplicacion = batch.TipoAplicacion == TipoAplicacion.Aumento 
+                    ? TipoAplicacion.Disminucion 
+                    : TipoAplicacion.Aumento,
+                ValorCambio = batch.ValorCambio,
+                AlcanceJson = batch.AlcanceJson,
+                ListasAfectadasJson = batch.ListasAfectadasJson,
+                Estado = EstadoBatch.Aplicado,
+                CantidadProductos = batch.CantidadProductos,
+                SolicitadoPor = revertidoPor,
+                FechaSolicitud = fechaReversion,
+                AprobadoPor = revertidoPor,
+                FechaAprobacion = fechaReversion,
+                AplicadoPor = revertidoPor,
+                FechaAplicacion = fechaReversion,
+                FechaVigencia = fechaReversion,
+                RequiereAutorizacion = false,
+                BatchPadreId = batchId,
+                Notas = $"Reversión del batch #{batchId}. Motivo: {motivo}",
+                MotivoReversion = motivo,
+                PorcentajePromedioCambio = -batch.PorcentajePromedioCambio
+            };
+
+            _context.PriceChangeBatches.Add(batchReversion);
+            await _context.SaveChangesAsync(); // Obtener ID del nuevo batch
+
+            var nuevosPrecios = new List<ProductoPrecioLista>();
+            var itemsReversion = new List<PriceChangeItem>();
 
             foreach (var item in batch.Items.Where(i => i.Aplicado))
             {
                 // Marcar precio actual (del batch) como no vigente
-                var preciosDelBatch = await _context.ProductosPrecios
+                await _context.ProductosPrecios
                     .Where(p => p.ProductoId == item.ProductoId
                              && p.ListaId == item.ListaId
                              && p.BatchId == batchId
-                             && p.EsVigente)
-                    .ToListAsync();
-
-                foreach (var precio in preciosDelBatch)
-                {
-                    precio.EsVigente = false;
-                    precio.VigenciaHasta = fechaReversion.AddSeconds(-1);
-                }
+                             && p.EsVigente
+                             && !p.IsDeleted)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(p => p.EsVigente, false)
+                        .SetProperty(p => p.VigenciaHasta, fechaReversion.AddSeconds(-1))
+                        .SetProperty(p => p.UpdatedAt, now)
+                        .SetProperty(p => p.UpdatedBy, revertidoPor));
 
                 // Restaurar precio anterior
                 var nuevoPrecio = new ProductoPrecioLista
@@ -770,30 +908,54 @@ public class PrecioService : IPrecioService
                     MargenPorcentaje = item.MargenAnterior ?? 0,
                     EsManual = false,
                     EsVigente = true,
+                    BatchId = batchReversion.Id,
                     CreadoPor = revertidoPor,
-                    Notas = $"Revertido desde batch {batchId}: {motivo}"
+                    Notas = $"Revertido desde batch #{batchId}: {motivo}"
                 };
 
-                _context.ProductosPrecios.Add(nuevoPrecio);
+                nuevosPrecios.Add(nuevoPrecio);
 
-                // Marcar item como revertido
+                // Crear item de reversión para el nuevo batch
+                var itemReversion = new PriceChangeItem
+                {
+                    BatchId = batchReversion.Id,
+                    ProductoId = item.ProductoId,
+                    ListaId = item.ListaId,
+                    ProductoCodigo = item.ProductoCodigo,
+                    ProductoNombre = item.ProductoNombre,
+                    PrecioAnterior = item.PrecioNuevo,  // El "anterior" es el precio que estamos revirtiendo
+                    PrecioNuevo = item.PrecioAnterior,  // El "nuevo" es el precio original
+                    DiferenciaValor = item.PrecioAnterior - item.PrecioNuevo,
+                    DiferenciaPorcentaje = -item.DiferenciaPorcentaje,
+                    Costo = item.Costo,
+                    MargenAnterior = item.MargenNuevo,
+                    MargenNuevo = item.MargenAnterior,
+                    Aplicado = true
+                };
+
+                itemsReversion.Add(itemReversion);
+
+                // Marcar item original como revertido
                 item.Revertido = true;
             }
 
-            // Actualizar batch
+            _context.ProductosPrecios.AddRange(nuevosPrecios);
+            _context.PriceChangeItems.AddRange(itemsReversion);
+
+            // Actualizar batch original
             batch.Estado = EstadoBatch.Revertido;
             batch.RevertidoPor = revertidoPor;
             batch.FechaReversion = fechaReversion;
-            batch.MotivoRechazo = motivo;
+            batch.MotivoReversion = motivo;
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
             _logger.LogInformation(
-                "Batch revertido exitosamente: {BatchId} por {User} - Motivo: {Motivo}",
-                batchId, revertidoPor, motivo);
+                "Batch revertido exitosamente: {BatchId} por {User} - Motivo: {Motivo}. Batch de reversión: {BatchReversionId}",
+                batchId, revertidoPor, motivo, batchReversion.Id);
 
-            return batch;
+            return batchReversion; // Retornar el batch de reversión para referencia
         }
         catch (Exception ex)
         {
@@ -814,7 +976,9 @@ public class PrecioService : IPrecioService
         int skip = 0,
         int take = 50)
     {
-        var query = _context.PriceChangeBatches.AsQueryable();
+        var query = _context.PriceChangeBatches
+            .Where(b => !b.IsDeleted)
+            .AsQueryable();
 
         if (estado.HasValue)
             query = query.Where(b => b.Estado == estado.Value);
@@ -835,8 +999,8 @@ public class PrecioService : IPrecioService
     public async Task<Dictionary<string, object>> GetEstadisticasBatchAsync(int batchId)
     {
         var batch = await _context.PriceChangeBatches
-            .Include(b => b.Items)
-            .FirstOrDefaultAsync(b => b.Id == batchId);
+            .Include(b => b.Items.Where(i => !i.IsDeleted))
+            .FirstOrDefaultAsync(b => b.Id == batchId && !b.IsDeleted);
 
         if (batch == null)
             return new Dictionary<string, object>();
@@ -861,10 +1025,81 @@ public class PrecioService : IPrecioService
         DateTime fechaDesde,
         DateTime fechaHasta)
     {
-        // TODO: Implementar exportación a Excel/CSV
-        // Por ahora retorna array vacío
-        await Task.CompletedTask;
-        return Array.Empty<byte>();
+        if (productoIds == null || productoIds.Count == 0)
+            return Array.Empty<byte>();
+
+        if (fechaHasta < fechaDesde)
+            throw new ArgumentException("fechaHasta debe ser mayor o igual a fechaDesde");
+
+        var precios = await _context.ProductosPrecios
+            .Include(p => p.Producto)
+            .Include(p => p.Lista)
+            .Include(p => p.Batch)
+            .Where(p => productoIds.Contains(p.ProductoId)
+                     && !p.IsDeleted
+                     && !p.Producto.IsDeleted
+                     && !p.Lista.IsDeleted
+                     && p.VigenciaDesde <= fechaHasta
+                     && (p.VigenciaHasta == null || p.VigenciaHasta >= fechaDesde))
+            .OrderBy(p => p.Producto.Codigo)
+            .ThenBy(p => p.Lista.Orden)
+            .ThenByDescending(p => p.VigenciaDesde)
+            .ToListAsync();
+
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("HistorialPrecios");
+
+        worksheet.Cell(1, 1).Value = "ProductoId";
+        worksheet.Cell(1, 2).Value = "Codigo";
+        worksheet.Cell(1, 3).Value = "Producto";
+        worksheet.Cell(1, 4).Value = "Lista";
+        worksheet.Cell(1, 5).Value = "VigenciaDesde";
+        worksheet.Cell(1, 6).Value = "VigenciaHasta";
+        worksheet.Cell(1, 7).Value = "Precio";
+        worksheet.Cell(1, 8).Value = "Costo";
+        worksheet.Cell(1, 9).Value = "Margen%";
+        worksheet.Cell(1, 10).Value = "EsVigente";
+        worksheet.Cell(1, 11).Value = "EsManual";
+        worksheet.Cell(1, 12).Value = "BatchId";
+        worksheet.Cell(1, 13).Value = "Batch";
+        worksheet.Cell(1, 14).Value = "Notas";
+
+        var headerRange = worksheet.Range("A1:N1");
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+
+        int row = 2;
+        foreach (var p in precios)
+        {
+            worksheet.Cell(row, 1).Value = p.ProductoId;
+            worksheet.Cell(row, 2).Value = p.Producto?.Codigo ?? p.ProductoId.ToString();
+            worksheet.Cell(row, 3).Value = p.Producto?.Nombre ?? string.Empty;
+            worksheet.Cell(row, 4).Value = p.Lista?.Nombre ?? p.ListaId.ToString();
+            worksheet.Cell(row, 5).Value = p.VigenciaDesde;
+            worksheet.Cell(row, 6).Value = p.VigenciaHasta;
+            worksheet.Cell(row, 7).Value = p.Precio;
+            worksheet.Cell(row, 8).Value = p.Costo;
+            worksheet.Cell(row, 9).Value = p.MargenPorcentaje;
+            worksheet.Cell(row, 10).Value = p.EsVigente;
+            worksheet.Cell(row, 11).Value = p.EsManual;
+            worksheet.Cell(row, 12).Value = p.BatchId;
+            worksheet.Cell(row, 13).Value = p.Batch?.Nombre ?? string.Empty;
+            worksheet.Cell(row, 14).Value = p.Notas ?? string.Empty;
+            row++;
+        }
+
+        if (row > 2)
+        {
+            worksheet.Range($"E2:F{row - 1}").Style.DateFormat.Format = "yyyy-MM-dd HH:mm:ss";
+            worksheet.Range($"G2:H{row - 1}").Style.NumberFormat.Format = "$#,##0.00";
+            worksheet.Range($"I2:I{row - 1}").Style.NumberFormat.Format = "0.00";
+        }
+
+        worksheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
     }
 
     #endregion
@@ -877,7 +1112,8 @@ public class PrecioService : IPrecioService
         int listaId)
     {
         // Obtener margen mínimo de la lista de precios
-        var lista = await _context.ListasPrecios.FindAsync(listaId);
+        var lista = await _context.ListasPrecios
+            .FirstOrDefaultAsync(l => l.Id == listaId && !l.IsDeleted);
         var margenMinimo = lista?.MargenMinimoPorcentaje ?? 10.0m;
 
         var margen = CalcularMargen(precio, costo);

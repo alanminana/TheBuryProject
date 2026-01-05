@@ -1,13 +1,15 @@
 ﻿@model TheBuryProject.ViewModels.MarcaViewModel
 @{
     ViewData["Title"] = "Eliminar Marca";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index")!;
 }
 
 <section class="container-fluid py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="mb-4">
-                <a asp-action="Index" class="text-decoration-none text-light">
+                <a href="@backUrl" class="text-decoration-none text-light">
                     <i class="bi bi-arrow-left me-2"></i>Volver al listado
                 </a>
             </div>
@@ -90,12 +92,16 @@
 
                     <form asp-action="Delete" method="post" class="mt-4">
                         <input type="hidden" asp-for="Id" />
+                        @if (!string.IsNullOrWhiteSpace(returnUrl))
+                        {
+                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        }
 
                         <div class="d-flex justify-content-end gap-2">
-                            <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
+                            <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
                                 <i class="bi bi-x-circle me-2"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-danger btn-lg px-4">
+                            <button type="submit" class="btn btn-danger btn-lg px-4" data-confirm="¿Eliminar la marca '@Model.Nombre'? Esta acción la deshabilita para nuevos productos." data-confirm-title="Confirmar eliminación">
                                 <i class="bi bi-trash me-2"></i>Eliminar Marca
                             </button>
                         </div>
@@ -105,3 +111,7 @@
         </div>
     </div>
 </section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/catalogo.css" asp-append-version="true" />
+}

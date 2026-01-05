@@ -3,78 +3,83 @@
     ViewData["Title"] = "Detalles del Producto";
 }
 
-<section class="container-fluid py-5">
+<div class="container-fluid py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <div class="mb-4">
-                <a asp-action="Index" class="link-light text-decoration-none">
-                    <i class="bi bi-arrow-left me-2"></i>Volver al listado
-                </a>
-            </div>
 
-            <div class="card bg-dark border-0 shadow-sm">
-                <div class="card-header bg-info border-0">
-                    <h4 class="fw-bold text-dark mb-0">
-                        <i class="bi bi-eye me-2"></i>Detalles del Producto
-                    </h4>
+            @* Header unificado *@
+            <partial name="_PageHeader" model='new PageHeaderModel {
+                Breadcrumb = "Inventario · Productos",
+                Title = "Detalles del Producto",
+                Icon = "eye",
+                Subtitle = Model.Nombre,
+                BackAction = "Index",
+                BackController = "Catalogo",
+                BackText = "Volver al catálogo",
+                ShowCatalogoLink = false
+            }' />
+
+            @* Alertas *@
+            <partial name="_Alerts" />
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-eye"></i>
+                        <span>@Model.Nombre</span>
+                    </h5>
+                    @if (Model.Activo)
+                    {
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Activo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Inactivo</span>
+                    }
                 </div>
 
-                <div class="card-body p-4 text-light">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h5 class="border-bottom border-secondary pb-2 mb-0 text-info">
-                            <i class="bi bi-info-circle me-2"></i>Información General
-                        </h5>
-                        @if (Model.Activo)
-                        {
-                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Activo</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Inactivo</span>
-                        }
-                    </div>
-
+                <div class="card-body p-4">
                     <div class="row g-4">
+                        @* Sección: Información Básica *@
+                        <partial name="_FormSection" model="FormSectionModel.InfoBasica()" />
+
                         <div class="col-md-4">
-                            <label class="form-label text-secondary small fw-semibold">Código</label>
-                            <p><span class="badge bg-info text-dark fs-6">@Model.Codigo</span></p>
+                            <label class="form-label text-muted small fw-semibold">Código</label>
+                            <p><span class="badge bg-info fs-6">@Model.Codigo</span></p>
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label text-secondary small fw-semibold">Nombre</label>
+                            <label class="form-label text-muted small fw-semibold">Nombre</label>
                             <p class="fw-bold fs-4">@Model.Nombre</p>
                         </div>
                         <div class="col-12">
-                            <label class="form-label text-secondary small fw-semibold">Descripción</label>
-                            <p class="text-secondary">@(Model.Descripcion ?? "Sin descripción")</p>
+                            <label class="form-label text-muted small fw-semibold">Descripción</label>
+                            <p class="text-muted">@(Model.Descripcion ?? "Sin descripción")</p>
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label text-secondary small fw-semibold">Categoría</label>
-                            <p><i class="bi bi-diagram-3 text-info me-1"></i>@Model.CategoriaNombre</p>
+                            <label class="form-label text-muted small fw-semibold">Categoría</label>
+                            <p><i class="bi bi-diagram-3 text-primary me-1"></i>@Model.CategoriaNombre</p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-secondary small fw-semibold">Marca</label>
-                            <p><i class="bi bi-tag text-info me-1"></i>@Model.MarcaNombre</p>
+                            <label class="form-label text-muted small fw-semibold">Marca</label>
+                            <p><i class="bi bi-tag text-primary me-1"></i>@Model.MarcaNombre</p>
                         </div>
 
-                        <!-- Precios -->
-                        <div class="col-12 mt-4">
-                            <h5 class="border-bottom border-secondary pb-2 mb-3 text-success">
-                                <i class="bi bi-cash-coin me-2"></i>Precios
-                            </h5>
-                        </div>
+                        @* Sección: Precios *@
+                        <partial name="_FormSection" model="FormSectionModel.Precios()" />
+
                         <div class="col-md-6">
-                            <div class="card bg-body-secondary border-0">
+                            <div class="card bg-light border-0">
                                 <div class="card-body text-center">
-                                    <p class="text-secondary small mb-1">Precio de Compra</p>
-                                    <p class="fw-bold fs-4 text-info mb-0">@Model.PrecioCompra.ToString("C2")</p>
+                                    <p class="text-muted small mb-1">Precio de Compra</p>
+                                    <p class="fw-bold fs-4 text-primary mb-0">@Model.PrecioCompra.ToString("C2")</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="card bg-body-secondary border-0">
+                            <div class="card bg-light border-0">
                                 <div class="card-body text-center">
-                                    <p class="text-secondary small mb-1">Precio de Venta</p>
+                                    <p class="text-muted small mb-1">Precio de Venta</p>
                                     <p class="fw-bold fs-4 text-success mb-0">@Model.PrecioVenta.ToString("C2")</p>
                                 </div>
                             </div>
@@ -83,43 +88,54 @@
                         @if (Model.MargenGanancia.HasValue)
                         {
                             <div class="col-12">
-                                <div class="alert alert-success border-0 text-dark">
+                                <div class="alert alert-success border-0">
                                     <i class="bi bi-graph-up-arrow me-2"></i>
                                     <strong>Margen:</strong> @Model.MargenGanancia.Value.ToString("F2")%
                                 </div>
                             </div>
                         }
 
-                        <!-- Inventario -->
-                        <div class="col-12 mt-4">
-                            <h5 class="border-bottom border-secondary pb-2 mb-3 text-info">
-                                <i class="bi bi-boxes me-2"></i>Inventario
-                            </h5>
+                        @* Acciones de precios *@
+                        <div class="col-12">
+                            <div class="d-flex flex-wrap gap-2">
+                                <a asp-controller="CambiosPrecios" asp-action="Historial" asp-route-productoId="@Model.Id" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-clock-history me-1"></i>Ver historial de precios
+                                </a>
+                                <a asp-controller="CambiosPrecios" asp-action="Simular" asp-route-productoIdsText="@Model.Id" 
+                                   class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-calculator me-1"></i>Crear simulación con este producto
+                                </a>
+                            </div>
                         </div>
+
+                        @* Sección: Stock *@
+                        <partial name="_FormSection" model="FormSectionModel.Stock()" />
+
                         <div class="col-md-4">
                             <div class="card border-0
                                 @(Model.EstadoStock == "Sin Stock" ? "bg-danger-subtle" :
-                                                                   Model.EstadoStock == "Stock Bajo" ? "bg-warning-subtle" : "bg-success-subtle")">
+                                  Model.EstadoStock == "Stock Bajo" ? "bg-warning-subtle" : "bg-success-subtle")">
                                 <div class="card-body text-center">
-                                    <p class="text-secondary small mb-1">Stock Actual</p>
+                                    <p class="text-muted small mb-1">Stock Actual</p>
                                     <p class="fw-bold fs-3 mb-1">@Model.StockActual</p>
-                                    <span class="badge bg-dark">@Model.UnidadMedida</span>
+                                    <span class="badge bg-secondary">UN</span>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="card bg-body-secondary border-0">
+                            <div class="card bg-light border-0">
                                 <div class="card-body text-center">
-                                    <p class="text-secondary small mb-1">Stock Mínimo</p>
+                                    <p class="text-muted small mb-1">Stock Mínimo</p>
                                     <p class="fw-bold fs-3 mb-1">@Model.StockMinimo</p>
-                                    <span class="badge bg-dark">@Model.UnidadMedida</span>
+                                    <span class="badge bg-secondary">UN</span>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="card bg-body-secondary border-0">
+                            <div class="card bg-light border-0">
                                 <div class="card-body text-center">
-                                    <p class="text-secondary small mb-1">Estado de Stock</p>
+                                    <p class="text-muted small mb-1">Estado de Stock</p>
                                     <p class="fw-bold fs-5 mb-0">
                                         @if (Model.EstadoStock == "Sin Stock")
                                         {
@@ -127,12 +143,10 @@
                                         }
                                         else if (Model.EstadoStock == "Stock Bajo")
                                         {
-
                                             <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> Bajo</span>
                                         }
                                         else
                                         {
-
                                             <span class="text-success"><i class="bi bi-check-circle"></i> OK</span>
                                         }
                                     </p>
@@ -140,48 +154,20 @@
                             </div>
                         </div>
 
-                        <!-- Configuración -->
+                        @* Sección: Auditoría *@
                         <div class="col-12 mt-4">
-                            <h5 class="border-bottom border-secondary pb-2 mb-3 text-light">
-                                <i class="bi bi-gear me-2"></i>Configuración
-                            </h5>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card bg-body-secondary border-0">
-                                <div class="card-body">
-                                    <p class="text-secondary small mb-1">Requiere N° de Serie</p>
-                                    <p class="fw-bold mb-0">
-                                        @(Model.RequiereNumeroSerie ?
-                                                                                "<span class='text-success'><i class='bi bi-check-circle-fill'></i> Sí</span>" :
-                                                                                "<span class='text-secondary'><i class='bi bi-x-circle'></i> No</span>")
-                                        @Html.Raw("")
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card bg-body-secondary border-0">
-                                <div class="card-body">
-                                    <p class="text-secondary small mb-1">Unidad de Medida</p>
-                                    <p class="fw-bold fs-5 mb-0">@Model.UnidadMedida</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Auditoría -->
-                        <div class="col-12 mt-4">
-                            <h5 class="border-bottom border-secondary pb-2 mb-3 text-secondary">
+                            <h6 class="border-bottom pb-2 mb-3 text-muted">
                                 <i class="bi bi-clock-history me-2"></i>Auditoría
-                            </h5>
+                            </h6>
                         </div>
                         <div class="col-md-6">
                             <p>
-                                <i class="bi bi-calendar-plus text-info me-1"></i>
+                                <i class="bi bi-calendar-plus text-primary me-1"></i>
                                 Creado: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                             </p>
                             @if (!string.IsNullOrEmpty(Model.CreatedBy))
                             {
-                                <p class="small text-secondary"><i class="bi bi-person me-1"></i>@Model.CreatedBy</p>
+                                <p class="small text-muted"><i class="bi bi-person me-1"></i>@Model.CreatedBy</p>
                             }
                         </div>
                         <div class="col-md-6">
@@ -193,27 +179,28 @@
                                 </p>
                                 @if (!string.IsNullOrEmpty(Model.UpdatedBy))
                                 {
-                                    <p class="small text-secondary"><i class="bi bi-person me-1"></i>@Model.UpdatedBy</p>
+                                    <p class="small text-muted"><i class="bi bi-person me-1"></i>@Model.UpdatedBy</p>
                                 }
                             }
                             else
                             {
-                                <p class="text-secondary">Sin modificaciones</p>
+                                <p class="text-muted">Sin modificaciones</p>
                             }
                         </div>
                     </div>
 
-                    <hr class="border-secondary my-4" />
+                    <hr class="my-4" />
+                    
                     <div class="d-flex justify-content-between align-items-center">
-                        <a asp-controller="MovimientoStock" asp-action="Kardex" asp-route-id="@Model.Id" class="btn btn-info text-dark fw-semibold">
-                            <i class="bi bi-graph-up"></i> Ver Kardex
+                        <a asp-controller="MovimientoStock" asp-action="Kardex" asp-route-id="@Model.Id" class="btn btn-outline-info">
+                            <i class="bi bi-graph-up me-1"></i>Ver Kardex
                         </a>
                         <div class="d-flex gap-2">
-                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning text-dark fw-semibold">
-                                <i class="bi bi-pencil me-2"></i>Editar
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                                <i class="bi bi-pencil me-1"></i>Editar
                             </a>
                             <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
-                                <i class="bi bi-trash me-2"></i>Eliminar
+                                <i class="bi bi-trash me-1"></i>Eliminar
                             </a>
                         </div>
                     </div>
@@ -221,4 +208,4 @@
             </div>
         </div>
     </div>
-</section>
+</div>

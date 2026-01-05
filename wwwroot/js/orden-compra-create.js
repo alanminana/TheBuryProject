@@ -21,6 +21,16 @@
     let detalles = [];
     let detalleIndex = 0;
 
+    function normalizarCantidadEntera(valor) {
+        const parsed = Number.parseInt(String(valor ?? ''), 10);
+        return Number.isFinite(parsed) ? parsed : NaN;
+    }
+
+    function normalizarNumero(valor) {
+        const parsed = Number.parseFloat(String(valor ?? ''));
+        return Number.isFinite(parsed) ? parsed : NaN;
+    }
+
     async function cargarProductos(proveedorId) {
         if (!productoSelect) return;
 
@@ -76,8 +86,8 @@
     function agregarDetalle() {
         const productoId = productoSelect.value;
         const productoNombre = productoSelect.options[productoSelect.selectedIndex]?.text;
-        const cantidad = parseFloat(cantidadInput.value);
-        const precio = parseFloat(precioInput.value);
+        const cantidad = normalizarCantidadEntera(cantidadInput.value);
+        const precio = normalizarNumero(precioInput.value);
 
         if (!productoId || !productoNombre || isNaN(cantidad) || isNaN(precio) || cantidad <= 0 || precio <= 0) {
             alert('Complete los campos.');
@@ -91,6 +101,7 @@
 
         const detalle = {
             index: detalleIndex++,
+            id: null,
             productoId,
             productoNombre,
             cantidad,
@@ -123,8 +134,12 @@
 
         const rows = detalles.map((d, idx) => `
             <tr>
-                <td>${d.productoNombre}<input type="hidden" name="Detalles[${idx}].ProductoId" value="${d.productoId}" /></td>
-                <td class="text-end">${d.cantidad.toFixed(2)}<input type="hidden" name="Detalles[${idx}].Cantidad" value="${d.cantidad}" /></td>
+                <td>
+                    ${d.productoNombre || ''}
+                    <input type="hidden" name="Detalles[${idx}].Id" value="${d.id ?? 0}" />
+                    <input type="hidden" name="Detalles[${idx}].ProductoId" value="${d.productoId}" />
+                </td>
+                <td class="text-end">${d.cantidad}<input type="hidden" name="Detalles[${idx}].Cantidad" value="${d.cantidad}" /></td>
                 <td class="text-end">$${d.precioUnitario.toFixed(2)}<input type="hidden" name="Detalles[${idx}].PrecioUnitario" value="${d.precioUnitario}" /></td>
                 <td class="text-end fw-bold">$${d.subtotal.toFixed(2)}<input type="hidden" name="Detalles[${idx}].Subtotal" value="${d.subtotal}" /></td>
                 <td class="text-center"><button type="button" class="btn btn-sm btn-danger" data-detalle-index="${d.index}"><i class="bi bi-trash"></i></button></td>
@@ -160,7 +175,49 @@
         }
     }
 
+    function getDetallesIniciales() {
+        const jsonEl = document.getElementById('ordenCompraDetallesInicialesJson');
+        const rawJson = (jsonEl && 'value' in jsonEl)
+            ? String(jsonEl.value || '')
+            : String(jsonEl?.textContent || '');
+
+        if (rawJson && rawJson.trim()) {
+            try {
+                const parsed = JSON.parse(rawJson.trim());
+                if (Array.isArray(parsed)) return parsed;
+            } catch {
+                // ignore
+            }
+        }
+
+        return window.ordenCompraDetallesIniciales;
+    }
+
     function inicializar() {
+        const detallesIniciales = getDetallesIniciales();
+        if (Array.isArray(detallesIniciales) && detallesIniciales.length > 0) {
+            detalles = detallesIniciales
+                .filter(d => d && d.productoId)
+                .map((d, idx) => {
+                    const cantidad = normalizarCantidadEntera(d.cantidad);
+                    const precio = normalizarNumero(d.precioUnitario);
+                    const subtotal = normalizarNumero(d.subtotal);
+
+                    return {
+                        index: idx,
+                        id: d.id ?? 0,
+                        productoId: String(d.productoId),
+                        productoNombre: d.productoNombre ?? '',
+                        cantidad: Number.isFinite(cantidad) ? cantidad : 0,
+                        precioUnitario: Number.isFinite(precio) ? precio : 0,
+                        subtotal: Number.isFinite(subtotal) ? subtotal : 0
+                    };
+                });
+
+            detalleIndex = detalles.length;
+            renderDetalles();
+        }
+
         if (proveedorSelect) {
             proveedorSelect.addEventListener('change', () => cargarProductos(proveedorSelect.value));
             if (proveedorSelect.value) {

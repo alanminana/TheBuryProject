@@ -1,7 +1,10 @@
 ﻿@model TheBuryProject.ViewModels.SolicitudesListViewModel
+@using TheBuryProject.Models.Constants
 
 @{
     ViewData["Title"] = "Solicitudes de Autorización";
+    var cleanedQuery = QueryString.Create(Context.Request.Query.Where(kvp => !string.Equals(kvp.Key, "returnUrl", StringComparison.OrdinalIgnoreCase)));
+    var listReturnUrl = Context.Request.Path + cleanedQuery;
 }
 
 <div class="container-fluid px-0">
@@ -19,10 +22,10 @@
         </div>
 
         <div class="d-flex flex-wrap gap-2">
-            <a asp-action="CrearSolicitud" class="btn btn-primary btn-sm">
+            <a asp-action="CrearSolicitud" asp-route-returnUrl="@listReturnUrl" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-circle me-1"></i>Nueva solicitud
             </a>
-            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <a asp-action="Index" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-gear me-1"></i>Configurar umbrales
             </a>
         </div>
@@ -145,7 +148,7 @@
                                         <th>Valor solicitado</th>
                                         <th>Valor permitido</th>
                                         <th>Justificación</th>
-                                        @if (User.IsInRole("Admin") || User.IsInRole("Gerente"))
+                                        @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Gerente))
                                         {
                                             <th class="text-end">Acciones</th>
                                         }
@@ -183,12 +186,13 @@
                                                                                                 : solicitud.Justificacion)
                                         </small>
                                     </td>
-                                    @if (User.IsInRole("Admin") || User.IsInRole("Gerente"))
+                                    @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Gerente))
                                             {
                                                 <td class="text-end">
                                                     <div class="btn-group btn-group-sm" role="group">
                                                         <a asp-action="DetallesSolicitud"
                                                            asp-route-id="@solicitud.Id"
+                                                                                                                     asp-route-returnUrl="@listReturnUrl"
                                                            class="btn btn-outline-info">
                                                             <i class="bi bi-eye"></i>
                                                         </a>
@@ -197,9 +201,10 @@
                                                               method="post"
                                                               class="d-inline">
                                                             @Html.AntiForgeryToken()
+                                                                                                                        <input type="hidden" name="returnUrl" value="@listReturnUrl" />
                                                             <button type="submit"
                                                                     class="btn btn-success"
-                                                                    onclick="return confirm('¿Aprobar esta solicitud?');">
+                                                                    data-confirm="¿Aprobar esta solicitud?">
                                                                 <i class="bi bi-check-circle"></i>
                                                             </button>
                                                         </form>
@@ -276,6 +281,7 @@
                                             <td class="text-end">
                                                 <a asp-action="DetallesSolicitud"
                                                    asp-route-id="@solicitud.Id"
+                                                                    asp-route-returnUrl="@listReturnUrl"
                                                    class="btn btn-sm btn-outline-info">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
@@ -295,7 +301,7 @@
                         <div class="alert alert-info mb-0">
                             <i class="bi bi-info-circle me-1"></i>
                             No has creado solicitudes aún.
-                            <a asp-action="CrearSolicitud" class="alert-link ms-1">Crear una ahora</a>
+                            <a asp-action="CrearSolicitud" asp-route-returnUrl="@listReturnUrl" class="alert-link ms-1">Crear una ahora</a>
                         </div>
                     }
                     else
@@ -348,6 +354,7 @@
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     <a asp-action="DetallesSolicitud"
                                                        asp-route-id="@solicitud.Id"
+                                                       asp-route-returnUrl="@listReturnUrl"
                                                        class="btn btn-outline-info">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
@@ -358,9 +365,10 @@
                                                               method="post"
                                                               class="d-inline">
                                                             @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="returnUrl" value="@listReturnUrl" />
                                                             <button type="submit"
                                                                     class="btn btn-outline-danger"
-                                                                    onclick="return confirm('¿Cancelar esta solicitud?');">
+                                                                    data-confirm="¿Cancelar esta solicitud?">
                                                                 <i class="bi bi-x-circle"></i>
                                                             </button>
                                                         </form>

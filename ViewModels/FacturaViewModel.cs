@@ -11,7 +11,6 @@ namespace TheBuryProject.ViewModels
         public int VentaId { get; set; }
 
         [Display(Name = "Número de Factura")]
-        [Required(ErrorMessage = "El número de factura es requerido")]
         [StringLength(50)]
         public string Numero { get; set; } = string.Empty;
 

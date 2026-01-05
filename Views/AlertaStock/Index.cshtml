@@ -6,6 +6,7 @@
     var tiposAlerta = ViewBag.TiposAlerta as TheBuryProject.Models.Enums.TipoAlertaStock[];
     var prioridades = ViewBag.Prioridades as TheBuryProject.Models.Enums.PrioridadAlerta[];
     var estados = ViewBag.Estados as TheBuryProject.Models.Enums.EstadoAlerta[];
+    var returnUrl = $"{ViewContext.HttpContext.Request.Path}{ViewContext.HttpContext.Request.QueryString}";
 }
 
 <div class="container-fluid px-0">
@@ -36,7 +37,7 @@
                 @Html.AntiForgeryToken()
                 <button type="submit"
                         class="btn btn-primary btn-sm"
-                        onclick="return confirm('¿Generar alertas de stock manualmente?')">
+                        data-confirm="¿Generar alertas de stock manualmente?">
                     <i class="bi bi-arrow-clockwise me-1"></i>Generar alertas
                 </button>
             </form>
@@ -291,20 +292,38 @@
 
                                             @if (alerta.Estado == TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)
                                             {
-                                                <button type="button"
-                                                        class="btn btn-outline-success js-resolver-alerta"
-                                                        data-id="@alerta.Id"
-                                                        data-producto="@alerta.ProductoNombre"
-                                                        title="Resolver">
-                                                    <i class="bi bi-check-circle"></i>
-                                                </button>
-                                                <button type="button"
-                                                        class="btn btn-outline-secondary js-ignorar-alerta"
-                                                        data-id="@alerta.Id"
-                                                        data-producto="@alerta.ProductoNombre"
-                                                        title="Ignorar">
-                                                    <i class="bi bi-x-circle"></i>
-                                                </button>
+                                                <form asp-action="Resolver" asp-route-id="@alerta.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                                    @if (alerta.RowVersion != null)
+                                                    {
+                                                        <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(alerta.RowVersion)" />
+                                                    }
+                                                    <button type="submit"
+                                                            class="btn btn-outline-success"
+                                                            data-prompt="@($"Resolver alerta de \"{alerta.ProductoNombre}\".\\n\\nObservaciones (opcional):")"
+                                                            data-prompt-name="observaciones"
+                                                            title="Resolver">
+                                                        <i class="bi bi-check-circle"></i>
+                                                    </button>
+                                                </form>
+
+                                                <form asp-action="Ignorar" asp-route-id="@alerta.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                                    @if (alerta.RowVersion != null)
+                                                    {
+                                                        <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(alerta.RowVersion)" />
+                                                    }
+                                                    <button type="submit"
+                                                            class="btn btn-outline-secondary"
+                                                            data-confirm="@($"¿Ignorar alerta de \"{alerta.ProductoNombre}\"?")"
+                                                            data-prompt="Motivo (opcional):"
+                                                            data-prompt-name="observaciones"
+                                                            title="Ignorar">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                </form>
                                             }
                                         </div>
                                     </td>
@@ -323,6 +342,13 @@
                             <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
                                 <a class="page-link"
                                    asp-action="Index"
+                                   asp-route-ProductoCodigo="@filtro?.ProductoCodigo"
+                                   asp-route-ProductoNombre="@filtro?.ProductoNombre"
+                                   asp-route-Tipo="@(filtro?.Tipo != null ? (int)filtro.Tipo : (int?)null)"
+                                   asp-route-Prioridad="@(filtro?.Prioridad != null ? (int)filtro.Prioridad : (int?)null)"
+                                   asp-route-Estado="@(filtro?.Estado != null ? (int)filtro.Estado : (int?)null)"
+                                   asp-route-SoloUrgentes="@(filtro?.SoloUrgentes == true ? "true" : (string?)null)"
+                                   asp-route-SoloVencidas="@(filtro?.SoloVencidas == true ? "true" : (string?)null)"
                                    asp-route-PageNumber="@(Model.PageNumber - 1)">
                                     Anterior
                                 </a>
@@ -333,6 +359,13 @@
                                 <li class="page-item @(i == Model.PageNumber ? "active" : "")">
                                     <a class="page-link"
                                        asp-action="Index"
+                                       asp-route-ProductoCodigo="@filtro?.ProductoCodigo"
+                                       asp-route-ProductoNombre="@filtro?.ProductoNombre"
+                                       asp-route-Tipo="@(filtro?.Tipo != null ? (int)filtro.Tipo : (int?)null)"
+                                       asp-route-Prioridad="@(filtro?.Prioridad != null ? (int)filtro.Prioridad : (int?)null)"
+                                       asp-route-Estado="@(filtro?.Estado != null ? (int)filtro.Estado : (int?)null)"
+                                       asp-route-SoloUrgentes="@(filtro?.SoloUrgentes == true ? "true" : (string?)null)"
+                                       asp-route-SoloVencidas="@(filtro?.SoloVencidas == true ? "true" : (string?)null)"
                                        asp-route-PageNumber="@i">
                                         @i
                                     </a>
@@ -342,6 +375,13 @@
                             <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
                                 <a class="page-link"
                                    asp-action="Index"
+                                   asp-route-ProductoCodigo="@filtro?.ProductoCodigo"
+                                   asp-route-ProductoNombre="@filtro?.ProductoNombre"
+                                   asp-route-Tipo="@(filtro?.Tipo != null ? (int)filtro.Tipo : (int?)null)"
+                                   asp-route-Prioridad="@(filtro?.Prioridad != null ? (int)filtro.Prioridad : (int?)null)"
+                                   asp-route-Estado="@(filtro?.Estado != null ? (int)filtro.Estado : (int?)null)"
+                                   asp-route-SoloUrgentes="@(filtro?.SoloUrgentes == true ? "true" : (string?)null)"
+                                   asp-route-SoloVencidas="@(filtro?.SoloVencidas == true ? "true" : (string?)null)"
                                    asp-route-PageNumber="@(Model.PageNumber + 1)">
                                     Siguiente
                                 </a>
@@ -353,15 +393,3 @@
         </div>
     }
 </div>
-
-<!-- Token global para JS (formularios dinámicos) -->
-<div class="d-none"
-     data-alerta-stock-config
-     data-resolver-url="@Url.Action("Resolver")"
-     data-ignorar-url="@Url.Action("Ignorar")">
-    @Html.AntiForgeryToken()
-</div>
-
-@section Scripts {
-    <script src="~/js/alerta-stock-index.js"></script>
-}

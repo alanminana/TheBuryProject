@@ -24,12 +24,12 @@ namespace TheBuryProject.Services
                     ? VentaConstants.PREFIJO_COTIZACION
                     : VentaConstants.PREFIJO_VENTA;
 
-                var fecha = DateTime.Now;
+                var fecha = DateTime.UtcNow;
                 var periodo = fecha.ToString(VentaConstants.FORMATO_PERIODO);
                 var prefijoCompleto = $"{prefijo}-{periodo}";
 
                 var ultimaVenta = await _context.Ventas
-                    .Where(v => v.Numero.StartsWith(prefijoCompleto) && !v.IsDeleted)
+                    .Where(v => v.Numero.StartsWith(prefijoCompleto))
                     .OrderByDescending(v => v.Numero)
                     .FirstOrDefaultAsync();
 
@@ -58,7 +58,7 @@ namespace TheBuryProject.Services
             try
             {
                 var prefijo = ObtenerPrefijoFactura(tipo);
-                var fecha = DateTime.Now;
+                var fecha = DateTime.UtcNow;
                 var periodo = fecha.ToString(VentaConstants.FORMATO_PERIODO);
                 var prefijoCompleto = $"{prefijo}-{periodo}";
 

@@ -1,13 +1,14 @@
 ﻿using System;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public class AlertaStockController : Controller
     {
         private readonly IAlertaStockService _alertaStockService;
@@ -62,8 +63,8 @@ namespace TheBuryProject.Controllers
         {
             try
             {
-                var alertas = await _alertaStockService.GetAlertasPendientesAsync();
-                return View(alertas);
+                // No hay vista dedicada; Index ya soporta filtro por estado
+                return RedirectToAction(nameof(Index), new { Estado = (int)EstadoAlerta.Pendiente });
             }
             catch (Exception ex)
             {
@@ -130,29 +131,33 @@ namespace TheBuryProject.Controllers
         // POST: AlertaStock/Resolver/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Resolver(int id, string? observaciones)
+        public async Task<IActionResult> Resolver(int id, string? observaciones, byte[]? rowVersion, string? returnUrl)
         {
             return await ProcesarAccionAlerta(
                 id,
                 observaciones,
+            rowVersion,
                 _alertaStockService.ResolverAlertaAsync,
                 "La alerta se resolvió exitosamente",
                 "No se pudo resolver la alerta",
-                "resolver");
+                "resolver",
+                returnUrl);
         }
 
         // POST: AlertaStock/Ignorar/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Ignorar(int id, string? observaciones)
+        public async Task<IActionResult> Ignorar(int id, string? observaciones, byte[]? rowVersion, string? returnUrl)
         {
             return await ProcesarAccionAlerta(
                 id,
                 observaciones,
+            rowVersion,
                 _alertaStockService.IgnorarAlertaAsync,
                 "La alerta se ignoró exitosamente",
                 "No se pudo ignorar la alerta",
-                "ignorar");
+                "ignorar",
+                returnUrl);
         }
 
         // POST: AlertaStock/GenerarAlertas
@@ -210,21 +215,28 @@ namespace TheBuryProject.Controllers
         private async Task<IActionResult> ProcesarAccionAlerta(
             int id,
             string? observaciones,
-            Func<int, string, string?, Task<bool>> accion,
+            byte[]? rowVersion,
+            Func<int, string, string?, byte[]?, Task<bool>> accion,
             string mensajeExito,
             string mensajeError,
-            string accionLog)
+            string accionLog,
+            string? returnUrl)
         {
             try
             {
-                var exito = await accion(id, CurrentUserName, observaciones);
+                var exito = await accion(id, CurrentUserName, observaciones, rowVersion);
 
                 TempData[exito ? "Success" : "Error"] = exito ? mensajeExito : mensajeError;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al {Accion} alerta {AlertaId}", accionLog, id);
-                TempData["Error"] = $"Error al {accionLog} la alerta";
+                TempData["Error"] = $"Error al {accionLog} la alerta: {ex.Message}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
             }
 
             return RedirectToAction(nameof(Index));

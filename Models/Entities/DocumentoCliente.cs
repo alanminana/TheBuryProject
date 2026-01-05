@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Representa un documento adjunto de un cliente (DNI, recibos, servicios, etc.)
     /// </summary>
-    public class DocumentoCliente : BaseEntity
+    public class DocumentoCliente  : AuditableEntity
     {
         public int ClienteId { get; set; }
 

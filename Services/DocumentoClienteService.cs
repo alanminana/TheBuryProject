@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using TheBuryProject.Data;
 using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
@@ -37,7 +39,7 @@ namespace TheBuryProject.Services
         {
             var documentos = await _context.Set<DocumentoCliente>()
                 .Include(d => d.Cliente)
-                .Where(d => !d.IsDeleted)
+                .Where(d => !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted)
                 .OrderByDescending(d => d.FechaSubida)
                 .ToListAsync();
 
@@ -48,7 +50,7 @@ namespace TheBuryProject.Services
         {
             var documento = await _context.Set<DocumentoCliente>()
                 .Include(d => d.Cliente)
-                .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted);
+                .FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted);
 
             return documento != null ? _mapper.Map<DocumentoClienteViewModel>(documento) : null;
         }
@@ -57,7 +59,7 @@ namespace TheBuryProject.Services
         {
             var documentos = await _context.Set<DocumentoCliente>()
                 .Include(d => d.Cliente)
-                .Where(d => d.ClienteId == clienteId && !d.IsDeleted)
+                .Where(d => d.ClienteId == clienteId && !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted)
                 .OrderByDescending(d => d.FechaSubida)
                 .ToListAsync();
 
@@ -69,49 +71,35 @@ namespace TheBuryProject.Services
             try
             {
                 if (viewModel.Archivo == null || viewModel.Archivo.Length == 0)
-                {
                     throw new Exception("Debe seleccionar un archivo");
-                }
 
-                // CAMBIO: Usar helper de validación mejorado
                 var (isValid, errorMessage) = DocumentoValidationHelper.ValidateFile(viewModel.Archivo);
                 if (!isValid)
-                {
                     throw new Exception(errorMessage);
-                }
 
                 DocumentoCliente? documentoAnterior = null;
                 if (viewModel.ReemplazarExistente && viewModel.DocumentoAReemplazarId.HasValue)
                 {
                     documentoAnterior = await _context.Set<DocumentoCliente>()
-                        .FirstOrDefaultAsync(d => d.Id == viewModel.DocumentoAReemplazarId.Value
-                            && d.ClienteId == viewModel.ClienteId
-                            && !d.IsDeleted);
+                        .FirstOrDefaultAsync(d =>
+                            d.Id == viewModel.DocumentoAReemplazarId.Value &&
+                            d.ClienteId == viewModel.ClienteId);
 
                     if (documentoAnterior == null)
-                    {
                         throw new Exception("El documento a reemplazar no existe o pertenece a otro cliente");
-                    }
                 }
 
-                // Crear carpeta si no existe
                 var uploadPath = Path.Combine(_environment.WebRootPath, UPLOAD_FOLDER);
                 if (!Directory.Exists(uploadPath))
-                {
                     Directory.CreateDirectory(uploadPath);
-                }
 
-                // CAMBIO: Validar ruta para prevenir path traversal
                 var extension = Path.GetExtension(viewModel.Archivo.FileName).ToLowerInvariant();
-                var nombreArchivo = $"{viewModel.ClienteId}_{viewModel.TipoDocumento}_{DateTime.Now:yyyyMMddHHmmss}{extension}";
-                
+                var nombreArchivo = $"{viewModel.ClienteId}_{viewModel.TipoDocumento}_{DateTime.UtcNow:yyyyMMddHHmmss}{extension}";
+
                 var (pathValid, rutaCompleta, pathError) = DocumentoValidationHelper.NormalizePath(uploadPath, nombreArchivo);
                 if (!pathValid)
-                {
                     throw new Exception(pathError);
-                }
 
-                // Guardar archivo
                 using (var stream = new FileStream(rutaCompleta, FileMode.Create))
                 {
                     await viewModel.Archivo.CopyToAsync(stream);
@@ -119,7 +107,6 @@ namespace TheBuryProject.Services
 
                 _logger.LogInformation("Archivo guardado: {Ruta}", rutaCompleta);
 
-                // Crear entidad
                 var documento = new DocumentoCliente
                 {
                     ClienteId = viewModel.ClienteId,
@@ -129,7 +116,7 @@ namespace TheBuryProject.Services
                     TipoMIME = viewModel.Archivo.ContentType,
                     TamanoBytes = viewModel.Archivo.Length,
                     Estado = EstadoDocumento.Pendiente,
-                    FechaSubida = DateTime.Now,
+                    FechaSubida = DateTime.UtcNow,
                     FechaVencimiento = viewModel.FechaVencimiento,
                     Observaciones = viewModel.Observaciones
                 };
@@ -137,9 +124,7 @@ namespace TheBuryProject.Services
                 _context.Set<DocumentoCliente>().Add(documento);
 
                 if (documentoAnterior != null)
-                {
                     documentoAnterior.IsDeleted = true;
-                }
 
                 await _context.SaveChangesAsync();
 
@@ -175,12 +160,8 @@ namespace TheBuryProject.Services
             int clienteId,
             IEnumerable<TipoDocumentoCliente>? requeridos = null)
         {
-            var tiposRequeridos = requeridos?.ToList() ?? new List<TipoDocumentoCliente>
-            {
-                TipoDocumentoCliente.DNI,
-                TipoDocumentoCliente.ReciboSueldo,
-                TipoDocumentoCliente.Servicio
-            };
+            var tiposRequeridos = requeridos?.ToList() 
+                ?? DropdownConstants.DocumentosClienteRequeridos.ToList();
 
             var documentosCliente = await _context.Set<DocumentoCliente>()
                 .Where(d => d.ClienteId == clienteId && !d.IsDeleted)
@@ -195,9 +176,7 @@ namespace TheBuryProject.Services
                     d.Estado == EstadoDocumento.Verificado);
 
                 if (!tieneDocumento)
-                {
                     faltantes.Add(tipo);
-                }
             }
 
             return new DocumentacionClienteEstadoViewModel
@@ -218,7 +197,7 @@ namespace TheBuryProject.Services
                     return false;
 
                 documento.Estado = EstadoDocumento.Verificado;
-                documento.FechaVerificacion = DateTime.Now;
+                documento.FechaVerificacion = DateTime.UtcNow;
                 documento.VerificadoPor = verificadoPor;
                 if (!string.IsNullOrEmpty(observaciones))
                     documento.Observaciones = observaciones;
@@ -247,7 +226,7 @@ namespace TheBuryProject.Services
                     return false;
 
                 documento.Estado = EstadoDocumento.Rechazado;
-                documento.FechaVerificacion = DateTime.Now;
+                documento.FechaVerificacion = DateTime.UtcNow;
                 documento.VerificadoPor = rechazadoPor;
                 documento.MotivoRechazo = motivo;
 
@@ -274,11 +253,9 @@ namespace TheBuryProject.Services
                 if (documento == null)
                     return false;
 
-                // Soft delete
                 documento.IsDeleted = true;
                 await _context.SaveChangesAsync();
 
-                // Opcional: eliminar archivo físico
                 var rutaCompleta = Path.Combine(_environment.WebRootPath, documento.RutaArchivo);
                 if (File.Exists(rutaCompleta))
                 {
@@ -327,7 +304,7 @@ namespace TheBuryProject.Services
             {
                 var query = _context.Set<DocumentoCliente>()
                     .Include(d => d.Cliente)
-                    .Where(d => !d.IsDeleted)
+                    .Where(d => !d.IsDeleted && d.Cliente != null && !d.Cliente.IsDeleted)
                     .AsQueryable();
 
                 if (filtro.ClienteId.HasValue)
@@ -343,13 +320,12 @@ namespace TheBuryProject.Services
                     query = query.Where(d => d.Estado == EstadoDocumento.Pendiente);
 
                 if (filtro.SoloVencidos)
-                    query = query.Where(d => d.Estado == EstadoDocumento.Vencido ||
-                                            (d.FechaVencimiento.HasValue && d.FechaVencimiento.Value < DateTime.Today));
+                    query = query.Where(d =>
+                        d.Estado == EstadoDocumento.Vencido ||
+                        (d.FechaVencimiento.HasValue && d.FechaVencimiento.Value < DateTime.UtcNow.Date));
 
-                // CAMBIO: Contar total antes de paginación
                 var total = await query.CountAsync();
 
-                // CAMBIO: Aplicar paginación
                 var pageNumber = filtro.PageNumber > 0 ? filtro.PageNumber : 1;
                 var pageSize = filtro.PageSize > 0 ? filtro.PageSize : 10;
 
@@ -370,29 +346,222 @@ namespace TheBuryProject.Services
             }
         }
 
-        public async Task MarcarVencidosAsync()
+        public async Task<int> VerificarTodosAsync(int clienteId, string verificadoPor, string? observaciones = null)
         {
             try
             {
-                var documentosVencidos = await _context.Set<DocumentoCliente>()
-                    .Where(d => !d.IsDeleted
-                             && d.Estado == EstadoDocumento.Verificado
-                             && d.FechaVencimiento.HasValue
-                             && d.FechaVencimiento.Value < DateTime.Today)
+                var documentosPendientes = await _context.Set<DocumentoCliente>()
+                    .Where(d => d.ClienteId == clienteId 
+                             && !d.IsDeleted 
+                             && d.Estado == EstadoDocumento.Pendiente)
                     .ToListAsync();
 
-                foreach (var doc in documentosVencidos)
+                if (!documentosPendientes.Any())
+                    return 0;
+
+                var ahora = DateTime.UtcNow;
+                foreach (var documento in documentosPendientes)
                 {
-                    doc.Estado = EstadoDocumento.Vencido;
+                    documento.Estado = EstadoDocumento.Verificado;
+                    documento.FechaVerificacion = ahora;
+                    documento.VerificadoPor = verificadoPor;
+                    if (!string.IsNullOrEmpty(observaciones))
+                        documento.Observaciones = observaciones;
                 }
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Se marcaron {Count} documentos como vencidos", documentosVencidos.Count);
+                _logger.LogInformation(
+                    "Se verificaron {Cantidad} documentos del cliente {ClienteId} por {Usuario}",
+                    documentosPendientes.Count, clienteId, verificadoPor);
+
+                return documentosPendientes.Count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al verificar todos los documentos del cliente {ClienteId}", clienteId);
+                throw;
+            }
+        }
+
+        public async Task MarcarVencidosAsync()
+        {
+            try
+            {
+                var today = DateTime.UtcNow.Date;
+                var now = DateTime.UtcNow;
+
+                var updated = await _context.Set<DocumentoCliente>()
+                    .Where(d => !d.IsDeleted
+                             && d.Estado == EstadoDocumento.Verificado
+                             && d.FechaVencimiento.HasValue
+                             && d.FechaVencimiento.Value < today)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(d => d.Estado, EstadoDocumento.Vencido)
+                        .SetProperty(d => d.UpdatedAt, now));
+
+                _logger.LogInformation("Se marcaron {Count} documentos como vencidos", updated);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al marcar documentos vencidos");
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<BatchOperacionResultado> VerificarBatchAsync(
+            IEnumerable<int> ids, 
+            string verificadoPor, 
+            string? observaciones = null)
+        {
+            var resultado = new BatchOperacionResultado();
+            var idsList = ids.Distinct().ToList();
+            
+            if (!idsList.Any())
+                return resultado;
+
+            try
+            {
+                var documentos = await _context.Set<DocumentoCliente>()
+                    .Where(d => idsList.Contains(d.Id) && !d.IsDeleted)
+                    .ToListAsync();
+
+                var ahora = DateTime.UtcNow;
+                
+                foreach (var id in idsList)
+                {
+                    var doc = documentos.FirstOrDefault(d => d.Id == id);
+                    
+                    if (doc == null)
+                    {
+                        resultado.Fallidos++;
+                        resultado.Errores.Add(new BatchItemError 
+                        { 
+                            Id = id, 
+                            Mensaje = "Documento no encontrado" 
+                        });
+                        continue;
+                    }
+
+                    if (doc.Estado != EstadoDocumento.Pendiente)
+                    {
+                        resultado.Fallidos++;
+                        resultado.Errores.Add(new BatchItemError 
+                        { 
+                            Id = id, 
+                            Mensaje = $"No se puede verificar: estado actual es {doc.Estado}" 
+                        });
+                        continue;
+                    }
+
+                    doc.Estado = EstadoDocumento.Verificado;
+                    doc.FechaVerificacion = ahora;
+                    doc.VerificadoPor = verificadoPor;
+                    if (!string.IsNullOrEmpty(observaciones))
+                        doc.Observaciones = observaciones;
+
+                    resultado.Exitosos++;
+                }
+
+                if (resultado.Exitosos > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation(
+                        "Se verificaron {Exitosos} documentos en batch por {Usuario}. Fallidos: {Fallidos}",
+                        resultado.Exitosos, verificadoPor, resultado.Fallidos);
+                }
+
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al verificar documentos en batch");
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<BatchOperacionResultado> RechazarBatchAsync(
+            IEnumerable<int> ids, 
+            string motivo, 
+            string rechazadoPor)
+        {
+            var resultado = new BatchOperacionResultado();
+            var idsList = ids.Distinct().ToList();
+            
+            if (!idsList.Any())
+                return resultado;
+
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                foreach (var id in idsList)
+                {
+                    resultado.Fallidos++;
+                    resultado.Errores.Add(new BatchItemError 
+                    { 
+                        Id = id, 
+                        Mensaje = "Debe especificar el motivo del rechazo" 
+                    });
+                }
+                return resultado;
+            }
+
+            try
+            {
+                var documentos = await _context.Set<DocumentoCliente>()
+                    .Where(d => idsList.Contains(d.Id) && !d.IsDeleted)
+                    .ToListAsync();
+
+                var ahora = DateTime.UtcNow;
+                
+                foreach (var id in idsList)
+                {
+                    var doc = documentos.FirstOrDefault(d => d.Id == id);
+                    
+                    if (doc == null)
+                    {
+                        resultado.Fallidos++;
+                        resultado.Errores.Add(new BatchItemError 
+                        { 
+                            Id = id, 
+                            Mensaje = "Documento no encontrado" 
+                        });
+                        continue;
+                    }
+
+                    if (doc.Estado != EstadoDocumento.Pendiente)
+                    {
+                        resultado.Fallidos++;
+                        resultado.Errores.Add(new BatchItemError 
+                        { 
+                            Id = id, 
+                            Mensaje = $"No se puede rechazar: estado actual es {doc.Estado}" 
+                        });
+                        continue;
+                    }
+
+                    doc.Estado = EstadoDocumento.Rechazado;
+                    doc.FechaVerificacion = ahora;
+                    doc.VerificadoPor = rechazadoPor;
+                    doc.MotivoRechazo = motivo;
+
+                    resultado.Exitosos++;
+                }
+
+                if (resultado.Exitosos > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation(
+                        "Se rechazaron {Exitosos} documentos en batch por {Usuario}. Motivo: {Motivo}. Fallidos: {Fallidos}",
+                        resultado.Exitosos, rechazadoPor, motivo, resultado.Fallidos);
+                }
+
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al rechazar documentos en batch");
                 throw;
             }
         }

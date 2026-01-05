@@ -8,6 +8,7 @@ namespace TheBuryProject.ViewModels;
 public class NotificacionViewModel
 {
     public int Id { get; set; }
+    public byte[]? RowVersion { get; set; }
     public TipoNotificacion Tipo { get; set; }
     public PrioridadNotificacion Prioridad { get; set; }
     public string Titulo { get; set; } = string.Empty;

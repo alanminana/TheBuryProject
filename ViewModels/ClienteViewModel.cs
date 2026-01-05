@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.ViewModels
 {
@@ -33,6 +34,22 @@ namespace TheBuryProject.ViewModels
         public DateTime? FechaNacimiento { get; set; }
 
         public string? EstadoCivil { get; set; }
+
+        // ✅ DATOS DE CÓNYUGE (opcionales)
+        [StringLength(200)]
+        public string? ConyugeNombreCompleto { get; set; }
+
+        [StringLength(20)]
+        public string? ConyugeTipoDocumento { get; set; }
+
+        [StringLength(20)]
+        public string? ConyugeNumeroDocumento { get; set; }
+
+        [StringLength(20)]
+        public string? ConyugeTelefono { get; set; }
+
+        [Range(0, 999999999.99)]
+        public decimal? ConyugeSueldo { get; set; }
 
         [Required(ErrorMessage = "El teléfono es requerido")]
         [StringLength(20)]
@@ -79,8 +96,18 @@ namespace TheBuryProject.ViewModels
         [StringLength(50)]
         public string? TiempoTrabajo { get; set; }
 
-        // ✅ PROPIEDADES DE CONTROL
-        public decimal PuntajeRiesgo { get; set; } = 5.0m;
+        // ✅ PROPIEDADES DE CONTROL DE RIESGO
+        
+        /// <summary>
+        /// Nivel de riesgo crediticio (1-5)
+        /// </summary>
+        [Display(Name = "Calificación Crediticia")]
+        public NivelRiesgoCredito NivelRiesgo { get; set; } = NivelRiesgoCredito.AprobadoCondicional;
+
+        /// <summary>
+        /// Puntaje numérico derivado del nivel de riesgo (para compatibilidad)
+        /// </summary>
+        public decimal PuntajeRiesgo { get; set; } = 6.0m;
 
         public bool Activo { get; set; } = true;
 
@@ -118,5 +145,8 @@ namespace TheBuryProject.ViewModels
 
         // Alias para Domicilio
         public string? Direccion => Domicilio;
+
+        [Timestamp]
+        public byte[]? RowVersion { get; set; }
     }
 }

@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Crear Rol";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Roles")!;
 }
 
 <div class="container-fluid">
@@ -9,7 +11,7 @@
         <div class="col-md-12">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a asp-action="Index">Roles</a></li>
+                    <li class="breadcrumb-item"><a href="@backUrl">Roles</a></li>
                     <li class="breadcrumb-item active">Crear Rol</li>
                 </ol>
             </nav>
@@ -24,6 +26,7 @@
                 </div>
                 <div class="card-body">
                     <form asp-action="Create" method="post">
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                         <div class="mb-3">
@@ -35,20 +38,13 @@
                             </small>
                         </div>
 
-                        <div class="mb-3">
-                            <label asp-for="Descripcion" class="form-label"></label>
-                            <textarea asp-for="Descripcion" class="form-control" rows="3"
-                                      placeholder="Descripción opcional del rol y sus responsabilidades"></textarea>
-                            <span asp-validation-for="Descripcion" class="text-danger"></span>
-                        </div>
-
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle me-2"></i>
                             <strong>Nota:</strong> Después de crear el rol, podrás asignarle permisos específicos desde la lista de roles.
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
-                            <a asp-action="Index" class="btn btn-secondary">
+                            <a href="@backUrl" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">

@@ -1,125 +1,98 @@
-using System.Security;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Microsoft.AspNetCore.Http;
 
 namespace TheBuryProject.Helpers
 {
-    /// <summary>
-    /// Helper consolidado para validación de documentos de clientes
-    /// Incluye: validación de archivos, normalización de rutas, y prevención de seguridad
-    /// </summary>
     public static class DocumentoValidationHelper
     {
-        // Configuración
-        private const long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-        private static readonly string[] VALID_EXTENSIONS = { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
-        private static readonly Dictionary<string, string[]> VALID_MIME_TYPES = new()
+        private static readonly HashSet<string> VALID_EXTENSIONS = new(StringComparer.OrdinalIgnoreCase)
         {
-            { ".pdf", new[] { "application/pdf" } },
-            { ".jpg", new[] { "image/jpeg" } },
-            { ".jpeg", new[] { "image/jpeg" } },
-            { ".png", new[] { "image/png" } },
-            { ".doc", new[] { "application/msword" } },
-            { ".docx", new[] { "application/vnd.openxmlformats-officedocument.wordprocessingml.document" } }
+            ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx"
         };
 
-        /// <summary>
-        /// Valida un archivo de entrada verificando tamaño, extensión y MIME type
-        /// </summary>
-        /// <param name="archivo">Archivo a validar</param>
-        /// <returns>Tupla (isValid, errorMessage)</returns>
-        public static (bool IsValid, string ErrorMessage) ValidateFile(IFormFile archivo)
+        private const long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+        public static (bool IsValid, string ErrorMessage) ValidateFile(IFormFile file)
         {
-            if (archivo == null || archivo.Length == 0)
-                return (false, "Debe seleccionar un archivo");
+            if (file == null || file.Length == 0)
+                return (false, "Debe seleccionar un archivo válido.");
 
-            // Validar tamaño
-            if (archivo.Length > MAX_FILE_SIZE)
-                return (false, $"Archivo no puede superar {MAX_FILE_SIZE / (1024 * 1024)} MB");
+            if (file.Length > MAX_FILE_SIZE)
+                return (false, $"El archivo excede el tamaño máximo permitido ({FormatFileSize(MAX_FILE_SIZE)}).");
 
-            // Validar extensión
-            var extension = Path.GetExtension(archivo.FileName).ToLowerInvariant();
-            if (!VALID_EXTENSIONS.Contains(extension))
-                return (false, $"Extensión no permitida. Formatos válidos: {string.Join(", ", VALID_EXTENSIONS)}");
+            var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(ext) || !VALID_EXTENSIONS.Contains(ext))
+                return (false, $"Extensión no permitida. Permitidas: {string.Join(", ", VALID_EXTENSIONS)}");
 
-            // Validar MIME type
-            if (VALID_MIME_TYPES.TryGetValue(extension, out var validMimes))
-            {
-                if (!validMimes.Contains(archivo.ContentType))
-                    return (false, $"Tipo de archivo inválido: {archivo.ContentType}");
-            }
+            if (!ValidateMagicBytes(file, ext))
+                return (false, "El contenido del archivo no coincide con su extensión (magic bytes inválidos).");
 
-            // Validar magic bytes (primeros 4 bytes del archivo)
-            if (!ValidateMagicBytes(archivo, extension))
-                return (false, $"Archivo corrupto o falsificado: el contenido no coincide con la extensión {extension}");
-
-            return (true, string.Empty);
+            return (true, "");
         }
 
-        /// <summary>
-        /// Normaliza una ruta de archivo para prevenir path traversal attacks
-        /// </summary>
-        /// <param name="basePath">Ruta base segura</param>
-        /// <param name="fileName">Nombre del archivo</param>
-        /// <returns>Tupla (isValid, fullPath, errorMessage)</returns>
         public static (bool IsValid, string FullPath, string ErrorMessage) NormalizePath(string basePath, string fileName)
         {
-            try
-            {
-                var fullPath = Path.Combine(basePath, fileName);
-                var normalizedPath = Path.GetFullPath(fullPath);
-                var normalizedBase = Path.GetFullPath(basePath);
+            if (string.IsNullOrWhiteSpace(basePath))
+                return (false, string.Empty, "La ruta base no es válida.");
 
-                // Verificar que la ruta normalizada está dentro de basePath
-                if (!normalizedPath.StartsWith(normalizedBase, StringComparison.OrdinalIgnoreCase))
-                    return (false, string.Empty, "Intento de path traversal detectado");
+            if (string.IsNullOrWhiteSpace(fileName))
+                return (false, string.Empty, "El nombre de archivo no es válido.");
 
-                return (true, normalizedPath, string.Empty);
-            }
-            catch (Exception ex)
-            {
-                return (false, string.Empty, $"Error al normalizar ruta: {ex.Message}");
-            }
+            var normalizedBase = Path.GetFullPath(basePath);
+            var combined = Path.Combine(normalizedBase, fileName);
+            var normalizedFull = Path.GetFullPath(combined);
+
+            // Evita falsos positivos tipo: C:\uploads vs C:\uploads2
+            var baseWithSep = normalizedBase.EndsWith(Path.DirectorySeparatorChar)
+                ? normalizedBase
+                : normalizedBase + Path.DirectorySeparatorChar;
+
+            if (!normalizedFull.StartsWith(baseWithSep, StringComparison.OrdinalIgnoreCase))
+                return (false, string.Empty, "Ruta inválida (path traversal detectado).");
+
+            return (true, normalizedFull, "");
         }
 
-        /// <summary>
-        /// Valida los magic bytes del archivo para verificar su tipo real
-        /// </summary>
-        private static bool ValidateMagicBytes(IFormFile archivo, string extension)
+        private static bool ValidateMagicBytes(IFormFile file, string extension)
         {
             try
             {
-                using var stream = archivo.OpenReadStream();
-                var buffer = new byte[4];
-                stream.Read(buffer, 0, 4);
+                using var stream = file.OpenReadStream();
+                if (!stream.CanRead) return false;
 
-                return extension.ToLowerInvariant() switch
+                var buffer = new byte[4];
+                var bytesRead = stream.Read(buffer, 0, buffer.Length);
+
+                return extension switch
                 {
-                    ".pdf" => buffer[0] == 0x25 && buffer[1] == 0x50 && buffer[2] == 0x44 && buffer[3] == 0x46, // %PDF
-                    ".jpg" or ".jpeg" => buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF, // FFD8FF
-                    ".png" => buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47, // 89504E47
-                    ".doc" => buffer[0] == 0xD0 && buffer[1] == 0xCF && buffer[2] == 0x11 && buffer[3] == 0xE0, // D0CF11E0
-                    ".docx" => buffer[0] == 0x50 && buffer[1] == 0x4B && buffer[2] == 0x03 && buffer[3] == 0x04, // PK (ZIP)
-                    _ => true // Extensiones no reconocidas se permiten
+                    ".pdf" => bytesRead >= 4 && buffer[0] == 0x25 && buffer[1] == 0x50 && buffer[2] == 0x44 && buffer[3] == 0x46, // %PDF
+                    ".png" => bytesRead >= 4 && buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47, // PNG
+                    ".jpg" or ".jpeg" => bytesRead >= 3 && buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF, // JPEG
+                    ".doc" => bytesRead >= 4 && buffer[0] == 0xD0 && buffer[1] == 0xCF && buffer[2] == 0x11 && buffer[3] == 0xE0, // OLE
+                    ".docx" => bytesRead >= 2 && buffer[0] == 0x50 && buffer[1] == 0x4B, // ZIP (PK)
+                    _ => true
                 };
             }
             catch
             {
-                // Si no se pueden leer los magic bytes, permitir (podría ser un archivo pequeño)
-                return true;
+                // Si no se puede leer el header, bloquear (más seguro)
+                return false;
             }
         }
 
-        /// <summary>
-        /// Formatea el tamaño de un archivo en bytes a formato legible
-        /// </summary>
-        public static string FormatFileSize(long bytes)
+        private static string FormatFileSize(long bytes)
         {
-            return bytes switch
-            {
-                < 1024 => $"{bytes} B",
-                < 1024 * 1024 => $"{bytes / 1024.0:F2} KB",
-                < 1024 * 1024 * 1024 => $"{bytes / (1024.0 * 1024):F2} MB",
-                _ => $"{bytes / (1024.0 * 1024 * 1024):F2} GB"
-            };
+            const long KB = 1024;
+            const long MB = KB * 1024;
+            const long GB = MB * 1024;
+
+            if (bytes >= GB) return $"{bytes / (double)GB:0.##} GB";
+            if (bytes >= MB) return $"{bytes / (double)MB:0.##} MB";
+            if (bytes >= KB) return $"{bytes / (double)KB:0.##} KB";
+            return $"{bytes} bytes";
         }
     }
 }

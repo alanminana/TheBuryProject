@@ -1,0 +1,494 @@
+@model ConfiguracionMoraExpandidaViewModel
+@using TheBuryProject.Models.Enums
+@using TheBuryProject.ViewModels.Mora
+
+@{
+    ViewData["Title"] = "Configuración Avanzada de Mora";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Mora")!;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-gear-fill me-2"></i>Configuración Avanzada de Mora</h2>
+        <div>
+            <a asp-action="Configuracion" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-gear me-2"></i>Configuración Básica
+            </a>
+            <a href="@backUrl" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <form asp-action="GuardarConfiguracionExpandida" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+        <div class="row">
+            <!-- Columna Izquierda -->
+            <div class="col-md-6">
+                <!-- Cálculo de Mora -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>Cálculo de Mora</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="TipoTasaMora" class="form-label">Tipo de Tasa</label>
+                                <select asp-for="TipoTasaMora" class="form-select" asp-items="Html.GetEnumSelectList<TipoTasaMora>()">
+                                    <option value="">-- No aplicar --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="TasaMoraBase" class="form-label">Tasa Base (%)</label>
+                                <div class="input-group">
+                                    <input asp-for="TasaMoraBase" class="form-control" step="0.01" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="BaseCalculoMora" class="form-label">Base de Cálculo</label>
+                                <select asp-for="BaseCalculoMora" class="form-select" asp-items="Html.GetEnumSelectList<BaseCalculoMora>()">
+                                    <option value="">-- Capital --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DiasGracia" class="form-label">Días de Gracia</label>
+                                <input asp-for="DiasGracia" class="form-control" type="number" min="0" max="90" />
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Escalonamiento de Tasas</h6>
+                        
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="EscalonamientoActivo" class="form-check-input" type="checkbox" id="escalonamientoActivo" />
+                            <label class="form-check-label" for="escalonamientoActivo">Escalonamiento Activo</label>
+                        </div>
+
+                        <div id="seccionEscalonamiento" class="@(Model.EscalonamientoActivo ? "" : "d-none")">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label asp-for="TasaPrimerMes" class="form-label">1er Mes (%)</label>
+                                    <input asp-for="TasaPrimerMes" class="form-control" step="0.01" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="TasaSegundoMes" class="form-label">2do Mes (%)</label>
+                                    <input asp-for="TasaSegundoMes" class="form-control" step="0.01" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="TasaTercerMesEnAdelante" class="form-label">3er+ Mes (%)</label>
+                                    <input asp-for="TasaTercerMesEnAdelante" class="form-control" step="0.01" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Tope Máximo</h6>
+
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="TopeMaximoMoraActivo" class="form-check-input" type="checkbox" id="topeActivo" />
+                            <label class="form-check-label" for="topeActivo">Tope Máximo Activo</label>
+                        </div>
+
+                        <div id="seccionTope" class="@(Model.TopeMaximoMoraActivo ? "" : "d-none")">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label asp-for="TipoTopeMora" class="form-label">Tipo de Tope</label>
+                                    <select asp-for="TipoTopeMora" class="form-select" asp-items="Html.GetEnumSelectList<TipoTopeMora>()">
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="ValorTopeMora" class="form-label">Valor del Tope</label>
+                                    <input asp-for="ValorTopeMora" class="form-control" step="0.01" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label asp-for="MoraMinima" class="form-label">Mora Mínima ($)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="MoraMinima" class="form-control" step="0.01" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clasificación y Prioridad -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart-steps me-2"></i>Clasificación por Prioridad</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>Por Días de Atraso</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="DiasParaPrioridadMedia" class="form-label">Media (días)</label>
+                                <input asp-for="DiasParaPrioridadMedia" class="form-control" type="number" min="1" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="DiasParaPrioridadAlta" class="form-label">Alta (días)</label>
+                                <input asp-for="DiasParaPrioridadAlta" class="form-control" type="number" min="1" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="DiasParaPrioridadCritica" class="form-label">Crítica (días)</label>
+                                <input asp-for="DiasParaPrioridadCritica" class="form-control" type="number" min="1" />
+                            </div>
+                        </div>
+
+                        <h6>Por Monto Vencido</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label asp-for="MontoParaPrioridadMedia" class="form-label">Media ($)</label>
+                                <input asp-for="MontoParaPrioridadMedia" class="form-control" step="0.01" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="MontoParaPrioridadAlta" class="form-label">Alta ($)</label>
+                                <input asp-for="MontoParaPrioridadAlta" class="form-control" step="0.01" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="MontoParaPrioridadCritica" class="form-label">Crítica ($)</label>
+                                <input asp-for="MontoParaPrioridadCritica" class="form-control" step="0.01" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gestión de Cobranzas -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Gestión de Cobranzas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="DiasMaximosSinGestion" class="form-label">Días Máx. sin Gestión</label>
+                                <input asp-for="DiasMaximosSinGestion" class="form-control" type="number" min="1" />
+                                <small class="text-muted">Días sin contacto antes de escalar</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="DiasParaCumplirPromesa" class="form-label">Días para Cumplir Promesa</label>
+                                <input asp-for="DiasParaCumplirPromesa" class="form-control" type="number" min="1" />
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6>Acuerdos de Pago</h6>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="MaximoCuotasAcuerdo" class="form-label">Máx. Cuotas Acuerdo</label>
+                                <input asp-for="MaximoCuotasAcuerdo" class="form-control" type="number" min="1" max="60" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="PorcentajeMinimoEntrega" class="form-label">% Mín. Entrega</label>
+                                <div class="input-group">
+                                    <input asp-for="PorcentajeMinimoEntrega" class="form-control" step="0.01" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input asp-for="PermitirCondonacionMora" class="form-check-input" type="checkbox" />
+                            <label asp-for="PermitirCondonacionMora" class="form-check-label">Permitir Condonación de Mora</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha -->
+            <div class="col-md-6">
+                <!-- Automatización -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-robot me-2"></i>Automatización</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="ProcesoAutomaticoActivo" class="form-check-input" type="checkbox" />
+                            <label asp-for="ProcesoAutomaticoActivo" class="form-check-label">Proceso Automático Activo</label>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="HoraEjecucionDiaria" class="form-label">Hora de Ejecución</label>
+                                <input asp-for="HoraEjecucionDiaria" class="form-control" type="time" />
+                            </div>
+                        </div>
+
+                        <hr>
+                        <div class="form-check form-switch mb-2">
+                            <input asp-for="AlertasPreventivasActivas" class="form-check-input" type="checkbox" />
+                            <label asp-for="AlertasPreventivasActivas" class="form-check-label">Alertas Preventivas</label>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="DiasAntesAlertaPreventiva" class="form-label">Días Antes</label>
+                                <input asp-for="DiasAntesAlertaPreventiva" class="form-control" type="number" min="1" />
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch mb-2">
+                            <input asp-for="CambiarEstadoCuotaAuto" class="form-check-input" type="checkbox" />
+                            <label asp-for="CambiarEstadoCuotaAuto" class="form-check-label">Cambiar Estado Cuota Automáticamente</label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input asp-for="ActualizarMoraAutomaticamente" class="form-check-input" type="checkbox" />
+                            <label asp-for="ActualizarMoraAutomaticamente" class="form-check-label">Actualizar Mora Diariamente</label>
+                        </div>
+
+                        @if (Model.UltimaEjecucion.HasValue)
+                        {
+                            <hr>
+                            <small class="text-muted">Última ejecución: @Model.UltimaEjecucion.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                        }
+                    </div>
+                </div>
+
+                <!-- Notificaciones -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Notificaciones</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="NotificacionesActivas" class="form-check-input" type="checkbox" id="notifActivas" />
+                            <label class="form-check-label" for="notifActivas">Notificaciones Activas</label>
+                        </div>
+
+                        <div id="seccionNotif" class="@(Model.NotificacionesActivas ? "" : "d-none")">
+                            <h6>Canales</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input asp-for="WhatsAppActivo" class="form-check-input" type="checkbox" />
+                                        <label asp-for="WhatsAppActivo" class="form-check-label">WhatsApp</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input asp-for="EmailActivo" class="form-check-input" type="checkbox" />
+                                        <label asp-for="EmailActivo" class="form-check-label">Email</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="CanalPreferido" class="form-label">Preferido</label>
+                                    <select asp-for="CanalPreferido" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<CanalNotificacion>()">
+                                        <option value="">--</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <hr>
+                            <h6>Eventos a Notificar</h6>
+                            <div class="form-check form-switch mb-2">
+                                <input asp-for="NotificarProximoVencimiento" class="form-check-input" type="checkbox" />
+                                <label asp-for="NotificarProximoVencimiento" class="form-check-label">Próximo Vencimiento</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input asp-for="NotificarCuotaVencida" class="form-check-input" type="checkbox" />
+                                <label asp-for="NotificarCuotaVencida" class="form-check-label">Cuota Vencida</label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input asp-for="NotificarMoraAcumulada" class="form-check-input" type="checkbox" />
+                                <label asp-for="NotificarMoraAcumulada" class="form-check-label">Mora Acumulada</label>
+                            </div>
+
+                            <hr>
+                            <h6>Límites</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label asp-for="DiasAntesNotificacionPreventiva" class="form-label">Días Antes</label>
+                                    <input asp-for="DiasAntesNotificacionPreventiva" class="form-control form-control-sm" type="number" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="MaximoNotificacionesDiarias" class="form-label">Máx/Día</label>
+                                    <input asp-for="MaximoNotificacionesDiarias" class="form-control form-control-sm" type="number" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="MaximoNotificacionesPorCuota" class="form-label">Máx/Cuota</label>
+                                    <input asp-for="MaximoNotificacionesPorCuota" class="form-control form-control-sm" type="number" />
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label asp-for="HoraInicioEnvio" class="form-label">Hora Inicio</label>
+                                    <input asp-for="HoraInicioEnvio" class="form-control form-control-sm" type="time" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="HoraFinEnvio" class="form-label">Hora Fin</label>
+                                    <input asp-for="HoraFinEnvio" class="form-control form-control-sm" type="time" />
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch mt-4">
+                                        <input asp-for="EnviarFinDeSemana" class="form-check-input" type="checkbox" />
+                                        <label asp-for="EnviarFinDeSemana" class="form-check-label">Fines de Semana</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tramos de Cobranza -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Tramos de Cobranza</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="TramosCobranzaActivos" class="form-check-input" type="checkbox" id="tramosActivos" />
+                            <label class="form-check-label" for="tramosActivos">Tramos de Cobranza Activos</label>
+                        </div>
+
+                        <div id="seccionTramos" class="@(Model.TramosCobranzaActivos ? "" : "d-none")">
+                            <!-- Tramo 1: Preventivo -->
+                            <div class="card mb-2">
+                                <div class="card-header py-2 bg-success text-white">Tramo 1: Preventivo</div>
+                                <div class="card-body py-2">
+                                    <div class="row">
+                                        <div class="col-3">
+                                            <input asp-for="Tramo1DiasInicio" class="form-control form-control-sm" placeholder="Desde" />
+                                        </div>
+                                        <div class="col-3">
+                                            <input asp-for="Tramo1DiasFin" class="form-control form-control-sm" placeholder="Hasta" />
+                                        </div>
+                                        <div class="col-3">
+                                            <input asp-for="Tramo1Recordatorio" class="form-control form-control-sm" placeholder="Recordatorio" />
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="form-check">
+                                                <input asp-for="Tramo1LlamadaActiva" class="form-check-input" type="checkbox" />
+                                                <label class="form-check-label small">Llamada</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tramo 2: Temprano -->
+                            <div class="card mb-2">
+                                <div class="card-header py-2 bg-warning">Tramo 2: Temprano</div>
+                                <div class="card-body py-2">
+                                    <div class="row">
+                                        <div class="col-3">
+                                            <input asp-for="Tramo2DiasInicio" class="form-control form-control-sm" placeholder="Desde" />
+                                        </div>
+                                        <div class="col-3">
+                                            <input asp-for="Tramo2DiasFin" class="form-control form-control-sm" placeholder="Hasta" />
+                                        </div>
+                                        <div class="col-3">
+                                            <input asp-for="Tramo2Recordatorio" class="form-control form-control-sm" placeholder="Recordatorio" />
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="form-check">
+                                                <input asp-for="Tramo2LlamadaActiva" class="form-check-input" type="checkbox" />
+                                                <label class="form-check-label small">Llamada</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tramo 3: Gestión -->
+                            <div class="card mb-2">
+                                <div class="card-header py-2 bg-danger text-white">Tramo 3: Gestión</div>
+                                <div class="card-body py-2">
+                                    <div class="row">
+                                        <div class="col-3">
+                                            <input asp-for="Tramo3DiasInicio" class="form-control form-control-sm" placeholder="Desde" />
+                                        </div>
+                                        <div class="col-3">
+                                            <input asp-for="Tramo3DiasFin" class="form-control form-control-sm" placeholder="Hasta" />
+                                        </div>
+                                        <div class="col-3">
+                                            <input asp-for="Tramo3Recordatorio" class="form-control form-control-sm" placeholder="Recordatorio" />
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="form-check">
+                                                <input asp-for="Tramo3LlamadaActiva" class="form-check-input" type="checkbox" />
+                                                <label class="form-check-label small">Llamada</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tramo 4: Crítico -->
+                            <div class="card">
+                                <div class="card-header py-2 bg-dark text-white">Tramo 4: Crítico</div>
+                                <div class="card-body py-2">
+                                    <div class="row">
+                                        <div class="col-4">
+                                            <input asp-for="Tramo4DiasInicio" class="form-control form-control-sm" placeholder="Desde día" />
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="form-check">
+                                                <input asp-for="Tramo4EscalamientoActivo" class="form-check-input" type="checkbox" />
+                                                <label class="form-check-label small">Escalamiento</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="form-check">
+                                                <input asp-for="Tramo4BloqueoActivo" class="form-check-input" type="checkbox" />
+                                                <label class="form-check-label small">Bloqueo</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón Guardar -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Recuerde guardar los cambios antes de salir</span>
+                        <div>
+                            <a href="@backUrl" class="btn btn-secondary me-2">Cancelar</a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-lg me-2"></i>Guardar Configuración
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // Toggle secciones
+        document.getElementById('escalonamientoActivo')?.addEventListener('change', function() {
+            document.getElementById('seccionEscalonamiento').classList.toggle('d-none', !this.checked);
+        });
+        document.getElementById('topeActivo')?.addEventListener('change', function() {
+            document.getElementById('seccionTope').classList.toggle('d-none', !this.checked);
+        });
+        document.getElementById('notifActivas')?.addEventListener('change', function() {
+            document.getElementById('seccionNotif').classList.toggle('d-none', !this.checked);
+        });
+        document.getElementById('tramosActivos')?.addEventListener('change', function() {
+            document.getElementById('seccionTramos').classList.toggle('d-none', !this.checked);
+        });
+    </script>
+}

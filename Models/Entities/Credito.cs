@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Representa un cr�dito otorgado a un cliente
     /// </summary>
-    public class Credito : BaseEntity
+    public class Credito  : AuditableEntity
     {
         public int ClienteId { get; set; }
 

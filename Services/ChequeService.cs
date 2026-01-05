@@ -39,7 +39,7 @@ namespace TheBuryProject.Services
                 .AsNoTracking()
                 .Include(c => c.Proveedor)
                 .Include(c => c.OrdenCompra)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
         }
 
         public async Task<Cheque> CreateAsync(Cheque cheque)
@@ -47,13 +47,13 @@ namespace TheBuryProject.Services
             if (await NumeroExisteAsync(cheque.Numero))
                 throw new InvalidOperationException($"Ya existe un cheque con el número {cheque.Numero}");
 
-            var proveedor = await _context.Proveedores.FindAsync(cheque.ProveedorId);
+            var proveedor = await _context.Proveedores.FirstOrDefaultAsync(p => p.Id == cheque.ProveedorId && !p.IsDeleted);
             if (proveedor == null)
                 throw new InvalidOperationException("El proveedor especificado no existe");
 
             if (cheque.OrdenCompraId.HasValue)
             {
-                var orden = await _context.OrdenesCompra.FindAsync(cheque.OrdenCompraId.Value);
+                var orden = await _context.OrdenesCompra.FirstOrDefaultAsync(o => o.Id == cheque.OrdenCompraId.Value && !o.IsDeleted);
                 if (orden == null)
                     throw new InvalidOperationException("La orden de compra especificada no existe");
                 if (orden.ProveedorId != cheque.ProveedorId)
@@ -72,10 +72,13 @@ namespace TheBuryProject.Services
 
         public async Task<Cheque> UpdateAsync(Cheque cheque)
         {
+            if (cheque.RowVersion == null || cheque.RowVersion.Length == 0)
+                throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá el cheque e intentá nuevamente.");
+
             var chequeExistente = await _context.Cheques
                 .Include(c => c.Proveedor)
                 .Include(c => c.OrdenCompra)
-                .FirstOrDefaultAsync(c => c.Id == cheque.Id);
+                .FirstOrDefaultAsync(c => c.Id == cheque.Id && !c.IsDeleted);
 
             if (chequeExistente == null)
                 throw new InvalidOperationException("El cheque no existe");
@@ -87,18 +90,20 @@ namespace TheBuryProject.Services
                 throw new InvalidOperationException("La fecha de vencimiento no puede ser anterior a la fecha de emisión");
 
             // Validar proveedor y orden como en Create
-            var proveedor = await _context.Proveedores.FindAsync(cheque.ProveedorId);
+            var proveedor = await _context.Proveedores.FirstOrDefaultAsync(p => p.Id == cheque.ProveedorId && !p.IsDeleted);
             if (proveedor == null)
                 throw new InvalidOperationException("El proveedor especificado no existe");
 
             if (cheque.OrdenCompraId.HasValue)
             {
-                var orden = await _context.OrdenesCompra.FindAsync(cheque.OrdenCompraId.Value);
+                var orden = await _context.OrdenesCompra.FirstOrDefaultAsync(o => o.Id == cheque.OrdenCompraId.Value && !o.IsDeleted);
                 if (orden == null)
                     throw new InvalidOperationException("La orden de compra especificada no existe");
                 if (orden.ProveedorId != cheque.ProveedorId)
                     throw new InvalidOperationException("La orden de compra no pertenece al proveedor seleccionado");
             }
+
+            _context.Entry(chequeExistente).Property(c => c.RowVersion).OriginalValue = cheque.RowVersion;
 
             // Actualizar propiedades
             chequeExistente.Numero = cheque.Numero;
@@ -111,7 +116,15 @@ namespace TheBuryProject.Services
             chequeExistente.OrdenCompraId = cheque.OrdenCompraId;
             chequeExistente.Observaciones = cheque.Observaciones;
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new InvalidOperationException(
+                    "El cheque fue modificado por otro usuario. Recargá la página y volvé a intentar.");
+            }
 
             _logger.LogInformation("Cheque {Numero} actualizado exitosamente", cheque.Numero);
             return chequeExistente;
@@ -119,14 +132,14 @@ namespace TheBuryProject.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var cheque = await _context.Cheques.FindAsync(id);
+            var cheque = await _context.Cheques.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
             if (cheque == null)
                 return false;
 
             if (cheque.Estado == EstadoCheque.Cobrado || cheque.Estado == EstadoCheque.Depositado)
                 throw new InvalidOperationException("No se puede eliminar un cheque que está depositado o cobrado");
 
-            _context.Cheques.Remove(cheque);
+            cheque.IsDeleted = true;
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Cheque {Id} eliminado exitosamente", id);
@@ -151,6 +164,8 @@ namespace TheBuryProject.Services
                 .Include(c => c.Proveedor)
                 .Include(c => c.OrdenCompra)
                 .AsQueryable();
+
+            query = query.Where(c => !c.IsDeleted);
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -246,7 +261,7 @@ namespace TheBuryProject.Services
             return await _context.Cheques
                 .AsNoTracking()
                 .Include(c => c.OrdenCompra)
-                .Where(c => c.ProveedorId == proveedorId)
+                .Where(c => c.ProveedorId == proveedorId && !c.IsDeleted)
                 .OrderByDescending(c => c.FechaEmision)
                 .ToListAsync();
         }
@@ -256,7 +271,7 @@ namespace TheBuryProject.Services
             return await _context.Cheques
                 .AsNoTracking()
                 .Include(c => c.Proveedor)
-                .Where(c => c.OrdenCompraId == ordenCompraId)
+                .Where(c => c.OrdenCompraId == ordenCompraId && !c.IsDeleted)
                 .OrderByDescending(c => c.FechaEmision)
                 .ToListAsync();
         }
@@ -268,7 +283,8 @@ namespace TheBuryProject.Services
                 .AsNoTracking()
                 .Include(c => c.Proveedor)
                 .Include(c => c.OrdenCompra)
-                .Where(c => c.FechaVencimiento.HasValue &&
+                .Where(c => !c.IsDeleted &&
+                            c.FechaVencimiento.HasValue &&
                             c.FechaVencimiento.Value < hoy &&
                             c.Estado != EstadoCheque.Cobrado &&
                             c.Estado != EstadoCheque.Rechazado &&
@@ -286,7 +302,8 @@ namespace TheBuryProject.Services
                 .AsNoTracking()
                 .Include(c => c.Proveedor)
                 .Include(c => c.OrdenCompra)
-                .Where(c => c.FechaVencimiento.HasValue &&
+                .Where(c => !c.IsDeleted &&
+                            c.FechaVencimiento.HasValue &&
                             c.FechaVencimiento.Value >= hoy &&
                             c.FechaVencimiento.Value <= limite &&
                             c.Estado != EstadoCheque.Cobrado &&
@@ -298,7 +315,7 @@ namespace TheBuryProject.Services
 
         public async Task<bool> CambiarEstadoAsync(int id, EstadoCheque nuevoEstado)
         {
-            var cheque = await _context.Cheques.FindAsync(id);
+            var cheque = await _context.Cheques.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
             if (cheque == null)
                 return false;
 
@@ -312,7 +329,10 @@ namespace TheBuryProject.Services
         public async Task<bool> NumeroExisteAsync(string numero, int? excludeId = null)
         {
             return await _context.Cheques
-                .AnyAsync(c => c.Numero == numero && (excludeId == null || c.Id != excludeId.Value));
+                .AnyAsync(c =>
+                    c.Numero == numero &&
+                    !c.IsDeleted &&
+                    (excludeId == null || c.Id != excludeId.Value));
         }
     }
 }

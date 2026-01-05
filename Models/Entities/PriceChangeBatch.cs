@@ -8,7 +8,7 @@ namespace TheBuryProject.Models.Entities;
 /// Representa un lote de cambios de precios masivos
 /// Soporta workflow: Simulación → Autorización → Aplicación → Reversión
 /// </summary>
-public class PriceChangeBatch : BaseEntity
+public class PriceChangeBatch  : AuditableEntity
 {
     /// <summary>
     /// Nombre descriptivo del batch
@@ -156,6 +156,21 @@ public class PriceChangeBatch : BaseEntity
     /// Indica si este cambio requiere autorización
     /// </summary>
     public bool RequiereAutorizacion { get; set; }
+
+    /// <summary>
+    /// ID del batch padre (para reversiones)
+    /// </summary>
+    public int? BatchPadreId { get; set; }
+
+    /// <summary>
+    /// Batch padre - usado cuando este batch es una reversión
+    /// </summary>
+    public virtual PriceChangeBatch? BatchPadre { get; set; }
+
+    /// <summary>
+    /// Batch de reversión - si este batch fue revertido, referencia al batch de reversión
+    /// </summary>
+    public virtual PriceChangeBatch? BatchReversion { get; set; }
 
     /// <summary>
     /// Porcentaje promedio de cambio (para estadísticas)

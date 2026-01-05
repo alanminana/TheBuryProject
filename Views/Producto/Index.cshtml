@@ -1,9 +1,35 @@
-﻿@model TheBuryProject.ViewModels.ProductoFilterViewModel
+﻿@*
+    ═══════════════════════════════════════════════════════════════════════
+    VISTA OBSOLETA - ProductoController.Index redirige a Catalogo/Index
+    Esta vista se mantiene solo por compatibilidad pero ya no se renderiza.
+    Puede eliminarse en futuras versiones.
+    ═══════════════════════════════════════════════════════════════════════
+*@
+@model TheBuryProject.ViewModels.ProductoFilterViewModel
 @{
     ViewData["Title"] = "Productos";
+    var mostrarBannerCatalogo = ViewBag.MostrarBannerCatalogo as bool? ?? false;
 }
 
 <section class="container-fluid py-4">
+    @* Banner de migración al catálogo unificado *@
+    @if (mostrarBannerCatalogo)
+    {
+        <div class="alert alert-info alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle fs-4 me-3"></i>
+                <div class="flex-grow-1">
+                    <strong>¡Nueva vista unificada disponible!</strong>
+                    <p class="mb-0 small">Ahora podés ver productos con precios por lista desde el <strong>Catálogo Unificado</strong>.</p>
+                </div>
+                <a asp-controller="Catalogo" asp-action="Index" class="btn btn-info btn-sm text-dark fw-semibold ms-3">
+                    <i class="bi bi-grid me-1"></i>Ir al Catálogo
+                </a>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
     <div class="row align-items-center mb-4">
         <div class="col">
             <h1 class="h3 fw-bold text-light mb-0">
@@ -15,6 +41,11 @@
             <!-- Botón al catálogo -->
             <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-light fw-semibold shadow-sm">
                 <i class="bi bi-collection me-2"></i>Ver Catálogo
+            </a>
+
+            <!-- Botón a cambios masivos de precios -->
+            <a asp-controller="CambiosPrecios" asp-action="Index" class="btn btn-outline-success fw-semibold shadow-sm">
+                <i class="bi bi-shuffle me-2"></i>Cambios de Precios
             </a>
 
             <!-- Botón a movimiento de stock -->
@@ -70,7 +101,7 @@
                         <!-- Categoría -->
                         <div class="col-md-3">
                             <label class="form-label text-light fw-semibold"><i class="bi bi-tag me-1"></i>Categoría</label>
-                            <select class="form-select bg-body-secondary text-light border-0" name="categoriaId" asp-items="ViewBag.CategoriasFiltro">
+                            <select asp-for="CategoriaId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.CategoriasFiltro">
                                 <option value="">Todas</option>
                             </select>
                         </div>
@@ -78,7 +109,7 @@
                         <!-- Marca -->
                         <div class="col-md-3">
                             <label class="form-label text-light fw-semibold"><i class="bi bi-award me-1"></i>Marca</label>
-                            <select class="form-select bg-body-secondary text-light border-0" name="marcaId" asp-items="ViewBag.MarcasFiltro">
+                            <select asp-for="MarcaId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.MarcasFiltro">
                                 <option value="">Todas</option>
                             </select>
                         </div>
@@ -179,7 +210,7 @@
                                     <td class="text-end fw-bold text-light">@p.PrecioVenta.ToString("C2")</td>
                                     <td class="text-center">
                                         <span class="badge rounded-pill @(p.EstadoStock == "Sin Stock" ? "bg-danger" : p.EstadoStock == "Stock Bajo" ? "bg-warning text-dark" : "bg-success")">
-                                            @p.StockActual @p.UnidadMedida
+                                            @p.StockActual UN
                                         </span>
                                     </td>
                                     <td class="text-center">
@@ -196,6 +227,7 @@
                                         <div class="btn-group btn-group-sm">
                                             <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-outline-info" title="Detalles"><i class="bi bi-eye"></i></a>
                                             <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-outline-warning" title="Editar"><i class="bi bi-pencil"></i></a>
+                                            <a asp-controller="CambiosPrecios" asp-action="Historial" asp-route-productoId="@p.Id" class="btn btn-outline-success" title="Historial de precios"><i class="bi bi-clock-history"></i></a>
                                             <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></a>
                                         </div>
                                     </td>

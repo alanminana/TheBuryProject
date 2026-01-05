@@ -5,11 +5,24 @@ using TheBuryProject.Models.Enums;
 namespace TheBuryProject.ViewModels;
 
 /// <summary>
+/// Constantes compartidas para validación de caja
+/// </summary>
+public static class CajaConstants
+{
+    /// <summary>
+    /// Tolerancia para diferencias de arqueo (en pesos)
+    /// </summary>
+    public const decimal TOLERANCIA_DIFERENCIA = 0.01m;
+}
+
+/// <summary>
 /// ViewModel para crear/editar caja
 /// </summary>
 public class CajaViewModel
 {
     public int Id { get; set; }
+
+    public byte[]? RowVersion { get; set; }
 
     [Required(ErrorMessage = "El código es obligatorio")]
     [StringLength(50)]
@@ -138,7 +151,7 @@ public class CerrarCajaViewModel
     [Display(Name = "Diferencia")]
     public decimal Diferencia => MontoTotalReal - MontoEsperadoSistema;
 
-    public bool TieneDiferencia => Math.Abs(Diferencia) > 0.01m;
+    public bool TieneDiferencia => Math.Abs(Diferencia) > CajaConstants.TOLERANCIA_DIFERENCIA;
 
     [StringLength(1000)]
     [Display(Name = "Justificación de Diferencia")]
@@ -164,9 +177,9 @@ public class CerrarCajaViewModel
 /// </summary>
 public class CajasListViewModel
 {
-    public List<Caja> CajasActivas { get; set; } = new();
-    public List<Caja> CajasInactivas { get; set; } = new();
-    public List<AperturaCaja> AperturasAbiertas { get; set; } = new();
+    public IList<AperturaCaja> AperturasAbiertas { get; set; } = new List<AperturaCaja>();
+    public IList<Caja> CajasActivas { get; set; } = new List<Caja>();
+    public IList<Caja> CajasInactivas { get; set; } = new List<Caja>();
 }
 
 /// <summary>

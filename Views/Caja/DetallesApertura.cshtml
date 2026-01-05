@@ -30,6 +30,7 @@
             {
                 <a asp-action="Cerrar"
                    asp-route-aperturaId="@Model.Apertura.Id"
+                   asp-route-returnUrl="@(Context.Request.Path + Context.Request.QueryString)"
                    class="btn btn-warning btn-sm">
                     <i class="bi bi-lock me-1"></i>Cerrar caja
                 </a>

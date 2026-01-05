@@ -1,22 +1,41 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public class MarcaController : Controller
     {
         private readonly IMarcaService _marcaService;
         private readonly ILogger<MarcaController> _logger;
+        private readonly IMapper _mapper;
 
-        public MarcaController(IMarcaService marcaService, ILogger<MarcaController> logger)
+        private string? GetSafeReturnUrl(string? returnUrl)
+        {
+            return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+                ? returnUrl
+                : null;
+        }
+
+        private IActionResult RedirectToReturnUrlOrIndex(string? returnUrl)
+        {
+            var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+            return safeReturnUrl != null
+                ? LocalRedirect(safeReturnUrl)
+                : RedirectToAction(nameof(Index));
+        }
+
+        public MarcaController(IMarcaService marcaService, ILogger<MarcaController> logger, IMapper mapper)
         {
             _marcaService = marcaService;
             _logger = logger;
+            _mapper = mapper;
         }
 
         // GET: Marca
@@ -25,10 +44,13 @@ namespace TheBuryProject.Controllers
             string? searchTerm = null,
             bool soloActivos = false,
             string? orderBy = null,
-            string? orderDirection = "asc")
+            string? orderDirection = "asc",
+            string? returnUrl = null)
         {
             try
             {
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
                 // Ejecutar b�squeda con filtros
                 var marcas = await _marcaService.SearchAsync(
                     searchTerm,
@@ -37,17 +59,7 @@ namespace TheBuryProject.Controllers
                     orderDirection
                 );
 
-                var viewModels = marcas.Select(m => new MarcaViewModel
-                {
-                    Id = m.Id,
-                    Codigo = m.Codigo,
-                    Nombre = m.Nombre,
-                    Descripcion = m.Descripcion,
-                    ParentId = m.ParentId,
-                    ParentNombre = m.Parent?.Nombre,
-                    PaisOrigen = m.PaisOrigen,
-                    Activo = m.Activo
-                }).ToList();
+                var viewModels = _mapper.Map<List<MarcaViewModel>>(marcas);
 
                 // Crear ViewModel de filtros
                 var filterViewModel = new MarcaFilterViewModel
@@ -71,12 +83,14 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Marca/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int? id, string? returnUrl = null)
         {
             if (id == null)
             {
                 return NotFound();
             }
+
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
             try
             {
@@ -86,16 +100,7 @@ namespace TheBuryProject.Controllers
                     return NotFound();
                 }
 
-                var viewModel = new MarcaViewModel
-                {
-                    Id = marca.Id,
-                    Codigo = marca.Codigo,
-                    Nombre = marca.Nombre,
-                    Descripcion = marca.Descripcion,
-                    ParentId = marca.ParentId,
-                    ParentNombre = marca.Parent?.Nombre,
-                    PaisOrigen = marca.PaisOrigen
-                };
+                var viewModel = _mapper.Map<MarcaViewModel>(marca);
 
                 return View(viewModel);
             }
@@ -108,8 +113,9 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Marca/Create
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
             await CargarMarcasParaDropdown();
             return View();
         }
@@ -117,8 +123,9 @@ namespace TheBuryProject.Controllers
         // POST: Marca/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(MarcaViewModel viewModel)
+        public async Task<IActionResult> Create(MarcaViewModel viewModel, string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
             if (ModelState.IsValid)
             {
                 try
@@ -142,7 +149,7 @@ namespace TheBuryProject.Controllers
 
                     await _marcaService.CreateAsync(marca);
                     TempData["Success"] = "Marca creada exitosamente";
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToReturnUrlOrIndex(returnUrl);
                 }
                 catch (Exception ex)
                 {
@@ -156,12 +163,14 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Marca/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(int? id, string? returnUrl = null)
         {
             if (id == null)
             {
                 return NotFound();
             }
+
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
             try
             {
@@ -171,16 +180,7 @@ namespace TheBuryProject.Controllers
                     return NotFound();
                 }
 
-                var viewModel = new MarcaViewModel
-                {
-                    Id = marca.Id,
-                    Codigo = marca.Codigo,
-                    Nombre = marca.Nombre,
-                    Descripcion = marca.Descripcion,
-                    ParentId = marca.ParentId,
-                    PaisOrigen = marca.PaisOrigen,
-                    RowVersion = marca.RowVersion
-                };
+                var viewModel = _mapper.Map<MarcaViewModel>(marca);
 
                 await CargarMarcasParaDropdown(viewModel.ParentId, id.Value);
                 return View(viewModel);
@@ -196,17 +196,27 @@ namespace TheBuryProject.Controllers
         // POST: Marca/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, MarcaViewModel viewModel)
+        public async Task<IActionResult> Edit(int id, MarcaViewModel viewModel, string? returnUrl = null)
         {
             if (id != viewModel.Id)
             {
                 return NotFound();
             }
 
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
             if (ModelState.IsValid)
             {
                 try
                 {
+                    var rowVersion = viewModel.RowVersion;
+                    if (rowVersion is null || rowVersion.Length == 0)
+                    {
+                        ModelState.AddModelError("", "No se recibió la versión de fila (RowVersion). Recargue la página e intente nuevamente.");
+                        await CargarMarcasParaDropdown(viewModel.ParentId, id);
+                        return View(viewModel);
+                    }
+
                     // Verificar que el c�digo no exista (excluyendo el registro actual)
                     if (await _marcaService.ExistsCodigoAsync(viewModel.Codigo, id))
                     {
@@ -223,12 +233,12 @@ namespace TheBuryProject.Controllers
                         Descripcion = viewModel.Descripcion,
                         ParentId = viewModel.ParentId,
                         PaisOrigen = viewModel.PaisOrigen,
-                        RowVersion = viewModel.RowVersion
+                        RowVersion = rowVersion
                     };
 
                     await _marcaService.UpdateAsync(marca);
                     TempData["Success"] = "Marca actualizada exitosamente";
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToReturnUrlOrIndex(returnUrl);
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -247,12 +257,14 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Marca/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(int? id, string? returnUrl = null)
         {
             if (id == null)
             {
                 return NotFound();
             }
+
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
             try
             {
@@ -262,16 +274,7 @@ namespace TheBuryProject.Controllers
                     return NotFound();
                 }
 
-                var viewModel = new MarcaViewModel
-                {
-                    Id = marca.Id,
-                    Codigo = marca.Codigo,
-                    Nombre = marca.Nombre,
-                    Descripcion = marca.Descripcion,
-                    ParentId = marca.ParentId,
-                    ParentNombre = marca.Parent?.Nombre,
-                    PaisOrigen = marca.PaisOrigen
-                };
+                var viewModel = _mapper.Map<MarcaViewModel>(marca);
 
                 return View(viewModel);
             }
@@ -286,7 +289,7 @@ namespace TheBuryProject.Controllers
         // POST: Marca/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id, string? returnUrl = null)
         {
             try
             {
@@ -311,7 +314,7 @@ namespace TheBuryProject.Controllers
                 TempData["Error"] = "Error al eliminar la marca. Por favor, intente nuevamente.";
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToReturnUrlOrIndex(returnUrl);
         }
 
         /// <summary>

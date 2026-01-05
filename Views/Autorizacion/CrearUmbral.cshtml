@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Crear Umbral de Autorización";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Autorizacion")!;
 }
 
 <div class="container-fluid px-0">
@@ -16,7 +18,7 @@
             </p>
         </div>
 
-        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <a href="@backUrl" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i>Volver al listado
         </a>
     </div>
@@ -29,6 +31,8 @@
 
                     <form asp-action="CrearUmbral" method="post" novalidate>
                         @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
 
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
 
@@ -94,7 +98,7 @@
 
                         <!-- Botones -->
                         <div class="d-flex justify-content-end gap-2 mt-3">
-                            <a asp-action="Index" class="btn btn-outline-secondary">
+                            <a href="@backUrl" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-lg me-1"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">

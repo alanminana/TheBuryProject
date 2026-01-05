@@ -212,6 +212,7 @@ public class ListasPreciosController : Controller
             var viewModel = new EditarListaPrecioViewModel
             {
                 Id = lista.Id,
+                RowVersion = lista.RowVersion,
                 Nombre = lista.Nombre,
                 Codigo = lista.Codigo,
                 Tipo = lista.Tipo,
@@ -280,10 +281,15 @@ public class ListasPreciosController : Controller
             lista.Descripcion = viewModel.Descripcion;
             lista.Notas = viewModel.Notas;
 
-            await _precioService.UpdateListaAsync(lista);
+            await _precioService.UpdateListaAsync(lista, viewModel.RowVersion);
 
             TempData["Success"] = $"Lista de precios '{lista.Nombre}' actualizada exitosamente.";
             return RedirectToAction(nameof(Details), new { id = lista.Id });
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            TempData["Error"] = "La lista fue modificada por otro usuario. Recargue la página e intente nuevamente.";
+            return RedirectToAction(nameof(Edit), new { id });
         }
         catch (Exception ex)
         {
@@ -316,6 +322,7 @@ public class ListasPreciosController : Controller
             var viewModel = new ListaPrecioViewModel
             {
                 Id = lista.Id,
+                RowVersion = lista.RowVersion,
                 Nombre = lista.Nombre,
                 Codigo = lista.Codigo,
                 Tipo = lista.Tipo,
@@ -341,11 +348,11 @@ public class ListasPreciosController : Controller
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = ModuloPrecios, Accion = AccionEliminar)]
-    public async Task<IActionResult> DeleteConfirmed(int id)
+    public async Task<IActionResult> DeleteConfirmed(int id, byte[] rowVersion)
     {
         try
         {
-            var result = await _precioService.DeleteListaAsync(id);
+            var result = await _precioService.DeleteListaAsync(id, rowVersion);
 
             if (result)
             {
@@ -355,6 +362,10 @@ public class ListasPreciosController : Controller
             {
                 TempData["Error"] = "No se pudo eliminar la lista de precios.";
             }
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            TempData["Error"] = "La lista fue modificada por otro usuario. Recargue la página e intente nuevamente.";
         }
         catch (Exception ex)
         {

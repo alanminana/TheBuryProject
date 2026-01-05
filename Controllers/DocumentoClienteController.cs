@@ -2,38 +2,62 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
+using TheBuryProject.Helpers;
+using TheBuryProject.Models.Entities;
+using System.Text.Json;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public class DocumentoClienteController : Controller
     {
         private readonly IDocumentoClienteService _documentoService;
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly ILogger<DocumentoClienteController> _logger;
         private readonly IDocumentacionService _documentacionService;
+        private readonly IClienteLookupService _clienteLookup;
+
+        private string? GetSafeReturnUrl(string? returnUrl)
+        {
+            return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+                ? returnUrl
+                : null;
+        }
+
+        private IActionResult RedirectToReturnUrlOrIndex(string? returnUrl, object? indexRouteValues = null)
+        {
+            var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+            return safeReturnUrl != null
+                ? LocalRedirect(safeReturnUrl)
+                : RedirectToAction(nameof(Index), indexRouteValues);
+        }
 
         public DocumentoClienteController(
             IDocumentoClienteService documentoService,
             IDbContextFactory<AppDbContext> contextFactory,
             ILogger<DocumentoClienteController> logger,
-            IDocumentacionService documentacionService)
+            IDocumentacionService documentacionService,
+            IClienteLookupService clienteLookup)
         {
             _documentoService = documentoService;
             _contextFactory = contextFactory;
             _logger = logger;
             _documentacionService = documentacionService;
+            _clienteLookup = clienteLookup;
         }
 
         // GET: DocumentoCliente
-        public async Task<IActionResult> Index(DocumentoClienteFilterViewModel? filtro, int? returnToVentaId)
+        public async Task<IActionResult> Index(DocumentoClienteFilterViewModel? filtro, int? returnToVentaId, string? returnUrl = null)
         {
             try
             {
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
                 await using var context = await _contextFactory.CreateDbContextAsync();
 
                 if (filtro == null)
@@ -54,24 +78,17 @@ namespace TheBuryProject.Controllers
 
                 if (filtro.UploadModel.ClienteId > 0)
                 {
-                    var cliente = await context.Clientes
-                        .Where(c => c.Id == filtro.UploadModel.ClienteId)
-                        .Select(c => new
-                        {
-                            c.Id,
-                            NombreCompleto = $"{c.Apellido}, {c.Nombre} - DNI: {c.NumeroDocumento}"
-                        })
-                        .FirstOrDefaultAsync();
-
-                    if (cliente != null)
+                    var display = await _clienteLookup.GetClienteDisplayNameAsync(filtro.UploadModel.ClienteId);
+                    if (!string.IsNullOrWhiteSpace(display))
                     {
-                        filtro.UploadModel.ClienteNombre = cliente.NombreCompleto;
+                        filtro.UploadModel.ClienteNombre = display;
                     }
                 }
 
                 if (filtro.ReturnToVentaId.HasValue)
                 {
-                    var venta = await context.Ventas.FindAsync(filtro.ReturnToVentaId.Value);
+                    var venta = await context.Ventas
+                        .FirstOrDefaultAsync(v => v.Id == filtro.ReturnToVentaId.Value && !v.IsDeleted);
                     if (venta != null)
                     {
                         ViewBag.DocumentacionPendiente =
@@ -79,7 +96,7 @@ namespace TheBuryProject.Controllers
                     }
                 }
 
-                await CargarViewBags(context, filtro.ClienteId);
+                await CargarViewBags(filtro.ClienteId);
 
                 return View(filtro);
             }
@@ -89,18 +106,19 @@ namespace TheBuryProject.Controllers
                 TempData["Error"] = $"Error al cargar los documentos: {ex.Message}";
 
                 var emptyModel = new DocumentoClienteFilterViewModel();
-                await using var context = await _contextFactory.CreateDbContextAsync();
-                await CargarViewBags(context, null);
+                await CargarViewBags(null);
                 return View(emptyModel);
             }
         }
 
         // GET: DocumentoCliente/Upload
-        public async Task<IActionResult> Upload(int? clienteId, int? returnToVentaId, int? replaceId)
+        public async Task<IActionResult> Upload(int? clienteId, int? returnToVentaId, int? replaceId, string? returnUrl = null)
         {
             await using var context = await _contextFactory.CreateDbContextAsync();
             var viewModel = new DocumentoClienteViewModel();
             var bloquearCliente = false;
+
+            ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
             if (clienteId.HasValue)
                 viewModel.ClienteId = clienteId.Value;
@@ -110,12 +128,16 @@ namespace TheBuryProject.Controllers
 
                 var venta = await context.Ventas
                     .Include(v => v.Cliente)
-                    .FirstOrDefaultAsync(v => v.Id == returnToVentaId.Value);
+                    .FirstOrDefaultAsync(v =>
+                        v.Id == returnToVentaId.Value &&
+                        !v.IsDeleted &&
+                        v.Cliente != null &&
+                        !v.Cliente.IsDeleted);
 
                 if (venta != null)
                 {
                     viewModel.ClienteId = venta.ClienteId;
-                    viewModel.ClienteNombre = $"{venta.Cliente.Apellido}, {venta.Cliente.Nombre} - DNI: {venta.Cliente.NumeroDocumento}";
+                    viewModel.ClienteNombre = venta.Cliente.ToDisplayName();
                     bloquearCliente = true;
                 }
             }
@@ -130,12 +152,12 @@ namespace TheBuryProject.Controllers
                     viewModel.DocumentoAReemplazarNombre = documento.NombreArchivo;
                     viewModel.ClienteId = documento.ClienteId;
                     viewModel.TipoDocumento = documento.TipoDocumento;
-                    await CargarViewBags(context, documento.ClienteId, false);
+                    await CargarViewBags(documento.ClienteId, false);
                 }
             }
 
             ViewBag.ClienteBloqueado = bloquearCliente;
-            await CargarViewBags(context, viewModel.ClienteId, bloquearCliente);
+            await CargarViewBags(viewModel.ClienteId, bloquearCliente);
 
             if (!string.IsNullOrWhiteSpace(viewModel.ClienteNombre))
             {
@@ -144,10 +166,10 @@ namespace TheBuryProject.Controllers
 
             if (viewModel.ClienteId > 0)
             {
-                var cliente = await context.Clientes.FindAsync(viewModel.ClienteId);
-                if (cliente != null)
+                var display = await _clienteLookup.GetClienteDisplayNameAsync(viewModel.ClienteId);
+                if (!string.IsNullOrWhiteSpace(display))
                 {
-                    viewModel.ClienteNombre = $"{cliente.Apellido}, {cliente.Nombre} - DNI: {cliente.NumeroDocumento}";
+                    viewModel.ClienteNombre = display;
                 }
             }
 
@@ -157,7 +179,7 @@ namespace TheBuryProject.Controllers
         // POST: DocumentoCliente/Upload
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Upload(DocumentoClienteViewModel viewModel, bool returnToDetails = false)
+        public async Task<IActionResult> Upload(DocumentoClienteViewModel viewModel, bool returnToDetails = false, string? returnUrl = null)
         {
             await using var context = await _contextFactory.CreateDbContextAsync();
 
@@ -167,7 +189,11 @@ namespace TheBuryProject.Controllers
                 {
                     var venta = await context.Ventas
                         .Include(v => v.Cliente)
-                        .FirstOrDefaultAsync(v => v.Id == viewModel.ReturnToVentaId.Value);
+                        .FirstOrDefaultAsync(v =>
+                            v.Id == viewModel.ReturnToVentaId.Value &&
+                            !v.IsDeleted &&
+                            v.Cliente != null &&
+                            !v.Cliente.IsDeleted);
 
                     if (venta == null)
                     {
@@ -177,24 +203,26 @@ namespace TheBuryProject.Controllers
                     {
                         ModelState.AddModelError("ClienteId", "Debe adjuntar documentación para el cliente seleccionado en la venta.");
                         viewModel.ClienteId = venta.ClienteId;
-                        viewModel.ClienteNombre = $"{venta.Cliente.Apellido}, {venta.Cliente.Nombre} - DNI: {venta.Cliente.NumeroDocumento}";
+                        viewModel.ClienteNombre = venta.Cliente.ToDisplayName();
                     }
                     else
                     {
-                        viewModel.ClienteNombre = $"{venta.Cliente.Apellido}, {venta.Cliente.Nombre} - DNI: {venta.Cliente.NumeroDocumento}";
+                        viewModel.ClienteNombre = venta.Cliente.ToDisplayName();
                     }
                 }
 
                 if (!ModelState.IsValid)
                 {
                     ViewBag.ClienteBloqueado = viewModel.ReturnToVentaId.HasValue;
-                    await CargarViewBags(context, viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
+                    await CargarViewBags(viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
 
                     // Si viene del inline upload, redirigir con error
                     if (returnToDetails)
                     {
                         TempData["Error"] = "Por favor corrija los errores en el formulario";
-                        return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentos" });
+                        return RedirectToReturnUrlOrIndex(
+                            returnUrl,
+                            new { clienteId = viewModel.ClienteId, returnToVentaId = viewModel.ReturnToVentaId });
                     }
 
                     return View(viewModel);
@@ -206,6 +234,8 @@ namespace TheBuryProject.Controllers
 
                 if (viewModel.ReturnToVentaId.HasValue)
                 {
+                    var returnToVentaDetailsUrl = Url.Action("Details", "Venta", new { id = viewModel.ReturnToVentaId.Value });
+
                     var estado = await _documentacionService.ProcesarDocumentacionVentaAsync(viewModel.ReturnToVentaId.Value);
 
                     if (!estado.DocumentacionCompleta)
@@ -216,7 +246,8 @@ namespace TheBuryProject.Controllers
                         return RedirectToAction(nameof(Index), new
                         {
                             clienteId = viewModel.ClienteId,
-                            returnToVentaId = viewModel.ReturnToVentaId
+                            returnToVentaId = viewModel.ReturnToVentaId,
+                            returnUrl = returnToVentaDetailsUrl
                         });
                     }
 
@@ -227,17 +258,21 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(
                         "ConfigurarVenta",
                         "Credito",
-                        new { id = estado.CreditoId, ventaId = viewModel.ReturnToVentaId });
+                        new { id = estado.CreditoId, ventaId = viewModel.ReturnToVentaId, returnUrl = returnToVentaDetailsUrl });
                 }
 
                 // Si viene del upload inline, redirigir a Cliente/Details con tab documentos
                 if (returnToDetails)
                 {
-                    return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentos" });
+                    return RedirectToReturnUrlOrIndex(
+                        returnUrl,
+                        new { clienteId = viewModel.ClienteId, returnToVentaId = viewModel.ReturnToVentaId });
                 }
 
                 // Redirigir al índice de documentos filtrado por el cliente
-                return RedirectToAction(nameof(Index), new { clienteId = viewModel.ClienteId });
+                return RedirectToReturnUrlOrIndex(
+                    returnUrl,
+                    new { clienteId = viewModel.ClienteId, returnToVentaId = viewModel.ReturnToVentaId });
             }
             catch (Exception ex)
             {
@@ -248,18 +283,20 @@ namespace TheBuryProject.Controllers
                 // Si viene del inline upload, redirigir al tab documentos
                 if (returnToDetails)
                 {
-                    return RedirectToAction("Details", "Cliente", new { id = viewModel.ClienteId, tab = "documentos" });
+                    return RedirectToReturnUrlOrIndex(
+                        returnUrl,
+                        new { clienteId = viewModel.ClienteId, returnToVentaId = viewModel.ReturnToVentaId });
                 }
 
                 ModelState.AddModelError("", "Error al subir documento: " + ex.Message);
                 ViewBag.ClienteBloqueado = viewModel.ReturnToVentaId.HasValue;
-                await CargarViewBags(context, viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
+                await CargarViewBags(viewModel.ClienteId, viewModel.ReturnToVentaId.HasValue);
                 return View(viewModel);
             }
         }
 
         // GET: DocumentoCliente/Details/5
-        public async Task<IActionResult> Details(int id)
+        public async Task<IActionResult> Details(int id, string? returnUrl = null)
         {
             try
             {
@@ -267,8 +304,10 @@ namespace TheBuryProject.Controllers
                 if (documento == null)
                 {
                     TempData["Error"] = "Documento no encontrado";
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToReturnUrlOrIndex(returnUrl);
                 }
+
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
                 return View(documento);
             }
@@ -276,14 +315,14 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al obtener documento {Id}", id);
                 TempData["Error"] = "Error al cargar el documento";
-                return RedirectToAction(nameof(Index));
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
         }
 
         // POST: DocumentoCliente/Verificar/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Verificar(int id, string? observaciones)
+        public async Task<IActionResult> Verificar(int id, string? observaciones, string? returnUrl = null)
         {
             try
             {
@@ -296,27 +335,28 @@ namespace TheBuryProject.Controllers
                 else
                     TempData["Error"] = "No se pudo verificar el documento";
 
-                return RedirectToAction(nameof(Details), new { id });
+                // Redirigir a returnUrl si existe (la lista de documentos del cliente)
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al verificar documento {Id}", id);
                 TempData["Error"] = "Error al verificar el documento";
-                return RedirectToAction(nameof(Details), new { id });
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
         }
 
         // POST: DocumentoCliente/Rechazar/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Rechazar(int id, string motivo)
+        public async Task<IActionResult> Rechazar(int id, string motivo, string? returnUrl = null)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(motivo))
                 {
                     TempData["Error"] = "Debe especificar el motivo del rechazo";
-                    return RedirectToAction(nameof(Details), new { id });
+                    return RedirectToReturnUrlOrIndex(returnUrl);
                 }
 
                 // CAMBIO: Capturar usuario actual en lugar de hardcodear "System"
@@ -328,18 +368,44 @@ namespace TheBuryProject.Controllers
                 else
                     TempData["Error"] = "No se pudo rechazar el documento";
 
-                return RedirectToAction(nameof(Details), new { id });
+                // Redirigir a returnUrl si existe (la lista de documentos del cliente)
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al rechazar documento {Id}", id);
                 TempData["Error"] = "Error al rechazar el documento";
-                return RedirectToAction(nameof(Details), new { id });
+                return RedirectToReturnUrlOrIndex(returnUrl);
+            }
+        }
+
+        // POST: DocumentoCliente/VerificarTodos
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerificarTodos(int clienteId, string? observaciones, string? returnUrl = null)
+        {
+            try
+            {
+                var usuario = User.Identity?.Name ?? "Sistema";
+                var resultado = await _documentoService.VerificarTodosAsync(clienteId, usuario, observaciones);
+
+                if (resultado > 0)
+                    TempData["Success"] = $"Se verificaron {resultado} documento(s) exitosamente";
+                else
+                    TempData["Warning"] = "No había documentos pendientes para verificar";
+
+                return RedirectToReturnUrlOrIndex(returnUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al verificar todos los documentos del cliente {ClienteId}", clienteId);
+                TempData["Error"] = "Error al verificar los documentos";
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
         }
 
         // GET: DocumentoCliente/Descargar/5
-        public async Task<IActionResult> Descargar(int id)
+        public async Task<IActionResult> Descargar(int id, string? returnUrl = null)
         {
             try
             {
@@ -347,7 +413,7 @@ namespace TheBuryProject.Controllers
                 if (documento == null)
                 {
                     TempData["Error"] = "Documento no encontrado";
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToReturnUrlOrIndex(returnUrl);
                 }
 
                 var bytes = await _documentoService.DescargarArchivoAsync(id);
@@ -357,14 +423,14 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al descargar documento {Id}", id);
                 TempData["Error"] = "Error al descargar el documento";
-                return RedirectToAction(nameof(Index));
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
         }
 
         // POST: DocumentoCliente/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, string? returnUrl = null)
         {
             try
             {
@@ -372,7 +438,7 @@ namespace TheBuryProject.Controllers
                 if (documento == null)
                 {
                     TempData["Error"] = "Documento no encontrado";
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToReturnUrlOrIndex(returnUrl);
                 }
 
                 var clienteId = documento.ClienteId;
@@ -384,41 +450,24 @@ namespace TheBuryProject.Controllers
                 else
                     TempData["Error"] = "No se pudo eliminar el documento";
 
-                return RedirectToAction(nameof(Index), new { clienteId = clienteId });
+                return RedirectToReturnUrlOrIndex(returnUrl, new { clienteId = clienteId });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al eliminar documento {Id}", id);
                 TempData["Error"] = "Error al eliminar el documento";
-                return RedirectToAction(nameof(Index));
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
         }
 
-        private async Task CargarViewBags(AppDbContext context, int? clienteIdSeleccionado = null, bool limitarAClienteSeleccionado = false)
+        private async Task CargarViewBags(int? clienteIdSeleccionado = null, bool limitarAClienteSeleccionado = false)
         {
-            var clientesQuery = context.Clientes
-                .Where(c => !c.IsDeleted && c.Activo);
-
-            if (limitarAClienteSeleccionado && clienteIdSeleccionado.HasValue)
-            {
-                clientesQuery = clientesQuery.Where(c => c.Id == clienteIdSeleccionado.Value);
-            }
-
-            var clientes = await clientesQuery
-                .OrderBy(c => c.Apellido)
-                .ThenBy(c => c.Nombre)
-                .Select(c => new
-                {
-                    c.Id,
-                    NombreCompleto = $"{c.Apellido}, {c.Nombre} - DNI: {c.NumeroDocumento}"
-                })
-                .ToListAsync();
-
-            ViewBag.Clientes = new SelectList(clientes, "Id", "NombreCompleto", clienteIdSeleccionado);
+            var clientesSelect = await _clienteLookup.GetClientesSelectListAsync(clienteIdSeleccionado, limitarAClienteSeleccionado);
+            ViewBag.Clientes = new SelectList(clientesSelect, "Value", "Text", clienteIdSeleccionado?.ToString());
 
             ViewBag.TiposDocumento = new SelectList(Enum.GetValues(typeof(TipoDocumentoCliente))
                 .Cast<TipoDocumentoCliente>()
-                .Select(t => new { Value = (int)t, Text = GetTipoDocumentoNombre(t) }), "Value", "Text");
+                .Select(t => new { Value = (int)t, Text = new DocumentoClienteViewModel { TipoDocumento = t }.TipoDocumentoNombre }), "Value", "Text");
 
             ViewBag.Estados = new SelectList(Enum.GetValues(typeof(EstadoDocumento))
                 .Cast<EstadoDocumento>()
@@ -441,18 +490,180 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        private string GetTipoDocumentoNombre(TipoDocumentoCliente tipo)
+        /// <summary>
+        /// POST: API endpoint para verificar múltiples documentos en batch (AJAX)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerificarBatch([FromBody] BatchDocumentosRequest request)
         {
-            return tipo switch
+            try
             {
-                TipoDocumentoCliente.DNI => "DNI",
-                TipoDocumentoCliente.ReciboSueldo => "Recibo de Sueldo",
-                TipoDocumentoCliente.Servicio => "Servicio",
-                TipoDocumentoCliente.ConstanciaCUIL => "Constancia CUIL",
-                TipoDocumentoCliente.Veraz => "Veraz",
-                TipoDocumentoCliente.Otro => "Otro",
-                _ => "Desconocido"
-            };
+                if (request?.Ids == null || !request.Ids.Any())
+                {
+                    return BadRequest(new BatchDocumentosResponse 
+                    { 
+                        Success = false, 
+                        Message = "Debe seleccionar al menos un documento" 
+                    });
+                }
+
+                var usuario = User.Identity?.Name ?? "Sistema";
+                var resultado = await _documentoService.VerificarBatchAsync(
+                    request.Ids, 
+                    usuario, 
+                    request.Observaciones);
+
+                var response = new BatchDocumentosResponse
+                {
+                    Success = resultado.Exitosos > 0,
+                    Exitosos = resultado.Exitosos,
+                    Fallidos = resultado.Fallidos,
+                    Errores = resultado.Errores.Select(e => new BatchItemErrorResponse 
+                    { 
+                        Id = e.Id, 
+                        Mensaje = e.Mensaje 
+                    }).ToList()
+                };
+
+                if (resultado.Exitosos > 0 && resultado.Fallidos == 0)
+                {
+                    response.Message = $"Se verificaron {resultado.Exitosos} documento(s) exitosamente";
+                }
+                else if (resultado.Exitosos > 0)
+                {
+                    response.Message = $"Se verificaron {resultado.Exitosos} documento(s). {resultado.Fallidos} fallaron.";
+                }
+                else
+                {
+                    response.Message = "No se pudo verificar ningún documento";
+                }
+
+                _logger.LogInformation(
+                    "VerificarBatch: {Exitosos} exitosos, {Fallidos} fallidos por {Usuario}",
+                    resultado.Exitosos, resultado.Fallidos, usuario);
+
+                return Json(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en VerificarBatch");
+                return StatusCode(500, new BatchDocumentosResponse 
+                { 
+                    Success = false, 
+                    Message = "Error al verificar documentos: " + ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// POST: API endpoint para rechazar múltiples documentos en batch (AJAX)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RechazarBatch([FromBody] BatchDocumentosRequest request)
+        {
+            try
+            {
+                if (request?.Ids == null || !request.Ids.Any())
+                {
+                    return BadRequest(new BatchDocumentosResponse 
+                    { 
+                        Success = false, 
+                        Message = "Debe seleccionar al menos un documento" 
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.Motivo))
+                {
+                    return BadRequest(new BatchDocumentosResponse 
+                    { 
+                        Success = false, 
+                        Message = "Debe especificar el motivo del rechazo" 
+                    });
+                }
+
+                var usuario = User.Identity?.Name ?? "Sistema";
+                var resultado = await _documentoService.RechazarBatchAsync(
+                    request.Ids, 
+                    request.Motivo, 
+                    usuario);
+
+                var response = new BatchDocumentosResponse
+                {
+                    Success = resultado.Exitosos > 0,
+                    Exitosos = resultado.Exitosos,
+                    Fallidos = resultado.Fallidos,
+                    Errores = resultado.Errores.Select(e => new BatchItemErrorResponse 
+                    { 
+                        Id = e.Id, 
+                        Mensaje = e.Mensaje 
+                    }).ToList()
+                };
+
+                if (resultado.Exitosos > 0 && resultado.Fallidos == 0)
+                {
+                    response.Message = $"Se rechazaron {resultado.Exitosos} documento(s)";
+                }
+                else if (resultado.Exitosos > 0)
+                {
+                    response.Message = $"Se rechazaron {resultado.Exitosos} documento(s). {resultado.Fallidos} fallaron.";
+                }
+                else
+                {
+                    response.Message = "No se pudo rechazar ningún documento";
+                }
+
+                _logger.LogInformation(
+                    "RechazarBatch: {Exitosos} exitosos, {Fallidos} fallidos por {Usuario}. Motivo: {Motivo}",
+                    resultado.Exitosos, resultado.Fallidos, usuario, request.Motivo);
+
+                return Json(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en RechazarBatch");
+                return StatusCode(500, new BatchDocumentosResponse 
+                { 
+                    Success = false, 
+                    Message = "Error al rechazar documentos: " + ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// GET: API para obtener documentos parcial (para refrescar la grilla por AJAX)
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetDocumentosPartial(int clienteId)
+        {
+            try
+            {
+                var documentos = await _documentoService.GetByClienteIdAsync(clienteId);
+                return Json(documentos.Select(d => new 
+                {
+                    d.Id,
+                    d.TipoDocumentoNombre,
+                    d.NombreArchivo,
+                    d.TamanoFormateado,
+                    FechaSubida = d.FechaSubida.ToString("dd/MM/yyyy"),
+                    Estado = d.Estado.ToString(),
+                    d.EstadoNombre,
+                    d.EstadoColor,
+                    d.EstadoIcono,
+                    FechaVencimiento = d.FechaVencimiento?.ToString("dd/MM/yyyy"),
+                    Vencido = d.FechaVencimiento.HasValue && d.FechaVencimiento.Value < DateTime.Now,
+                    PorVencer = d.FechaVencimiento.HasValue 
+                        && d.FechaVencimiento.Value >= DateTime.Now 
+                        && (d.FechaVencimiento.Value - DateTime.Now).Days <= 30,
+                    EsPendiente = d.Estado == EstadoDocumento.Pendiente
+                }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener documentos parciales para cliente {ClienteId}", clienteId);
+                return StatusCode(500, new { error = "Error al obtener documentos" });
+            }
         }
     }
 }

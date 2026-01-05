@@ -4,51 +4,51 @@ using TheBuryProject.Models.Base;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Representa una categoría de productos en el sistema.
-    /// Soporta jerarquía (categorías padre e hijas).
+    /// Representa una categorï¿½a de productos en el sistema.
+    /// Soporta jerarquï¿½a (categorï¿½as padre e hijas).
     /// </summary>
-    public class Categoria : BaseEntity
+    public class Categoria  : AuditableEntity
     {
         /// <summary>
-        /// Código único de la categoría (ej: "ELEC", "FRIO")
+        /// Cï¿½digo ï¿½nico de la categorï¿½a (ej: "ELEC", "FRIO")
         /// </summary>
         [Required]
         [StringLength(20)]
         public string Codigo { get; set; } = string.Empty;
 
         /// <summary>
-        /// Nombre descriptivo de la categoría
+        /// Nombre descriptivo de la categorï¿½a
         /// </summary>
         [Required]
         [StringLength(100)]
         public string Nombre { get; set; } = string.Empty;
 
         /// <summary>
-        /// Descripción opcional de la categoría
+        /// Descripciï¿½n opcional de la categorï¿½a
         /// </summary>
         [StringLength(500)]
         public string? Descripcion { get; set; }
 
         /// <summary>
-        /// Id de la categoría padre (null si es raíz)
+        /// Id de la categorï¿½a padre (null si es raï¿½z)
         /// </summary>
         public int? ParentId { get; set; }
 
         /// <summary>
-        /// Indica si los productos de esta categoría requieren control de serie
+        /// Indica si los productos de esta categorï¿½a requieren control de serie
         /// </summary>
         public bool ControlSerieDefault { get; set; } = false;
 
         /// <summary>
-        /// Categoría padre (navegación)
+        /// Categorï¿½a padre (navegaciï¿½n)
         /// </summary>
         public virtual Categoria? Parent { get; set; }
         /// <summary>
-        /// Indica si la marca está activa
+        /// Indica si la marca estï¿½ activa
         /// </summary>
         public bool Activo { get; set; } = true;
         /// <summary>
-        /// Categorías hijas (navegación)
+        /// Categorï¿½as hijas (navegaciï¿½n)
         /// </summary>
         public virtual ICollection<Categoria> Children { get; set; } = new List<Categoria>();
     }

@@ -1,4 +1,5 @@
 ﻿@model List<TheBuryProject.Models.Entities.Devolucion>
+@using TheBuryProject.Models.Constants
 
 <div class="table-responsive">
     <table class="table table-hover">
@@ -18,6 +19,7 @@
         <tbody>
             @foreach (var devolucion in Model)
             {
+                var rowVersionBase64 = Convert.ToBase64String(devolucion.RowVersion ?? Array.Empty<byte>());
                 <tr>
                     <td>
                         <strong>@devolucion.NumeroDevolucion</strong>
@@ -78,29 +80,31 @@
                             <i class="bi bi-eye"></i>
                         </a>
 
-                        @if (devolucion.Estado == TheBuryProject.Models.Entities.EstadoDevolucion.Pendiente && User.IsInRole("Admin") || User.IsInRole("Gerente"))
+                        @if (devolucion.Estado == TheBuryProject.Models.Entities.EstadoDevolucion.Pendiente && (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Gerente)))
                         {
                             <form asp-action="Aprobar" asp-route-id="@devolucion.Id"
                                   method="post" class="d-inline">
                                 @Html.AntiForgeryToken()
+                                <input type="hidden" name="rowVersion" value="@rowVersionBase64" />
                                 <button type="submit" class="btn btn-sm btn-success"
                                         data-bs-toggle="tooltip"
                                         title="Aprobar devolución"
-                                        onclick="return confirm('¿Aprobar esta devolución?');">
+                                        data-confirm="¿Aprobar esta devolución?">
                                     <i class="bi bi-check-circle"></i>
                                 </button>
                             </form>
                         }
 
-                        @if (devolucion.Estado == TheBuryProject.Models.Entities.EstadoDevolucion.Aprobada && User.IsInRole("Admin") || User.IsInRole("Gerente"))
+                        @if (devolucion.Estado == TheBuryProject.Models.Entities.EstadoDevolucion.Aprobada && (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Gerente)))
                         {
                             <form asp-action="Completar" asp-route-id="@devolucion.Id"
                                   method="post" class="d-inline">
                                 @Html.AntiForgeryToken()
+                                <input type="hidden" name="rowVersion" value="@rowVersionBase64" />
                                 <button type="submit" class="btn btn-sm btn-primary"
                                         data-bs-toggle="tooltip"
                                         title="Completar devolución"
-                                        onclick="return confirm('¿Completar esta devolución y procesar stock?');">
+                                        data-confirm="¿Completar esta devolución y procesar stock?">
                                     <i class="bi bi-check2-all"></i>
                                 </button>
                             </form>

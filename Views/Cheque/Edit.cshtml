@@ -17,6 +17,7 @@
 
             <form asp-action="Edit" method="post" class="needs-validation" novalidate>
                 <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="RowVersion" />
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                     <div>Por favor, corregí los errores antes de continuar.</div>

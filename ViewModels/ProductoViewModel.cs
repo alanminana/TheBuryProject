@@ -31,12 +31,24 @@ namespace TheBuryProject.ViewModels
         [Display(Name = "Categoría")]
         public string? CategoriaNombre { get; set; }
 
+        [Display(Name = "Subcategoría")]
+        public int? SubcategoriaId { get; set; }
+
+        [Display(Name = "Subcategoría")]
+        public string? SubcategoriaNombre { get; set; }
+
         [Required(ErrorMessage = "La marca es obligatoria")]
         [Display(Name = "Marca")]
         public int MarcaId { get; set; }
 
         [Display(Name = "Marca")]
         public string? MarcaNombre { get; set; }
+
+        [Display(Name = "Submarca")]
+        public int? SubmarcaId { get; set; }
+
+        [Display(Name = "Submarca")]
+        public string? SubmarcaNombre { get; set; }
 
         [Required(ErrorMessage = "El precio de compra es obligatorio")]
         [Display(Name = "Precio de Compra")]
@@ -50,9 +62,6 @@ namespace TheBuryProject.ViewModels
         [DisplayFormat(DataFormatString = "{0:C2}", ApplyFormatInEditMode = false)]
         public decimal PrecioVenta { get; set; }
 
-        [Display(Name = "Requiere Número de Serie")]
-        public bool RequiereNumeroSerie { get; set; } = false;
-
         [Display(Name = "Stock Mínimo")]
         [Range(0, double.MaxValue, ErrorMessage = "El stock mínimo debe ser mayor o igual a 0")]
         public decimal StockMinimo { get; set; } = 0;
@@ -61,12 +70,15 @@ namespace TheBuryProject.ViewModels
         [Range(0, double.MaxValue, ErrorMessage = "El stock actual debe ser mayor o igual a 0")]
         public decimal StockActual { get; set; } = 0;
 
-        [Display(Name = "Unidad de Medida")]
-        [StringLength(10, ErrorMessage = "La unidad de medida no puede superar 10 caracteres")]
-        public string UnidadMedida { get; set; } = "UN";
-
         [Display(Name = "Activo")]
         public bool Activo { get; set; } = true;
+
+
+        /// <summary>
+        /// RowVersion para control de concurrencia optimista.
+        /// Debe enviarse en POST/PUT para detectar conflictos.
+        /// </summary>
+        public byte[]? RowVersion { get; set; }
 
         // Propiedades calculadas
         [Display(Name = "Margen de Ganancia")]

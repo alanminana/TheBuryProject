@@ -6,15 +6,15 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Entidad que representa un producto en el sistema
     /// </summary>
-    public class Producto : BaseEntity
+    public class Producto  : AuditableEntity
 
 
     {
         /// <summary>
-        /// Código único del producto
+        /// Cï¿½digo ï¿½nico del producto
         /// </summary>
-        [Required(ErrorMessage = "El código es obligatorio")]
-        [StringLength(50, ErrorMessage = "El código no puede superar 50 caracteres")]
+        [Required(ErrorMessage = "El cï¿½digo es obligatorio")]
+        [StringLength(50, ErrorMessage = "El cï¿½digo no puede superar 50 caracteres")]
         public string Codigo { get; set; } = string.Empty;
 
         /// <summary>
@@ -25,22 +25,32 @@ namespace TheBuryProject.Models.Entities
         public string Nombre { get; set; } = string.Empty;
 
         /// <summary>
-        /// Descripción detallada del producto
+        /// Descripciï¿½n detallada del producto
         /// </summary>
-        [StringLength(1000, ErrorMessage = "La descripción no puede superar 1000 caracteres")]
+        [StringLength(1000, ErrorMessage = "La descripciï¿½n no puede superar 1000 caracteres")]
         public string? Descripcion { get; set; }
 
         /// <summary>
-        /// ID de la categoría a la que pertenece
+        /// ID de la categorï¿½a a la que pertenece
         /// </summary>
-        [Required(ErrorMessage = "La categoría es obligatoria")]
+        [Required(ErrorMessage = "La categorï¿½a es obligatoria")]
         public int CategoriaId { get; set; }
+
+        /// <summary>
+        /// ID de la subcategorï¿½a (opcional, debe ser hija de CategoriaId)
+        /// </summary>
+        public int? SubcategoriaId { get; set; }
 
         /// <summary>
         /// ID de la marca del producto
         /// </summary>
         [Required(ErrorMessage = "La marca es obligatoria")]
         public int MarcaId { get; set; }
+
+        /// <summary>
+        /// ID de la submarca (opcional, debe ser hija de MarcaId)
+        /// </summary>
+        public int? SubmarcaId { get; set; }
 
         /// <summary>
         /// Precio de compra del producto
@@ -57,14 +67,14 @@ namespace TheBuryProject.Models.Entities
         public decimal PrecioVenta { get; set; }
 
         /// <summary>
-        /// Indica si el producto requiere número de serie para control individual
+        /// Indica si el producto requiere nï¿½mero de serie para control individual
         /// </summary>
         public bool RequiereNumeroSerie { get; set; } = false;
 
         /// <summary>
-        /// Stock mínimo que debe mantener el producto (alerta)
+        /// Stock mï¿½nimo que debe mantener el producto (alerta)
         /// </summary>
-        [Range(0, double.MaxValue, ErrorMessage = "El stock mínimo debe ser mayor o igual a 0")]
+        [Range(0, double.MaxValue, ErrorMessage = "El stock mï¿½nimo debe ser mayor o igual a 0")]
         public decimal StockMinimo { get; set; } = 0;
 
         /// <summary>
@@ -80,19 +90,29 @@ namespace TheBuryProject.Models.Entities
         public string UnidadMedida { get; set; } = "UN";
 
         /// <summary>
-        /// Indica si el producto está activo para la venta
+        /// Indica si el producto estï¿½ activo para la venta
         /// </summary>
         public bool Activo { get; set; } = true;
 
-        // Propiedades de navegación
+        // Propiedades de navegaciï¿½n
         /// <summary>
-        /// Categoría a la que pertenece el producto
+        /// Categorï¿½a a la que pertenece el producto
         /// </summary>
         public virtual Categoria Categoria { get; set; } = null!;
+
+        /// <summary>
+        /// Subcategorï¿½a del producto (opcional)
+        /// </summary>
+        public virtual Categoria? Subcategoria { get; set; }
 
         /// <summary>
         /// Marca del producto
         /// </summary>
         public virtual Marca Marca { get; set; } = null!;
+
+        /// <summary>
+        /// Submarca del producto (opcional)
+        /// </summary>
+        public virtual Marca? Submarca { get; set; }
     }
 }

@@ -1,15 +1,17 @@
 namespace TheBuryProject.Helpers
 {
     /// <summary>
-    /// Helper para cálculos financieros de créditos
+    /// Helper para cÃ¡lculos financieros de crÃ©ditos.
+    /// [DEPRECATED] Usar IFinancialCalculationService en su lugar.
     /// </summary>
     public static class CreditoHelper
     {
         /// <summary>
-        /// Calcula el monto de cuota usando el sistema francés (cuota fija)
-        /// Fórmula: Cuota = Capital * (i * (1 + i)^n) / ((1 + i)^n - 1)
+        /// Calcula el monto de cuota usando el sistema francÃ©s (cuota fija)
+        /// FÃ³rmula: Cuota = Capital * (i * (1 + i)^n) / ((1 + i)^n - 1)
         /// donde i = tasa mensual (decimal), n = cantidad de cuotas
         /// </summary>
+        [Obsolete("Usar IFinancialCalculationService.CalcularCuotaSistemaFrances en su lugar")]
         public static decimal CalcularMontoCuotaSistemaFrances(decimal monto, decimal tasaMensual, int cantidadCuotas)
         {
             if (cantidadCuotas <= 0)
@@ -22,7 +24,7 @@ namespace TheBuryProject.Helpers
             if (tasaMensual == 0)
                 return monto / cantidadCuotas;
 
-            // Sistema Francés: C = M * [i(1+i)^n] / [(1+i)^n - 1]
+            // Sistema Francï¿½s: C = M * [i(1+i)^n] / [(1+i)^n - 1]
             var numerador = tasaMensual * (decimal)Math.Pow((double)(1 + tasaMensual), cantidadCuotas);
             var denominador = (decimal)Math.Pow((double)(1 + tasaMensual), cantidadCuotas) - 1;
 
@@ -35,6 +37,7 @@ namespace TheBuryProject.Helpers
         /// CFTEA = [(1 + i)^12 - 1] * 100
         /// donde i = tasa mensual (decimal)
         /// </summary>
+        [Obsolete("Usar IFinancialCalculationService.CalcularCFTEADesdeTasa en su lugar")]
         public static decimal CalcularCFTEA(decimal tasaMensual)
         {
             if (tasaMensual < 0)
@@ -46,11 +49,14 @@ namespace TheBuryProject.Helpers
         }
 
         /// <summary>
-        /// Calcula el saldo adeudado en un momento específico del crédito
+        /// Calcula el saldo adeudado en un momento especÃ­fico del crÃ©dito
         /// </summary>
+        [Obsolete("Usar IFinancialCalculationService en su lugar")]
         public static decimal CalcularSaldoPendiente(decimal montoOriginal, decimal tasaMensual, int cuotasPagadas, int totalCuotas)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             var montoCuota = CalcularMontoCuotaSistemaFrances(montoOriginal, tasaMensual, totalCuotas);
+#pragma warning restore CS0618
             var saldoPendiente = montoOriginal;
 
             for (int i = 0; i < cuotasPagadas; i++)
@@ -64,14 +70,17 @@ namespace TheBuryProject.Helpers
         }
 
         /// <summary>
-        /// Calcula el interés de una cuota específica en el sistema francés
+        /// Calcula el interÃ©s de una cuota especÃ­fica en el sistema francÃ©s
         /// </summary>
+        [Obsolete("Usar IFinancialCalculationService en su lugar")]
         public static decimal CalcularInteresCuota(decimal montoOriginal, decimal tasaMensual, int numeroCuota, int totalCuotas)
         {
             if (numeroCuota < 1 || numeroCuota > totalCuotas)
-                throw new ArgumentException("Número de cuota inválido");
+                throw new ArgumentException("NÃºmero de cuota invÃ¡lido");
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var montoCuota = CalcularMontoCuotaSistemaFrances(montoOriginal, tasaMensual, totalCuotas);
+#pragma warning restore CS0618
             var saldoPendiente = montoOriginal;
 
             for (int i = 1; i < numeroCuota; i++)
@@ -86,15 +95,18 @@ namespace TheBuryProject.Helpers
         }
 
         /// <summary>
-        /// Calcula el capital de una cuota específica en el sistema francés
+        /// Calcula el capital de una cuota especÃ­fica en el sistema francÃ©s
         /// </summary>
+        [Obsolete("Usar IFinancialCalculationService en su lugar")]
         public static decimal CalcularCapitalCuota(decimal montoOriginal, decimal tasaMensual, int numeroCuota, int totalCuotas)
         {
             if (numeroCuota < 1 || numeroCuota > totalCuotas)
-                throw new ArgumentException("Número de cuota inválido");
+                throw new ArgumentException("NÃºmero de cuota invÃ¡lido");
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var montoCuota = CalcularMontoCuotaSistemaFrances(montoOriginal, tasaMensual, totalCuotas);
             var interes = CalcularInteresCuota(montoOriginal, tasaMensual, numeroCuota, totalCuotas);
+#pragma warning restore CS0618
             var capital = montoCuota - interes;
 
             return Math.Round(capital, 2);

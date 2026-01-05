@@ -1,6 +1,8 @@
 ﻿@model TheBuryProject.ViewModels.PagarCuotaViewModel
 @{
     ViewData["Title"] = "Pagar Cuota";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Details", "Credito", new { id = Model.CreditoId })!;
 }
 
 <section class="container-fluid py-4 text-light">
@@ -8,13 +10,14 @@
         <h2 class="fw-bold mb-0">
             <i class="bi bi-cash-coin text-success me-2"></i>Registrar Pago de Cuota
         </h2>
-        <a href="javascript:history.back()" class="btn btn-outline-light">
+        <a href="@backUrl" class="btn btn-outline-light">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
     </div>
 
     <form asp-action="PagarCuota" method="post" class="needs-validation" novalidate>
-        <input type="hidden" asp-for="CuotaId" />
+        <input type="hidden" asp-for="CreditoId" />
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
 
         <div class="row g-4">
             <!-- Información de la Cuota -->
@@ -84,6 +87,14 @@
 
                         <div class="row g-3">
                             <div class="col-md-6">
+                                <label asp-for="CuotaId" class="form-label fw-semibold">Cuota a pagar</label>
+                                <select asp-for="CuotaId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Cuotas" required>
+                                    <option value="">Seleccione una cuota...</option>
+                                </select>
+                                <span asp-validation-for="CuotaId" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
                                 <label asp-for="MontoPagado" class="form-label fw-semibold"></label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-secondary text-light border-0">$</span>
@@ -130,7 +141,7 @@
                         <button type="submit" class="btn btn-success btn-lg px-4">
                             <i class="bi bi-check-circle me-1"></i>Registrar Pago
                         </button>
-                        <a href="javascript:history.back()" class="btn btn-outline-light btn-lg px-4">
+                        <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
                             <i class="bi bi-x-circle me-1"></i>Cancelar
                         </a>
                     </div>

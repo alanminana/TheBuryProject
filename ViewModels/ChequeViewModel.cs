@@ -7,6 +7,8 @@ namespace TheBuryProject.ViewModels
     {
         public int Id { get; set; }
 
+        public byte[]? RowVersion { get; set; }
+
         [Required(ErrorMessage = "El número de cheque es obligatorio")]
         [StringLength(50, ErrorMessage = "El número no puede tener más de 50 caracteres")]
         [Display(Name = "Número de Cheque")]

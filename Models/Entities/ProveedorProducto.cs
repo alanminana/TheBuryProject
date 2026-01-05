@@ -3,15 +3,15 @@ using TheBuryProject.Models.Base;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Relación N:N entre Proveedor y Producto
-    /// Indica qué productos puede proveer cada proveedor
+    /// Relaciï¿½n N:N entre Proveedor y Producto
+    /// Indica quï¿½ productos puede proveer cada proveedor
     /// </summary>
-    public class ProveedorProducto : BaseEntity
+    public class ProveedorProducto  : AuditableEntity
     {
         public int ProveedorId { get; set; }
         public int ProductoId { get; set; }
 
-        // Navegación
+        // Navegaciï¿½n
         public virtual Proveedor Proveedor { get; set; } = null!;
         public virtual Producto Producto { get; set; } = null!;
     }

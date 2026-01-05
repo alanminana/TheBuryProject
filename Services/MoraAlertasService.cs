@@ -62,16 +62,21 @@ namespace TheBuryProject.Services
                     return;
                 }
 
-                var diasGracia = config.DiasGracia;
-                var fechaGracia = DateTime.Now.AddDays(-diasGracia);
+                var diasGracia = config.DiasGracia ?? 0;
+                var fechaGracia = DateTime.UtcNow.AddDays(-diasGracia);
 
                 // Obtener cuotas vencidas que no tienen mora calculada
                 var cuotasVencidas = await _context.Cuotas
                     .Include(c => c.Credito)
+                        .ThenInclude(cr => cr!.Cliente)
                     .Where(c => c.FechaVencimiento < fechaGracia &&
+                               !c.IsDeleted &&
                                c.Estado == EstadoCuota.Pendiente &&
                                c.MontoPunitorio == 0 &&
-                               c.Credito != null)  // ✅ VALIDACIÓN AGREGADA
+                               c.Credito != null &&
+                               !c.Credito.IsDeleted &&
+                               c.Credito.Cliente != null &&
+                               !c.Credito.Cliente.IsDeleted)  // ✅ VALIDACIÓN AGREGADA
                     .ToListAsync();
 
                 _logger.LogInformation("Encontradas {Count} cuotas vencidas para calcular mora", cuotasVencidas.Count);
@@ -79,7 +84,7 @@ namespace TheBuryProject.Services
                 foreach (var cuota in cuotasVencidas)
                 {
                     // Calcular mora usando helper
-                    var mora = CalcularMora(cuota.Id);
+                    var mora = CalcularMora(cuota);
                     cuota.MontoPunitorio = mora;
                     cuota.Estado = EstadoCuota.Vencida;
 
@@ -106,32 +111,39 @@ namespace TheBuryProject.Services
                 var creditosConMora = await _context.Creditos
                     .Include(c => c.Cliente)
                     .Include(c => c.Cuotas)
-                    .Where(c => c.Estado == EstadoCredito.Activo &&
-                               c.Cuotas.Any(cu => cu.Estado == EstadoCuota.Vencida ||
-                                                 cu.Estado == EstadoCuota.Parcial))
+                    .Where(c => !c.IsDeleted
+                             && c.Cliente != null
+                             && !c.Cliente.IsDeleted
+                             && c.Estado == EstadoCredito.Activo
+                             && c.Cuotas.Any(cu => !cu.IsDeleted && (cu.Estado == EstadoCuota.Vencida || cu.Estado == EstadoCuota.Parcial)))
                     .ToListAsync();
 
                 _logger.LogInformation("Encontrados {Count} créditos con mora", creditosConMora.Count);
+
+                var creditosIds = creditosConMora.Select(c => c.Id).ToList();
+                var alertasActivas = await _context.Set<AlertaCobranza>()
+                    .Where(a => creditosIds.Contains(a.CreditoId) && !a.Resuelta && !a.IsDeleted)
+                    .ToListAsync();
+                var alertasActivasByCreditoId = alertasActivas
+                    .GroupBy(a => a.CreditoId)
+                    .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.FechaAlerta).First());
 
                 int alertasCreadas = 0;
 
                 foreach (var credito in creditosConMora)
                 {
                     var cuotasVencidas = credito.Cuotas
-                        .Where(c => c.Estado == EstadoCuota.Vencida || c.Estado == EstadoCuota.Parcial)
+                        .Where(cu => !cu.IsDeleted && (cu.Estado == EstadoCuota.Vencida || cu.Estado == EstadoCuota.Parcial))
                         .ToList();
 
                     if (!cuotasVencidas.Any())
                         continue;
 
                     var montoVencido = cuotasVencidas.Sum(c => c.MontoTotal + c.MontoPunitorio - c.MontoPagado);
-                    var diasAtraso = (DateTime.Now - cuotasVencidas.Min(c => c.FechaVencimiento)).Days;
+                    var diasAtraso = (DateTime.UtcNow - cuotasVencidas.Min(c => c.FechaVencimiento)).Days;
 
                     // ✅ MEJORADO: Verificar si ya existe alerta activa
-                    var alertaExistente = await _context.Set<AlertaCobranza>()
-                        .FirstOrDefaultAsync(a => a.CreditoId == credito.Id && 
-                                                 !a.Resuelta && 
-                                                 !a.IsDeleted);
+                    alertasActivasByCreditoId.TryGetValue(credito.Id, out var alertaExistente);
 
                     if (alertaExistente != null)
                     {
@@ -142,7 +154,7 @@ namespace TheBuryProject.Services
                         alertaExistente.CuotasVencidas = cuotasVencidas.Count;
                         alertaExistente.Mensaje = GenerarMensajeAlerta(credito, montoVencido, cuotasVencidas.Count, diasAtraso);
                         alertaExistente.Prioridad = DeterminarPrioridad(montoVencido, credito.MontoAprobado, diasAtraso);
-                        alertaExistente.UpdatedAt = DateTime.Now;
+                        alertaExistente.UpdatedAt = DateTime.UtcNow;
                         
                         continue;
                     }
@@ -157,7 +169,7 @@ namespace TheBuryProject.Services
                         Mensaje = GenerarMensajeAlerta(credito, montoVencido, cuotasVencidas.Count, diasAtraso),
                         MontoVencido = montoVencido,
                         CuotasVencidas = cuotasVencidas.Count,
-                        FechaAlerta = DateTime.Now,
+                        FechaAlerta = DateTime.UtcNow,
                         Resuelta = false
                     };
 
@@ -176,6 +188,18 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al generar alertas de cobranza");
                 throw;
             }
+        }
+
+        private decimal CalcularMora(Cuota cuota)
+        {
+            if (cuota.Credito == null || cuota.FechaVencimiento >= DateTime.UtcNow)
+                return 0;
+
+            var diasAtraso = (DateTime.UtcNow - cuota.FechaVencimiento).Days;
+            var tasaMensual = (cuota.Credito.TasaInteres / 100m) / 12m;
+            var mora = cuota.MontoTotal * tasaMensual * (diasAtraso / 30m);
+
+            return Math.Round(mora, 2);
         }
 
         public async Task<List<AlertaCobranzaViewModel>> ObtenerAlertasActivasAsync()
@@ -217,22 +241,37 @@ namespace TheBuryProject.Services
             }
         }
 
-        public async Task<bool> ResolverAlertaAsync(int alertaId, string? observaciones = null)
+        public async Task<bool> ResolverAlertaAsync(int alertaId, string? observaciones = null, byte[]? rowVersion = null)
         {
             try
             {
                 var alerta = await _context.Set<AlertaCobranza>()
-                    .FirstOrDefaultAsync(a => a.Id == alertaId);
+                    .FirstOrDefaultAsync(a => a.Id == alertaId && !a.IsDeleted);
 
                 if (alerta == null)
                     return false;
 
+                if (alerta.Resuelta)
+                    return true; // idempotente
+
+                if (rowVersion is null || rowVersion.Length == 0)
+                    throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la alerta e intentá nuevamente.");
+
+                _context.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
+
                 alerta.Resuelta = true;
-                alerta.FechaResolucion = DateTime.Now;
+                alerta.FechaResolucion = DateTime.UtcNow;
                 if (!string.IsNullOrEmpty(observaciones))
                     alerta.Observaciones = observaciones;
 
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    throw new InvalidOperationException("La alerta fue modificada por otro usuario. Por favor, recargue los datos.");
+                }
 
                 _logger.LogInformation("Alerta {Id} marcada como resuelta", alertaId);
                 return true;
@@ -245,20 +284,33 @@ namespace TheBuryProject.Services
         }
 
         // ✅ CORREGIDO: Cambiar nombre de método para reflejar que NO es async
-        public async Task<bool> MarcarAlertaComoLeidaAsync(int alertaId)
+        public async Task<bool> MarcarAlertaComoLeidaAsync(int alertaId, byte[]? rowVersion = null)
         {
             try
             {
                 var alerta = await _context.Set<AlertaCobranza>()
-                    .FirstOrDefaultAsync(a => a.Id == alertaId);
+                    .FirstOrDefaultAsync(a => a.Id == alertaId && !a.IsDeleted);
 
                 if (alerta == null)
                     return false;
 
+                if (rowVersion is null || rowVersion.Length == 0)
+                    throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la alerta e intentá nuevamente.");
+
+                _context.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
+
                 // Nota: "Leída" es conceptualmente diferente de "Resuelta"
                 // Esta es una operación de UI para marcar que el usuario vio la alerta
-                alerta.UpdatedAt = DateTime.Now;
-                await _context.SaveChangesAsync();
+                alerta.UpdatedAt = DateTime.UtcNow;
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    throw new InvalidOperationException("La alerta fue modificada por otro usuario. Por favor, recargue los datos.");
+                }
 
                 _logger.LogInformation("Alerta {Id} marcada como leída", alertaId);
                 return true;
@@ -277,12 +329,18 @@ namespace TheBuryProject.Services
             {
                 var cuota = _context.Cuotas
                     .Include(c => c.Credito)
-                    .FirstOrDefault(c => c.Id == cuotaId);
+                    .ThenInclude(cr => cr!.Cliente)
+                    .FirstOrDefault(c => c.Id == cuotaId &&
+                                         !c.IsDeleted &&
+                                         c.Credito != null &&
+                                         !c.Credito.IsDeleted &&
+                                         c.Credito.Cliente != null &&
+                                         !c.Credito.Cliente.IsDeleted);
 
-                if (cuota == null || cuota.Credito == null || cuota.FechaVencimiento >= DateTime.Now)
+                if (cuota == null || cuota.Credito == null || cuota.FechaVencimiento >= DateTime.UtcNow)
                     return 0;
 
-                var diasAtraso = (DateTime.Now - cuota.FechaVencimiento).Days;
+                var diasAtraso = (DateTime.UtcNow - cuota.FechaVencimiento).Days;
                 var tasaMensual = (cuota.Credito.TasaInteres / 100m) / 12m;
                 var mora = cuota.MontoTotal * tasaMensual * (diasAtraso / 30m);
 
@@ -300,12 +358,20 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var mora = CalcularMora(cuotaId);
-                var cuota = _context.Cuotas.FirstOrDefault(c => c.Id == cuotaId);
+                var cuota = _context.Cuotas
+                    .Include(c => c.Credito)
+                    .ThenInclude(cr => cr!.Cliente)
+                    .FirstOrDefault(c => c.Id == cuotaId &&
+                                         !c.IsDeleted &&
+                                         c.Credito != null &&
+                                         !c.Credito.IsDeleted &&
+                                         c.Credito.Cliente != null &&
+                                         !c.Credito.Cliente.IsDeleted);
 
                 if (cuota == null)
                     return 0;
 
+                var mora = CalcularMora(cuota);
                 return cuota.MontoTotal + mora - cuota.MontoPagado;
             }
             catch (Exception ex)

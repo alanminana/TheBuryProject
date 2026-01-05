@@ -6,7 +6,7 @@ namespace TheBuryProject.Models.Entities;
 /// <summary>
 /// Registro de devoluci�n de productos vendidos
 /// </summary>
-public class Devolucion : BaseEntity
+public class Devolucion  : AuditableEntity
 {
     [Required]
     public int VentaId { get; set; }
@@ -41,6 +41,8 @@ public class Devolucion : BaseEntity
 
     public int? NotaCreditoId { get; set; }
 
+
+
     [StringLength(500)]
     public string? ObservacionesInternas { get; set; }
 
@@ -60,7 +62,7 @@ public class Devolucion : BaseEntity
 /// <summary>
 /// Detalle de items devueltos
 /// </summary>
-public class DevolucionDetalle : BaseEntity
+public class DevolucionDetalle  : AuditableEntity
 {
     [Required]
     public int DevolucionId { get; set; }
@@ -103,7 +105,7 @@ public class DevolucionDetalle : BaseEntity
 /// <summary>
 /// Registro de garant�a de producto
 /// </summary>
-public class Garantia : BaseEntity
+public class Garantia  : AuditableEntity
 {
     [Required]
     public int VentaDetalleId { get; set; }
@@ -146,7 +148,7 @@ public class Garantia : BaseEntity
 /// <summary>
 /// RMA - Return Merchandise Authorization con proveedor
 /// </summary>
-public class RMA : BaseEntity
+public class RMA  : AuditableEntity
 {
     [Required]
     public int ProveedorId { get; set; }
@@ -200,7 +202,7 @@ public class RMA : BaseEntity
 /// <summary>
 /// Nota de cr�dito generada por devoluci�n
 /// </summary>
-public class NotaCredito : BaseEntity
+public class NotaCredito  : AuditableEntity
 {
     [Required]
     public int DevolucionId { get; set; }

@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using TheBuryProject.Filters;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
@@ -16,6 +18,21 @@ public class AutorizacionController : Controller
     private readonly IAutorizacionService _autorizacionService;
     private readonly UserManager<IdentityUser> _userManager;
 
+    private string? GetSafeReturnUrl(string? returnUrl)
+        => !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : null;
+
+    private IActionResult RedirectToReturnUrlOrIndex(string? returnUrl)
+    {
+        var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        return safeReturnUrl != null ? LocalRedirect(safeReturnUrl) : RedirectToAction(nameof(Index));
+    }
+
+    private IActionResult RedirectToReturnUrlOrSolicitudes(string? returnUrl)
+    {
+        var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        return safeReturnUrl != null ? LocalRedirect(safeReturnUrl) : RedirectToAction(nameof(Solicitudes));
+    }
+
     public AutorizacionController(
         IAutorizacionService autorizacionService,
         UserManager<IdentityUser> userManager)
@@ -29,9 +46,12 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Lista de todos los umbrales configurados
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
-    public async Task<IActionResult> Index()
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
+    public async Task<IActionResult> Index(string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         var umbrales = await _autorizacionService.ObtenerTodosUmbralesAsync();
 
         var viewModel = new UmbralesListViewModel
@@ -48,25 +68,30 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Formulario para crear nuevo umbral
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpGet]
-    public IActionResult CrearUmbral()
+    public IActionResult CrearUmbral(string? returnUrl)
     {
-        ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+        ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
         return View(new UmbralAutorizacionViewModel());
     }
 
     /// <summary>
     /// Procesar creación de umbral
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CrearUmbral(UmbralAutorizacionViewModel model)
+    public async Task<IActionResult> CrearUmbral(UmbralAutorizacionViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
-            ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+            ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
             return View(model);
         }
 
@@ -83,12 +108,12 @@ public class AutorizacionController : Controller
 
             await _autorizacionService.CrearUmbralAsync(umbral);
             TempData["Success"] = "Umbral creado exitosamente";
-            return RedirectToAction(nameof(Index));
+            return RedirectToReturnUrlOrIndex(returnUrl);
         }
         catch (InvalidOperationException ex)
         {
             ModelState.AddModelError("", ex.Message);
-            ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+            ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
             return View(model);
         }
     }
@@ -96,15 +121,18 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Formulario para editar umbral
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpGet]
-    public async Task<IActionResult> EditarUmbral(int id)
+    public async Task<IActionResult> EditarUmbral(int id, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         var umbral = await _autorizacionService.ObtenerUmbralAsync(id);
         if (umbral == null)
         {
             TempData["Error"] = "Umbral no encontrado";
-            return RedirectToAction(nameof(Index));
+            return RedirectToReturnUrlOrIndex(returnUrl);
         }
 
         var viewModel = new UmbralAutorizacionViewModel
@@ -117,21 +145,24 @@ public class AutorizacionController : Controller
             Activo = umbral.Activo
         };
 
-        ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+        ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
         return View(viewModel);
     }
 
     /// <summary>
     /// Procesar edición de umbral
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditarUmbral(UmbralAutorizacionViewModel model)
+    public async Task<IActionResult> EditarUmbral(UmbralAutorizacionViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
-            ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+            ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
             return View(model);
         }
 
@@ -147,12 +178,12 @@ public class AutorizacionController : Controller
 
             await _autorizacionService.ActualizarUmbralAsync(umbral);
             TempData["Success"] = "Umbral actualizado exitosamente";
-            return RedirectToAction(nameof(Index));
+            return RedirectToReturnUrlOrIndex(returnUrl);
         }
         catch (Exception ex)
         {
             ModelState.AddModelError("", ex.Message);
-            ViewBag.Roles = new List<string> { "Admin", "Gerente", "Vendedor", "Contador" };
+            ViewBag.Roles = new List<string> { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
             return View(model);
         }
     }
@@ -160,10 +191,11 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Eliminar umbral
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EliminarUmbral(int id)
+    public async Task<IActionResult> EliminarUmbral(int id, string? returnUrl)
     {
         try
         {
@@ -175,7 +207,7 @@ public class AutorizacionController : Controller
             TempData["Error"] = $"Error al eliminar umbral: {ex.Message}";
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToReturnUrlOrIndex(returnUrl);
     }
 
     #endregion
@@ -185,9 +217,12 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Lista de solicitudes de autorización
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
-    public async Task<IActionResult> Solicitudes()
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
+    public async Task<IActionResult> Solicitudes(string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         var usuario = await _userManager.GetUserAsync(User);
         var todasSolicitudes = await _autorizacionService.ObtenerTodasSolicitudesAsync();
         var misSolicitudes = await _autorizacionService.ObtenerSolicitudesPorUsuarioAsync(usuario?.UserName ?? "");
@@ -208,8 +243,11 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Ver detalles de una solicitud
     /// </summary>
-    public async Task<IActionResult> DetallesSolicitud(int id)
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
+    public async Task<IActionResult> DetallesSolicitud(int id, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         var solicitud = await _autorizacionService.ObtenerSolicitudAsync(id);
         if (solicitud == null)
         {
@@ -240,8 +278,10 @@ public class AutorizacionController : Controller
     /// Formulario para crear nueva solicitud
     /// </summary>
     [HttpGet]
-    public IActionResult CrearSolicitud()
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
+    public IActionResult CrearSolicitud(string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
         return View(new CrearSolicitudAutorizacionViewModel());
     }
 
@@ -250,8 +290,11 @@ public class AutorizacionController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CrearSolicitud(CrearSolicitudAutorizacionViewModel model)
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
+    public async Task<IActionResult> CrearSolicitud(CrearSolicitudAutorizacionViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -261,7 +304,7 @@ public class AutorizacionController : Controller
         {
             var usuario = await _userManager.GetUserAsync(User);
             var roles = await _userManager.GetRolesAsync(usuario!);
-            var rol = roles.FirstOrDefault() ?? "Vendedor";
+            var rol = roles.FirstOrDefault(r => Roles.GetAllRoles().Contains(r)) ?? Roles.Vendedor;
 
             var solicitud = new SolicitudAutorizacion
             {
@@ -277,7 +320,7 @@ public class AutorizacionController : Controller
 
             await _autorizacionService.CrearSolicitudAsync(solicitud);
             TempData["Success"] = "Solicitud de autorización creada exitosamente. Aguarde aprobación de un superior.";
-            return RedirectToAction(nameof(Solicitudes));
+            return RedirectToReturnUrlOrSolicitudes(returnUrl);
         }
         catch (Exception ex)
         {
@@ -289,15 +332,16 @@ public class AutorizacionController : Controller
     /// <summary>
     /// Aprobar solicitud
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Aprobar)]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AprobarSolicitud(int id, string? comentario)
+    public async Task<IActionResult> AprobarSolicitud(int id, string? comentario, string? returnUrl)
     {
         try
         {
             var usuario = await _userManager.GetUserAsync(User);
-            await _autorizacionService.AprobarSolicitudAsync(id, usuario?.UserName ?? "Admin", comentario);
+            await _autorizacionService.AprobarSolicitudAsync(id, usuario?.UserName ?? Roles.Administrador, comentario);
             TempData["Success"] = "Solicitud aprobada exitosamente";
         }
         catch (Exception ex)
@@ -305,27 +349,28 @@ public class AutorizacionController : Controller
             TempData["Error"] = $"Error al aprobar solicitud: {ex.Message}";
         }
 
-        return RedirectToAction(nameof(Solicitudes));
+        return RedirectToReturnUrlOrSolicitudes(returnUrl);
     }
 
     /// <summary>
     /// Rechazar solicitud
     /// </summary>
-    [Authorize(Roles = "SuperAdmin,Gerente")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Administrador)]
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Rechazar)]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RechazarSolicitud(int id, string comentario)
+    public async Task<IActionResult> RechazarSolicitud(int id, string comentario, string? returnUrl)
     {
         if (string.IsNullOrWhiteSpace(comentario))
         {
             TempData["Error"] = "Debe proporcionar un comentario para rechazar la solicitud";
-            return RedirectToAction(nameof(DetallesSolicitud), new { id });
+            return RedirectToAction(nameof(DetallesSolicitud), new { id, returnUrl });
         }
 
         try
         {
             var usuario = await _userManager.GetUserAsync(User);
-            await _autorizacionService.RechazarSolicitudAsync(id, usuario?.UserName ?? "Admin", comentario);
+            await _autorizacionService.RechazarSolicitudAsync(id, usuario?.UserName ?? Roles.Administrador, comentario);
             TempData["Success"] = "Solicitud rechazada";
         }
         catch (Exception ex)
@@ -333,7 +378,7 @@ public class AutorizacionController : Controller
             TempData["Error"] = $"Error al rechazar solicitud: {ex.Message}";
         }
 
-        return RedirectToAction(nameof(Solicitudes));
+        return RedirectToReturnUrlOrSolicitudes(returnUrl);
     }
 
     /// <summary>
@@ -341,7 +386,8 @@ public class AutorizacionController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CancelarSolicitud(int id)
+    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
+    public async Task<IActionResult> CancelarSolicitud(int id, string? returnUrl)
     {
         try
         {
@@ -353,7 +399,7 @@ public class AutorizacionController : Controller
             TempData["Error"] = $"Error al cancelar solicitud: {ex.Message}";
         }
 
-        return RedirectToAction(nameof(Solicitudes));
+        return RedirectToReturnUrlOrSolicitudes(returnUrl);
     }
 
     #endregion

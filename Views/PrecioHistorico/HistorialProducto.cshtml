@@ -176,7 +176,7 @@
                                     {
                                         <div class="mt-3">
                                             <form asp-action="Revertir" asp-route-id="@cambio.Id" method="post"
-                                                  onsubmit="return confirm('¿Está seguro de revertir este cambio? Los precios volverán a sus valores anteriores.');">
+                                                  data-confirm="¿Está seguro de revertir este cambio? Los precios volverán a sus valores anteriores.">
                                                 @Html.AntiForgeryToken()
                                                 <button type="submit" class="btn btn-warning">
                                                     <i class="bi bi-arrow-counterclockwise"></i> Revertir este cambio (Undo)

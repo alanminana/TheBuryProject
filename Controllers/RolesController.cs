@@ -17,6 +17,21 @@ public class RolesController : Controller
     private readonly IRolService _rolService;
     private readonly ILogger<RolesController> _logger;
 
+    private string? GetSafeReturnUrl(string? returnUrl)
+        => !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : null;
+
+    private IActionResult RedirectToReturnUrlOrIndex(string? returnUrl)
+    {
+        var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        return safeReturnUrl != null ? LocalRedirect(safeReturnUrl) : RedirectToAction(nameof(Index));
+    }
+
+    private IActionResult RedirectToReturnUrlOrDetails(string id, string? returnUrl)
+    {
+        var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        return safeReturnUrl != null ? LocalRedirect(safeReturnUrl) : RedirectToAction(nameof(Details), new { id });
+    }
+
     public RolesController(
         IRolService rolService,
         ILogger<RolesController> logger)
@@ -29,7 +44,7 @@ public class RolesController : Controller
     /// Lista todos los roles del sistema
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? returnUrl)
     {
         try
         {
@@ -57,12 +72,14 @@ public class RolesController : Controller
     /// Muestra detalles de un rol con sus permisos
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Details(string id)
+    public async Task<IActionResult> Details(string id, string? returnUrl)
     {
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
         }
+
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
         try
         {
@@ -109,8 +126,9 @@ public class RolesController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "roles", Accion = "create")]
-    public IActionResult Create()
+    public IActionResult Create(string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
         return View(new CrearRolViewModel());
     }
 
@@ -120,8 +138,10 @@ public class RolesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "roles", Accion = "create")]
-    public async Task<IActionResult> Create(CrearRolViewModel model)
+    public async Task<IActionResult> Create(CrearRolViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -129,14 +149,14 @@ public class RolesController : Controller
 
         try
         {
-            var result = await _rolService.CreateRoleAsync(model.Nombre, model.Descripcion);
+            var result = await _rolService.CreateRoleAsync(model.Nombre);
 
             if (result.Succeeded)
             {
                 _logger.LogInformation("Rol creado: {RoleName} por usuario {User}",
                     model.Nombre, User.Identity?.Name);
                 TempData["Success"] = $"Rol '{model.Nombre}' creado exitosamente";
-                return RedirectToAction(nameof(Index));
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
 
             foreach (var error in result.Errors)
@@ -158,12 +178,14 @@ public class RolesController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "roles", Accion = "update")]
-    public async Task<IActionResult> Edit(string id)
+    public async Task<IActionResult> Edit(string id, string? returnUrl)
     {
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
         }
+
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
         try
         {
@@ -195,8 +217,10 @@ public class RolesController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "roles", Accion = "update")]
-    public async Task<IActionResult> Edit(EditarRolViewModel model)
+    public async Task<IActionResult> Edit(EditarRolViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -211,7 +235,7 @@ public class RolesController : Controller
                 _logger.LogInformation("Rol actualizado: {RoleId} -> {NuevoNombre} por usuario {User}",
                     model.Id, model.Nombre, User.Identity?.Name);
                 TempData["Success"] = $"Rol '{model.Nombre}' actualizado exitosamente";
-                return RedirectToAction(nameof(Index));
+                return RedirectToReturnUrlOrDetails(model.Id, returnUrl);
             }
 
             foreach (var error in result.Errors)
@@ -233,12 +257,14 @@ public class RolesController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "roles", Accion = "delete")]
-    public async Task<IActionResult> Delete(string id)
+    public async Task<IActionResult> Delete(string id, string? returnUrl)
     {
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
         }
+
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
         try
         {
@@ -273,7 +299,7 @@ public class RolesController : Controller
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "roles", Accion = "delete")]
-    public async Task<IActionResult> DeleteConfirmed(string id)
+    public async Task<IActionResult> DeleteConfirmed(string id, string? returnUrl)
     {
         try
         {
@@ -296,7 +322,7 @@ public class RolesController : Controller
             TempData["Error"] = "Error al eliminar el rol";
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToReturnUrlOrIndex(returnUrl);
     }
 
     /// <summary>
@@ -304,12 +330,14 @@ public class RolesController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "roles", Accion = "assignpermissions")]
-    public async Task<IActionResult> AsignarPermisos(string id)
+    public async Task<IActionResult> AsignarPermisos(string id, string? returnUrl)
     {
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
         }
+
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
         try
         {
@@ -357,6 +385,7 @@ public class RolesController : Controller
     /// Asigna/remueve un permiso de un rol (AJAX)
     /// </summary>
     [HttpPost]
+    [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "roles", Accion = "assignpermissions")]
     public async Task<IActionResult> TogglePermiso(string roleId, int moduloId, int accionId, bool asignar)
     {
@@ -384,12 +413,14 @@ public class RolesController : Controller
     /// Muestra usuarios en un rol
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Usuarios(string id)
+    public async Task<IActionResult> Usuarios(string id, string? returnUrl)
     {
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
         }
+
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
         try
         {

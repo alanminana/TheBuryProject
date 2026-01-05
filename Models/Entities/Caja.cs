@@ -5,9 +5,9 @@ using TheBuryProject.Models.Enums;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Representa una caja física o punto de venta
+    /// Representa una caja fï¿½sica o punto de venta
     /// </summary>
-    public class Caja : BaseEntity
+    public class Caja : AuditableEntity
     {
         [Required]
         [StringLength(50)]
@@ -30,7 +30,7 @@ namespace TheBuryProject.Models.Entities
 
         public EstadoCaja Estado { get; set; } = EstadoCaja.Cerrada;
 
-        // Navegación
+        // Navegaciï¿½n
         public virtual ICollection<AperturaCaja> Aperturas { get; set; } = new List<AperturaCaja>();
     }
 }

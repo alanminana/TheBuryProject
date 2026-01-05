@@ -5,6 +5,8 @@
     ViewData["PageTitle"] = "Nueva Línea de Crédito";
     ViewData["PageSubtitle"] = "Asigna un monto disponible al cliente";
     ViewData["MostrarEvaluacion"] = true;
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Credito")!;
 }
 
 @section Styles {
@@ -12,7 +14,7 @@
 }
 
 @section PageActions {
-    <a asp-action="Index" class="btn btn-outline-light">
+    <a href="@backUrl" class="btn btn-outline-light">
         <i class="bi bi-arrow-left me-2"></i>Volver
     </a>
 }
@@ -41,6 +43,8 @@
                   method="post"
                   data-credito-form
                   data-evaluar-url="@Url.Action("EvaluarCredito", "Credito")">
+
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
 
                 <div asp-validation-summary="ModelOnly"
                      class="alert alert-danger d-flex align-items-center"
@@ -111,7 +115,7 @@
                 </div>
 
                 <div class="d-flex justify-content-end gap-2 mt-4">
-                    <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
+                    <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
                         <i class="bi bi-x-circle me-2"></i>Cancelar
                     </a>
                     <button type="submit" class="btn btn-success btn-lg px-4 text-dark fw-semibold">

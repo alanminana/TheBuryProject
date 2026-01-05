@@ -24,7 +24,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<bool> NumeroOrdenExisteAsync(string numero, int? excludeId = null);
         Task<decimal> CalcularTotalOrdenAsync(int ordenId);
 
-        // NUEVO: Método para recepcionar
-        Task<OrdenCompra> RecepcionarAsync(int ordenId, List<RecepcionDetalleViewModel> detallesRecepcion);
+        // NUEVO: Mï¿½todo para recepcionar
+        Task<OrdenCompra> RecepcionarAsync(int ordenId, byte[] rowVersion, List<RecepcionDetalleViewModel> detallesRecepcion);
     }
 }

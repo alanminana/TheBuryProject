@@ -1,13 +1,18 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using System;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using TheBuryProject.Models.Constants;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using RoleConstants = TheBuryProject.Models.Constants.Roles;
 
 namespace TheBuryProject.Filters;
 
 /// <summary>
 /// Attribute para requerir un permiso específico (claims-based)
-/// Uso: [PermisoRequerido(Modulo = "Ventas", Accion = "create")]
+/// Uso: [PermisoRequerido(Modulo = "ventas", Accion = "create")]
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
 public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilter
@@ -23,55 +28,72 @@ public class PermisoRequeridoAttribute : AuthorizeAttribute, IAuthorizationFilte
     public string Accion { get; set; } = string.Empty;
 
     /// <summary>
-    /// Si es true, permite acceso a SuperAdmin sin verificar el permiso específico
+    /// Si es true, permite acceso a <see cref="RoleConstants.SuperAdmin"/> sin verificar el permiso específico.
     /// </summary>
     public bool AllowSuperAdmin { get; set; } = true;
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
-        var user = context.HttpContext.User;
+        var httpContext = context.HttpContext;
+        var user = httpContext.User;
 
-        // Verificar si el usuario está autenticado
-        if (!user.Identity?.IsAuthenticated ?? true)
+        // Primera validación: el usuario debe estar autenticado antes de cualquier lógica de permisos
+        if (user?.Identity?.IsAuthenticated != true)
         {
             context.Result = new ChallengeResult();
             return;
         }
 
-        // TEMPORAL: En desarrollo, permitir acceso si está autenticado
-        var env = context.HttpContext.RequestServices.GetService<IWebHostEnvironment>();
-        if (env?.IsDevelopment() == true)
+        var services = httpContext.RequestServices;
+        var env = services.GetService(typeof(IWebHostEnvironment)) as IWebHostEnvironment;
+        var logger = services.GetService(typeof(ILogger<PermisoRequeridoAttribute>)) as ILogger<PermisoRequeridoAttribute>;
+        var configuration = services.GetService(typeof(IConfiguration)) as IConfiguration;
+        var requestPath = httpContext.Request.Path;
+
+        // Permitir omitir permisos solo cuando la configuración lo habilite explícitamente en desarrollo
+        var skipPermissionsInDevelopment =
+            env?.IsDevelopment() is true &&
+            configuration?.GetValue<bool>("Seguridad:OmitirPermisosEnDev") is true;
+
+        if (skipPermissionsInDevelopment)
         {
+            logger?.LogWarning(
+                "Permisos omitidos en Development porque Seguridad:OmitirPermisosEnDev=true para {Username} al acceder a {Path}",
+                user.Identity?.Name ?? "Desconocido",
+                requestPath);
+
             return; // Permitir acceso en desarrollo
         }
 
-        // Si AllowSuperAdmin está habilitado y el usuario es SuperAdmin, permitir
-        if (AllowSuperAdmin && user.IsInRole(TheBuryProject.Models.Constants.Roles.SuperAdmin))
+        // Bypass de SuperAdmin (evita colisión con AuthorizeAttribute.Roles)
+        if (AllowSuperAdmin && user.IsInRole(RoleConstants.SuperAdmin))
         {
             return;
         }
 
-        // Construir el claim value requerido
-        var claimValue = $"{Modulo}.{Accion}";
+        // Normalizar valores de módulo y acción
+        var normalizedModulo = (Modulo ?? string.Empty).Trim();
+        var normalizedAccion = (Accion ?? string.Empty).Trim();
 
-        // Verificar si el usuario tiene el claim de permiso
-        var hasPermission = user.HasClaim(c => c.Type == "Permission" && c.Value == claimValue);
+        if (string.IsNullOrWhiteSpace(normalizedModulo) || string.IsNullOrWhiteSpace(normalizedAccion))
+        {
+            logger?.LogError("PermisoRequeridoAttribute configurado sin Modulo o Accion en {Path}", requestPath);
+            context.Result = new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            return;
+        }
+
+        // Claim canonizado
+        var claimValue = $"{normalizedModulo.ToLowerInvariant()}.{normalizedAccion.ToLowerInvariant()}";
+
+        // Comparación robusta
+        var hasPermission = user.HasClaim(c =>
+            c.Type == "Permission" &&
+            string.Equals(c.Value, claimValue, StringComparison.OrdinalIgnoreCase));
 
         if (!hasPermission)
         {
-            // Registrar intento de acceso no autorizado
-            var logger = context.HttpContext.RequestServices
-                .GetService<ILogger<PermisoRequeridoAttribute>>();
-
-            logger?.LogWarning(
-                "Acceso denegado: Usuario {Username} intentó acceder a {Path} sin permiso {Permission}",
-                user.Identity?.Name ?? "Desconocido",
-                context.HttpContext.Request.Path,
-                claimValue
-            );
-
-            // Retornar 403 Forbidden
             context.Result = new ForbidResult();
+            return;
         }
     }
 }

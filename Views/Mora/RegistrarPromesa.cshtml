@@ -1,0 +1,80 @@
+@model RegistrarPromesaViewModel
+@using TheBuryProject.ViewModels.Mora
+
+@{
+    ViewData["Title"] = "Registrar Promesa de Pago";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("FichaCliente", "Mora", new { id = Model.ClienteId })!;
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-calendar-check me-2"></i>Registrar Promesa de Pago</h2>
+                <a href="@backUrl" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Cancelar
+                </a>
+            </div>
+
+            <!-- Datos del Cliente -->
+            <div class="card shadow-sm mb-4 border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-person me-2"></i>Cliente</h6>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-1">@Model.NombreCliente</h5>
+                    <p class="mb-0">Monto Total Vencido: <strong class="text-danger fs-5">$@Model.MontoVencidoTotal?.ToString("N2")</strong></p>
+                </div>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-handshake me-2"></i>Detalles de la Promesa</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="RegistrarPromesa" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="AlertaId" />
+                        <input type="hidden" asp-for="ClienteId" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+                        <div class="mb-3">
+                            <label asp-for="FechaPromesa" class="form-label">Fecha de Pago Prometida *</label>
+                            <input asp-for="FechaPromesa" class="form-control" type="date" />
+                            <span asp-validation-for="FechaPromesa" class="text-danger"></span>
+                            <small class="form-text text-muted">Fecha en que el cliente se compromete a realizar el pago</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="MontoPromesa" class="form-label">Monto Prometido *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="MontoPromesa" class="form-control" type="number" step="0.01" min="0.01" />
+                            </div>
+                            <span asp-validation-for="MontoPromesa" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Observaciones" class="form-label">Observaciones</label>
+                            <textarea asp-for="Observaciones" class="form-control" rows="3" placeholder="Notas adicionales sobre la promesa..."></textarea>
+                        </div>
+
+                        <div class="alert alert-info py-2">
+                            <i class="bi bi-info-circle me-2"></i>
+                            La promesa quedará registrada y se generará un seguimiento automático.
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="@backUrl" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-2"></i>Registrar Promesa
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

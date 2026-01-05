@@ -1,414 +1,446 @@
-﻿using AutoMapper;
+﻿// FILE: Controllers/CajaController.cs
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
-namespace TheBuryProject.Controllers;
-
-/// <summary>
-/// Controlador para gestión de cajas y arqueos
-/// </summary>
-[Authorize]
-public class CajaController : Controller
+namespace TheBuryProject.Controllers
 {
-    private readonly ICajaService _cajaService;
-    private readonly UserManager<IdentityUser> _userManager;
-    private readonly ILogger<CajaController> _logger;
-    private readonly IMapper _mapper; // INYECCIÓN: Agregar IMapper
-
-    public CajaController(
-        ICajaService cajaService,
-        UserManager<IdentityUser> userManager,
-        ILogger<CajaController> logger,
-        IMapper mapper) // INYECCIÓN: Agregar IMapper
+    /// <summary>
+    /// Controlador para gestión de cajas y arqueos
+    /// </summary>
+    [Authorize]
+    public class CajaController : Controller
     {
-        _cajaService = cajaService;
-        _userManager = userManager;
-        _logger = logger;
-        _mapper = mapper; // INICIALIZACIÓN: Asignar IMapper
-    }
+        private readonly ICajaService _cajaService;
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly ILogger<CajaController> _logger;
+        private readonly IMapper _mapper;
 
-    #region CRUD de Cajas
-
-    [Authorize(Roles = "SuperAdmin,Gerente,Contador")]
-    public async Task<IActionResult> Index(int? cajaId = null, DateTime? fechaDesde = null, DateTime? fechaHasta = null)
-    {
-        var viewModel = await BuildHistorialViewModelAsync(cajaId, fechaDesde, fechaHasta);
-
-        await SetHistorialFiltersAsync(cajaId, fechaDesde, fechaHasta);
-
-        return View(viewModel);
-    }
-
-    [Authorize(Roles = "SuperAdmin,Gerente")]
-    public IActionResult Create()
-    {
-        return View();
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "SuperAdmin,Gerente")]
-    public async Task<IActionResult> Create(CajaViewModel model)
-    {
-        if (!ModelState.IsValid)
+        public CajaController(
+            ICajaService cajaService,
+            UserManager<IdentityUser> userManager,
+            ILogger<CajaController> logger,
+            IMapper mapper)
         {
-            return View(model);
+            _cajaService = cajaService;
+            _userManager = userManager;
+            _logger = logger;
+            _mapper = mapper;
         }
 
-        try
+        #region CRUD de Cajas
+
+        /// <summary>
+        /// Módulo principal de cajas: muestra cajas activas/inactivas y aperturas abiertas
+        /// </summary>
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Contador)]
+        public async Task<IActionResult> Index()
         {
-            await _cajaService.CrearCajaAsync(model);
-            TempData["Success"] = "Caja creada exitosamente";
-            return RedirectToAction(nameof(Index));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al crear caja");
-            TempData["Error"] = ex.Message;
-            return View(model);
-        }
-    }
+            var cajas = await _cajaService.ObtenerTodasCajasAsync();
+            var aperturasAbiertas = await _cajaService.ObtenerAperturasAbiertasAsync();
 
-    [Authorize(Roles = "SuperAdmin,Gerente")]
-    public async Task<IActionResult> Edit(int id)
-    {
-        var caja = await _cajaService.ObtenerCajaPorIdAsync(id);
-        if (caja == null)
-        {
-            TempData["Error"] = "Caja no encontrada";
-            return RedirectToAction(nameof(Index));
-        }
-
-        // ✅ CAMBIO: Usar AutoMapper en lugar de mapeo manual
-        var model = _mapper.Map<CajaViewModel>(caja);
-
-        return View(model);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "SuperAdmin,Gerente")]
-    public async Task<IActionResult> Edit(int id, CajaViewModel model)
-    {
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
-
-        try
-        {
-            await _cajaService.ActualizarCajaAsync(id, model);
-            TempData["Success"] = "Caja actualizada exitosamente";
-            return RedirectToAction(nameof(Index));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al actualizar caja");
-            TempData["Error"] = ex.Message;
-            return View(model);
-        }
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        try
-        {
-            await _cajaService.EliminarCajaAsync(id);
-            TempData["Success"] = "Caja eliminada exitosamente";
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al eliminar caja");
-            TempData["Error"] = ex.Message;
-        }
-
-        return RedirectToAction(nameof(Index));
-    }
-
-    #endregion
-
-    #region Apertura de Caja
-
-    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
-    public async Task<IActionResult> Abrir(int? cajaId)
-    {
-        var cajas = await SetCajasActivasSelectListAsync(cajaId);
-
-        var model = new AbrirCajaViewModel();
-        if (cajaId.HasValue)
-        {
-            model.CajaId = cajaId.Value;
-            var caja = cajas.FirstOrDefault(c => c.Id == cajaId.Value);
-            if (caja != null)
+            var viewModel = new CajasListViewModel
             {
-                model.CajaNombre = caja.Nombre;
-                model.CajaCodigo = caja.Codigo;
+                CajasActivas = cajas.Where(c => c.Activa).ToList(),
+                CajasInactivas = cajas.Where(c => !c.Activa).ToList(),
+                AperturasAbiertas = aperturasAbiertas
+            };
+
+            return View(viewModel); // Views/Caja/Index.cshtml (CajasListViewModel)
+        }
+
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+        public async Task<IActionResult> Create(CajaViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            try
+            {
+                await _cajaService.CrearCajaAsync(model);
+                TempData["Success"] = "Caja creada exitosamente";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear caja");
+                TempData["Error"] = ex.Message;
+                return View(model);
             }
         }
 
-        return View(model);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
-    public async Task<IActionResult> Abrir(AbrirCajaViewModel model)
-    {
-        if (!ModelState.IsValid)
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+        public async Task<IActionResult> Edit(int id)
         {
-            _ = await SetCajasActivasSelectListAsync(model.CajaId);
+            var caja = await _cajaService.ObtenerCajaPorIdAsync(id);
+            if (caja == null)
+            {
+                TempData["Error"] = "Caja no encontrada";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Usar AutoMapper
+            var model = _mapper.Map<CajaViewModel>(caja);
+
             return View(model);
         }
 
-        try
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+        public async Task<IActionResult> Edit(int id, CajaViewModel model)
         {
-            var user = await _userManager.GetUserAsync(User);
-            var apertura = await _cajaService.AbrirCajaAsync(model, user?.UserName ?? "Unknown");
-            TempData["Success"] = $"Caja abierta exitosamente con ${model.MontoInicial:N2}";
-            return RedirectToAction(nameof(DetallesApertura), new { id = apertura.Id });
+            if (id != model.Id)
+            {
+                TempData["Error"] = "Caja no encontrada";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var rowVersion = model.RowVersion;
+            if (rowVersion is null || rowVersion.Length == 0)
+            {
+                ModelState.AddModelError("", "No se recibió la versión de fila (RowVersion). Recargue la página e intente nuevamente.");
+                return View(model);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            try
+            {
+                await _cajaService.ActualizarCajaAsync(id, model);
+                TempData["Success"] = "Caja actualizada exitosamente";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar caja");
+                TempData["Error"] = ex.Message;
+                return View(model);
+            }
         }
-        catch (Exception ex)
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+        public async Task<IActionResult> Delete(int id, byte[]? rowVersion)
         {
-            _logger.LogError(ex, "Error al abrir caja");
-            _ = await SetCajasActivasSelectListAsync(model.CajaId);
-            TempData["Error"] = ex.Message;
-            return View(model);
-        }
-    }
+            try
+            {
+                if (rowVersion is null || rowVersion.Length == 0)
+                {
+                    TempData["Error"] = "No se recibió la versión de fila (RowVersion). Recargue la página e intente nuevamente.";
+                    return RedirectToAction(nameof(Index));
+                }
 
-    #endregion
+                await _cajaService.EliminarCajaAsync(id, rowVersion);
+                TempData["Success"] = "Caja eliminada exitosamente";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar caja");
+                TempData["Error"] = ex.Message;
+            }
 
-    #region Movimientos
-
-    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
-    public async Task<IActionResult> RegistrarMovimiento(int aperturaId)
-    {
-        var apertura = await _cajaService.ObtenerAperturaPorIdAsync(aperturaId);
-        if (apertura == null)
-        {
-            TempData["Error"] = "Apertura no encontrada";
             return RedirectToAction(nameof(Index));
         }
 
-        var saldo = await _cajaService.CalcularSaldoActualAsync(aperturaId);
+        #endregion
 
-        var model = new MovimientoCajaViewModel
+        #region Apertura de Caja
+
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
+        public async Task<IActionResult> Abrir(int? cajaId)
         {
-            AperturaCajaId = aperturaId,
-            CajaNombre = apertura.Caja.Nombre,
-            SaldoActual = saldo
-        };
+            var cajas = await SetCajasActivasSelectListAsync(cajaId);
 
-        return View(model);
-    }
+            var model = new AbrirCajaViewModel();
+            if (cajaId.HasValue)
+            {
+                model.CajaId = cajaId.Value;
+                var caja = cajas.FirstOrDefault(c => c.Id == cajaId.Value);
+                if (caja != null)
+                {
+                    model.CajaNombre = caja.Nombre;
+                    model.CajaCodigo = caja.Codigo;
+                }
+            }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
-    public async Task<IActionResult> RegistrarMovimiento(MovimientoCajaViewModel model)
-    {
-        if (!ModelState.IsValid)
-        {
-            await TryPopulateMovimientoContextAsync(model);
             return View(model);
         }
 
-        try
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
+        public async Task<IActionResult> Abrir(AbrirCajaViewModel model)
         {
-            var user = await _userManager.GetUserAsync(User);
-            await _cajaService.RegistrarMovimientoAsync(model, user?.UserName ?? "Unknown");
-            TempData["Success"] = "Movimiento registrado exitosamente";
-            return RedirectToAction(nameof(DetallesApertura), new { id = model.AperturaCajaId });
+            if (!ModelState.IsValid)
+            {
+                _ = await SetCajasActivasSelectListAsync(model.CajaId);
+                return View(model);
+            }
+
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                var apertura = await _cajaService.AbrirCajaAsync(model, user?.UserName ?? "Unknown");
+
+                TempData["Success"] = $"Caja abierta exitosamente con ${model.MontoInicial:N2}";
+                return RedirectToAction(nameof(DetallesApertura), new { id = apertura.Id });
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Ej: "La caja ya tiene una apertura activa"
+                _logger.LogWarning(ex, "Validación al abrir caja");
+                TempData["Error"] = ex.Message;
+                _ = await SetCajasActivasSelectListAsync(model.CajaId);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al abrir caja");
+                _ = await SetCajasActivasSelectListAsync(model.CajaId);
+                TempData["Error"] = "Error al abrir la caja";
+                return View(model);
+            }
         }
-        catch (Exception ex)
+
+        #endregion
+
+        #region Movimientos
+
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
+        public async Task<IActionResult> RegistrarMovimiento(int aperturaId)
         {
-            _logger.LogError(ex, "Error al registrar movimiento");
-            await TryPopulateMovimientoContextAsync(model);
-            TempData["Error"] = ex.Message;
-            return View(model);
-        }
-    }
+            var apertura = await _cajaService.ObtenerAperturaPorIdAsync(aperturaId);
+            if (apertura == null)
+            {
+                TempData["Error"] = "Apertura no encontrada";
+                return RedirectToAction(nameof(Index));
+            }
 
-    #endregion
+            var saldo = await _cajaService.CalcularSaldoActualAsync(aperturaId);
 
-    #region Cierre de Caja
-
-    [Authorize(Roles = "SuperAdmin,Gerente")]
-    public async Task<IActionResult> Cerrar(int aperturaId)
-    {
-        try
-        {
-            var detalles = await _cajaService.ObtenerDetallesAperturaAsync(aperturaId);
-
-            var model = new CerrarCajaViewModel
+            var model = new MovimientoCajaViewModel
             {
                 AperturaCajaId = aperturaId,
-                MontoInicialSistema = detalles.Apertura.MontoInicial,
-                TotalIngresosSistema = detalles.TotalIngresos,
-                TotalEgresosSistema = detalles.TotalEgresos,
-                MontoEsperadoSistema = detalles.SaldoActual,
-                CajaNombre = detalles.Apertura.Caja.Nombre,
-                FechaApertura = detalles.Apertura.FechaApertura,
-                UsuarioApertura = detalles.Apertura.UsuarioApertura,
-                Movimientos = detalles.Movimientos
+                CajaNombre = apertura.Caja.Nombre,
+                SaldoActual = saldo
             };
 
             return View(model);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al cargar formulario de cierre");
-            TempData["Error"] = ex.Message;
-            return RedirectToAction(nameof(Index));
-        }
-    }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "SuperAdmin,Gerente")]
-    public async Task<IActionResult> Cerrar(CerrarCajaViewModel model)
-    {
-        if (!ModelState.IsValid)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
+        public async Task<IActionResult> RegistrarMovimiento(MovimientoCajaViewModel model)
         {
-            await TryPopulateCerrarModelAsync(model);
-            return View(model);
-        }
-
-        try
-        {
-            var user = await _userManager.GetUserAsync(User);
-            var cierre = await _cajaService.CerrarCajaAsync(model, user?.UserName ?? "Unknown");
-
-            if (cierre.TieneDiferencia)
+            if (!ModelState.IsValid)
             {
-                TempData["Warning"] = $"Caja cerrada con diferencia de ${cierre.Diferencia:N2}";
-            }
-            else
-            {
-                TempData["Success"] = "Caja cerrada exitosamente sin diferencias";
+                await TryPopulateMovimientoContextAsync(model);
+                return View(model);
             }
 
-            return RedirectToAction(nameof(DetallesCierre), new { id = cierre.Id });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al cerrar caja");
-            await TryPopulateCerrarModelAsync(model);
-            TempData["Error"] = ex.Message;
-            return View(model);
-        }
-    }
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                await _cajaService.RegistrarMovimientoAsync(model, user?.UserName ?? "Unknown");
 
-    #endregion
-
-    #region Detalles y Reportes
-
-    [Authorize(Roles = "SuperAdmin,Gerente,Vendedor")]
-    public async Task<IActionResult> DetallesApertura(int id)
-    {
-        try
-        {
-            var detalles = await _cajaService.ObtenerDetallesAperturaAsync(id);
-            return View(detalles);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al cargar detalles de apertura");
-            TempData["Error"] = ex.Message;
-            return RedirectToAction(nameof(Index));
-        }
-    }
-
-    [Authorize(Roles = "SuperAdmin,Gerente")]
-    public async Task<IActionResult> DetallesCierre(int id)
-    {
-        var cierre = await _cajaService.ObtenerCierrePorIdAsync(id);
-        if (cierre == null)
-        {
-            TempData["Error"] = "Cierre no encontrado";
-            return RedirectToAction(nameof(Index));
+                TempData["Success"] = "Movimiento registrado exitosamente";
+                return RedirectToAction(nameof(DetallesApertura), new { id = model.AperturaCajaId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al registrar movimiento");
+                await TryPopulateMovimientoContextAsync(model);
+                TempData["Error"] = ex.Message;
+                return View(model);
+            }
         }
 
-        return View(cierre);
-    }
+        #endregion
 
-    [Authorize(Roles = "SuperAdmin,Gerente,Contador")]
-    public async Task<IActionResult> Historial(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
-    {
-        var viewModel = await BuildHistorialViewModelAsync(cajaId, fechaDesde, fechaHasta);
+        #region Cierre de Caja
 
-        await SetHistorialFiltersAsync(cajaId, fechaDesde, fechaHasta);
-
-        return View(viewModel);
-    }
-
-    #endregion
-
-    #region Helpers
-
-    private async Task<List<Caja>> SetCajasActivasSelectListAsync(int? selectedId)
-    {
-        var cajas = await _cajaService.ObtenerTodasCajasAsync();
-        ViewBag.Cajas = new SelectList(cajas.Where(c => c.Activa), "Id", "Nombre", selectedId);
-        return cajas;
-    }
-
-    private async Task SetHistorialFiltersAsync(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
-    {
-        var cajas = await _cajaService.ObtenerTodasCajasAsync();
-        ViewBag.Cajas = new SelectList(cajas, "Id", "Nombre", cajaId);
-        ViewBag.FechaDesde = fechaDesde;
-        ViewBag.FechaHasta = fechaHasta;
-    }
-
-    private async Task<HistorialCierresViewModel> BuildHistorialViewModelAsync(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
-    {
-        var cierres = await _cajaService.ObtenerHistorialCierresAsync(cajaId, fechaDesde, fechaHasta);
-
-        var totalDiferenciasPositivas = cierres.Where(c => c.Diferencia > 0).Sum(c => c.Diferencia);
-        var totalDiferenciasNegativas = cierres.Where(c => c.Diferencia < 0).Sum(c => c.Diferencia);
-        var cierresConDiferencia = cierres.Count(c => c.TieneDiferencia);
-        var porcentajeCierresExactos = cierres.Count > 0
-            ? ((cierres.Count - cierresConDiferencia) / (decimal)cierres.Count) * 100
-            : 0;
-
-        return new HistorialCierresViewModel
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+        public async Task<IActionResult> Cerrar(int aperturaId, string? returnUrl = null)
         {
-            Cierres = cierres,
-            TotalDiferenciasPositivas = totalDiferenciasPositivas,
-            TotalDiferenciasNegativas = totalDiferenciasNegativas,
-            CierresConDiferencia = cierresConDiferencia,
-            TotalCierres = cierres.Count,
-            PorcentajeCierresExactos = porcentajeCierresExactos
-        };
-    }
+            try
+            {
+                var detalles = await _cajaService.ObtenerDetallesAperturaAsync(aperturaId);
 
-    private async Task TryPopulateMovimientoContextAsync(MovimientoCajaViewModel model)
-    {
-        var apertura = await _cajaService.ObtenerAperturaPorIdAsync(model.AperturaCajaId);
-        if (apertura != null)
-        {
-            model.CajaNombre = apertura.Caja.Nombre;
-            model.SaldoActual = await _cajaService.CalcularSaldoActualAsync(model.AperturaCajaId);
+                ViewBag.ReturnUrl = returnUrl;
+
+                var model = new CerrarCajaViewModel
+                {
+                    AperturaCajaId = aperturaId,
+                    MontoInicialSistema = detalles.Apertura.MontoInicial,
+                    TotalIngresosSistema = detalles.TotalIngresos,
+                    TotalEgresosSistema = detalles.TotalEgresos,
+                    MontoEsperadoSistema = detalles.SaldoActual,
+                    CajaNombre = detalles.Apertura.Caja.Nombre,
+                    FechaApertura = detalles.Apertura.FechaApertura,
+                    UsuarioApertura = detalles.Apertura.UsuarioApertura,
+                    Movimientos = detalles.Movimientos
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar formulario de cierre");
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
         }
-    }
 
-    private async Task TryPopulateCerrarModelAsync(CerrarCajaViewModel model)
-    {
-        var detalles = await _cajaService.ObtenerDetallesAperturaAsync(model.AperturaCajaId);
-        model.CajaNombre = detalles.Apertura.Caja.Nombre;
-        model.FechaApertura = detalles.Apertura.FechaApertura;
-        model.UsuarioApertura = detalles.Apertura.UsuarioApertura;
-        model.Movimientos = detalles.Movimientos;
-    }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+        public async Task<IActionResult> Cerrar(CerrarCajaViewModel model, string? returnUrl = null)
+        {
+            if (!ModelState.IsValid)
+            {
+                await TryPopulateCerrarModelAsync(model);
+                ViewBag.ReturnUrl = returnUrl;
+                return View(model);
+            }
 
-    #endregion
+            try
+            {
+                var user = await _userManager.GetUserAsync(User);
+                var cierre = await _cajaService.CerrarCajaAsync(model, user?.UserName ?? "Unknown");
+
+                if (cierre.TieneDiferencia)
+                {
+                    TempData["Warning"] = $"Caja cerrada con diferencia de ${cierre.Diferencia:N2}";
+                }
+                else
+                {
+                    TempData["Success"] = "Caja cerrada exitosamente sin diferencias";
+                }
+
+                var safeReturnUrl = (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    ? returnUrl
+                    : null;
+
+                return RedirectToAction(nameof(DetallesCierre), new { id = cierre.Id, returnUrl = safeReturnUrl });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cerrar caja");
+                await TryPopulateCerrarModelAsync(model);
+                ViewBag.ReturnUrl = returnUrl;
+                TempData["Error"] = ex.Message;
+                return View(model);
+            }
+        }
+
+        #endregion
+
+        #region Detalles y Reportes
+
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
+        public async Task<IActionResult> DetallesApertura(int id)
+        {
+            try
+            {
+                var detalles = await _cajaService.ObtenerDetallesAperturaAsync(id);
+                return View(detalles);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar detalles de apertura");
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+        public async Task<IActionResult> DetallesCierre(int id, string? returnUrl = null)
+        {
+            var cierre = await _cajaService.ObtenerCierrePorIdAsync(id);
+            if (cierre == null)
+            {
+                TempData["Error"] = "Cierre no encontrado";
+                return RedirectToAction(nameof(Historial));
+            }
+
+            ViewBag.ReturnUrl = returnUrl;
+
+            return View(cierre);
+        }
+
+        /// <summary>
+        /// Historial de cierres de caja con filtros
+        /// </summary>
+        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Contador)]
+        public async Task<IActionResult> Historial(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
+        {
+            var viewModel = await _cajaService.ObtenerEstadisticasCierresAsync(cajaId, fechaDesde, fechaHasta);
+
+            await SetHistorialFiltersAsync(cajaId, fechaDesde, fechaHasta);
+
+            return View(viewModel); // Views/Caja/Historial.cshtml (HistorialCierresViewModel)
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private async Task<List<Caja>> SetCajasActivasSelectListAsync(int? selectedId)
+        {
+            var cajas = await _cajaService.ObtenerTodasCajasAsync();
+            ViewBag.Cajas = new SelectList(cajas.Where(c => c.Activa), "Id", "Nombre", selectedId);
+            return cajas;
+        }
+
+        private async Task SetHistorialFiltersAsync(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
+        {
+            var cajas = await _cajaService.ObtenerTodasCajasAsync();
+            ViewBag.Cajas = new SelectList(cajas, "Id", "Nombre", cajaId);
+            ViewBag.FechaDesde = fechaDesde;
+            ViewBag.FechaHasta = fechaHasta;
+        }
+
+        private async Task TryPopulateMovimientoContextAsync(MovimientoCajaViewModel model)
+        {
+            var apertura = await _cajaService.ObtenerAperturaPorIdAsync(model.AperturaCajaId);
+            if (apertura != null)
+            {
+                model.CajaNombre = apertura.Caja.Nombre;
+                model.SaldoActual = await _cajaService.CalcularSaldoActualAsync(model.AperturaCajaId);
+            }
+        }
+
+        private async Task TryPopulateCerrarModelAsync(CerrarCajaViewModel model)
+        {
+            var detalles = await _cajaService.ObtenerDetallesAperturaAsync(model.AperturaCajaId);
+            model.CajaNombre = detalles.Apertura.Caja.Nombre;
+            model.FechaApertura = detalles.Apertura.FechaApertura;
+            model.UsuarioApertura = detalles.Apertura.UsuarioApertura;
+            model.Movimientos = detalles.Movimientos;
+        }
+
+        #endregion
+    }
 }

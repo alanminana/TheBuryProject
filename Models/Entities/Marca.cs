@@ -5,13 +5,13 @@ namespace TheBuryProject.Models.Entities
 {
     /// <summary>
     /// Representa una marca de productos en el sistema.
-    /// Soporta jerarquía (marcas padre e hijas/submarcas).
+    /// Soporta jerarquï¿½a (marcas padre e hijas/submarcas).
     /// </summary>
-    public class Marca : BaseEntity
+    public class Marca  : AuditableEntity
 
     {
         /// <summary>
-        /// Código único de la marca (ej: "SAM", "LG", "WHI")
+        /// Cï¿½digo ï¿½nico de la marca (ej: "SAM", "LG", "WHI")
         /// </summary>
         [Required]
         [StringLength(20)]
@@ -25,32 +25,32 @@ namespace TheBuryProject.Models.Entities
         public string Nombre { get; set; } = string.Empty;
 
         /// <summary>
-        /// Descripción opcional de la marca
+        /// Descripciï¿½n opcional de la marca
         /// </summary>
         [StringLength(500)]
         public string? Descripcion { get; set; }
 
         /// <summary>
-        /// Id de la marca padre (null si es raíz, ej: Samsung es padre, Samsung Galaxy es hija)
+        /// Id de la marca padre (null si es raï¿½z, ej: Samsung es padre, Samsung Galaxy es hija)
         /// </summary>
         public int? ParentId { get; set; }
 
         /// <summary>
-        /// País de origen de la marca
+        /// Paï¿½s de origen de la marca
         /// </summary>
         [StringLength(100)]
         public string? PaisOrigen { get; set; }
 
         /// <summary>
-        /// Marca padre (navegación)
+        /// Marca padre (navegaciï¿½n)
         /// </summary>
         public virtual Marca? Parent { get; set; }
         /// <summary>
-        /// Indica si la marca está activa
+        /// Indica si la marca estï¿½ activa
         /// </summary>
         public bool Activo { get; set; } = true;
         /// <summary>
-        /// SubMarcas (navegación)
+        /// SubMarcas (navegaciï¿½n)
         /// </summary>
         public virtual ICollection<Marca> Children { get; set; } = new List<Marca>();
     }

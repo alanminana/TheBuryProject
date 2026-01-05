@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Crear Acción";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Acciones")!;
 }
 
 <div class="container-fluid px-0">
@@ -13,7 +15,7 @@
             <h1 class="h4 mb-0">Crear nueva acción</h1>
         </div>
 
-        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <a href="@backUrl" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i>
             Volver al listado
         </a>
@@ -27,6 +29,7 @@
                 <div class="card-body">
 
                     <form asp-action="Create" method="post" novalidate>
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
 
                         <!-- Módulo -->
@@ -71,7 +74,7 @@
 
                         <!-- Botones -->
                         <div class="d-flex justify-content-end gap-2 mt-3">
-                            <a asp-action="Index" class="btn btn-outline-secondary">
+                            <a href="@backUrl" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-lg me-1"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">

@@ -1,0 +1,110 @@
+@model TheBuryProject.ViewModels.AutorizarBatchViewModel
+
+@{
+    ViewData["Title"] = "Autorizar cambio de precios";
+}
+
+<div class="container-fluid py-4">
+
+    @* Header unificado *@
+    <partial name="_PageHeader" model='new PageHeaderModel {
+        Breadcrumb = "Gestión de precios · Cambios masivos",
+        Title = "Autorizar cambio de precios",
+        Icon = "shield-check",
+        Subtitle = "Aprobar, rechazar o cancelar un batch en estado Simulado.",
+        BackAction = "Preview",
+        BackController = "CambiosPrecios",
+        BackRouteId = Model.BatchId,
+        BackText = "Volver al detalle"
+    }' />
+
+    @* Alertas unificadas *@
+    <partial name="_Alerts" />
+
+    <div class="row">
+        <div class="col-12 col-lg-7 col-xl-6">
+            <div class="card card-animate border-0">
+                <div class="card-body">
+
+                    <dl class="row small mb-3">
+                        <dt class="col-sm-4 text-muted">Nombre</dt>
+                        <dd class="col-sm-8 fw-semibold">@Model.Nombre</dd>
+
+                        <dt class="col-sm-4 text-muted">Tipo de cambio</dt>
+                        <dd class="col-sm-8">@Model.TipoCambio</dd>
+
+                        <dt class="col-sm-4 text-muted">Valor</dt>
+                        <dd class="col-sm-8">@Model.ValorCambio.ToString("N2")</dd>
+
+                        <dt class="col-sm-4 text-muted">Productos afectados</dt>
+                        <dd class="col-sm-8"><span class="fw-semibold text-primary">@Model.CantidadProductos</span></dd>
+
+                        <dt class="col-sm-4 text-muted">Solicitado por</dt>
+                        <dd class="col-sm-8">
+                            <div>@Model.SolicitadoPor</div>
+                            <small class="text-muted">@Model.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</small>
+                        </dd>
+                    </dl>
+
+                    <hr />
+
+                    <div class="d-flex flex-column gap-3">
+
+                        <form asp-action="Aprobar" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.BatchId" />
+                            <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(Model.RowVersion)" />
+
+                            <div class="mb-2">
+                                <label for="notas" class="form-label small">Notas (opcional)</label>
+                                <textarea id="notas" name="notas" class="form-control form-control-sm" rows="2"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" data-confirm="¿Aprobar este batch?">
+                                <i class="bi bi-check2-circle me-1"></i>Aprobar
+                            </button>
+                        </form>
+
+                        <form asp-action="Rechazar" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.BatchId" />
+                            <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(Model.RowVersion)" />
+
+                            <div class="mb-2">
+                                <label for="motivo" class="form-label small fw-semibold">Motivo de rechazo *</label>
+                                <textarea id="motivo" name="motivo" class="form-control form-control-sm" rows="3" required></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-danger" data-confirm="¿Rechazar este batch?">
+                                <i class="bi bi-x-circle me-1"></i>Rechazar
+                            </button>
+                        </form>
+
+                        <form asp-action="Cancelar" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.BatchId" />
+                            <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(Model.RowVersion)" />
+
+                            <div class="mb-2">
+                                <label for="motivoCancelar" class="form-label small">Motivo de cancelación (opcional)</label>
+                                <textarea id="motivoCancelar" name="motivo" class="form-control form-control-sm" rows="2"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-outline-secondary" data-confirm="¿Cancelar este batch?">
+                                <i class="bi bi-ban me-1"></i>Cancelar
+                            </button>
+                        </form>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Data;
 using TheBuryProject.Filters;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
@@ -10,20 +13,38 @@ namespace TheBuryProject.Controllers;
 /// <summary>
 /// Controller para gestión de usuarios del sistema
 /// </summary>
-[Authorize(Roles = "SuperAdmin,Administrador")]
+[Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
 [PermisoRequerido(Modulo = "usuarios", Accion = "view")]
 public class UsuariosController : Controller
 {
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly AppDbContext _context;
     private readonly IRolService _rolService;
     private readonly ILogger<UsuariosController> _logger;
 
+    private string? GetSafeReturnUrl(string? returnUrl)
+        => !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : null;
+
+    private IActionResult RedirectToReturnUrlOrIndex(string? returnUrl)
+    {
+        var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        return safeReturnUrl != null ? LocalRedirect(safeReturnUrl) : RedirectToAction(nameof(Index));
+    }
+
+    private IActionResult RedirectToReturnUrlOrDetails(string id, string? returnUrl)
+    {
+        var safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        return safeReturnUrl != null ? LocalRedirect(safeReturnUrl) : RedirectToAction(nameof(Details), new { id });
+    }
+
     public UsuariosController(
         UserManager<IdentityUser> userManager,
+        AppDbContext context,
         IRolService rolService,
         ILogger<UsuariosController> logger)
     {
         _userManager = userManager;
+        _context = context;
         _rolService = rolService;
         _logger = logger;
     }
@@ -32,27 +53,32 @@ public class UsuariosController : Controller
     /// Lista todos los usuarios del sistema
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? returnUrl)
     {
         try
         {
-            var users = _userManager.Users.ToList();
-            var viewModels = new List<UsuarioViewModel>();
+            var users = await _context.Users
+                .OrderBy(u => u.UserName)
+                .ToListAsync();
 
-            foreach (var user in users.OrderBy(u => u.UserName))
+            var rolesLookup = await _context.UserRoles
+                .Join(_context.Roles,
+                    ur => ur.RoleId,
+                    r => r.Id,
+                    (ur, r) => new { ur.UserId, r.Name })
+                .GroupBy(x => x.UserId)
+                .ToDictionaryAsync(g => g.Key, g => g.Select(x => x.Name!).ToList());
+
+            var viewModels = users.Select(user => new UsuarioViewModel
             {
-                var roles = await _userManager.GetRolesAsync(user);
-                viewModels.Add(new UsuarioViewModel
-                {
-                    Id = user.Id,
-                    Email = user.Email!,
-                    UserName = user.UserName!,
-                    EmailConfirmed = user.EmailConfirmed,
-                    LockoutEnabled = user.LockoutEnabled,
-                    LockoutEnd = user.LockoutEnd,
-                    Roles = roles.ToList()
-                });
-            }
+                Id = user.Id,
+                Email = user.Email!,
+                UserName = user.UserName!,
+                EmailConfirmed = user.EmailConfirmed,
+                LockoutEnabled = user.LockoutEnabled,
+                LockoutEnd = user.LockoutEnd,
+                Roles = rolesLookup.GetValueOrDefault(user.Id, new List<string>())
+            }).ToList();
 
             return View(viewModels);
         }
@@ -68,12 +94,14 @@ public class UsuariosController : Controller
     /// Muestra detalles de un usuario
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Details(string id)
+    public async Task<IActionResult> Details(string id, string? returnUrl)
     {
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
         }
+
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
         try
         {
@@ -113,8 +141,9 @@ public class UsuariosController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "usuarios", Accion = "create")]
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
         await CargarRolesEnViewBag();
         return View(new CrearUsuarioViewModel());
     }
@@ -125,8 +154,10 @@ public class UsuariosController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "usuarios", Accion = "create")]
-    public async Task<IActionResult> Create(CrearUsuarioViewModel model)
+    public async Task<IActionResult> Create(CrearUsuarioViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
             await CargarRolesEnViewBag();
@@ -158,7 +189,7 @@ public class UsuariosController : Controller
                 _logger.LogInformation("Usuario creado: {Email} por usuario {User}",
                     model.Email, User.Identity?.Name);
                 TempData["Success"] = $"Usuario '{model.Email}' creado exitosamente";
-                return RedirectToAction(nameof(Index));
+                return RedirectToReturnUrlOrIndex(returnUrl);
             }
 
             foreach (var error in result.Errors)
@@ -181,12 +212,14 @@ public class UsuariosController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "usuarios", Accion = "update")]
-    public async Task<IActionResult> Edit(string id)
+    public async Task<IActionResult> Edit(string id, string? returnUrl)
     {
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
         }
+
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
         try
         {
@@ -221,8 +254,10 @@ public class UsuariosController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "usuarios", Accion = "update")]
-    public async Task<IActionResult> Edit(EditarUsuarioViewModel model)
+    public async Task<IActionResult> Edit(EditarUsuarioViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -248,7 +283,7 @@ public class UsuariosController : Controller
                 _logger.LogInformation("Usuario actualizado: {UserId} por usuario {User}",
                     model.Id, User.Identity?.Name);
                 TempData["Success"] = $"Usuario '{model.Email}' actualizado exitosamente";
-                return RedirectToAction(nameof(Index));
+                return RedirectToReturnUrlOrDetails(model.Id, returnUrl);
             }
 
             foreach (var error in result.Errors)
@@ -270,12 +305,14 @@ public class UsuariosController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "usuarios", Accion = "delete")]
-    public async Task<IActionResult> Delete(string id)
+    public async Task<IActionResult> Delete(string id, string? returnUrl)
     {
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
         }
+
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
         try
         {
@@ -311,7 +348,7 @@ public class UsuariosController : Controller
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "usuarios", Accion = "delete")]
-    public async Task<IActionResult> DeleteConfirmed(string id)
+    public async Task<IActionResult> DeleteConfirmed(string id, string? returnUrl)
     {
         try
         {
@@ -341,7 +378,7 @@ public class UsuariosController : Controller
             TempData["Error"] = "Error al eliminar el usuario";
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToReturnUrlOrIndex(returnUrl);
     }
 
     /// <summary>
@@ -349,12 +386,14 @@ public class UsuariosController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "usuarios", Accion = "assignroles")]
-    public async Task<IActionResult> AsignarRoles(string id)
+    public async Task<IActionResult> AsignarRoles(string id, string? returnUrl)
     {
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
         }
+
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
         try
         {
@@ -396,7 +435,7 @@ public class UsuariosController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "usuarios", Accion = "assignroles")]
-    public async Task<IActionResult> AsignarRoles(AsignarRolesUsuarioViewModel model)
+    public async Task<IActionResult> AsignarRoles(AsignarRolesUsuarioViewModel model, string? returnUrl)
     {
         try
         {
@@ -426,7 +465,7 @@ public class UsuariosController : Controller
             _logger.LogInformation("Roles actualizados para usuario {UserId} por {User}",
                 model.UserId, User.Identity?.Name);
             TempData["Success"] = "Roles asignados exitosamente";
-            return RedirectToAction(nameof(Details), new { id = model.UserId });
+            return RedirectToReturnUrlOrDetails(model.UserId, returnUrl);
         }
         catch (Exception ex)
         {
@@ -441,12 +480,14 @@ public class UsuariosController : Controller
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "usuarios", Accion = "resetpassword")]
-    public async Task<IActionResult> CambiarPassword(string id)
+    public async Task<IActionResult> CambiarPassword(string id, string? returnUrl)
     {
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
         }
+
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
 
         try
         {
@@ -478,8 +519,10 @@ public class UsuariosController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "usuarios", Accion = "resetpassword")]
-    public async Task<IActionResult> CambiarPassword(CambiarPasswordUsuarioViewModel model)
+    public async Task<IActionResult> CambiarPassword(CambiarPasswordUsuarioViewModel model, string? returnUrl)
     {
+        ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -502,7 +545,7 @@ public class UsuariosController : Controller
                 _logger.LogInformation("Contraseña cambiada para usuario {UserId} por {User}",
                     model.UserId, User.Identity?.Name);
                 TempData["Success"] = "Contraseña cambiada exitosamente";
-                return RedirectToAction(nameof(Details), new { id = model.UserId });
+                return RedirectToReturnUrlOrDetails(model.UserId, returnUrl);
             }
 
             foreach (var error in result.Errors)

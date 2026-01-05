@@ -21,6 +21,7 @@
               data-descuento-es-porcentaje="false">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="RowVersion" />
             <input type="hidden" asp-for="Numero" />
             <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4"></div>
 

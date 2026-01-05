@@ -5,6 +5,12 @@
     ViewData["Title"] = "Configurar Crédito de Venta";
     ViewData["PageTitle"] = "Crédito Personal";
     ViewData["PageSubtitle"] = "Completa los datos del plan para avanzar";
+
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl
+        ?? (Model.VentaId.HasValue
+            ? Url.Action("Details", "Venta", new { id = Model.VentaId })!
+            : Url.Action("Index", "Credito")!);
 }
 
 @section Styles {
@@ -12,8 +18,8 @@
 }
 
 @section PageActions {
-    <a asp-controller="Venta" asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Volver a la venta
+    <a href="@backUrl" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver
     </a>
 }
 
@@ -21,6 +27,7 @@
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="CreditoId" />
     <input type="hidden" asp-for="VentaId" />
+    <input type="hidden" name="returnUrl" value="@returnUrl" />
 
     <div class="card bg-dark border-0 shadow-sm">
         <div class="card-body p-4">
@@ -165,7 +172,7 @@
             </div>
 
             <div class="d-flex justify-content-end gap-2 mt-4">
-                <a asp-controller="Venta" asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-outline-secondary">
+                <a href="@backUrl" class="btn btn-outline-secondary">
                     <i class="bi bi-x-circle"></i> Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary">

@@ -58,7 +58,7 @@ namespace TheBuryProject.Services
                     SueldoCliente = cliente.Sueldo,
                     PuntajeRiesgoCliente = cliente.PuntajeRiesgo,
                     TieneGarante = garanteId.HasValue,
-                    FechaEvaluacion = DateTime.Now,
+                    FechaEvaluacion = DateTime.UtcNow,
                     Reglas = new List<ReglaEvaluacionViewModel>()
                 };
 
@@ -360,7 +360,7 @@ namespace TheBuryProject.Services
                     TieneGarante = evaluacion.TieneGarante,
                     Motivo = evaluacion.Motivo,
                     Observaciones = evaluacion.Observaciones,
-                    FechaEvaluacion = DateTime.Now
+                    FechaEvaluacion = DateTime.UtcNow
                 };
 
                 _context.EvaluacionesCredito.Add(entidad);
@@ -382,7 +382,13 @@ namespace TheBuryProject.Services
             {
                 var evaluacion = await _context.EvaluacionesCredito
                     .Include(e => e.Cliente)
-                    .Where(e => e.CreditoId == creditoId && !e.IsDeleted)
+                    .Include(e => e.Credito)
+                    .Where(e => e.CreditoId == creditoId &&
+                               !e.IsDeleted &&
+                               e.Cliente != null &&
+                               !e.Cliente.IsDeleted &&
+                               e.Credito != null &&
+                               !e.Credito.IsDeleted)
                     .OrderByDescending(e => e.FechaEvaluacion)
                     .FirstOrDefaultAsync();
 
@@ -401,7 +407,12 @@ namespace TheBuryProject.Services
             {
                 var evaluaciones = await _context.EvaluacionesCredito
                     .Include(e => e.Credito)
-                    .Where(e => e.ClienteId == clienteId && !e.IsDeleted)
+                    .Where(e => e.ClienteId == clienteId &&
+                               !e.IsDeleted &&
+                               e.Cliente != null &&
+                               !e.Cliente.IsDeleted &&
+                               e.Credito != null &&
+                               !e.Credito.IsDeleted)
                     .OrderByDescending(e => e.FechaEvaluacion)
                     .ToListAsync();
 

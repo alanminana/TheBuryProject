@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Eliminar Rol";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Roles")!;
 }
 
 <div class="container-fluid">
@@ -9,7 +11,7 @@
         <div class="col-md-12">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a asp-action="Index">Roles</a></li>
+                    <li class="breadcrumb-item"><a href="@backUrl">Roles</a></li>
                     <li class="breadcrumb-item active">Eliminar Rol</li>
                 </ol>
             </nav>
@@ -57,11 +59,12 @@
 
                     <form asp-action="Delete" method="post">
                         <input type="hidden" asp-for="Id" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
                         <div class="d-flex justify-content-between mt-4">
-                            <a asp-action="Index" class="btn btn-secondary">
+                            <a href="@backUrl" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-danger">
+                            <button type="submit" class="btn btn-danger" data-confirm="¿Eliminar el rol '@Model.Nombre'? Esta acción no se puede deshacer.">
                                 <i class="bi bi-trash me-1"></i>Eliminar Rol
                             </button>
                         </div>

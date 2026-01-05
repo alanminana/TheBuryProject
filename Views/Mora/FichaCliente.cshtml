@@ -1,0 +1,485 @@
+@model FichaMoraViewModel
+@using TheBuryProject.Models.Enums
+@using TheBuryProject.ViewModels.Mora
+
+@{
+    ViewData["Title"] = $"Ficha de Mora - {Model.NombreCliente}";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var listReturnUrl = Context.Request.Path + Context.Request.QueryString;
+    var backUrl = returnUrl ?? Url.Action("ClientesMora", "Mora")!;
+}
+
+<div class="container-fluid mora-page">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>@Model.NombreCliente</h2>
+            <small class="text-muted">@Model.DocumentoCliente</small>
+        </div>
+        <div class="btn-group">
+            <a href="@backUrl" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Volver
+            </a>
+            <a asp-action="RegistrarContacto" asp-route-clienteId="@Model.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-success">
+                <i class="bi bi-telephone-plus me-2"></i>Registrar Contacto
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Columna Izquierda: Datos del Cliente y Resumen -->
+        <div class="col-md-4">
+            <!-- Datos de Contacto -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="bi bi-person me-2"></i>Datos de Contacto</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><i class="bi bi-telephone me-2 text-muted"></i>@(Model.Telefono ?? "Sin teléfono")</p>
+                    @if (!string.IsNullOrEmpty(Model.TelefonoLaboral))
+                    {
+                        <p class="mb-2"><i class="bi bi-building me-2 text-muted"></i>@Model.TelefonoLaboral (Laboral)</p>
+                    }
+                    <p class="mb-2"><i class="bi bi-envelope me-2 text-muted"></i>@(Model.Email ?? "Sin email")</p>
+                    <p class="mb-0"><i class="bi bi-geo-alt me-2 text-muted"></i>@(Model.Direccion ?? "Sin dirección")</p>
+                </div>
+            </div>
+
+            <!-- Resumen de Mora -->
+            <div class="card shadow-sm mb-4 @(Model.Resumen.PrioridadMaxima == PrioridadAlerta.Critica ? "border-danger" : Model.Resumen.PrioridadMaxima == PrioridadAlerta.Alta ? "border-warning" : "")">
+                <div class="card-header @(Model.Resumen.PrioridadMaxima == PrioridadAlerta.Critica ? "bg-danger text-white" : Model.Resumen.PrioridadMaxima == PrioridadAlerta.Alta ? "bg-warning" : "bg-primary text-white")">
+                    <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Resumen de Mora</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <h3 class="mb-0 text-danger">@Model.Resumen.DiasMaxAtraso</h3>
+                            <small class="text-muted">Días Atraso</small>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="mb-0">@Model.Resumen.TotalCuotasVencidas</h3>
+                            <small class="text-muted">Cuotas Vencidas</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Capital Vencido:</span>
+                        <strong>$@Model.Resumen.MontoCapitalVencido.ToString("N2")</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Mora Acumulada:</span>
+                        <strong class="text-danger">$@Model.Resumen.MontoMoraAcumulada.ToString("N2")</strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold">TOTAL:</span>
+                        <strong class="fs-5">$@Model.Resumen.MontoTotal.ToString("N2")</strong>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Prioridad:</span>
+                        @{
+                            var prioridadColor = Model.Resumen.PrioridadMaxima switch
+                            {
+                                PrioridadAlerta.Critica => "dark",
+                                PrioridadAlerta.Alta => "danger",
+                                PrioridadAlerta.Media => "warning",
+                                _ => "secondary"
+                            };
+                        }
+                        <span class="badge bg-@prioridadColor">@Model.Resumen.PrioridadMaxima</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado de Gestión -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Estado de Gestión</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Contactos realizados:</span>
+                        <strong>@Model.Resumen.ContactosRealizados</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Último contacto:</span>
+                        <strong>@(Model.Resumen.UltimoContacto?.ToString("dd/MM/yyyy") ?? "Nunca")</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Próximo contacto:</span>
+                        <strong>@(Model.Resumen.ProximoContacto?.ToString("dd/MM/yyyy") ?? "No programado")</strong>
+                    </div>
+                    <hr>
+                    @if (Model.Resumen.PromesaActiva)
+                    {
+                        <div class="alert alert-info mb-2 py-2">
+                            <i class="bi bi-calendar-check me-2"></i>Tiene promesa de pago activa
+                        </div>
+                    }
+                    @if (Model.Resumen.AcuerdoActivo)
+                    {
+                        <div class="alert alert-primary mb-0 py-2">
+                            <i class="bi bi-file-earmark-text me-2"></i>Tiene acuerdo de pago activo
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Créditos, Alertas, Historial -->
+        <div class="col-md-8">
+            <!-- Promesas Activas -->
+            @if (Model.PromesasPago.Any())
+            {
+                <div class="card shadow-sm mb-4 border-info">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Promesas de Pago Activas</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha Promesa</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var promesa in Model.PromesasPago)
+                                {
+                                    <tr class="@(promesa.Vencida ? "table-danger" : "")">
+                                        <td>@promesa.FechaPromesa.ToString("dd/MM/yyyy")</td>
+                                        <td>$@promesa.MontoPrometido.ToString("N2")</td>
+                                        <td>
+                                            @if (promesa.Vencida)
+                                            {
+                                                <span class="badge bg-danger">Vencida</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success">@promesa.DiasRestantes días restantes</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <form asp-action="MarcarPromesaCumplida" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="alertaId" value="@promesa.AlertaId" />
+                                                <input type="hidden" name="clienteId" value="@Model.ClienteId" />
+                                                <input type="hidden" name="returnUrl" value="@listReturnUrl" />
+                                                <button type="submit" class="btn btn-sm btn-success" title="Marcar como cumplida">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-sm btn-danger" title="Marcar como incumplida" 
+                                                    data-bs-toggle="modal" data-bs-target="#modalIncumplida" 
+                                                    data-alerta="@promesa.AlertaId">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- Créditos en Mora -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="bi bi-credit-card me-2"></i>Créditos en Mora (@Model.Creditos.Count)</h6>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.Creditos.Any())
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-check-circle fs-1 text-success"></i>
+                            <p class="text-muted mt-2">No hay créditos en mora</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="accordion" id="accordionCreditos">
+                            @foreach (var credito in Model.Creditos)
+                            {
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#credito-@credito.CreditoId">
+                                            <div class="d-flex justify-content-between w-100 me-3">
+                                                <span>
+                                                    <strong>Crédito #@credito.NumeroCredito</strong>
+                                                    <span class="badge bg-danger ms-2">@credito.DiasAtraso días</span>
+                                                </span>
+                                                <span>
+                                                    @credito.CuotasVencidas cuota(s) - $@credito.MontoCuotasVencidas.ToString("N2")
+                                                </span>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="credito-@credito.CreditoId" class="accordion-collapse collapse" data-bs-parent="#accordionCreditos">
+                                        <div class="accordion-body">
+                                            <div class="row mb-3">
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">Monto Original</small><br>
+                                                    <strong>$@credito.MontoOriginal.ToString("N2")</strong>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">Saldo Actual</small><br>
+                                                    <strong>$@credito.SaldoActual.ToString("N2")</strong>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">Cuotas</small><br>
+                                                    <strong>@credito.CuotasPagadas / @credito.TotalCuotas</strong>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">Mora</small><br>
+                                                    <strong class="text-danger">$@credito.MontoMora.ToString("N2")</strong>
+                                                </div>
+                                            </div>
+                                            
+                                            <h6>Cuotas Vencidas</h6>
+                                            <table class="table table-sm table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Vencimiento</th>
+                                                        <th>Capital</th>
+                                                        <th>Interés</th>
+                                                        <th>Días Atraso</th>
+                                                        <th>Mora</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var cuota in credito.CuotasDetalle)
+                                                    {
+                                                        <tr>
+                                                            <td>@cuota.NumeroCuota</td>
+                                                            <td>@cuota.FechaVencimiento.ToString("dd/MM/yyyy")</td>
+                                                            <td>$@cuota.MontoCapital.ToString("N2")</td>
+                                                            <td>$@cuota.MontoInteres.ToString("N2")</td>
+                                                            <td class="text-danger">@cuota.DiasAtraso</td>
+                                                            <td>$@cuota.MontoMora.ToString("N2")</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                            
+                                            <div class="btn-group btn-group-sm">
+                                                @if (Model.AlertasActivas.Any(a => a.CreditoId == credito.CreditoId))
+                                                {
+                                                    var alertaCredito = Model.AlertasActivas.First(a => a.CreditoId == credito.CreditoId);
+                                                    <a asp-action="RegistrarPromesa" asp-route-alertaId="@alertaCredito.Id" asp-route-clienteId="@Model.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-info">
+                                                        <i class="bi bi-calendar-plus me-1"></i>Promesa de Pago
+                                                    </a>
+                                                    <a asp-action="CrearAcuerdo" asp-route-alertaId="@alertaCredito.Id" asp-route-clienteId="@Model.ClienteId" asp-route-creditoId="@credito.CreditoId" asp-route-returnUrl="@listReturnUrl" class="btn btn-primary">
+                                                        <i class="bi bi-file-earmark-plus me-1"></i>Crear Acuerdo
+                                                    </a>
+                                                }
+                                                <a asp-controller="Credito" asp-action="Details" asp-route-id="@credito.CreditoId" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-secondary">
+                                                    <i class="bi bi-eye me-1"></i>Ver Crédito
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Alertas Activas -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-bell me-2"></i>Alertas Activas (@Model.AlertasActivas.Count)</h6>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.AlertasActivas.Any())
+                    {
+                        <div class="text-center py-3">
+                            <i class="bi bi-check-circle text-success fs-4"></i>
+                            <p class="text-muted mb-0">Sin alertas activas</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Mensaje</th>
+                                    <th>Prioridad</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var alerta in Model.AlertasActivas.Take(5))
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-@alerta.ColorAlerta">@alerta.TipoNombre</span>
+                                        </td>
+                                        <td>@alerta.Mensaje.Substring(0, Math.Min(50, alerta.Mensaje.Length))...</td>
+                                        <td>
+                                            <span class="badge bg-@(alerta.Prioridad == PrioridadAlerta.Critica ? "dark" : alerta.Prioridad == PrioridadAlerta.Alta ? "danger" : "warning")">
+                                                @alerta.Prioridad
+                                            </span>
+                                        </td>
+                                        <td>@alerta.CreatedAt.ToString("dd/MM")</td>
+                                        <td>
+                                            <form asp-action="Resolver" asp-route-id="@alerta.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="rowVersion" value="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")" />
+                                                <input type="hidden" name="returnUrl" value="@listReturnUrl" />
+                                                <button type="submit" class="btn btn-sm btn-success" title="Resolver">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+
+            <!-- Historial de Contactos -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Historial de Contactos (@Model.HistorialContactos.Count)</h6>
+                    <a asp-action="RegistrarContacto" asp-route-clienteId="@Model.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-sm btn-light">
+                        <i class="bi bi-plus-lg"></i> Nuevo
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    @if (!Model.HistorialContactos.Any())
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-chat-dots fs-1 text-muted"></i>
+                            <p class="text-muted mt-2">No hay contactos registrados</p>
+                            <a asp-action="RegistrarContacto" asp-route-clienteId="@Model.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-success">
+                                <i class="bi bi-telephone-plus me-2"></i>Registrar Primer Contacto
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var contacto in Model.HistorialContactos.Take(10))
+                            {
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <span class="badge bg-secondary me-2">@contacto.TipoContactoNombre</span>
+                                            <span class="badge bg-@contacto.ResultadoColor">@contacto.ResultadoNombre</span>
+                                            @if (contacto.DuracionMinutos.HasValue)
+                                            {
+                                                <span class="text-muted ms-2"><i class="bi bi-clock"></i> @contacto.DuracionMinutos min</span>
+                                            }
+                                        </div>
+                                        <small class="text-muted">@contacto.FechaContacto.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(contacto.Observaciones))
+                                    {
+                                        <p class="mb-1 mt-2 small">@contacto.Observaciones</p>
+                                    }
+                                    @if (contacto.FechaPromesaPago.HasValue)
+                                    {
+                                        <div class="mt-1">
+                                            <span class="badge bg-info">
+                                                <i class="bi bi-calendar-check me-1"></i>
+                                                Promesa: @contacto.FechaPromesaPago.Value.ToString("dd/MM/yyyy") - $@contacto.MontoPromesaPago?.ToString("N2")
+                                            </span>
+                                        </div>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+
+            <!-- Acuerdos de Pago -->
+            @if (Model.Acuerdos.Any())
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Acuerdos de Pago (@Model.Acuerdos.Count)</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Monto Total</th>
+                                    <th>Pagado</th>
+                                    <th>Cuotas</th>
+                                    <th>Próx. Vto.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var acuerdo in Model.Acuerdos)
+                                {
+                                    <tr>
+                                        <td><strong>@acuerdo.NumeroAcuerdo</strong></td>
+                                        <td>@acuerdo.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                                        <td><span class="badge bg-@acuerdo.EstadoColor">@acuerdo.EstadoNombre</span></td>
+                                        <td>$@acuerdo.MontoTotal.ToString("N2")</td>
+                                        <td>$@acuerdo.MontoPagado.ToString("N2")</td>
+                                        <td>@acuerdo.CuotasPagadas / @acuerdo.TotalCuotas</td>
+                                        <td>@(acuerdo.ProximaFechaVencimiento?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Promesa Incumplida -->
+<div class="modal fade" id="modalIncumplida" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="MarcarPromesaIncumplida" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="alertaId" id="alertaIdIncumplida" />
+                <input type="hidden" name="clienteId" value="@Model.ClienteId" />
+                <input type="hidden" name="returnUrl" value="@listReturnUrl" />
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Marcar Promesa Incumplida</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea name="observaciones" class="form-control" rows="3" placeholder="Motivo del incumplimiento..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Marcar Incumplida</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('modalIncumplida')?.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var alertaId = button.getAttribute('data-alerta');
+            document.getElementById('alertaIdIncumplida').value = alertaId;
+        });
+    </script>
+}

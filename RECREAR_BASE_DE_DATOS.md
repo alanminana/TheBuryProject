@@ -164,6 +164,23 @@ Después de recrear la base de datos:
 - Verifica que SQL Server LocalDB esté corriendo
 - Ejecuta: `sqllocaldb start mssqllocaldb`
 
+### Error: "Cannot create file '...TheBuryProjectDb.mdf' because it already exists" (SQL Error 5170)
+Esto pasa cuando quedó un archivo `.mdf` “huérfano” en disco y LocalDB intenta crear la base con el mismo nombre/ruta.
+
+Pasos (desarrollo):
+1. Detener LocalDB:
+   - `sqllocaldb stop mssqllocaldb`
+2. Borrar los archivos huérfanos (si existen):
+   - `C:\Users\<tu_usuario>\TheBuryProjectDb.mdf`
+   - `C:\Users\<tu_usuario>\TheBuryProjectDb_log.ldf` (si existe)
+3. Volver a iniciar LocalDB:
+   - `sqllocaldb start mssqllocaldb`
+4. Recrear la base:
+   - `dotnet ef database drop --force`
+   - `dotnet ef database update`
+
+Si no querés borrar archivos manualmente, alternativa: cambiar temporalmente el nombre de la DB en `appsettings.Development.json` (por ejemplo `TheBuryProjectDb_Dev`) para regenerar una base limpia.
+
 ---
 
 ## 💡 Consejo

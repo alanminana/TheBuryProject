@@ -17,11 +17,16 @@ namespace TheBuryProject.Services
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly ILogger<VentaService> _logger;
+        private readonly IPrecioService _precioService;
         private readonly IConfiguracionPagoService _configuracionPagoService;
         private readonly IAlertaStockService _alertaStockService;
+        private readonly IMovimientoStockService _movimientoStockService;
         private readonly IFinancialCalculationService _financialService;
         private readonly IVentaValidator _validator;
         private readonly VentaNumberGenerator _numberGenerator;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IValidacionVentaService _validacionVentaService;
+        private readonly ICajaService _cajaService;
 
         public VentaService(
             AppDbContext context,
@@ -29,18 +34,28 @@ namespace TheBuryProject.Services
             ILogger<VentaService> logger,
             IConfiguracionPagoService configuracionPagoService,
             IAlertaStockService alertaStockService,
+            IMovimientoStockService movimientoStockService,
             IFinancialCalculationService financialService,
             IVentaValidator validator,
-            VentaNumberGenerator numberGenerator)
+            VentaNumberGenerator numberGenerator,
+            IPrecioService precioService,
+            IHttpContextAccessor httpContextAccessor,
+            IValidacionVentaService validacionVentaService,
+            ICajaService cajaService)
         {
             _context = context;
             _mapper = mapper;
             _logger = logger;
             _configuracionPagoService = configuracionPagoService;
             _alertaStockService = alertaStockService;
+            _movimientoStockService = movimientoStockService;
             _financialService = financialService;
             _validator = validator;
             _numberGenerator = numberGenerator;
+            _precioService = precioService;
+            _httpContextAccessor = httpContextAccessor;
+            _validacionVentaService = validacionVentaService;
+            _cajaService = cajaService;
         }
 
         #region Consultas
@@ -50,10 +65,13 @@ namespace TheBuryProject.Services
             var query = _context.Ventas
                 .Include(v => v.Cliente)
                 .Include(v => v.Credito)
-                .Include(v => v.Detalles).ThenInclude(d => d.Producto)
+                .Include(v => v.Detalles.Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted)).ThenInclude(d => d.Producto)
                 .Include(v => v.DatosTarjeta)
                 .Include(v => v.DatosCheque)
-                .Where(v => !v.IsDeleted)
+                .Where(v =>
+                    !v.IsDeleted &&
+                    (v.Cliente == null || !v.Cliente.IsDeleted) &&
+                    (v.Credito == null || (!v.Credito.IsDeleted && v.Credito.Cliente != null && !v.Credito.Cliente.IsDeleted)))
                 .AsQueryable();
 
             query = AplicarFiltros(query, filter);
@@ -71,23 +89,33 @@ namespace TheBuryProject.Services
             var venta = await _context.Ventas
                 .Include(v => v.Cliente)
                 .Include(v => v.Credito)
-                .Include(v => v.Detalles).ThenInclude(d => d.Producto)
+                .Include(v => v.Detalles.Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted)).ThenInclude(d => d.Producto)
                 .Include(v => v.Facturas)
                 .Include(v => v.DatosTarjeta).ThenInclude(dt => dt!.ConfiguracionTarjeta)
                 .Include(v => v.DatosCheque)
                 .Include(v => v.VentaCreditoCuotas.OrderBy(c => c.NumeroCuota))
-                .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
+                .FirstOrDefaultAsync(v =>
+                    v.Id == id &&
+                    !v.IsDeleted &&
+                    (v.Cliente == null || !v.Cliente.IsDeleted) &&
+                    (v.Credito == null || (!v.Credito.IsDeleted && v.Credito.Cliente != null && !v.Credito.Cliente.IsDeleted)));
 
             if (venta == null)
                 return null;
 
             var viewModel = _mapper.Map<VentaViewModel>(venta);
 
-            if (venta.TipoPago == TipoPago.CreditoPersonal &&
+            // Mapear estado del crédito para control de flujo en la vista
+            if (venta.Credito != null)
+            {
+                viewModel.CreditoEstado = venta.Credito.Estado;
+            }
+
+            if (venta.TipoPago == TipoPago.CreditoPersonall &&
                 venta.CreditoId.HasValue &&
                 venta.VentaCreditoCuotas.Any())
             {
-                viewModel.DatosCreditoPersonal = await ObtenerDatosCreditoVentaAsync(id);
+                viewModel.DatosCreditoPersonall = await ObtenerDatosCreditoVentaAsync(id);
             }
 
             return viewModel;
@@ -99,6 +127,14 @@ namespace TheBuryProject.Services
 
         public async Task<VentaViewModel> CreateAsync(VentaViewModel viewModel)
         {
+            // ✅ Validar que haya al menos una caja abierta antes de permitir ventas
+            if (!await _cajaService.ExisteAlgunaCajaAbiertaAsync())
+            {
+                throw new InvalidOperationException(
+                    "No se puede registrar la venta: no hay ninguna caja abierta. " +
+                    "Por favor, abra una caja antes de realizar ventas.");
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
@@ -109,19 +145,59 @@ namespace TheBuryProject.Services
 
                 AgregarDetalles(venta, viewModel.Detalles);
 
+                await AplicarPrecioVigenteADetallesAsync(venta);
+
                 CalcularTotales(venta);
 
-                await VerificarAutorizacionSiCorrespondeAsync(venta, viewModel);
+                // Validación unificada para crédito personal
+                ValidacionVentaResult? validacion = null;
+                if (viewModel.TipoPago == TipoPago.CreditoPersonall)
+                {
+                    validacion = await _validacionVentaService.ValidarVentaCreditoPersonalAsync(
+                        viewModel.ClienteId, 
+                        venta.Total, 
+                        viewModel.CreditoId);
+
+                    // E2: Si NoViable, rechazar guardado completamente
+                    if (validacion.NoViable)
+                    {
+                        throw new InvalidOperationException(
+                            $"No es posible crear la venta con crédito personal. {validacion.MensajeResumen}");
+                    }
+
+                    await AplicarResultadoValidacionAsync(venta, validacion);
+                }
+                else
+                {
+                    await VerificarAutorizacionSiCorrespondeAsync(venta, viewModel);
+                }
 
                 _context.Ventas.Add(venta);
                 await _context.SaveChangesAsync();
 
-                await GuardarDatosAdicionales(venta.Id, viewModel);
+                // Para crédito personal, crear el crédito inmediatamente después de guardar la venta
+                if (viewModel.TipoPago == TipoPago.CreditoPersonall && 
+                    venta.Estado == EstadoVenta.PendienteFinanciacion &&
+                    !venta.CreditoId.HasValue)
+                {
+                    await CrearCreditoPendienteParaVentaAsync(venta);
+                }
+
+                // Solo guardar datos adicionales de crédito si no hay requisitos pendientes
+                if (venta.Estado != EstadoVenta.PendienteRequisitos && 
+                    venta.Estado != EstadoVenta.PendienteFinanciacion)
+                {
+                    await GuardarDatosAdicionales(venta.Id, viewModel);
+                }
 
                 await transaction.CommitAsync();
 
-                _logger.LogInformation("Venta {Numero} creada exitosamente", venta.Numero);
-                return _mapper.Map<VentaViewModel>(venta);
+                var resultado = _mapper.Map<VentaViewModel>(venta);
+                resultado.ValidacionCredito = validacion;
+                resultado.CreditoId = venta.CreditoId; // Asegurar que el CreditoId se propague
+
+                _logger.LogInformation("Venta {Numero} creada exitosamente. Estado: {Estado}", venta.Numero, venta.Estado);
+                return resultado;
             }
             catch (Exception ex)
             {
@@ -129,6 +205,93 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al crear venta");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Aplica el resultado de la validación de crédito a la venta.
+        /// NOTA: Si NoViable=true, esta función no debe ser llamada (se rechaza antes).
+        /// Para crédito personal aprobable:
+        /// - Crea el crédito en estado PendienteConfiguracion
+        /// - Pone la venta en estado PendienteFinanciacion
+        /// </summary>
+        private async Task AplicarResultadoValidacionAsync(Venta venta, ValidacionVentaResult validacion)
+        {
+            // Seguridad: NoViable nunca debería llegar aquí, pero por si acaso
+            if (validacion.NoViable)
+            {
+                throw new InvalidOperationException(
+                    $"Error interno: Se intentó aplicar validación NoViable. {validacion.MensajeResumen}");
+            }
+
+            if (validacion.RequiereAutorizacion)
+            {
+                // E2: Guardar venta en estado PendienteAutorizacion con razones persistidas
+                venta.RequiereAutorizacion = true;
+                venta.Estado = EstadoVenta.PendienteFinanciacion; // También PendienteFinanciacion
+                venta.EstadoAutorizacion = EstadoAutorizacionVenta.PendienteAutorizacion;
+                venta.FechaSolicitudAutorizacion = DateTime.UtcNow;
+                venta.RazonesAutorizacionJson = System.Text.Json.JsonSerializer.Serialize(
+                    validacion.RazonesAutorizacion.Select(r => new { r.Tipo, r.Descripcion, r.DetalleAdicional }));
+
+                _logger.LogInformation(
+                    "Venta requiere autorización. Razones: {Razones}",
+                    validacion.MensajeResumen);
+            }
+            else
+            {
+                // Aprobable - Crear crédito y poner venta en PendienteFinanciacion
+                venta.RequiereAutorizacion = false;
+                venta.EstadoAutorizacion = EstadoAutorizacionVenta.NoRequiere;
+                venta.Estado = EstadoVenta.PendienteFinanciacion;
+                
+                _logger.LogInformation(
+                    "Venta con crédito personal aprobable. Estado: {Estado}. Crédito será creado después de persistir.",
+                    venta.Estado);
+            }
+
+            await Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Crea el crédito para una venta con CreditoPersonal después de que la venta fue guardada.
+        /// </summary>
+        private async Task CrearCreditoPendienteParaVentaAsync(Venta venta)
+        {
+            // Generar número de crédito
+            var ultimoCredito = await _context.Creditos
+                .OrderByDescending(c => c.Id)
+                .FirstOrDefaultAsync();
+            var numeroSecuencial = ultimoCredito != null ? ultimoCredito.Id + 1 : 1;
+            var numeroCredito = $"CRE-{DateTime.UtcNow:yyyyMM}-{numeroSecuencial:D6}";
+
+            // Obtener puntaje de riesgo del cliente
+            var cliente = await _context.Clientes.FindAsync(venta.ClienteId);
+            var puntajeRiesgo = cliente?.PuntajeRiesgo ?? 0;
+
+            var credito = new Credito
+            {
+                ClienteId = venta.ClienteId,
+                Numero = numeroCredito,
+                MontoSolicitado = venta.Total,
+                MontoAprobado = venta.Total,
+                SaldoPendiente = venta.Total,
+                TasaInteres = 0, // Se configurará después
+                CantidadCuotas = 0, // Se configurará después
+                Estado = EstadoCredito.PendienteConfiguracion,
+                FechaSolicitud = DateTime.UtcNow,
+                PuntajeRiesgoInicial = puntajeRiesgo
+            };
+
+            _context.Creditos.Add(credito);
+            await _context.SaveChangesAsync();
+
+            // Asociar crédito a la venta
+            venta.CreditoId = credito.Id;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Crédito {NumeroCredito} (PendienteConfiguracion) creado y asociado a venta {VentaId}",
+                numeroCredito, venta.Id);
         }
 
         public async Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel)
@@ -142,13 +305,29 @@ namespace TheBuryProject.Services
 
             _validator.ValidarEstadoParaEdicion(venta);
 
+            if (viewModel.RowVersion == null || viewModel.RowVersion.Length == 0)
+                throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la venta e intentá nuevamente.");
+
+            _context.Entry(venta).Property(v => v.RowVersion).OriginalValue = viewModel.RowVersion;
+
             ActualizarDatosVenta(venta, viewModel);
             ActualizarDetalles(venta, viewModel.Detalles);
+
+            await AplicarPrecioVigenteADetallesAsync(venta);
+
             CalcularTotales(venta);
 
             await VerificarAutorizacionSiCorrespondeAsync(venta, viewModel);
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new InvalidOperationException(
+                    "La venta fue modificada por otro usuario. Recargá la página y volvé a intentar.");
+            }
 
             _logger.LogInformation("Venta {Id} actualizada exitosamente", id);
             return _mapper.Map<VentaViewModel>(venta);
@@ -156,7 +335,8 @@ namespace TheBuryProject.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var venta = await _context.Ventas.FindAsync(id);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
             if (venta == null)
                 return false;
 
@@ -183,23 +363,62 @@ namespace TheBuryProject.Services
                 if (venta == null)
                     return false;
 
+                // Validación previa del estado
                 _validator.ValidarEstadoParaConfirmacion(venta);
-                _validator.ValidarAutorizacion(venta);
                 _validator.ValidarStock(venta);
+
+                // Para crédito personal, re-validar requisitos antes de confirmar
+                if (venta.TipoPago == TipoPago.CreditoPersonall)
+                {
+                    var validacion = await _validacionVentaService.ValidarConfirmacionVentaAsync(id);
+                    
+                    if (validacion.PendienteRequisitos)
+                    {
+                        throw new InvalidOperationException(
+                            $"No se puede confirmar la venta. {validacion.MensajeResumen}");
+                    }
+
+                    if (validacion.RequiereAutorizacion && venta.EstadoAutorizacion != EstadoAutorizacionVenta.Autorizada)
+                    {
+                        throw new InvalidOperationException(
+                            $"La venta requiere autorización. {validacion.MensajeResumen}");
+                    }
+                }
+                else
+                {
+                    _validator.ValidarAutorizacion(venta);
+                }
 
                 await DescontarStockYRegistrarMovimientos(venta);
 
-                if (venta.TipoPago == TipoPago.CreditoPersonal && venta.CreditoId.HasValue)
+                // E4: Procesar crédito personal solo si hay datos JSON y la venta está autorizada
+                if (venta.TipoPago == TipoPago.CreditoPersonall && 
+                    !string.IsNullOrEmpty(venta.DatosCreditoPersonallJson))
                 {
-                    await ProcesarCreditoPersonalVentaAsync(venta);
+                    // Verificar que la venta esté autorizada (o no requiera autorización)
+                    if (venta.RequiereAutorizacion && venta.EstadoAutorizacion != EstadoAutorizacionVenta.Autorizada)
+                    {
+                        throw new InvalidOperationException(
+                            "No se puede crear el crédito: la venta requiere autorización y no está autorizada.");
+                    }
+
+                    // E4: Crear cuotas y asignar CreditoId desde JSON (solo al confirmar post-autorización)
+                    await CrearCreditoDefinitivoDesdeJsonAsync(venta);
                 }
 
                 await GenerarAlertasStockBajo(venta);
 
                 venta.Estado = EstadoVenta.Confirmada;
-                venta.FechaConfirmacion = DateTime.Now;
+                venta.FechaConfirmacion = DateTime.UtcNow;
+                // Limpiar requisitos pendientes y datos temporales al confirmar
+                venta.RequisitosPendientesJson = null;
+                venta.DatosCreditoPersonallJson = null;
 
                 await _context.SaveChangesAsync();
+
+                // NOTA: El movimiento de caja se registra al FACTURAR, no al confirmar
+                // Esto permite que el cobro real coincida con el documento fiscal
+
                 await transaction.CommitAsync();
 
                 _logger.LogInformation("Venta {Id} confirmada exitosamente", id);
@@ -213,9 +432,136 @@ namespace TheBuryProject.Services
             }
         }
 
+        /// <summary>
+        /// Confirma una venta con crédito personal ya configurado: genera cuotas y marca crédito como Generado.
+        /// Este método asume que el crédito ya pasó por ConfigurarVenta (estado = Configurado).
+        /// </summary>
+        public async Task<bool> ConfirmarVentaCreditoAsync(int id)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var venta = await CargarVentaCompleta(id);
+                if (venta == null)
+                    return false;
+
+                if (venta.TipoPago != TipoPago.CreditoPersonall)
+                    throw new InvalidOperationException("Esta venta no es de tipo Crédito Personal.");
+
+                if (!venta.CreditoId.HasValue)
+                    throw new InvalidOperationException("La venta no tiene un crédito asociado.");
+
+                var credito = await _context.Creditos.FindAsync(venta.CreditoId.Value);
+                if (credito == null)
+                    throw new InvalidOperationException("Crédito no encontrado.");
+
+                // Permitir confirmar si el crédito está Configurado O si la venta tiene el flag
+                if (credito.Estado != EstadoCredito.Configurado && !venta.FechaConfiguracionCredito.HasValue)
+                    throw new InvalidOperationException(
+                        $"El crédito debe estar en estado Configurado para confirmar. Estado actual: {credito.Estado}");
+
+                // Si el crédito no está en Configurado pero la venta tiene el flag, corregir el estado
+                if (credito.Estado != EstadoCredito.Configurado && venta.FechaConfiguracionCredito.HasValue)
+                {
+                    _logger.LogWarning(
+                        "Corrigiendo estado de crédito {CreditoId} de {EstadoActual} a Configurado (flag presente en venta)",
+                        credito.Id, credito.Estado);
+                    credito.Estado = EstadoCredito.Configurado;
+                }
+
+                // Validar stock antes de confirmar
+                _validator.ValidarStock(venta);
+                _validator.ValidarAutorizacion(venta);
+
+                await DescontarStockYRegistrarMovimientos(venta);
+
+                // Generar las cuotas del crédito
+                await GenerarCuotasCreditoAsync(credito, venta.Total);
+
+                // Marcar crédito como Generado
+                credito.Estado = EstadoCredito.Generado;
+                credito.FechaAprobacion = DateTime.UtcNow;
+
+                await GenerarAlertasStockBajo(venta);
+
+                venta.Estado = EstadoVenta.Confirmada;
+                venta.FechaConfirmacion = DateTime.UtcNow;
+                venta.RequisitosPendientesJson = null;
+
+                await _context.SaveChangesAsync();
+
+                // ✅ Registrar anticipo en caja si lo hay (anticipo = total venta - monto financiado)
+                var anticipo = venta.Total - credito.MontoAprobado;
+                if (anticipo > 0)
+                {
+                    var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
+                    await _cajaService.RegistrarMovimientoAnticipoAsync(
+                        credito.Id,
+                        credito.Numero,
+                        anticipo,
+                        usuario);
+                }
+
+                await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    "Venta {VentaId} confirmada con crédito {CreditoId} generado ({Cuotas} cuotas)",
+                    id, credito.Id, credito.CantidadCuotas);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error al confirmar venta con crédito {Id}", id);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Genera las cuotas del crédito según la configuración del plan
+        /// </summary>
+        private async Task GenerarCuotasCreditoAsync(Credito credito, decimal montoVenta)
+        {
+            // Calcular cuota usando el servicio financiero
+            var montoFinanciado = credito.MontoAprobado > 0 ? credito.MontoAprobado : montoVenta;
+            var tasaDecimal = credito.TasaInteres / 100m;
+            var cuotaMensual = _financialService.ComputePmt(tasaDecimal, credito.CantidadCuotas, montoFinanciado);
+
+            // Calcular componentes de la cuota (sistema francés simplificado)
+            var interesTotal = (cuotaMensual * credito.CantidadCuotas) - montoFinanciado;
+            var capitalPorCuota = montoFinanciado / credito.CantidadCuotas;
+            var interesPorCuota = interesTotal / credito.CantidadCuotas;
+
+            credito.MontoCuota = cuotaMensual;
+            credito.TotalAPagar = cuotaMensual * credito.CantidadCuotas;
+            credito.SaldoPendiente = credito.TotalAPagar;
+
+            // Crear las cuotas
+            var fechaCuota = credito.FechaPrimeraCuota ?? DateTime.Today.AddMonths(1);
+            for (int i = 1; i <= credito.CantidadCuotas; i++)
+            {
+                var cuota = new Cuota
+                {
+                    CreditoId = credito.Id,
+                    NumeroCuota = i,
+                    MontoCapital = capitalPorCuota,
+                    MontoInteres = interesPorCuota,
+                    MontoTotal = cuotaMensual,
+                    FechaVencimiento = fechaCuota,
+                    Estado = EstadoCuota.Pendiente
+                };
+                _context.Cuotas.Add(cuota);
+                fechaCuota = fechaCuota.AddMonths(1);
+            }
+
+            await Task.CompletedTask;
+        }
+
         public async Task AsociarCreditoAVentaAsync(int ventaId, int creditoId)
         {
-            var venta = await _context.Ventas.FindAsync(ventaId);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
             if (venta == null)
                 throw new InvalidOperationException(VentaConstants.ErrorMessages.VENTA_NO_ENCONTRADA);
 
@@ -240,13 +586,22 @@ namespace TheBuryProject.Services
                     await DevolverStock(venta, motivo);
                 }
 
-                if (venta.TipoPago == TipoPago.CreditoPersonal)
+                if (venta.TipoPago == TipoPago.CreditoPersonall)
                 {
-                    await RestaurarCreditoPersonal(venta);
+                    // Si la venta fue confirmada, restaurar el crédito
+                    if (venta.Estado == EstadoVenta.Confirmada || venta.Estado == EstadoVenta.Facturada)
+                    {
+                        await RestaurarCreditoPersonall(venta);
+                    }
+                    else
+                    {
+                        // Si la venta nunca fue confirmada, solo limpiar datos temporales
+                        await LimpiarDatosCreditoVentaAsync(venta);
+                    }
                 }
 
                 venta.Estado = EstadoVenta.Cancelada;
-                venta.FechaCancelacion = DateTime.Now;
+                venta.FechaCancelacion = DateTime.UtcNow;
                 venta.MotivoCancelacion = motivo;
 
                 await _context.SaveChangesAsync();
@@ -282,9 +637,22 @@ namespace TheBuryProject.Services
             _context.Facturas.Add(factura);
 
             venta.Estado = EstadoVenta.Facturada;
-            venta.FechaFacturacion = DateTime.Now;
+            venta.FechaFacturacion = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            // ✅ Registrar movimiento de caja al facturar (solo para ventas que NO son crédito personal)
+            // Las ventas a crédito se cobran vía cuotas, no al facturar
+            if (venta.TipoPago != TipoPago.CreditoPersonall)
+            {
+                var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
+                await _cajaService.RegistrarMovimientoVentaAsync(
+                    venta.Id,
+                    venta.Numero,
+                    venta.Total,
+                    venta.TipoPago,
+                    usuario);
+            }
 
             _logger.LogInformation("Venta {Id} facturada con factura {NumeroFactura}", id, factura.Numero);
             return true;
@@ -293,7 +661,7 @@ namespace TheBuryProject.Services
         public async Task<bool> ValidarStockAsync(int ventaId)
         {
             var venta = await _context.Ventas
-                .Include(v => v.Detalles).ThenInclude(d => d.Producto)
+                .Include(v => v.Detalles.Where(d => !d.IsDeleted)).ThenInclude(d => d.Producto)
                 .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
 
             if (venta == null)
@@ -316,14 +684,15 @@ namespace TheBuryProject.Services
 
         public async Task<bool> SolicitarAutorizacionAsync(int id, string usuarioSolicita, string motivo)
         {
-            var venta = await _context.Ventas.FindAsync(id);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
             if (venta == null)
                 return false;
 
             venta.RequiereAutorizacion = true;
             venta.EstadoAutorizacion = EstadoAutorizacionVenta.PendienteAutorizacion;
             venta.UsuarioSolicita = usuarioSolicita;
-            venta.FechaSolicitudAutorizacion = DateTime.Now;
+            venta.FechaSolicitudAutorizacion = DateTime.UtcNow;
             venta.MotivoAutorizacion = motivo;
 
             await _context.SaveChangesAsync();
@@ -334,35 +703,49 @@ namespace TheBuryProject.Services
 
         public async Task<bool> AutorizarVentaAsync(int id, string usuarioAutoriza, string motivo)
         {
-            var venta = await _context.Ventas.FindAsync(id);
+            // E3: Motivo/observación es obligatorio
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                throw new ArgumentException(
+                    "El motivo/observación es obligatorio para autorizar una venta.",
+                    nameof(motivo));
+            }
+
+            // E3: Solo se puede autorizar si está en PendienteAutorizacion
+            var venta = await ObtenerVentaPendienteAutorizacionAsync(id);
             if (venta == null)
                 return false;
 
-            _validator.ValidarEstadoAutorizacion(venta, EstadoAutorizacionVenta.PendienteAutorizacion);
-
+            // E3: Registrar auditoría completa
             venta.EstadoAutorizacion = EstadoAutorizacionVenta.Autorizada;
             venta.UsuarioAutoriza = usuarioAutoriza;
-            venta.FechaAutorizacion = DateTime.Now;
-            venta.MotivoAutorizacion = motivo;
+            venta.FechaAutorizacion = DateTime.UtcNow;
+            venta.MotivoAutorizacion = motivo.Trim();
+            
+            // Las razones autorizadas ya están en RazonesAutorizacionJson (guardadas al crear)
+            // No se modifican, quedan como registro de qué se autorizó
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Venta {Id} autorizada por {Usuario}", id, usuarioAutoriza);
+            _logger.LogInformation(
+                "Venta {Id} autorizada por {Usuario}. Motivo: {Motivo}. Razones: {Razones}",
+                id, usuarioAutoriza, motivo, venta.RazonesAutorizacionJson ?? "N/A");
             return true;
         }
 
         public async Task<bool> RechazarVentaAsync(int id, string usuarioAutoriza, string motivo)
         {
-            var venta = await _context.Ventas.FindAsync(id);
+            var venta = await ObtenerVentaPendienteAutorizacionAsync(id);
             if (venta == null)
                 return false;
 
-            _validator.ValidarEstadoAutorizacion(venta, EstadoAutorizacionVenta.PendienteAutorizacion);
-
             venta.EstadoAutorizacion = EstadoAutorizacionVenta.Rechazada;
             venta.UsuarioAutoriza = usuarioAutoriza;
-            venta.FechaAutorizacion = DateTime.Now;
+            venta.FechaAutorizacion = DateTime.UtcNow;
             venta.MotivoRechazo = motivo;
+
+            // Limpiar datos de crédito al rechazar para evitar "créditos fantasma"
+            await LimpiarDatosCreditoVentaAsync(venta);
 
             await _context.SaveChangesAsync();
 
@@ -370,19 +753,45 @@ namespace TheBuryProject.Services
             return true;
         }
 
+        /// <summary>
+        /// Limpia todos los datos de crédito asociados a una venta rechazada o cancelada.
+        /// </summary>
+        private async Task LimpiarDatosCreditoVentaAsync(Venta venta)
+        {
+            // Limpiar plan de crédito JSON temporal
+            venta.DatosCreditoPersonallJson = null;
+
+            // Eliminar cuotas si existen (no deberían existir si el flujo es correcto)
+            var cuotasExistentes = await _context.VentaCreditoCuotas
+                .Where(c => c.VentaId == venta.Id)
+                .ToListAsync();
+
+            if (cuotasExistentes.Any())
+            {
+                _context.VentaCreditoCuotas.RemoveRange(cuotasExistentes);
+                _logger.LogWarning(
+                    "Se eliminaron {Count} cuotas huérfanas de la venta rechazada {VentaId}",
+                    cuotasExistentes.Count, venta.Id);
+            }
+
+            // Limpiar asociación con crédito
+            venta.CreditoId = null;
+
+            _logger.LogInformation("Datos de crédito limpiados para venta {VentaId}", venta.Id);
+        }
+
         public async Task<bool> RequiereAutorizacionAsync(VentaViewModel viewModel)
         {
-            if (viewModel.TipoPago != TipoPago.CreditoPersonal)
+            if (viewModel.TipoPago != TipoPago.CreditoPersonall)
                 return false;
 
-            var cliente = await _context.Clientes
-                .Include(c => c.Creditos)
-                .FirstOrDefaultAsync(c => c.Id == viewModel.ClienteId);
+            // Usar el servicio de validación unificado
+            var validacion = await _validacionVentaService.ValidarVentaCreditoPersonalAsync(
+                viewModel.ClienteId, 
+                viewModel.Total, 
+                viewModel.CreditoId);
 
-            if (cliente == null)
-                return false;
-
-            return await ValidarLimiteCreditoClienteAsync(cliente, viewModel.Total);
+            return validacion.RequiereAutorizacion;
         }
 
         #endregion
@@ -391,7 +800,8 @@ namespace TheBuryProject.Services
 
         public async Task<DatosTarjetaViewModel> CalcularCuotasTarjetaAsync(int tarjetaId, decimal monto, int cuotas)
         {
-            var configuracion = await _context.ConfiguracionesTarjeta.FindAsync(tarjetaId);
+            var configuracion = await _context.ConfiguracionesTarjeta
+                .FirstOrDefaultAsync(t => t.Id == tarjetaId && !t.IsDeleted);
             if (configuracion == null)
                 throw new InvalidOperationException("ConfiguraciÃ³n de tarjeta no encontrada");
 
@@ -426,7 +836,8 @@ namespace TheBuryProject.Services
 
         public async Task<bool> GuardarDatosTarjetaAsync(int ventaId, DatosTarjetaViewModel datosTarjeta)
         {
-            var venta = await _context.Ventas.FindAsync(ventaId);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
             if (venta == null)
                 return false;
 
@@ -463,7 +874,7 @@ namespace TheBuryProject.Services
 
         #region MÃ©todos de CÃ¡lculo - CrÃ©dito Personal
 
-        public async Task<DatosCreditoPersonalViewModel> CalcularCreditoPersonalAsync(
+        public async Task<DatosCreditoPersonallViewModel> CalcularCreditoPersonallAsync(
             int creditoId,
             decimal montoAFinanciar,
             int cuotas,
@@ -471,7 +882,10 @@ namespace TheBuryProject.Services
         {
             var credito = await _context.Creditos
                 .Include(c => c.Cuotas)
-                .FirstOrDefaultAsync(c => c.Id == creditoId && !c.IsDeleted);
+                .FirstOrDefaultAsync(c => c.Id == creditoId &&
+                                          !c.IsDeleted &&
+                                          c.Cliente != null &&
+                                          !c.Cliente.IsDeleted);
 
             if (credito == null)
                 throw new InvalidOperationException(VentaConstants.ErrorMessages.CREDITO_NO_ENCONTRADO);
@@ -493,26 +907,33 @@ namespace TheBuryProject.Services
             var totalAPagar = _financialService.CalcularTotalConInteres(
                 montoAFinanciar, tasaDecimal, cuotas);
 
-            return GenerarDatosCreditoPersonal(
+            return GenerarDatosCreditoPersonall(
                 credito, montoAFinanciar, cuotas, montoCuota,
                 totalAPagar, fechaPrimeraCuota);
         }
 
-        public async Task<DatosCreditoPersonalViewModel?> ObtenerDatosCreditoVentaAsync(int ventaId)
+        public async Task<DatosCreditoPersonallViewModel?> ObtenerDatosCreditoVentaAsync(int ventaId)
         {
             var venta = await _context.Ventas
                 .Include(v => v.Credito)
+                    .ThenInclude(c => c!.Cliente)
                 .Include(v => v.VentaCreditoCuotas.OrderBy(c => c.NumeroCuota))
-                .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
+                .FirstOrDefaultAsync(v => v.Id == ventaId &&
+                                          !v.IsDeleted &&
+                                          v.CreditoId != null &&
+                                          v.Credito != null &&
+                                          !v.Credito.IsDeleted &&
+                                          v.Credito.Cliente != null &&
+                                          !v.Credito.Cliente.IsDeleted);
 
-            if (venta == null || venta.CreditoId == null || !venta.VentaCreditoCuotas.Any())
+            if (venta == null || !venta.VentaCreditoCuotas.Any())
                 return null;
 
             var credito = venta.Credito!;
             var totalCuotas = venta.VentaCreditoCuotas.Sum(c => c.Monto);
             var primeraCuota = venta.VentaCreditoCuotas.OrderBy(c => c.NumeroCuota).First();
 
-            var resultado = new DatosCreditoPersonalViewModel
+            var resultado = new DatosCreditoPersonallViewModel
             {
                 CreditoId = credito.Id,
                 CreditoNumero = credito.Numero,
@@ -543,7 +964,10 @@ namespace TheBuryProject.Services
         public async Task<bool> ValidarDisponibilidadCreditoAsync(int creditoId, decimal monto)
         {
             var credito = await _context.Creditos
-                .FirstOrDefaultAsync(c => c.Id == creditoId && !c.IsDeleted);
+                .FirstOrDefaultAsync(c => c.Id == creditoId &&
+                                          !c.IsDeleted &&
+                                          c.Cliente != null &&
+                                          !c.Cliente.IsDeleted);
 
             if (credito == null || credito.Estado != EstadoCredito.Activo)
                 return false;
@@ -562,7 +986,8 @@ namespace TheBuryProject.Services
 
         public async Task<bool> GuardarDatosChequeAsync(int ventaId, DatosChequeViewModel datosCheque)
         {
-            var venta = await _context.Ventas.FindAsync(ventaId);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
             if (venta == null)
                 return false;
 
@@ -611,16 +1036,31 @@ namespace TheBuryProject.Services
         private async Task<Venta?> CargarVentaCompleta(int id)
         {
             return await _context.Ventas
-                .Include(v => v.Detalles).ThenInclude(d => d.Producto)
+                .Include(v => v.Detalles.Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted)).ThenInclude(d => d.Producto)
                 .Include(v => v.Credito)
                 .Include(v => v.Cliente)
                 .Include(v => v.VentaCreditoCuotas)
+                .FirstOrDefaultAsync(v =>
+                    v.Id == id &&
+                    !v.IsDeleted &&
+                    (v.Cliente == null || !v.Cliente.IsDeleted) &&
+                    (v.Credito == null || (!v.Credito.IsDeleted && v.Credito.Cliente != null && !v.Credito.Cliente.IsDeleted)));
+        }
+
+        private async Task<Venta?> ObtenerVentaPendienteAutorizacionAsync(int id)
+        {
+            var venta = await _context.Ventas
                 .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
+            if (venta == null)
+                return null;
+
+            _validator.ValidarEstadoAutorizacion(venta, EstadoAutorizacionVenta.PendienteAutorizacion);
+            return venta;
         }
 
         private void CalcularTotales(Venta venta)
         {
-            var detallesList = venta.Detalles.ToList();
+            var detallesList = venta.Detalles.Where(d => !d.IsDeleted).ToList();
 
             var detalleRequests = detallesList
                 .Select(d => new DetalleCalculoVentaRequest
@@ -683,7 +1123,10 @@ namespace TheBuryProject.Services
 
         private void ActualizarDetalles(Venta venta, List<VentaDetalleViewModel> detallesVM)
         {
-            _context.VentaDetalles.RemoveRange(venta.Detalles);
+            foreach (var existente in venta.Detalles.Where(d => !d.IsDeleted))
+            {
+                existente.IsDeleted = true;
+            }
 
             foreach (var detalleVM in detallesVM)
             {
@@ -705,54 +1148,104 @@ namespace TheBuryProject.Services
 
         private async Task DescontarStockYRegistrarMovimientos(Venta venta)
         {
-            foreach (var detalle in venta.Detalles)
-            {
-                var stockAnterior = detalle.Producto.StockActual;
-                detalle.Producto.StockActual -= detalle.Cantidad;
+            var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
 
-                var movimiento = new MovimientoStock
-                {
-                    ProductoId = detalle.ProductoId,
-                    Tipo = TipoMovimiento.Salida,
-                    Cantidad = detalle.Cantidad,
-                    StockAnterior = stockAnterior,
-                    StockNuevo = detalle.Producto.StockActual,
-                    Referencia = $"Venta {venta.Numero}",
-                    Motivo = $"ConfirmaciÃ³n de venta - Cliente: {venta.Cliente.Nombre}"
-                };
+            var referencia = $"Venta {venta.Numero}";
+            var motivo = $"Confirmación de venta - Cliente: {venta.Cliente?.Nombre ?? "(sin cliente)"}";
 
-                _context.MovimientosStock.Add(movimiento);
-            }
+            var salidas = venta.Detalles
+                .Where(d => !d.IsDeleted)
+                .Select(d => (d.ProductoId, (decimal)d.Cantidad, (string?)referencia))
+                .ToList();
+
+            await _movimientoStockService.RegistrarSalidasAsync(
+                salidas,
+                motivo,
+                usuario);
         }
 
         private async Task DevolverStock(Venta venta, string motivo)
         {
-            foreach (var detalle in venta.Detalles)
+            var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
+
+            var referencia = $"Cancelación Venta {venta.Numero}";
+
+            var entradas = venta.Detalles
+                .Where(d => !d.IsDeleted)
+                .Select(d => (d.ProductoId, (decimal)d.Cantidad, (string?)referencia))
+                .ToList();
+
+            await _movimientoStockService.RegistrarEntradasAsync(
+                entradas,
+                motivo,
+                usuario);
+        }
+
+        private async Task AplicarPrecioVigenteADetallesAsync(Venta venta)
+        {
+            var detalles = venta.Detalles.Where(d => !d.IsDeleted).ToList();
+            if (detalles.Count == 0)
+                return;
+
+            var listaPredeterminada = await _precioService.GetListaPredeterminadaAsync();
+            var productoIds = detalles.Select(d => d.ProductoId).Distinct().ToList();
+
+            var preciosListaPorProductoId = new Dictionary<int, decimal>();
+            if (listaPredeterminada != null && productoIds.Count > 0)
             {
-                var stockAnterior = detalle.Producto.StockActual;
-                detalle.Producto.StockActual += detalle.Cantidad;
+                var fecha = DateTime.UtcNow;
 
-                var movimiento = new MovimientoStock
+                var precios = await _context.ProductosPrecios
+                    .AsNoTracking()
+                    .Where(p => productoIds.Contains(p.ProductoId)
+                             && p.ListaId == listaPredeterminada.Id
+                             && p.VigenciaDesde <= fecha
+                             && (p.VigenciaHasta == null || p.VigenciaHasta >= fecha)
+                             && p.EsVigente
+                             && !p.IsDeleted)
+                    .Select(p => new { p.ProductoId, p.Precio })
+                    .ToListAsync();
+
+                // Defensive: si por datos sucios hubiese duplicados, priorizar el último leído.
+                foreach (var p in precios)
+                    preciosListaPorProductoId[p.ProductoId] = p.Precio;
+            }
+
+            var productos = await _context.Productos
+                .AsNoTracking()
+                .Where(p => productoIds.Contains(p.Id) && !p.IsDeleted)
+                .Select(p => new { p.Id, p.PrecioVenta })
+                .ToDictionaryAsync(p => p.Id, p => p.PrecioVenta);
+
+            var cache = new Dictionary<int, decimal>();
+
+            foreach (var detalle in detalles)
+            {
+                if (!cache.TryGetValue(detalle.ProductoId, out var precioUnitario))
                 {
-                    ProductoId = detalle.ProductoId,
-                    Tipo = TipoMovimiento.Entrada,
-                    Cantidad = detalle.Cantidad,
-                    StockAnterior = stockAnterior,
-                    StockNuevo = detalle.Producto.StockActual,
-                    Referencia = $"CancelaciÃ³n Venta {venta.Numero}",
-                    Motivo = motivo
-                };
+                    productos.TryGetValue(detalle.ProductoId, out var fallbackPrecioVenta);
+                    precioUnitario = fallbackPrecioVenta;
 
-                _context.MovimientosStock.Add(movimiento);
+                    if (preciosListaPorProductoId.TryGetValue(detalle.ProductoId, out var precioLista))
+                        precioUnitario = precioLista;
+
+                    cache[detalle.ProductoId] = precioUnitario;
+                }
+
+                detalle.PrecioUnitario = precioUnitario;
             }
         }
 
-        private async Task RestaurarCreditoPersonal(Venta venta)
+        private async Task RestaurarCreditoPersonall(Venta venta)
         {
             if (!venta.CreditoId.HasValue || !venta.VentaCreditoCuotas.Any())
                 return;
 
-            var credito = venta.Credito ?? await _context.Creditos.FindAsync(venta.CreditoId);
+            var credito = venta.Credito ?? await _context.Creditos
+                .FirstOrDefaultAsync(c => c.Id == venta.CreditoId!.Value &&
+                                          !c.IsDeleted &&
+                                          c.Cliente != null &&
+                                          !c.Cliente.IsDeleted);
             if (credito == null)
                 return;
 
@@ -769,30 +1262,32 @@ namespace TheBuryProject.Services
 
         private async Task GenerarAlertasStockBajo(Venta venta)
         {
-            foreach (var detalle in venta.Detalles)
-            {
-                await _alertaStockService.VerificarYGenerarAlertaAsync(detalle.ProductoId);
-            }
+            var productoIds = venta.Detalles
+                .Where(d => !d.IsDeleted)
+                .Select(d => d.ProductoId)
+                .Distinct()
+                .ToList();
+
+            await _alertaStockService.VerificarYGenerarAlertasAsync(productoIds);
         }
 
         private async Task VerificarAutorizacionSiCorrespondeAsync(Venta venta, VentaViewModel viewModel)
         {
-            if (viewModel.TipoPago == TipoPago.CreditoPersonal)
+            if (viewModel.TipoPago == TipoPago.CreditoPersonall)
             {
-                var cliente = await _context.Clientes
-                    .Include(c => c.Creditos)
-                    .FirstOrDefaultAsync(c => c.Id == viewModel.ClienteId);
+                // Usar el servicio de validación unificado
+                var validacion = await _validacionVentaService.ValidarVentaCreditoPersonalAsync(
+                    viewModel.ClienteId, 
+                    venta.Total, 
+                    viewModel.CreditoId);
 
-                if (cliente != null)
+                venta.RequiereAutorizacion = validacion.RequiereAutorizacion;
+
+                if (venta.RequiereAutorizacion &&
+                    venta.EstadoAutorizacion == EstadoAutorizacionVenta.NoRequiere)
                 {
-                    venta.RequiereAutorizacion = await ValidarLimiteCreditoClienteAsync(cliente, venta.Total);
-
-                    if (venta.RequiereAutorizacion &&
-                        venta.EstadoAutorizacion == EstadoAutorizacionVenta.NoRequiere)
-                    {
-                        venta.EstadoAutorizacion = EstadoAutorizacionVenta.PendienteAutorizacion;
-                        venta.FechaSolicitudAutorizacion = DateTime.Now;
-                    }
+                    venta.EstadoAutorizacion = EstadoAutorizacionVenta.PendienteAutorizacion;
+                    venta.FechaSolicitudAutorizacion = DateTime.UtcNow;
                 }
             }
         }
@@ -810,84 +1305,119 @@ namespace TheBuryProject.Services
                 await GuardarDatosChequeAsync(ventaId, viewModel.DatosCheque);
             }
 
-            if (viewModel.DatosCreditoPersonal != null && viewModel.TipoPago == TipoPago.CreditoPersonal)
+            // Para crédito personal: guardar plan como JSON, NO crear cuotas todavía
+            // Las cuotas se crean solo al confirmar la venta
+            if (viewModel.DatosCreditoPersonall != null && viewModel.TipoPago == TipoPago.CreditoPersonall)
             {
-                await GuardarCuotasCreditoPersonalAsync(ventaId, viewModel.DatosCreditoPersonal);
+                await GuardarPlanCreditoPersonallAsync(ventaId, viewModel.DatosCreditoPersonall);
             }
         }
 
-        private async Task GuardarCuotasCreditoPersonalAsync(int ventaId, DatosCreditoPersonalViewModel datos)
+        /// <summary>
+        /// Guarda el plan de crédito personal como JSON para usarlo al confirmar.
+        /// NO crea cuotas ni modifica el saldo del crédito.
+        /// </summary>
+        private async Task GuardarPlanCreditoPersonallAsync(int ventaId, DatosCreditoPersonallViewModel datos)
         {
-            var venta = await _context.Ventas.FindAsync(ventaId);
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == ventaId && !v.IsDeleted);
             if (venta == null)
                 throw new InvalidOperationException(VentaConstants.ErrorMessages.VENTA_NO_ENCONTRADA);
 
-            var credito = await _context.Creditos.FindAsync(datos.CreditoId);
-            if (credito == null)
-                throw new InvalidOperationException(VentaConstants.ErrorMessages.CREDITO_NO_ENCONTRADO);
-
-            if (credito.SaldoPendiente < datos.MontoAFinanciar)
-                throw new InvalidOperationException("Saldo de crÃ©dito insuficiente");
-
-            foreach (var cuotaVM in datos.Cuotas)
+            // Serializar el plan de crédito para usarlo al confirmar
+            venta.DatosCreditoPersonallJson = System.Text.Json.JsonSerializer.Serialize(new
             {
-                var cuota = new VentaCreditoCuota
-                {
-                    VentaId = ventaId,
-                    CreditoId = datos.CreditoId,
-                    NumeroCuota = cuotaVM.NumeroCuota,
-                    FechaVencimiento = cuotaVM.FechaVencimiento,
-                    Monto = cuotaVM.Monto,
-                    Saldo = cuotaVM.Saldo,
-                    Pagada = false
-                };
-
-                _context.VentaCreditoCuotas.Add(cuota);
-            }
+                datos.CreditoId,
+                datos.MontoAFinanciar,
+                datos.CantidadCuotas,
+                datos.MontoCuota,
+                datos.TotalAPagar,
+                datos.TasaInteresMensual,
+                datos.FechaPrimeraCuota,
+                datos.InteresTotal
+            });
 
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Plan de crédito personal guardado para venta {VentaId}. CreditoId: {CreditoId}, Monto: {Monto}, Cuotas: {Cuotas}",
+                ventaId, datos.CreditoId, datos.MontoAFinanciar, datos.CantidadCuotas);
         }
 
-        private async Task ProcesarCreditoPersonalVentaAsync(Venta venta)
+        /// <summary>
+        /// E4: Crea el crédito definitivo, cuotas y descuenta del cupo.
+        /// Solo se llama al confirmar una venta autorizada (o que no requiere autorización).
+        /// </summary>
+        private async Task CrearCreditoDefinitivoDesdeJsonAsync(Venta venta)
         {
-            if (venta.Credito == null)
+            if (string.IsNullOrEmpty(venta.DatosCreditoPersonallJson))
             {
-                venta.Credito = await _context.Creditos.FindAsync(venta.CreditoId);
+                throw new InvalidOperationException(
+                    "No hay datos del plan de crédito para crear el crédito definitivo.");
             }
 
-            if (venta.Credito == null)
-                throw new InvalidOperationException(VentaConstants.ErrorMessages.CREDITO_NO_ENCONTRADO);
+            try
+            {
+                var planJson = System.Text.Json.JsonDocument.Parse(venta.DatosCreditoPersonallJson);
+                var root = planJson.RootElement;
 
-            var datosCredito = venta.VentaCreditoCuotas.Any()
-                ? await ObtenerDatosCreditoVentaAsync(venta.Id)
-                : null;
+                var creditoId = root.GetProperty("CreditoId").GetInt32();
+                var montoAFinanciar = root.GetProperty("MontoAFinanciar").GetDecimal();
+                var cantidadCuotas = root.GetProperty("CantidadCuotas").GetInt32();
+                var montoCuota = root.GetProperty("MontoCuota").GetDecimal();
+                var fechaPrimeraCuota = root.GetProperty("FechaPrimeraCuota").GetDateTime();
 
-            if (datosCredito == null || !datosCredito.Cuotas.Any())
-                throw new InvalidOperationException("No se encontraron datos de crÃ©dito personal para esta venta");
+                // Obtener el crédito y validar saldo disponible
+                var credito = await _context.Creditos
+                    .FirstOrDefaultAsync(c => c.Id == creditoId && !c.IsDeleted);
+                
+                if (credito == null)
+                {
+                    throw new InvalidOperationException(VentaConstants.ErrorMessages.CREDITO_NO_ENCONTRADO);
+                }
 
-            if (datosCredito.MontoAFinanciar > venta.Credito.SaldoPendiente)
-                throw new InvalidOperationException(
-                    $"Saldo insuficiente en el crÃ©dito. Disponible: ${venta.Credito.SaldoPendiente:N2}");
+                if (credito.SaldoPendiente < montoAFinanciar)
+                {
+                    throw new InvalidOperationException(
+                        $"Saldo de crédito insuficiente. Disponible: ${credito.SaldoPendiente:N2}, Requerido: ${montoAFinanciar:N2}");
+                }
 
-            venta.Credito.SaldoPendiente -= datosCredito.MontoAFinanciar;
-            _context.Creditos.Update(venta.Credito);
+                // E4: Asignar CreditoId a la venta (ahora sí, post-autorización)
+                venta.CreditoId = creditoId;
+
+                // Crear las cuotas
+                for (int i = 0; i < cantidadCuotas; i++)
+                {
+                    var cuota = new VentaCreditoCuota
+                    {
+                        VentaId = venta.Id,
+                        CreditoId = creditoId,
+                        NumeroCuota = i + 1,
+                        FechaVencimiento = fechaPrimeraCuota.AddMonths(i),
+                        Monto = montoCuota,
+                        Saldo = montoAFinanciar,
+                        Pagada = false
+                    };
+                    _context.VentaCreditoCuotas.Add(cuota);
+                }
+
+                // E4: Descontar del cupo del crédito
+                credito.SaldoPendiente -= montoAFinanciar;
+                _context.Creditos.Update(credito);
+
+                _logger.LogInformation(
+                    "E4: Crédito definitivo creado para venta {VentaId}. CreditoId: {CreditoId}, " +
+                    "Monto: {Monto:C2}, Cuotas: {Cuotas}, Nuevo saldo disponible: {SaldoDisponible:C2}",
+                    venta.Id, creditoId, montoAFinanciar, cantidadCuotas, credito.SaldoPendiente);
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                _logger.LogError(ex, "Error al deserializar datos de crédito JSON para venta {VentaId}", venta.Id);
+                throw new InvalidOperationException("Error al procesar los datos del plan de crédito");
+            }
         }
 
-        private Task<bool> ValidarLimiteCreditoClienteAsync(Cliente cliente, decimal montoVenta)
-        {
-            var creditosActivos = cliente.Creditos
-                .Where(c => c.Estado == EstadoCredito.Activo)
-                .ToList();
-
-            if (!creditosActivos.Any())
-                return Task.FromResult(true);
-
-            var saldoDisponible = creditosActivos.Sum(c => c.SaldoPendiente);
-
-            return Task.FromResult(montoVenta > saldoDisponible);
-        }
-
-        private DatosCreditoPersonalViewModel GenerarDatosCreditoPersonal(
+        private DatosCreditoPersonallViewModel GenerarDatosCreditoPersonall(
             Credito credito,
             decimal montoAFinanciar,
             int cuotas,
@@ -895,7 +1425,7 @@ namespace TheBuryProject.Services
             decimal totalAPagar,
             DateTime fechaPrimeraCuota)
         {
-            var resultado = new DatosCreditoPersonalViewModel
+            var resultado = new DatosCreditoPersonallViewModel
             {
                 CreditoId = credito.Id,
                 CreditoNumero = credito.Numero,

@@ -11,66 +11,51 @@ namespace TheBuryProject.Services
     {
         private readonly AppDbContext _context;
         private readonly ILogger<OrdenCompraService> _logger;
+        private readonly IMovimientoStockService _movimientoStockService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public OrdenCompraService(AppDbContext context, ILogger<OrdenCompraService> logger)
+        public OrdenCompraService(
+            AppDbContext context,
+            ILogger<OrdenCompraService> logger,
+            IMovimientoStockService movimientoStockService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _logger = logger;
+            _movimientoStockService = movimientoStockService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<IEnumerable<OrdenCompra>> GetAllAsync()
         {
             return await _context.OrdenesCompra
+                .Where(o => !o.IsDeleted)
                 .Include(o => o.Proveedor)
-                .Include(o => o.Detalles)
+                .Include(o => o.Detalles.Where(d => !d.IsDeleted))
                     .ThenInclude(d => d.Producto)
+                .AsSplitQuery()
                 .OrderByDescending(o => o.FechaEmision)
                 .ToListAsync();
         }
 
         public async Task<OrdenCompra?> GetByIdAsync(int id)
         {
-            _logger.LogInformation("=== GetByIdAsync - Orden {Id} ===", id);
-
             var orden = await _context.OrdenesCompra
                 .Include(o => o.Proveedor)
-                .Include(o => o.Detalles)
+                .Include(o => o.Detalles.Where(d => !d.IsDeleted))
                     .ThenInclude(d => d.Producto)
-                        .ThenInclude(p => p.Marca)
-                .Include(o => o.Detalles)
+                        .ThenInclude(p => p!.Marca)
+                .Include(o => o.Detalles.Where(d => !d.IsDeleted))
                     .ThenInclude(d => d.Producto)
-                        .ThenInclude(p => p.Categoria)
-                .FirstOrDefaultAsync(o => o.Id == id);
+                        .ThenInclude(p => p!.Categoria)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
 
             if (orden == null)
             {
                 _logger.LogWarning("Orden {Id} NO encontrada", id);
-                _logger.LogInformation("=== FIN GetByIdAsync ===");
                 return null;
             }
-
-            _logger.LogInformation("Orden encontrada: {Numero}", orden.Numero);
-            _logger.LogInformation("Proveedor: {Proveedor}", orden.Proveedor?.RazonSocial ?? "NULL");
-            _logger.LogInformation("Detalles Count: {Count}", orden.Detalles?.Count ?? 0);
-
-            var detalles = orden.Detalles ?? new List<OrdenCompraDetalle>();
-            _logger.LogInformation("Detalles Count: {Count}", detalles.Count);
-
-            foreach (var d in detalles)
-            {
-                if (d == null) continue;
-
-                _logger.LogInformation(
-                    "Detalle {Id} - ProdId {ProdId} - Cant {Cant} - Rec {Rec} - Prod {Prod}",
-                    d.Id,
-                    d.ProductoId,
-                    d.Cantidad,
-                    d.CantidadRecibida,
-                    d.Producto?.Nombre ?? "NULL"
-                );
-            }
-
-            _logger.LogInformation("=== FIN GetByIdAsync ===");
             return orden;
         }
 
@@ -83,7 +68,7 @@ namespace TheBuryProject.Services
 
             var proveedor = await _context.Proveedores
                 .Include(p => p.ProveedorProductos)
-                .FirstOrDefaultAsync(p => p.Id == ordenCompra.ProveedorId);
+                .FirstOrDefaultAsync(p => p.Id == ordenCompra.ProveedorId && !p.IsDeleted);
 
             if (proveedor == null)
             {
@@ -94,21 +79,33 @@ namespace TheBuryProject.Services
             {
                 var productosAsociadosIds = proveedor.ProveedorProductos
                     .Select(pp => pp.ProductoId)
+                    .ToHashSet();
+
+                var detalleIds = (ordenCompra.Detalles ?? new List<OrdenCompraDetalle>())
+                    .Select(d => d.ProductoId)
+                    .Distinct()
                     .ToList();
 
-                var productosNoAsociados = new List<string>();
+                var productosNoAsociadosIds = detalleIds
+                    .Where(id => !productosAsociadosIds.Contains(id))
+                    .ToList();
 
-                foreach (var detalle in ordenCompra.Detalles)
+                if (productosNoAsociadosIds.Any())
                 {
-                    if (!productosAsociadosIds.Contains(detalle.ProductoId))
-                    {
-                        var producto = await _context.Productos.FindAsync(detalle.ProductoId);
-                        productosNoAsociados.Add(producto?.Nombre ?? $"ID {detalle.ProductoId}");
-                    }
-                }
+                    var nombres = await _context.Productos
+                        .AsNoTracking()
+                        .Where(p => productosNoAsociadosIds.Contains(p.Id) && !p.IsDeleted)
+                        .Select(p => new { p.Id, p.Nombre })
+                        .ToListAsync();
 
-                if (productosNoAsociados.Any())
-                {
+                    var nombresPorId = nombres
+                        .GroupBy(x => x.Id)
+                        .ToDictionary(g => g.Key, g => g.First().Nombre);
+
+                    var productosNoAsociados = productosNoAsociadosIds
+                        .Select(id => nombresPorId.TryGetValue(id, out var nombre) ? nombre : $"ID {id}")
+                        .ToList();
+
                     throw new InvalidOperationException(
                         $"No se puede crear la orden. Productos no asociados al proveedor '{proveedor.RazonSocial}': {string.Join(", ", productosNoAsociados)}.");
                 }
@@ -125,11 +122,16 @@ namespace TheBuryProject.Services
 
         public async Task<OrdenCompra> UpdateAsync(OrdenCompra ordenCompra)
         {
+            if (ordenCompra.RowVersion == null || ordenCompra.RowVersion.Length == 0)
+                throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la orden e intentá nuevamente.");
+
             var ordenExistente = await GetByIdAsync(ordenCompra.Id);
             if (ordenExistente == null)
             {
                 throw new InvalidOperationException("La orden de compra no existe");
             }
+
+            _context.Entry(ordenExistente).Property(o => o.RowVersion).OriginalValue = ordenCompra.RowVersion;
 
             if (await NumeroOrdenExisteAsync(ordenCompra.Numero, ordenCompra.Id))
             {
@@ -158,7 +160,7 @@ namespace TheBuryProject.Services
 
             foreach (var detalle in detallesAEliminar)
             {
-                _context.OrdenCompraDetalles.Remove(detalle);
+                detalle.IsDeleted = true;
             }
 
             foreach (var detalleNuevo in ordenCompra.Detalles)
@@ -180,7 +182,15 @@ namespace TheBuryProject.Services
                 }
             }
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new InvalidOperationException(
+                    "La orden fue modificada por otro usuario. Recargá la página y volvé a intentar.");
+            }
             _logger.LogInformation("Orden de compra {Numero} actualizada exitosamente", ordenCompra.Numero);
             return ordenExistente;
         }
@@ -195,12 +205,14 @@ namespace TheBuryProject.Services
                 throw new InvalidOperationException("No se puede eliminar una orden en tránsito o recibida");
             }
 
-            if (await _context.Cheques.AnyAsync(c => c.OrdenCompraId == id))
+            if (await _context.Cheques.AnyAsync(c => c.OrdenCompraId == id && !c.IsDeleted))
             {
                 throw new InvalidOperationException("No se puede eliminar una orden con cheques asociados");
             }
 
-            _context.OrdenesCompra.Remove(orden);
+            orden.IsDeleted = true;
+            foreach (var detalle in (orden.Detalles ?? new List<OrdenCompraDetalle>()))
+                detalle.IsDeleted = true;
             await _context.SaveChangesAsync();
             _logger.LogInformation("Orden de compra {Id} eliminada exitosamente", id);
             return true;
@@ -217,8 +229,12 @@ namespace TheBuryProject.Services
         {
             var query = _context.OrdenesCompra
                 .Include(o => o.Proveedor)
-                .Include(o => o.Detalles)
+                .Include(o => o.Detalles.Where(d => !d.IsDeleted))
+                    .ThenInclude(d => d.Producto)
+                .AsSplitQuery()
                 .AsQueryable();
+
+            query = query.Where(o => !o.IsDeleted);
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -257,19 +273,19 @@ namespace TheBuryProject.Services
         public async Task<IEnumerable<OrdenCompra>> GetByProveedorIdAsync(int proveedorId)
         {
             return await _context.OrdenesCompra
-                .Include(o => o.Detalles)
-                .Where(o => o.ProveedorId == proveedorId)
+                .Include(o => o.Detalles.Where(d => !d.IsDeleted))
+                .Where(o => o.ProveedorId == proveedorId && !o.IsDeleted)
                 .OrderByDescending(o => o.FechaEmision)
                 .ToListAsync();
         }
 
         public async Task<bool> CambiarEstadoAsync(int id, EstadoOrdenCompra nuevoEstado)
         {
-            var orden = await _context.OrdenesCompra.FindAsync(id);
+            var orden = await _context.OrdenesCompra.FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
             if (orden == null) return false;
 
             if (nuevoEstado == EstadoOrdenCompra.Recibida && orden.Estado != EstadoOrdenCompra.Recibida)
-                orden.FechaRecepcion = DateTime.Now;
+                orden.FechaRecepcion = DateTime.UtcNow;
 
             orden.Estado = nuevoEstado;
             await _context.SaveChangesAsync();
@@ -280,14 +296,22 @@ namespace TheBuryProject.Services
         public async Task<bool> NumeroOrdenExisteAsync(string numero, int? excludeId = null)
         {
             return await _context.OrdenesCompra
-                .AnyAsync(o => o.Numero == numero && (excludeId == null || o.Id != excludeId.Value));
+                .AnyAsync(o =>
+                    o.Numero == numero &&
+                    !o.IsDeleted &&
+                    (excludeId == null || o.Id != excludeId.Value));
         }
 
-        public async Task<OrdenCompra> RecepcionarAsync(int ordenId, List<RecepcionDetalleViewModel> detallesRecepcion)
+        public async Task<OrdenCompra> RecepcionarAsync(int ordenId, byte[] rowVersion, List<RecepcionDetalleViewModel> detallesRecepcion)
         {
             var orden = await GetByIdAsync(ordenId);
             if (orden == null)
                 throw new InvalidOperationException("Orden no encontrada");
+
+            if (rowVersion == null || rowVersion.Length == 0)
+                throw new InvalidOperationException("Falta información de concurrencia (RowVersion). Recargá la orden e intentá nuevamente.");
+
+            _context.Entry(orden).Property(o => o.RowVersion).OriginalValue = rowVersion;
 
             if (orden.Estado != EstadoOrdenCompra.Confirmada &&
                 orden.Estado != EstadoOrdenCompra.EnTransito)
@@ -295,7 +319,14 @@ namespace TheBuryProject.Services
                 throw new InvalidOperationException("Solo se pueden recepcionar órdenes confirmadas o en tránsito");
             }
 
+            var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
             bool todosRecibidos = true;
+
+            var entradas = new List<(int productoId, decimal cantidad, string? referencia)>();
+            var referencia = $"Orden de Compra {orden.Numero}";
 
             foreach (var recepcion in detallesRecepcion)
             {
@@ -318,43 +349,39 @@ namespace TheBuryProject.Services
 
                 detalle.CantidadRecibida = totalRecibido;
 
-                var producto = await _context.Productos.FindAsync(detalle.ProductoId);
-                if (producto != null)
-                {
-                    var stockAnterior = producto.StockActual;
-                    producto.StockActual += recepcion.CantidadARecepcionar;
-
-                    var movimiento = new MovimientoStock
-                    {
-                        ProductoId = producto.Id,
-                        Tipo = TipoMovimiento.Entrada,
-                        Cantidad = recepcion.CantidadARecepcionar,
-                        StockAnterior = stockAnterior,
-                        StockNuevo = producto.StockActual,
-                        Referencia = $"Orden de Compra {orden.Numero}",
-                        OrdenCompraId = orden.Id,
-                        Motivo = "Recepción de mercadería",
-                        CreatedAt = DateTime.UtcNow
-                    };
-
-                    _context.MovimientosStock.Add(movimiento);
-                }
+                // Stock + movimiento centralizado (batch, respeta auditoría, validaciones y transacción)
+                entradas.Add((detalle.ProductoId, recepcion.CantidadARecepcionar, referencia));
 
                 if (detalle.CantidadRecibida < cantidadSolicitada)
                     todosRecibidos = false;
             }
 
+            await _movimientoStockService.RegistrarEntradasAsync(
+                entradas,
+                "Recepción de mercadería",
+                usuario,
+                ordenCompraId: orden.Id);
+
             if (todosRecibidos)
             {
                 orden.Estado = EstadoOrdenCompra.Recibida;
-                orden.FechaRecepcion = DateTime.Now;
+                orden.FechaRecepcion = DateTime.UtcNow;
             }
             else if (orden.Estado == EstadoOrdenCompra.Confirmada)
             {
                 orden.Estado = EstadoOrdenCompra.EnTransito;
             }
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new InvalidOperationException(
+                    "La orden fue modificada por otro usuario. Recargá la página y volvé a intentar.");
+            }
+            await transaction.CommitAsync();
             return orden;
         }
 

@@ -5,12 +5,12 @@ using TheBuryProject.Models.Enums;
 namespace TheBuryProject.Models.Entities
 {
     /// <summary>
-    /// Alerta de stock generada automáticamente por el sistema
+    /// Alerta de stock generada automï¿½ticamente por el sistema
     /// </summary>
-    public class AlertaStock : BaseEntity
+    public class AlertaStock  : AuditableEntity
     {
         /// <summary>
-        /// ID del producto que generó la alerta
+        /// ID del producto que generï¿½ la alerta
         /// </summary>
         [Required]
         public int ProductoId { get; set; }
@@ -41,35 +41,35 @@ namespace TheBuryProject.Models.Entities
         public string Mensaje { get; set; } = string.Empty;
 
         /// <summary>
-        /// Stock actual cuando se generó la alerta
+        /// Stock actual cuando se generï¿½ la alerta
         /// </summary>
         [Required]
         public decimal StockActual { get; set; }
 
         /// <summary>
-        /// Stock mínimo configurado
+        /// Stock mï¿½nimo configurado
         /// </summary>
         [Required]
         public decimal StockMinimo { get; set; }
 
         /// <summary>
-        /// Cantidad sugerida para reposición
+        /// Cantidad sugerida para reposiciï¿½n
         /// </summary>
         public decimal? CantidadSugeridaReposicion { get; set; }
 
         /// <summary>
-        /// Fecha en que se generó la alerta
+        /// Fecha en que se generï¿½ la alerta
         /// </summary>
         [Required]
         public DateTime FechaAlerta { get; set; }
 
         /// <summary>
-        /// Fecha en que se resolvió la alerta
+        /// Fecha en que se resolviï¿½ la alerta
         /// </summary>
         public DateTime? FechaResolucion { get; set; }
 
         /// <summary>
-        /// Usuario que resolvió la alerta
+        /// Usuario que resolviï¿½ la alerta
         /// </summary>
         [StringLength(100)]
         public string? UsuarioResolucion { get; set; }
@@ -93,19 +93,19 @@ namespace TheBuryProject.Models.Entities
 
         // Propiedades calculadas
         /// <summary>
-        /// Porcentaje de stock respecto al mínimo
+        /// Porcentaje de stock respecto al mï¿½nimo
         /// </summary>
         public decimal PorcentajeStockMinimo =>
             StockMinimo == 0 ? 0 : (StockActual / StockMinimo) * 100;
 
         /// <summary>
-        /// Días transcurridos desde la alerta
+        /// Dï¿½as transcurridos desde la alerta
         /// </summary>
         public int DiasDesdeAlerta =>
             (DateTime.UtcNow - FechaAlerta).Days;
 
         /// <summary>
-        /// Indica si la alerta está vencida (más de 7 días sin resolver)
+        /// Indica si la alerta estï¿½ vencida (mï¿½s de 7 dï¿½as sin resolver)
         /// </summary>
         public bool EstaVencida =>
             Estado == EstadoAlerta.Pendiente && DiasDesdeAlerta > 7;

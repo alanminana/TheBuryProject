@@ -1,8 +1,13 @@
 @using TheBuryProject.Models.Entities
 @using TheBuryProject.ViewModels
+@using TheBuryProject.Models.Constants
 @model DevolucionDetallesViewModel
 @{
     ViewData["Title"] = $"Devolución {Model.Devolucion.NumeroDevolucion}";
+}
+
+@{
+    var rowVersionBase64 = Convert.ToBase64String(Model.Devolucion.RowVersion ?? Array.Empty<byte>());
 }
 
 <div class="container-fluid">
@@ -202,7 +207,7 @@
         <!-- Panel Lateral -->
         <div class="col-md-4">
             <!-- Acciones -->
-            @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente"))
+            @if (User.IsInRole(Roles.SuperAdmin) || User.IsInRole(Roles.Gerente))
             {
                 <div class="card mb-3">
                     <div class="card-header bg-primary text-white">
@@ -213,7 +218,8 @@
                         {
                             <form asp-action="Aprobar" asp-route-id="@Model.Devolucion.Id" method="post" class="mb-2">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-success w-100" onclick="return confirm('¿Aprobar esta devolución? Se generará una nota de crédito.');">
+                                <input type="hidden" name="rowVersion" value="@rowVersionBase64" />
+                                <button type="submit" class="btn btn-success w-100" data-confirm="¿Aprobar esta devolución? Se generará una nota de crédito.">
                                     <i class="bi bi-check-circle me-1"></i>Aprobar Devolución
                                 </button>
                             </form>
@@ -227,7 +233,8 @@
                         {
                             <form asp-action="Completar" asp-route-id="@Model.Devolucion.Id" method="post" class="mb-2">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-primary w-100" onclick="return confirm('¿Completar esta devolución? Se procesará el stock según las acciones definidas.');">
+                                <input type="hidden" name="rowVersion" value="@rowVersionBase64" />
+                                <button type="submit" class="btn btn-primary w-100" data-confirm="¿Completar esta devolución? Se procesará el stock según las acciones definidas.">
                                     <i class="bi bi-check2-all me-1"></i>Completar Devolución
                                 </button>
                             </form>
@@ -369,6 +376,7 @@
         <div class="modal-content">
             <form asp-action="Rechazar" asp-route-id="@Model.Devolucion.Id" method="post">
                 @Html.AntiForgeryToken()
+                <input type="hidden" name="rowVersion" value="@rowVersionBase64" />
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Rechazar Devolución</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -395,6 +403,7 @@
             <form asp-action="CrearRMA" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="devolucionId" value="@Model.Devolucion.Id" />
+                <input type="hidden" name="devolucionRowVersion" value="@rowVersionBase64" />
                 <div class="modal-header bg-warning">
                     <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Crear RMA</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

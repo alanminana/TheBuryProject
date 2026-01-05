@@ -9,28 +9,34 @@ namespace TheBuryProject.Services.Validators
     {
         public void ValidarEstadoParaEdicion(Venta venta)
         {
-            if (venta.Estado != EstadoVenta.Cotizacion && venta.Estado != EstadoVenta.Presupuesto)
+            if (venta.Estado != EstadoVenta.Cotizacion && 
+                venta.Estado != EstadoVenta.Presupuesto &&
+                venta.Estado != EstadoVenta.PendienteRequisitos &&
+                venta.Estado != EstadoVenta.PendienteFinanciacion)
             {
                 throw new InvalidOperationException(
-                    $"Solo se pueden editar ventas en estado Cotizaci髇 o Presupuesto. Estado actual: {venta.Estado}");
+                    $"Solo se pueden editar ventas en estado Cotizaci贸n, Presupuesto, Pendiente Requisitos o Pendiente Financiaci贸n. Estado actual: {venta.Estado}");
             }
         }
 
         public void ValidarEstadoParaEliminacion(Venta venta)
         {
-            if (venta.Estado != EstadoVenta.Cotizacion && venta.Estado != EstadoVenta.Presupuesto)
+            if (venta.Estado != EstadoVenta.Cotizacion && 
+                venta.Estado != EstadoVenta.Presupuesto &&
+                venta.Estado != EstadoVenta.PendienteRequisitos &&
+                venta.Estado != EstadoVenta.PendienteFinanciacion)
             {
                 throw new InvalidOperationException(
-                    $"Solo se pueden eliminar ventas en estado Cotizaci髇 o Presupuesto. Estado actual: {venta.Estado}");
+                    $"Solo se pueden eliminar ventas en estado Cotizaci贸n, Presupuesto, Pendiente Requisitos o Pendiente Financiaci贸n. Estado actual: {venta.Estado}");
             }
         }
 
         public void ValidarEstadoParaConfirmacion(Venta venta)
         {
-            if (venta.Estado != EstadoVenta.Presupuesto)
+            if (venta.Estado != EstadoVenta.Presupuesto && venta.Estado != EstadoVenta.PendienteRequisitos)
             {
                 throw new InvalidOperationException(
-                    $"Solo se pueden confirmar ventas en estado Presupuesto. Estado actual: {venta.Estado}");
+                    $"Solo se pueden confirmar ventas en estado Presupuesto o Pendiente Requisitos. Estado actual: {venta.Estado}");
             }
         }
 
@@ -48,19 +54,21 @@ namespace TheBuryProject.Services.Validators
             if (venta.RequiereAutorizacion && venta.EstadoAutorizacion != EstadoAutorizacionVenta.Autorizada)
             {
                 throw new InvalidOperationException(
-                    $"La venta requiere autorizaci髇 antes de continuar. Estado actual: {venta.EstadoAutorizacion}");
+                    $"La venta requiere autorizaci锟絥 antes de continuar. Estado actual: {venta.EstadoAutorizacion}");
             }
         }
 
         public void ValidarStock(Venta venta)
         {
             var productosInsuficientes = venta.Detalles
-                .Where(d => d.Producto.StockActual < d.Cantidad)
+                .Where(d => !d.IsDeleted)
+                .Where(d => d.Producto != null)
+                .Where(d => d.Producto!.StockActual < d.Cantidad)
                 .Select(d => new
                 {
-                    d.Producto.Nombre,
+                    Nombre = d.Producto!.Nombre,
                     d.Cantidad,
-                    Disponible = d.Producto.StockActual
+                    Disponible = d.Producto!.StockActual
                 })
                 .ToList();
 
@@ -86,7 +94,7 @@ namespace TheBuryProject.Services.Validators
             if (venta.EstadoAutorizacion != estadoEsperado)
             {
                 throw new InvalidOperationException(
-                    $"La venta debe estar en estado de autorizaci髇 {estadoEsperado}. Estado actual: {venta.EstadoAutorizacion}");
+                    $"La venta debe estar en estado de autorizaci锟絥 {estadoEsperado}. Estado actual: {venta.EstadoAutorizacion}");
             }
         }
     }

@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Gestión de Acciones";
+    var cleanedQuery = QueryString.Create(Context.Request.Query.Where(kvp => !string.Equals(kvp.Key, "returnUrl", StringComparison.OrdinalIgnoreCase)));
+    var listReturnUrl = Context.Request.Path + cleanedQuery;
 }
 
 <div class="container-fluid px-0">
@@ -20,7 +22,7 @@
         </div>
 
         <div class="text-end">
-            <a asp-action="Create" class="btn btn-primary btn-sm">
+            <a asp-action="Create" asp-route-returnUrl="@listReturnUrl" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-circle me-1"></i>
                 Crear acción
             </a>
@@ -92,13 +94,13 @@
                                             </td>
                                             <td class="text-end">
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <a asp-action="Details" asp-route-id="@accion.Id" class="btn btn-outline-info">
+                                                    <a asp-action="Details" asp-route-id="@accion.Id" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-info">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
-                                                    <a asp-action="Edit" asp-route-id="@accion.Id" class="btn btn-outline-primary">
+                                                    <a asp-action="Edit" asp-route-id="@accion.Id" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-primary">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
-                                                    <a asp-action="Delete" asp-route-id="@accion.Id" class="btn btn-outline-danger">
+                                                    <a asp-action="Delete" asp-route-id="@accion.Id" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-danger">
                                                         <i class="bi bi-trash"></i>
                                                     </a>
                                                 </div>
@@ -114,7 +116,7 @@
             else
             {
                 <div class="text-center py-5 text-muted">
-                    <i class="bi bi-lightning" style="font-size: 3.5rem;"></i>
+                    <i class="bi bi-lightning fs-1"></i>
                     <p class="mt-3 mb-1">No hay acciones configuradas</p>
                     <p class="small mb-0">
                         Crea la primera acción para comenzar a gestionar permisos por módulo.

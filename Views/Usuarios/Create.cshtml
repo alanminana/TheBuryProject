@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Crear Usuario";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("Index", "Usuarios")!;
 }
 
 <div class="container-fluid">
@@ -13,6 +15,7 @@
                 </div>
                 <div class="card-body">
                     <form asp-action="Create" method="post">
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                         <div class="row">
@@ -63,7 +66,7 @@
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
-                            <a asp-action="Index" class="btn btn-secondary">
+                            <a href="@backUrl" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">

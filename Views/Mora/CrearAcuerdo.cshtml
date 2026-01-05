@@ -1,0 +1,171 @@
+@model CrearAcuerdoViewModel
+@using TheBuryProject.ViewModels.Mora
+
+@{
+    ViewData["Title"] = "Crear Acuerdo de Pago";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var backUrl = returnUrl ?? Url.Action("FichaCliente", "Mora", new { id = Model.ClienteId })!;
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-file-earmark-plus me-2"></i>Crear Acuerdo de Pago</h2>
+                <a href="@backUrl" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Cancelar
+                </a>
+            </div>
+
+            <!-- Datos del Cliente -->
+            <div class="card shadow-sm mb-4 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-person me-2"></i>Cliente</h6>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-3">@Model.NombreCliente</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <small class="text-muted">Deuda Original</small>
+                            <h5>$@Model.MontoDeudaOriginal.ToString("N2")</h5>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Mora Original</small>
+                            <h5 class="text-danger">$@Model.MontoMoraOriginal.ToString("N2")</h5>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Total</small>
+                            <h5 class="text-primary">$@((Model.MontoDeudaOriginal + Model.MontoMoraOriginal).ToString("N2"))</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Detalles del Acuerdo</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="CrearAcuerdo" method="post" id="formAcuerdo">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="AlertaId" />
+                        <input type="hidden" asp-for="ClienteId" />
+                        <input type="hidden" asp-for="CreditoId" />
+                        <input type="hidden" asp-for="MontoDeudaOriginal" />
+                        <input type="hidden" asp-for="MontoMoraOriginal" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+
+                        @if (Model.PermiteCondonacion)
+                        {
+                            <div class="mb-3">
+                                <label asp-for="MontoCondonar" class="form-label">Monto a Condonar (máx. @Model.MaximoCondonacionPermitido%)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="MontoCondonar" class="form-control" type="number" step="0.01" min="0" id="montoCondonar" />
+                                </div>
+                                <span asp-validation-for="MontoCondonar" class="text-danger"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="hidden" asp-for="MontoCondonar" value="0" />
+                        }
+
+                        <div class="mb-3">
+                            <label asp-for="MontoEntregaInicial" class="form-label">Entrega Inicial (mín. @Model.PorcentajeMinEntrega%) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="MontoEntregaInicial" class="form-control" type="number" step="0.01" min="0" id="montoEntrega" />
+                            </div>
+                            <span asp-validation-for="MontoEntregaInicial" class="text-danger"></span>
+                            <small class="form-text text-muted">Mínimo sugerido: $@((Model.MontoDeudaOriginal + Model.MontoMoraOriginal) * (Model.PorcentajeMinEntrega ?? 10) / 100).ToString("N2")</small>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="CantidadCuotas" class="form-label">Cantidad de Cuotas (máx. @Model.MaximoCuotasPermitido) *</label>
+                                <input asp-for="CantidadCuotas" class="form-control" type="number" min="1" max="@Model.MaximoCuotasPermitido" id="cantidadCuotas" />
+                                <span asp-validation-for="CantidadCuotas" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="FechaPrimeraCuota" class="form-label">Fecha Primera Cuota *</label>
+                                <input asp-for="FechaPrimeraCuota" class="form-control" type="date" />
+                                <span asp-validation-for="FechaPrimeraCuota" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Observaciones" class="form-label">Observaciones</label>
+                            <textarea asp-for="Observaciones" class="form-control" rows="2" placeholder="Notas adicionales..."></textarea>
+                        </div>
+
+                        <!-- Resumen del Acuerdo -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="bi bi-calculator me-2"></i>Resumen del Acuerdo</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Total a Pagar:</span>
+                                            <strong id="totalPagar">$0.00</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Entrega Inicial:</span>
+                                            <strong id="entregaInicial">$0.00</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between">
+                                            <span>Saldo a Financiar:</span>
+                                            <strong id="saldoFinanciar">$0.00</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Valor Cuota:</span>
+                                            <strong id="valorCuota" class="text-primary">$0.00</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="@backUrl" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-lg me-2"></i>Crear Acuerdo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function calcularResumen() {
+            var deuda = @Model.MontoDeudaOriginal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var mora = @Model.MontoMoraOriginal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var condonar = parseFloat(document.getElementById('montoCondonar')?.value || 0);
+            var entrega = parseFloat(document.getElementById('montoEntrega')?.value || 0);
+            var cuotas = parseInt(document.getElementById('cantidadCuotas')?.value || 1);
+            
+            var total = deuda + mora - condonar;
+            var saldo = total - entrega;
+            var valorCuota = cuotas > 0 ? saldo / cuotas : 0;
+            
+            document.getElementById('totalPagar').textContent = '$' + total.toFixed(2);
+            document.getElementById('entregaInicial').textContent = '$' + entrega.toFixed(2);
+            document.getElementById('saldoFinanciar').textContent = '$' + saldo.toFixed(2);
+            document.getElementById('valorCuota').textContent = '$' + valorCuota.toFixed(2);
+        }
+        
+        document.getElementById('montoCondonar')?.addEventListener('input', calcularResumen);
+        document.getElementById('montoEntrega')?.addEventListener('input', calcularResumen);
+        document.getElementById('cantidadCuotas')?.addEventListener('input', calcularResumen);
+        
+        // Calcular al cargar
+        calcularResumen();
+    </script>
+}

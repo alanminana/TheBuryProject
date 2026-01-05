@@ -7,7 +7,7 @@ namespace TheBuryProject.Models.Entities
     /// <summary>
     /// Registro de apertura de caja
     /// </summary>
-    public class AperturaCaja : BaseEntity
+    public class AperturaCaja  : AuditableEntity
     {
         [Required]
         public int CajaId { get; set; }

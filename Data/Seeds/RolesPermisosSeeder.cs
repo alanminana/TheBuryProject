@@ -1,33 +1,35 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿// Data/Seeds/RolesPermisosSeeder.cs
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Data;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 
 namespace TheBuryProject.Data.Seeds;
 
 /// <summary>
-/// Seeder para roles, módulos, acciones y permisos iniciales del sistema
+/// Seeder para roles, módulos, acciones y permisos iniciales del sistema.
+/// Soporta soft-delete (revive) usando IgnoreQueryFilters y canoniza claves/claimValue.
 /// </summary>
 public static class RolesPermisosSeeder
 {
-    /// <summary>
-    /// Ejecuta todos los seeds necesarios
-    /// </summary>
     public static async Task SeedAsync(AppDbContext context, RoleManager<IdentityRole> roleManager)
     {
-        // 1. Seed roles
         await SeedRolesAsync(roleManager);
-
-        // 2. Seed módulos y acciones
         await SeedModulosYAccionesAsync(context);
-
-        // 3. Seed permisos por rol
         await SeedPermisosAsync(context);
     }
 
-    /// <summary>
-    /// Crea los roles del sistema
-    /// </summary>
+    private static string Canon(string value)
+        => (value ?? string.Empty).Trim().ToLowerInvariant();
+
+    private static string ClaimValue(string moduloClave, string accionClave)
+        => $"{Canon(moduloClave)}.{Canon(accionClave)}";
+
     private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
     {
         var roles = Models.Constants.Roles.GetAllRoles();
@@ -35,18 +37,12 @@ public static class RolesPermisosSeeder
         foreach (var roleName in roles)
         {
             if (!await roleManager.RoleExistsAsync(roleName))
-            {
                 await roleManager.CreateAsync(new IdentityRole(roleName));
-            }
         }
     }
 
-    /// <summary>
-    /// Crea módulos y acciones del sistema
-    /// </summary>
     private static async Task SeedModulosYAccionesAsync(AppDbContext context)
     {
-        // Definición de módulos con sus acciones
         var modulosData = new List<(string Nombre, string Clave, string Categoria, string Icono, int Orden, List<(string Nombre, string Clave, int Orden)> Acciones)>
         {
             // CATÁLOGO
@@ -222,12 +218,12 @@ public static class RolesPermisosSeeder
             }),
 
             // AUTORIZACIONES
-            ("Autorizaciones", "autorizaciones", "Autorizaciones", "bi-check2-circle", 70, new List<(string, string, int)>
+            ("Autorizaciones", AutorizacionesConstants.Modulo, "Autorizaciones", "bi-check2-circle", 70, new List<(string, string, int)>
             {
-                ("Ver", "view", 1),
-                ("Aprobar", "approve", 2),
-                ("Rechazar", "reject", 3),
-                ("Gestionar Umbrales", "managethresholds", 4)
+                ("Ver", AutorizacionesConstants.Acciones.Ver, 1),
+                ("Aprobar", AutorizacionesConstants.Acciones.Aprobar, 2),
+                ("Rechazar", AutorizacionesConstants.Acciones.Rechazar, 3),
+                ("Gestionar Umbrales", AutorizacionesConstants.Acciones.GestionarUmbrales, 4)
             }),
 
             // REPORTES
@@ -246,20 +242,35 @@ public static class RolesPermisosSeeder
             }),
 
             // CONFIGURACIÓN
-            ("Configuración", "configuracion", "Configuración", "bi-gear", 90, new List<(string, string, int)>
+            ("Acciones", "acciones", "Configuración", "bi-list-check", 90, new List<(string, string, int)>
+            {
+                ("Ver", "view", 1),
+                ("Crear", "create", 2),
+                ("Editar", "update", 3),
+                ("Eliminar", "delete", 4)
+            }),
+            ("Módulos", "modulos", "Configuración", "bi-diagram-3", 91, new List<(string, string, int)>
+            {
+                ("Ver", "view", 1),
+                ("Crear", "create", 2),
+                ("Editar", "update", 3),
+                ("Eliminar", "delete", 4)
+            }),
+            ("Configuración", "configuracion", "Configuración", "bi-gear", 92, new List<(string, string, int)>
             {
                 ("Ver", "view", 1),
                 ("Editar", "update", 2)
             }),
-            ("Usuarios", "usuarios", "Configuración", "bi-person", 91, new List<(string, string, int)>
+            ("Usuarios", "usuarios", "Configuración", "bi-person", 93, new List<(string, string, int)>
             {
                 ("Ver", "view", 1),
                 ("Crear", "create", 2),
                 ("Editar", "update", 3),
                 ("Eliminar", "delete", 4),
-                ("Asignar Roles", "assignroles", 5)
+                ("Asignar Roles", "assignroles", 5),
+                ("Resetear Contraseña", "resetpassword", 6)
             }),
-            ("Roles", "roles", "Configuración", "bi-shield", 92, new List<(string, string, int)>
+            ("Roles", "roles", "Configuración", "bi-shield", 94, new List<(string, string, int)>
             {
                 ("Ver", "view", 1),
                 ("Crear", "create", 2),
@@ -269,11 +280,15 @@ public static class RolesPermisosSeeder
             })
         };
 
-        foreach (var (nombre, clave, categoria, icono, orden, acciones) in modulosData)
+        foreach (var (nombre, claveRaw, categoria, icono, orden, acciones) in modulosData)
         {
-            // Buscar o crear módulo
+            var clave = Canon(claveRaw);
+
             var modulo = await context.ModulosSistema
+                .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(m => m.Clave == clave);
+
+            var isNewModulo = false;
 
             if (modulo == null)
             {
@@ -284,29 +299,75 @@ public static class RolesPermisosSeeder
                     Categoria = categoria,
                     Icono = icono,
                     Orden = orden,
-                    Activo = true
+                    Activo = true,
+                    IsDeleted = false
                 };
                 context.ModulosSistema.Add(modulo);
-                await context.SaveChangesAsync();
+                isNewModulo = true;
+            }
+            else
+            {
+                // revive + upsert metadata
+                modulo.Nombre = nombre;
+                modulo.Clave = clave;
+                modulo.Categoria = categoria;
+                modulo.Icono = icono;
+                modulo.Orden = orden;
+                modulo.Activo = true;
+                modulo.IsDeleted = false;
             }
 
-            // Crear acciones del módulo
-            foreach (var (nombreAccion, claveAccion, ordenAccion) in acciones)
-            {
-                var accionExistente = await context.AccionesModulo
-                    .FirstOrDefaultAsync(a => a.ModuloId == modulo.Id && a.Clave == claveAccion);
+            // Para módulos nuevos, no puede haber acciones existentes.
+            Dictionary<string, AccionModulo>? accionesExistentes = null;
 
-                if (accionExistente == null)
+            if (!isNewModulo)
+            {
+                var list = await context.AccionesModulo
+                    .IgnoreQueryFilters()
+                    .Where(a => a.ModuloId == modulo.Id)
+                    .ToListAsync();
+
+                accionesExistentes = list.ToDictionary(a => Canon(a.Clave), a => a);
+            }
+
+            foreach (var (nombreAccion, claveAccionRaw, ordenAccion) in acciones)
+            {
+                var claveAccion = Canon(claveAccionRaw);
+
+                if (isNewModulo)
                 {
-                    var accion = new AccionModulo
+                    context.AccionesModulo.Add(new AccionModulo
+                    {
+                        Modulo = modulo,
+                        Nombre = nombreAccion,
+                        Clave = claveAccion,
+                        Orden = ordenAccion,
+                        Activa = true,
+                        IsDeleted = false
+                    });
+                    continue;
+                }
+
+                if (accionesExistentes != null && accionesExistentes.TryGetValue(claveAccion, out var accionExistente))
+                {
+                    // revive + upsert metadata
+                    accionExistente.Nombre = nombreAccion;
+                    accionExistente.Clave = claveAccion;
+                    accionExistente.Orden = ordenAccion;
+                    accionExistente.Activa = true;
+                    accionExistente.IsDeleted = false;
+                }
+                else
+                {
+                    context.AccionesModulo.Add(new AccionModulo
                     {
                         ModuloId = modulo.Id,
                         Nombre = nombreAccion,
                         Clave = claveAccion,
                         Orden = ordenAccion,
-                        Activa = true
-                    };
-                    context.AccionesModulo.Add(accion);
+                        Activa = true,
+                        IsDeleted = false
+                    });
                 }
             }
         }
@@ -314,45 +375,36 @@ public static class RolesPermisosSeeder
         await context.SaveChangesAsync();
     }
 
-    /// <summary>
-    /// Asigna permisos a cada rol
-    /// </summary>
     private static async Task SeedPermisosAsync(AppDbContext context)
     {
-        var roles = await context.Roles.ToListAsync();
-        var modulos = await context.ModulosSistema.Include(m => m.Acciones).ToListAsync();
+        var roles = await context.Roles.AsNoTracking().ToListAsync();
+        var modulos = await context.ModulosSistema
+            .Include(m => m.Acciones)
+            .AsNoTracking()
+            .ToListAsync();
 
-        // ============================================
-        // SUPERADMIN - TODOS LOS PERMISOS
-        // ============================================
         var superAdminRole = roles.FirstOrDefault(r => r.Name == Models.Constants.Roles.SuperAdmin);
         if (superAdminRole != null)
-        {
             await AsignarTodosLosPermisosAsync(context, superAdminRole.Id, modulos);
-        }
 
-        // ============================================
-        // ADMINISTRADOR - CASI TODOS (sin delete críticos)
-        // ============================================
         var adminRole = roles.FirstOrDefault(r => r.Name == Models.Constants.Roles.Administrador);
         if (adminRole != null)
-        {
             await AsignarTodosLosPermisosAsync(context, adminRole.Id, modulos, exceptoAcciones: new[] { "usuarios.delete", "roles.delete", "configuracion.update" });
-        }
 
-        // ============================================
-        // GERENTE - Ventas, Compras, Reportes, Autorizaciones
-        // ============================================
         var gerenteRole = roles.FirstOrDefault(r => r.Name == Models.Constants.Roles.Gerente);
         if (gerenteRole != null)
         {
-            var modulosGerente = new[] { "ventas", "cotizaciones", "creditos", "cobranzas", "clientes", "evaluacioncredito", "proveedores", "ordenescompra", "stock", "movimientos", "devoluciones", "garantias", "rmas", "notascredito", "autorizaciones", "reportes", "dashboard" };
+            var modulosGerente = new[]
+            {
+                "ventas", "cotizaciones", "creditos", "cobranzas", "clientes", "evaluacioncredito",
+                "proveedores", "ordenescompra", "stock", "movimientos",
+                "devoluciones", "garantias", "rmas", "notascredito",
+                AutorizacionesConstants.Modulo,
+                "reportes", "dashboard"
+            };
             await AsignarPermisosModulosAsync(context, gerenteRole.Id, modulos, modulosGerente);
         }
 
-        // ============================================
-        // VENDEDOR - Ventas y Clientes
-        // ============================================
         var vendedorRole = roles.FirstOrDefault(r => r.Name == Models.Constants.Roles.Vendedor);
         if (vendedorRole != null)
         {
@@ -369,9 +421,6 @@ public static class RolesPermisosSeeder
             });
         }
 
-        // ============================================
-        // CAJERO - Cobros y Caja
-        // ============================================
         var cajeroRole = roles.FirstOrDefault(r => r.Name == Models.Constants.Roles.Cajero);
         if (cajeroRole != null)
         {
@@ -385,9 +434,6 @@ public static class RolesPermisosSeeder
             });
         }
 
-        // ============================================
-        // REPOSITOR - Stock
-        // ============================================
         var repositorRole = roles.FirstOrDefault(r => r.Name == Models.Constants.Roles.Repositor);
         if (repositorRole != null)
         {
@@ -401,9 +447,6 @@ public static class RolesPermisosSeeder
             });
         }
 
-        // ============================================
-        // TECNICO - Devoluciones, Garantías, RMAs
-        // ============================================
         var tecnicoRole = roles.FirstOrDefault(r => r.Name == Models.Constants.Roles.Tecnico);
         if (tecnicoRole != null)
         {
@@ -419,9 +462,6 @@ public static class RolesPermisosSeeder
             });
         }
 
-        // ============================================
-        // CONTADOR - Solo lectura y reportes
-        // ============================================
         var contadorRole = roles.FirstOrDefault(r => r.Name == Models.Constants.Roles.Contador);
         if (contadorRole != null)
         {
@@ -441,89 +481,101 @@ public static class RolesPermisosSeeder
         await context.SaveChangesAsync();
     }
 
+    private static async Task<Dictionary<(int ModuloId, int AccionId), RolPermiso>> LoadPermisosRoleAsync(AppDbContext context, string roleId)
+    {
+        var list = await context.RolPermisos
+            .IgnoreQueryFilters()
+            .Where(rp => rp.RoleId == roleId)
+            .ToListAsync();
+
+        return list.ToDictionary(rp => (rp.ModuloId, rp.AccionId), rp => rp);
+    }
+
+    private static async Task EnsurePermisoAsync(
+        AppDbContext context,
+        string roleId,
+        ModuloSistema modulo,
+        AccionModulo accion,
+        Dictionary<(int ModuloId, int AccionId), RolPermiso> existingByKey)
+    {
+        var key = (modulo.Id, accion.Id);
+        var claimValue = ClaimValue(modulo.Clave, accion.Clave);
+
+        if (!existingByKey.TryGetValue(key, out var permiso))
+        {
+            permiso = new RolPermiso
+            {
+                RoleId = roleId,
+                ModuloId = modulo.Id,
+                AccionId = accion.Id,
+                ClaimValue = claimValue,
+                IsDeleted = false
+            };
+            context.RolPermisos.Add(permiso);
+            existingByKey[key] = permiso;
+            return;
+        }
+
+        // revive + normalize
+        permiso.IsDeleted = false;
+        permiso.ClaimValue = claimValue;
+    }
+
     private static async Task AsignarTodosLosPermisosAsync(AppDbContext context, string roleId, List<ModuloSistema> modulos, string[]? exceptoAcciones = null)
     {
+        var excepto = (exceptoAcciones ?? Array.Empty<string>())
+            .Select(Canon) // "usuarios.delete" ya viene con punto; Canon lo baja a lower/trim
+            .ToHashSet(StringComparer.Ordinal);
+
+        var existing = await LoadPermisosRoleAsync(context, roleId);
+
         foreach (var modulo in modulos)
         {
             foreach (var accion in modulo.Acciones)
             {
-                var claimValue = $"{modulo.Clave}.{accion.Clave}";
-
-                if (exceptoAcciones != null && exceptoAcciones.Contains(claimValue))
+                var claimValue = ClaimValue(modulo.Clave, accion.Clave);
+                if (excepto.Contains(claimValue))
                     continue;
 
-                var existe = await context.RolPermisos
-                    .AnyAsync(rp => rp.RoleId == roleId && rp.ModuloId == modulo.Id && rp.AccionId == accion.Id);
-
-                if (!existe)
-                {
-                    context.RolPermisos.Add(new RolPermiso
-                    {
-                        RoleId = roleId,
-                        ModuloId = modulo.Id,
-                        AccionId = accion.Id,
-                        ClaimValue = claimValue
-                    });
-                }
+                await EnsurePermisoAsync(context, roleId, modulo, accion, existing);
             }
         }
     }
 
     private static async Task AsignarPermisosModulosAsync(AppDbContext context, string roleId, List<ModuloSistema> modulos, string[] modulosClaves)
     {
-        foreach (var moduloClave in modulosClaves)
+        var set = modulosClaves.Select(Canon).ToHashSet(StringComparer.Ordinal);
+        var existing = await LoadPermisosRoleAsync(context, roleId);
+
+        foreach (var modulo in modulos)
         {
-            var modulo = modulos.FirstOrDefault(m => m.Clave == moduloClave);
-            if (modulo == null) continue;
+            if (!set.Contains(Canon(modulo.Clave)))
+                continue;
 
             foreach (var accion in modulo.Acciones)
             {
-                var claimValue = $"{modulo.Clave}.{accion.Clave}";
-
-                var existe = await context.RolPermisos
-                    .AnyAsync(rp => rp.RoleId == roleId && rp.ModuloId == modulo.Id && rp.AccionId == accion.Id);
-
-                if (!existe)
-                {
-                    context.RolPermisos.Add(new RolPermiso
-                    {
-                        RoleId = roleId,
-                        ModuloId = modulo.Id,
-                        AccionId = accion.Id,
-                        ClaimValue = claimValue
-                    });
-                }
+                await EnsurePermisoAsync(context, roleId, modulo, accion, existing);
             }
         }
     }
 
     private static async Task AsignarPermisosEspecificosAsync(AppDbContext context, string roleId, List<ModuloSistema> modulos, Dictionary<string, string[]> permisosEspecificos)
     {
-        foreach (var (moduloClave, accionesClaves) in permisosEspecificos)
+        var existing = await LoadPermisosRoleAsync(context, roleId);
+
+        foreach (var (moduloClaveRaw, accionesClavesRaw) in permisosEspecificos)
         {
-            var modulo = modulos.FirstOrDefault(m => m.Clave == moduloClave);
+            var moduloClave = Canon(moduloClaveRaw);
+            var modulo = modulos.FirstOrDefault(m => Canon(m.Clave) == moduloClave);
             if (modulo == null) continue;
 
-            foreach (var accionClave in accionesClaves)
+            var accionesSet = accionesClavesRaw.Select(Canon).ToHashSet(StringComparer.Ordinal);
+            foreach (var accion in modulo.Acciones)
             {
-                var accion = modulo.Acciones.FirstOrDefault(a => a.Clave == accionClave);
-                if (accion == null) continue;
+                if (!accionesSet.Contains(Canon(accion.Clave)))
+                    continue;
 
-                var claimValue = $"{modulo.Clave}.{accion.Clave}";
-
-                var existe = await context.RolPermisos
-                    .AnyAsync(rp => rp.RoleId == roleId && rp.ModuloId == modulo.Id && rp.AccionId == accion.Id);
-
-                if (!existe)
-                {
-                    context.RolPermisos.Add(new RolPermiso
-                    {
-                        RoleId = roleId,
-                        ModuloId = modulo.Id,
-                        AccionId = accion.Id,
-                        ClaimValue = claimValue
-                    });
-                }
+                await EnsurePermisoAsync(context, roleId, modulo, accion, existing);
             }
         }
     }

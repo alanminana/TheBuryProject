@@ -1,6 +1,9 @@
 ﻿@model TheBuryProject.ViewModels.ClienteFilterViewModel
+@using TheBuryProject.Models.Enums
+@using TheBuryProject.Helpers
 @{
     ViewData["Title"] = "Clientes";
+    var listReturnUrl = Context.Request.Path + Context.Request.QueryString;
 
     var filtrosActivos =
         !string.IsNullOrWhiteSpace(Model.SearchTerm)
@@ -18,7 +21,7 @@
                 <h2 class="fw-bold mb-0">
                     <i class="bi bi-people text-info me-2"></i>Clientes
                 </h2>
-                <a asp-action="Create" class="btn btn-success">
+                <a asp-action="Create" asp-route-returnUrl="@listReturnUrl" class="btn btn-success">
                     <i class="bi bi-plus-circle"></i> Nuevo Cliente
                 </a>
             </div>
@@ -129,11 +132,17 @@
                                 <tbody>
                                     @foreach (var cliente in Model.Clientes)
                                     {
-                                        var badgeClass = cliente.PuntajeRiesgo >= 7
-                                        ? "bg-success"
-                                        : cliente.PuntajeRiesgo >= 4
-                                        ? "bg-warning text-dark"
-                                        : "bg-danger";
+                                        // Determinar badge según NivelRiesgo enum
+                                        var badgeClass = cliente.NivelRiesgo switch
+                                        {
+                                            NivelRiesgoCredito.AprobadoTotal => "bg-success",
+                                            NivelRiesgoCredito.AprobadoLimitado => "bg-info",
+                                            NivelRiesgoCredito.AprobadoCondicional => "bg-warning text-dark",
+                                            NivelRiesgoCredito.RechazadoRevisar => "bg-warning text-dark",
+                                            NivelRiesgoCredito.Rechazado => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                        var nivelTexto = EnumHelper.GetDisplayName(cliente.NivelRiesgo);
 
                                         <tr>
                                             <td>
@@ -166,8 +175,8 @@
                                                 }
                                             </td>
                                             <td class="text-center">
-                                                <span class="badge @badgeClass fs-6">
-                                                    @cliente.PuntajeRiesgo.ToString("F1")
+                                                <span class="badge @badgeClass fs-6" title="Puntaje: @cliente.PuntajeRiesgo.ToString("F1")">
+                                                    @nivelTexto
                                                 </span>
                                             </td>
                                             <td class="text-center">
@@ -188,14 +197,17 @@
                                             <td class="text-center">
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     <a asp-action="Details" asp-route-id="@cliente.Id"
+                                                           asp-route-returnUrl="@listReturnUrl"
                                                        class="btn btn-outline-info" title="Ver detalles">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
                                                     <a asp-action="Edit" asp-route-id="@cliente.Id"
+                                                           asp-route-returnUrl="@listReturnUrl"
                                                        class="btn btn-outline-warning" title="Editar">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                     <a asp-action="Delete" asp-route-id="@cliente.Id"
+                                                           asp-route-returnUrl="@listReturnUrl"
                                                        class="btn btn-outline-danger" title="Eliminar">
                                                         <i class="bi bi-trash"></i>
                                                     </a>

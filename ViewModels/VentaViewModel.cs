@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.ViewModels
@@ -6,6 +6,12 @@ namespace TheBuryProject.ViewModels
     public class VentaViewModel
     {
         public int Id { get; set; }
+
+        /// <summary>
+        /// RowVersion para control de concurrencia optimista.
+        /// Debe enviarse en POST para detectar conflictos.
+        /// </summary>
+        public byte[]? RowVersion { get; set; }
 
         [Display(Name = "Número")]
         public string Numero { get; set; } = string.Empty;
@@ -84,7 +90,7 @@ namespace TheBuryProject.ViewModels
         // Datos adicionales según tipo de pago
         public DatosTarjetaViewModel? DatosTarjeta { get; set; }
         public DatosChequeViewModel? DatosCheque { get; set; }
-        public DatosCreditoPersonalViewModel? DatosCreditoPersonal { get; set; }  // NUEVO
+        public DatosCreditoPersonallViewModel? DatosCreditoPersonall { get; set; }  // NUEVO
 
         // Datos de financiamiento
         [Display(Name = "Venta financiada")]
@@ -119,6 +125,11 @@ namespace TheBuryProject.ViewModels
 
         public DateTime CreatedAt { get; set; }
 
+        /// <summary>
+        /// Resultado de validación para ventas con crédito personal
+        /// </summary>
+        public ValidacionVentaResult? ValidacionCredito { get; set; }
+
         #region Presentación
 
         public string EstadoDisplay => Estado switch
@@ -129,6 +140,8 @@ namespace TheBuryProject.ViewModels
             EstadoVenta.Facturada => "Facturada",
             EstadoVenta.Entregada => "Entregada",
             EstadoVenta.Cancelada => "Cancelada",
+            EstadoVenta.PendienteRequisitos => "Pendiente Requisitos",
+            EstadoVenta.PendienteFinanciacion => "Pendiente Financiación",
             _ => Estado.ToString()
         };
 
@@ -140,6 +153,8 @@ namespace TheBuryProject.ViewModels
             EstadoVenta.Facturada => "badge bg-success",
             EstadoVenta.Entregada => "badge bg-dark text-light",
             EstadoVenta.Cancelada => "badge bg-danger",
+            EstadoVenta.PendienteRequisitos => "badge bg-warning text-dark",
+            EstadoVenta.PendienteFinanciacion => "badge bg-info",
             _ => "badge bg-secondary"
         };
 
@@ -171,12 +186,103 @@ namespace TheBuryProject.ViewModels
 
         #endregion
 
+        #region Estado del Crédito (para ventas con TipoPago = CreditoPersonal)
+
+        /// <summary>
+        /// Estado del crédito asociado a la venta.
+        /// Se usa para determinar botones en la vista.
+        /// </summary>
+        public EstadoCredito? CreditoEstado { get; set; }
+
+        /// <summary>
+        /// Fecha en que se configuró el financiamiento.
+        /// Se usa como flag persistente para evitar redireccionamientos repetidos.
+        /// </summary>
+        public DateTime? FechaConfiguracionCredito { get; set; }
+
+        /// <summary>
+        /// Indica si el financiamiento ya fue configurado (flag persistente).
+        /// </summary>
+        public bool FinanciamientoConfigurado => FechaConfiguracionCredito.HasValue;
+
+        /// <summary>
+        /// Indica si el crédito está pendiente de configuración del plan
+        /// </summary>
+        public bool CreditoPendienteConfiguracion =>
+            TipoPago == TipoPago.CreditoPersonal &&
+            CreditoId.HasValue &&
+            CreditoEstado == EstadoCredito.PendienteConfiguracion &&
+            !FinanciamientoConfigurado; // Si ya está configurado, no mostrar como pendiente
+
+        /// <summary>
+        /// Indica si el crédito ya fue configurado y está listo para confirmar.
+        /// Usa tanto el estado del crédito como el flag persistente.
+        /// </summary>
+        public bool CreditoConfigurado =>
+            TipoPago == TipoPago.CreditoPersonal &&
+            CreditoId.HasValue &&
+            (CreditoEstado == EstadoCredito.Configurado || FinanciamientoConfigurado);
+
+        /// <summary>
+        /// Indica si el crédito ya fue generado (cuotas creadas)
+        /// </summary>
+        public bool CreditoGenerado =>
+            TipoPago == TipoPago.CreditoPersonal &&
+            CreditoId.HasValue &&
+            (CreditoEstado == EstadoCredito.Generado ||
+             CreditoEstado == EstadoCredito.Activo ||
+             CreditoEstado == EstadoCredito.Finalizado);
+
+        #endregion
+
         #region Permisos de acción
 
-        public bool PuedeEditar => Estado == EstadoVenta.Cotizacion || Estado == EstadoVenta.Presupuesto;
+        public bool PuedeEditar => Estado == EstadoVenta.Cotizacion || 
+                                   Estado == EstadoVenta.Presupuesto || 
+                                   Estado == EstadoVenta.PendienteRequisitos ||
+                                   Estado == EstadoVenta.PendienteFinanciacion;
 
-        public bool PuedeConfirmar =>
-            Estado == EstadoVenta.Presupuesto && (!RequiereAutorizacion || EstadoAutorizacion == EstadoAutorizacionVenta.Autorizada);
+        /// <summary>
+        /// Para ventas con crédito personal:
+        /// - PendienteFinanciacion: NO puede confirmar (debe configurar primero)
+        /// - Con financiación configurada (FechaConfiguracionCredito): PUEDE confirmar
+        /// Para ventas sin crédito, usa la lógica original.
+        /// </summary>
+        public bool PuedeConfirmar
+        {
+            get
+            {
+                // No se puede confirmar si está en PendienteFinanciacion
+                if (Estado == EstadoVenta.PendienteFinanciacion)
+                    return false;
+
+                var estadoValido = Estado == EstadoVenta.Presupuesto || Estado == EstadoVenta.PendienteRequisitos;
+                var autorizacionOk = !RequiereAutorizacion || EstadoAutorizacion == EstadoAutorizacionVenta.Autorizada;
+
+                if (TipoPago == TipoPago.CreditoPersonal)
+                {
+                    // Solo puede confirmar si crédito está Configurado
+                    return estadoValido && autorizacionOk && CreditoConfigurado;
+                }
+
+                return estadoValido && autorizacionOk;
+            }
+        }
+
+        /// <summary>
+        /// Indica si la venta está en estado PendienteFinanciacion (crédito personal sin configurar)
+        /// </summary>
+        public bool EsPendienteFinanciacion => Estado == EstadoVenta.PendienteFinanciacion;
+
+        /// <summary>
+        /// Muestra botón "Configurar Crédito" si:
+        /// - Es crédito personal Y
+        /// - Está en PendienteFinanciacion O tiene crédito PendienteConfiguracion
+        /// </summary>
+        public bool PuedeConfigurarCredito =>
+            TipoPago == TipoPago.CreditoPersonall &&
+            CreditoId.HasValue &&
+            (Estado == EstadoVenta.PendienteFinanciacion || CreditoPendienteConfiguracion);
 
         public bool PuedeFacturar =>
             Estado == EstadoVenta.Confirmada && (!RequiereAutorizacion || EstadoAutorizacion == EstadoAutorizacionVenta.Autorizada);
@@ -192,6 +298,8 @@ namespace TheBuryProject.ViewModels
             RequiereAutorizacion && EstadoAutorizacion == EstadoAutorizacionVenta.PendienteAutorizacion;
 
         public bool FueRechazada => EstadoAutorizacion == EstadoAutorizacionVenta.Rechazada;
+
+        public bool TieneRequisitosPendientes => Estado == EstadoVenta.PendienteRequisitos;
 
         #endregion
     }

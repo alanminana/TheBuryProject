@@ -15,23 +15,41 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    const numberFormatter = new Intl.NumberFormat(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    const formatMoney = (value) => {
+        if (Number.isNaN(value) || value === null || value === undefined) return '$0,00';
+        return `$${numberFormatter.format(value)}`;
+    };
+
+    const setDifferenceClass = (difference) => {
+        diferenciaEl.classList.remove('text-warning', 'text-success', 'text-danger', 'text-info');
+        if (Math.abs(difference) > 0.01) {
+            diferenciaEl.classList.add(difference > 0 ? 'text-success' : 'text-danger');
+        } else {
+            diferenciaEl.classList.add('text-success');
+        }
+    };
+
     const calcularDiferencia = () => {
-        const efectivo = parseFloat(efectivoInput.value.replace(',', '.')) || 0;
-        const cheques = parseFloat(chequesInput.value.replace(',', '.')) || 0;
-        const vales = parseFloat(valesInput.value.replace(',', '.')) || 0;
+        const efectivo = parseFloat(String(efectivoInput.value || '').replace(',', '.')) || 0;
+        const cheques = parseFloat(String(chequesInput.value || '').replace(',', '.')) || 0;
+        const vales = parseFloat(String(valesInput.value || '').replace(',', '.')) || 0;
 
         const totalReal = efectivo + cheques + vales;
         const diferencia = totalReal - montoEsperado;
 
-        totalRealEl.textContent = `$${totalReal.toFixed(2)}`;
-        diferenciaEl.textContent = `$${diferencia.toFixed(2)}`;
+        totalRealEl.textContent = formatMoney(totalReal);
+        diferenciaEl.textContent = formatMoney(diferencia);
+        setDifferenceClass(diferencia);
 
         if (Math.abs(diferencia) > 0.01) {
-            diferenciaEl.className = diferencia > 0 ? 'text-success' : 'text-danger';
             justificacionDiv.style.display = 'block';
             justificacionInput.required = true;
         } else {
-            diferenciaEl.className = 'text-success';
             justificacionDiv.style.display = 'none';
             justificacionInput.required = false;
         }

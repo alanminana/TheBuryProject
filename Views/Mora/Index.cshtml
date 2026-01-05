@@ -1,30 +1,173 @@
-﻿@model ConfiguracionMoraViewModel
+﻿@model MoraIndexViewModel
 @using TheBuryProject.Models.Entities
 @using TheBuryProject.Models.Enums
 @using TheBuryProject.ViewModels
+@using TheBuryProject.Services.Interfaces
 
 @{
     ViewData["Title"] = "Dashboard de Mora";
-    var alertasActivas = ViewBag.AlertasActivas as List<AlertaCobranzaViewModel> ?? new List<AlertaCobranzaViewModel>();
+    var alertasActivas = Model.Alertas ?? new List<AlertaCobranzaViewModel>();
     var historialEjecuciones = ViewBag.HistorialEjecuciones as List<LogMora> ?? new List<LogMora>();
     var alertasCriticas = ViewBag.AlertasCriticas ?? 0;
     var alertasNoLeidas = ViewBag.AlertasNoLeidas ?? 0;
+    var kpis = ViewBag.KPIs as DashboardMoraKPIs;
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var listReturnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 
 <div class="container-fluid mora-page" data-refresh-ms="300000">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-speedometer2 me-2"></i>Dashboard de Mora</h2>
         <div>
-            <a asp-action="Configuracion" class="btn btn-outline-primary">
+            <a asp-action="ClientesMora" class="btn btn-warning">
+                <i class="bi bi-people-fill me-2"></i>Bandeja de Clientes
+            </a>
+            <a asp-action="Configuracion" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-primary">
                 <i class="bi bi-gear me-2"></i>Configuración
             </a>
-            <a asp-action="Alertas" class="btn btn-outline-info">
+            <a asp-action="ConfiguracionExpandida" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-secondary">
+                <i class="bi bi-sliders me-2"></i>Avanzado
+            </a>
+            <a asp-action="Alertas" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-info">
                 <i class="bi bi-bell me-2"></i>Ver Todas las Alertas
             </a>
         </div>
     </div>
 
-    <!-- Tarjetas de Estadísticas -->
+    <!-- KPIs de Clientes en Mora -->
+    @if (kpis != null)
+    {
+        <div class="row mb-4">
+            <div class="col-md-2">
+                <div class="card shadow-sm border-start border-danger border-4">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-1">Clientes en Mora</h6>
+                        <h2 class="mb-0 text-danger">@kpis.TotalClientesMora</h2>
+                        <small class="text-muted">@kpis.ClientesSinGestion sin gestión</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card shadow-sm border-start border-warning border-4">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-1">Monto Vencido</h6>
+                        <h4 class="mb-0 text-warning">$@kpis.MontoTotalVencido.ToString("N0")</h4>
+                        <small class="text-muted">Mora: $@kpis.MoraTotal.ToString("N0")</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card shadow-sm border-start border-info border-4">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-1">Promesas Hoy</h6>
+                        <h2 class="mb-0 text-info">@kpis.PromesasVencenHoy</h2>
+                        <small class="text-muted">$@kpis.MontoPromesasHoy.ToString("N0")</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card shadow-sm border-start border-success border-4">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-1">Acuerdos Activos</h6>
+                        <h2 class="mb-0 text-success">@kpis.AcuerdosActivos</h2>
+                        <small class="text-muted">$@kpis.MontoAcuerdosActivos.ToString("N0")</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card shadow-sm border-start border-primary border-4">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-1">Tasa Recupero</h6>
+                        <h2 class="mb-0 text-primary">@kpis.TasaRecuperoMes.ToString("N1")%</h2>
+                        <small class="text-muted">este mes</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card shadow-sm border-start border-secondary border-4">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-1">Días Prom. Atraso</h6>
+                        <h2 class="mb-0">@kpis.DiasPromedioAtraso.ToString("N0")</h2>
+                        <small class="text-muted">promedio</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribución por Prioridad -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Distribución por Prioridad</h6>
+                        <a asp-action="ClientesMora" class="btn btn-sm btn-light">Ver todos</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <a asp-action="ClientesMora" asp-route-prioridad="Critica" class="text-decoration-none">
+                                    <div class="p-3 rounded bg-danger bg-opacity-10">
+                                        <h2 class="text-danger mb-0">@kpis.ClientesPrioridadCritica</h2>
+                                        <small class="text-muted">Crítica</small>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a asp-action="ClientesMora" asp-route-prioridad="Alta" class="text-decoration-none">
+                                    <div class="p-3 rounded bg-warning bg-opacity-10">
+                                        <h2 class="text-warning mb-0">@kpis.ClientesPrioridadAlta</h2>
+                                        <small class="text-muted">Alta</small>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a asp-action="ClientesMora" asp-route-prioridad="Media" class="text-decoration-none">
+                                    <div class="p-3 rounded bg-info bg-opacity-10">
+                                        <h2 class="text-info mb-0">@kpis.ClientesPrioridadMedia</h2>
+                                        <small class="text-muted">Media</small>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a asp-action="ClientesMora" asp-route-prioridad="Baja" class="text-decoration-none">
+                                    <div class="p-3 rounded bg-secondary bg-opacity-10">
+                                        <h2 class="text-secondary mb-0">@kpis.ClientesPrioridadBaja</h2>
+                                        <small class="text-muted">Baja</small>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Gestiones Hoy</h6>
+                    </div>
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h2 class="mb-0 text-success">@kpis.ContactosHoy</h2>
+                                <small class="text-muted">Contactos</small>
+                            </div>
+                            <div class="col-6">
+                                <h2 class="mb-0 text-primary">@kpis.CobrosHoy</h2>
+                                <small class="text-muted">Cobros</small>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <span class="text-muted">Cobrado hoy: </span>
+                            <strong class="text-success">$@kpis.MontoCobradoHoy.ToString("N0")</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Tarjetas de Estadísticas de Alertas -->
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card text-white bg-primary shadow-sm">
@@ -34,7 +177,7 @@
                             <h6 class="card-title mb-0">Alertas Activas</h6>
                             <h2 class="mb-0">@alertasActivas.Count</h2>
                         </div>
-                        <i class="bi bi-bell-fill" style="font-size: 3rem; opacity: 0.5;"></i>
+                        <i class="bi bi-bell-fill fs-1 opacity-50"></i>
                     </div>
                 </div>
             </div>
@@ -48,7 +191,7 @@
                             <h6 class="card-title mb-0">Alertas Críticas</h6>
                             <h2 class="mb-0">@alertasCriticas</h2>
                         </div>
-                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem; opacity: 0.5;"></i>
+                        <i class="bi bi-exclamation-triangle-fill fs-1 opacity-50"></i>
                     </div>
                 </div>
             </div>
@@ -62,21 +205,21 @@
                             <h6 class="card-title mb-0">No Leídas</h6>
                             <h2 class="mb-0">@alertasNoLeidas</h2>
                         </div>
-                        <i class="bi bi-envelope-fill" style="font-size: 3rem; opacity: 0.5;"></i>
+                        <i class="bi bi-envelope-fill fs-1 opacity-50"></i>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card text-white @(Model.JobActivo ? "bg-success" : "bg-secondary") shadow-sm">
+            <div class="card text-white @(Model.Configuracion.JobActivo ? "bg-success" : "bg-secondary") shadow-sm">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title mb-0">Estado del Job</h6>
-                            <h3 class="mb-0">@(Model.JobActivo ? "Activo" : "Inactivo")</h3>
+                            <h3 class="mb-0">@(Model.Configuracion.JobActivo ? "Activo" : "Inactivo")</h3>
                         </div>
-                        <i class="bi bi-@(Model.JobActivo ? "play-circle-fill" : "pause-circle-fill")" style="font-size: 3rem; opacity: 0.5;"></i>
+                        <i class="bi bi-@(Model.Configuracion.JobActivo ? "play-circle-fill" : "pause-circle-fill") fs-1 opacity-50"></i>
                     </div>
                 </div>
             </div>
@@ -93,20 +236,20 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p class="mb-2"><strong>Tasa de Mora Diaria:</strong> @Model.TasaMoraDiaria%</p>
-                            <p class="mb-2"><strong>Días de Gracia:</strong> @Model.DiasGraciaMora días</p>
-                            <p class="mb-2"><strong>Recargo Primer Mes:</strong> @Model.PorcentajeRecargoPrimerMes%</p>
-                            <p class="mb-2"><strong>Recargo Segundo Mes:</strong> @Model.PorcentajeRecargoSegundoMes%</p>
+                            <p class="mb-2"><strong>Tasa de Mora Diaria:</strong> @Model.Configuracion.TasaMoraDiaria%</p>
+                            <p class="mb-2"><strong>Días de Gracia:</strong> @Model.Configuracion.DiasGraciaMora días</p>
+                            <p class="mb-2"><strong>Recargo Primer Mes:</strong> @Model.Configuracion.PorcentajeRecargoPrimerMes%</p>
+                            <p class="mb-2"><strong>Recargo Segundo Mes:</strong> @Model.Configuracion.PorcentajeRecargoSegundoMes%</p>
                         </div>
                         <div class="col-md-6">
-                            <p class="mb-2"><strong>Recargo Tercer Mes:</strong> @Model.PorcentajeRecargoTercerMes%</p>
-                            <p class="mb-2"><strong>Días Antes de Alerta:</strong> @Model.DiasAntesAlertaVencimiento días</p>
-                            <p class="mb-2"><strong>Hora de Ejecución:</strong> @Model.HoraEjecucion.ToString(@"hh\:mm")</p>
+                            <p class="mb-2"><strong>Recargo Tercer Mes:</strong> @Model.Configuracion.PorcentajeRecargoTercerMes%</p>
+                            <p class="mb-2"><strong>Días Antes de Alerta:</strong> @Model.Configuracion.DiasAntesAlertaVencimiento días</p>
+                            <p class="mb-2"><strong>Hora de Ejecución:</strong> @Model.Configuracion.HoraEjecucion.ToString(@"hh\:mm")</p>
                             <p class="mb-2">
                                 <strong>Última Ejecución:</strong>
-                                @if (Model.UltimaEjecucion.HasValue)
+                                @if (Model.Configuracion.UltimaEjecucion.HasValue)
                                 {
-                                    @Model.UltimaEjecucion.Value.ToString("dd/MM/yyyy HH:mm")
+                                    @Model.Configuracion.UltimaEjecucion.Value.ToString("dd/MM/yyyy HH:mm")
                                 }
                                 else
                                 {
@@ -127,7 +270,9 @@
                 <div class="card-body text-center">
                     <p class="mb-3">Ejecutar el proceso de cálculo de mora inmediatamente</p>
                     <form asp-action="EjecutarJob" method="post">
-                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="returnUrl" value="@listReturnUrl" />
+                        <button type="submit" class="btn btn-primary btn-lg w-100" data-confirm="¿Ejecutar ahora el proceso de mora? Esto procesará todas las cuotas vencidas.">
                             <i class="bi bi-play-fill me-2"></i>Ejecutar Ahora
                         </button>
                     </form>
@@ -143,13 +288,13 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Alertas Activas Recientes</h5>
-            <a asp-action="Alertas" class="btn btn-sm btn-dark">Ver Todas</a>
+            <a asp-action="Alertas" asp-route-returnUrl="@listReturnUrl" class="btn btn-sm btn-dark">Ver Todas</a>
         </div>
         <div class="card-body p-0">
             @if (!alertasActivas.Any())
             {
                 <div class="text-center py-5">
-                    <i class="bi bi-check-circle" style="font-size: 3rem; color: #198754;"></i>
+                    <i class="bi bi-check-circle fs-1 text-success"></i>
                     <p class="text-muted mt-3">No hay alertas activas</p>
                 </div>
             }
@@ -202,17 +347,26 @@
                                             @if (!alerta.Leida)
                                             {
                                                 <form asp-action="MarcarLeida" asp-route-id="@alerta.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="rowVersion" value="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")" />
+                                                    <input type="hidden" name="returnUrl" value="@listReturnUrl" />
                                                     <button type="submit" class="btn btn-outline-primary" title="Marcar como leída">
                                                         <i class="bi bi-eye"></i>
                                                     </button>
                                                 </form>
                                             }
-                                            <form asp-action="Resolver" asp-route-id="@alerta.Id" method="post" class="d-inline">
-                                                <button type="submit" class="btn btn-outline-success" title="Resolver">
-                                                    <i class="bi bi-check-lg"></i>
-                                                </button>
-                                            </form>
-                                            <a asp-controller="Creditos" asp-action="Details" asp-route-id="@alerta.CreditoId" class="btn btn-outline-info" title="Ver Crédito">
+                                            @if (!alerta.Resuelta)
+                                            {
+                                                <form asp-action="Resolver" asp-route-id="@alerta.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="rowVersion" value="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")" />
+                                                    <input type="hidden" name="returnUrl" value="@listReturnUrl" />
+                                                    <button type="submit" class="btn btn-outline-success" title="Resolver" data-confirm="¿Resolver esta alerta?">
+                                                        <i class="bi bi-check-lg"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            <a asp-controller="Credito" asp-action="Details" asp-route-id="@alerta.CreditoId" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-info" title="Ver Crédito">
                                                 <i class="bi bi-info-circle"></i>
                                             </a>
                                         </div>

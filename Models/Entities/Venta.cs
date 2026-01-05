@@ -4,7 +4,7 @@ using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.Models.Entities
 {
-    public class Venta : BaseEntity
+    public class Venta  : AuditableEntity
     {
         [Required]
         [StringLength(20)]
@@ -29,7 +29,7 @@ namespace TheBuryProject.Models.Entities
         // Cr�dito personal
         public int? CreditoId { get; set; }
 
-        // Autorizaci�n
+        // Autorización
         public EstadoAutorizacionVenta EstadoAutorizacion { get; set; } = EstadoAutorizacionVenta.NoRequiere;
         public bool RequiereAutorizacion { get; set; } = false;
 
@@ -49,7 +49,23 @@ namespace TheBuryProject.Models.Entities
         [StringLength(1000)]
         public string? MotivoRechazo { get; set; }
 
-        // Informaci�n adicional
+        /// <summary>
+        /// Razones de autorización en formato JSON (TipoRazonAutorizacion[])
+        /// </summary>
+        public string? RazonesAutorizacionJson { get; set; }
+
+        /// <summary>
+        /// Requisitos pendientes en formato JSON (TipoRequisitoPendiente[])
+        /// </summary>
+        public string? RequisitosPendientesJson { get; set; }
+
+        /// <summary>
+        /// Datos del plan de crédito personal en formato JSON.
+        /// Se guarda al crear la venta y se usa al confirmar para generar las cuotas.
+        /// </summary>
+        public string? DatosCreditoPersonallJson { get; set; }
+
+        // Información adicional
         [StringLength(200)]
         public string? VendedorNombre { get; set; }
 
@@ -61,6 +77,12 @@ namespace TheBuryProject.Models.Entities
         public DateTime? FechaEntrega { get; set; }
         public DateTime? FechaCancelacion { get; set; }
 
+        /// <summary>
+        /// Fecha en que se configuró el financiamiento del crédito personal.
+        /// Se usa para evitar redireccionamientos repetidos a ConfigurarVenta.
+        /// </summary>
+        public DateTime? FechaConfiguracionCredito { get; set; }
+
         [StringLength(500)]
         public string? MotivoCancelacion { get; set; }
 
@@ -71,7 +93,7 @@ namespace TheBuryProject.Models.Entities
         public virtual ICollection<Factura> Facturas { get; set; } = new List<Factura>();
         public virtual DatosTarjeta? DatosTarjeta { get; set; }
         public virtual DatosCheque? DatosCheque { get; set; }
-        public virtual ICollection<VentaCreditoCuota> VentaCreditoCuotas { get; set; } = new List<VentaCreditoCuota>();  // NUEVO
+        public virtual ICollection<VentaCreditoCuota> VentaCreditoCuotas { get; set; } = new List<VentaCreditoCuota>();
 
     }
 }

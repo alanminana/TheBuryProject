@@ -29,8 +29,14 @@ namespace TheBuryProject.Services
             {
                 var query = _context.Ventas
                     .Include(v => v.Cliente)
-                    .Include(v => v.Detalles)
+                    .Include(v => v.Detalles.Where(d =>
+                        !d.IsDeleted &&
+                        d.Producto != null &&
+                        !d.Producto.IsDeleted))
                         .ThenInclude(d => d.Producto)
+                    .Where(v =>
+                        !v.IsDeleted &&
+                        (v.Cliente == null || !v.Cliente.IsDeleted))
                     .AsQueryable();
 
                 // Aplicar filtros
@@ -50,34 +56,56 @@ namespace TheBuryProject.Services
                 // El filtro por vendedor requeriría comparación de strings
 
                 if (filtro.ProductoId.HasValue)
-                    query = query.Where(v => v.Detalles.Any(d => d.ProductoId == filtro.ProductoId.Value));
+                    query = query.Where(v => v.Detalles.Any(d =>
+                        !d.IsDeleted &&
+                        d.ProductoId == filtro.ProductoId.Value &&
+                        d.Producto != null &&
+                        !d.Producto.IsDeleted));
 
                 if (filtro.CategoriaId.HasValue)
-                    query = query.Where(v => v.Detalles.Any(d => d.Producto.CategoriaId == filtro.CategoriaId.Value));
+                    query = query.Where(v => v.Detalles.Any(d =>
+                        !d.IsDeleted &&
+                        d.Producto != null &&
+                        !d.Producto.IsDeleted &&
+                        d.Producto.CategoriaId == filtro.CategoriaId.Value));
 
                 if (filtro.MarcaId.HasValue)
-                    query = query.Where(v => v.Detalles.Any(d => d.Producto.MarcaId == filtro.MarcaId.Value));
+                    query = query.Where(v => v.Detalles.Any(d =>
+                        !d.IsDeleted &&
+                        d.Producto != null &&
+                        !d.Producto.IsDeleted &&
+                        d.Producto.MarcaId == filtro.MarcaId.Value));
 
                 var ventas = await query.OrderByDescending(v => v.FechaVenta).ToListAsync();
 
                 // Mapear a ViewModels
-                var ventasItems = ventas.Select(v => new VentaReporteItemViewModel
+                var ventasItems = ventas.Select(v =>
                 {
-                    Id = v.Id,
-                    NumeroVenta = v.Numero,
-                    FechaVenta = v.FechaVenta,
-                    ClienteNombre = v.Cliente?.NombreCompleto ?? "Anónimo",
-                    VendedorNombre = v.VendedorNombre ?? "Sin asignar",
-                    TipoPago = v.TipoPago,
-                    Subtotal = v.Subtotal,
-                    Descuento = v.Descuento,
-                    Total = v.Total,
-                    Costo = v.Detalles.Sum(d => d.Cantidad * d.Producto.PrecioCompra),
-                    Ganancia = v.Total - v.Detalles.Sum(d => d.Cantidad * d.Producto.PrecioCompra),
-                    MargenPorcentaje = v.Total > 0
-                        ? ((v.Total - v.Detalles.Sum(d => d.Cantidad * d.Producto.PrecioCompra)) / v.Total) * 100
-                        : 0,
-                    CantidadProductos = v.Detalles.Sum(d => (int)d.Cantidad)
+                    var detallesValidos = v.Detalles
+                        .Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted)
+                        .ToList();
+
+                    var costo = detallesValidos.Sum(d => d.Cantidad * d.Producto!.PrecioCompra);
+                    var ganancia = v.Total - costo;
+
+                    return new VentaReporteItemViewModel
+                    {
+                        Id = v.Id,
+                        NumeroVenta = v.Numero,
+                        FechaVenta = v.FechaVenta,
+                        ClienteNombre = v.Cliente?.NombreCompleto ?? "Anónimo",
+                        VendedorNombre = v.VendedorNombre ?? "Sin asignar",
+                        TipoPago = v.TipoPago,
+                        Subtotal = v.Subtotal,
+                        Descuento = v.Descuento,
+                        Total = v.Total,
+                        Costo = costo,
+                        Ganancia = ganancia,
+                        MargenPorcentaje = v.Total > 0
+                            ? (ganancia / v.Total) * 100
+                            : 0,
+                        CantidadProductos = detallesValidos.Sum(d => (int)d.Cantidad)
+                    };
                 }).ToList();
 
                 // Calcular estadísticas
@@ -129,6 +157,8 @@ namespace TheBuryProject.Services
                 var query = _context.Productos
                     .Include(p => p.Categoria)
                     .Include(p => p.Marca)
+                    .AsNoTracking()
+                    .Where(p => !p.IsDeleted)
                     .AsQueryable();
 
                 if (categoriaId.HasValue)
@@ -143,7 +173,10 @@ namespace TheBuryProject.Services
                 var hace30Dias = DateTime.UtcNow.AddDays(-30);
                 var ventasRecientes = await _context.VentaDetalles
                     .Include(vd => vd.Venta)
-                    .Where(vd => vd.Venta.FechaVenta >= hace30Dias)
+                    .Where(vd => !vd.IsDeleted &&
+                                 vd.Venta != null &&
+                                 !vd.Venta.IsDeleted &&
+                                 vd.Venta.FechaVenta >= hace30Dias)
                     .GroupBy(vd => vd.ProductoId)
                     .Select(g => new
                     {
@@ -212,7 +245,11 @@ namespace TheBuryProject.Services
                 var cuotasVencidas = await _context.Cuotas
                     .Include(c => c.Credito)
                         .ThenInclude(cr => cr.Cliente)
-                    .Where(c => c.FechaVencimiento < hoy && c.Estado == EstadoCuota.Pendiente)
+                    .Where(c => !c.IsDeleted
+                             && !c.Credito.IsDeleted
+                             && !c.Credito.Cliente.IsDeleted
+                             && c.FechaVencimiento < hoy
+                             && c.Estado == EstadoCuota.Pendiente)
                     .ToListAsync();
 
                 // Agrupar por cliente
@@ -233,9 +270,12 @@ namespace TheBuryProject.Services
                         var clienteId = g.Key.ClienteId;
                         var cuotasVigentes = _context.Cuotas
                             .Include(c => c.Credito)
-                            .Where(c => c.Credito.ClienteId == clienteId &&
-                                       c.FechaVencimiento >= hoy &&
-                                       c.Estado == EstadoCuota.Pendiente)
+                            .Where(c => !c.IsDeleted
+                                     && !c.Credito.IsDeleted
+                                     && !c.Credito.Cliente.IsDeleted
+                                     && c.Credito.ClienteId == clienteId
+                                     && c.FechaVencimiento >= hoy
+                                     && c.Estado == EstadoCuota.Pendiente)
                             .Sum(c => c.MontoTotal);
 
                         return new ClienteMorosoViewModel
@@ -290,10 +330,13 @@ namespace TheBuryProject.Services
             try
             {
                 var ventas = await _context.Ventas
-                    .Include(v => v.Detalles)
+                    .Include(v => v.Detalles.Where(d =>
+                        !d.IsDeleted &&
+                        d.Producto != null &&
+                        !d.Producto.IsDeleted))
                         .ThenInclude(d => d.Producto)
                             .ThenInclude(p => p.Categoria)
-                    .Where(v => v.FechaVenta >= fechaDesde && v.FechaVenta <= fechaHasta)
+                    .Where(v => !v.IsDeleted && v.FechaVenta >= fechaDesde && v.FechaVenta <= fechaHasta)
                     .ToListAsync();
 
                 return agruparPor?.ToLower() switch
@@ -305,7 +348,7 @@ namespace TheBuryProject.Services
                             Etiqueta = g.Key.ToString("dd/MM/yyyy"),
                             Monto = g.Sum(v => v.Total),
                             Cantidad = g.Count(),
-                            Ganancia = g.Sum(v => v.Total - v.Detalles.Sum(d => d.Cantidad * d.Producto.PrecioCompra))
+                            Ganancia = g.Sum(v => v.Total - v.Detalles.Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted).Sum(d => d.Cantidad * d.Producto!.PrecioCompra))
                         })
                         .OrderBy(v => v.Etiqueta)
                         .ToList(),
@@ -317,20 +360,21 @@ namespace TheBuryProject.Services
                             Etiqueta = $"{g.Key.Month:D2}/{g.Key.Year}",
                             Monto = g.Sum(v => v.Total),
                             Cantidad = g.Count(),
-                            Ganancia = g.Sum(v => v.Total - v.Detalles.Sum(d => d.Cantidad * d.Producto.PrecioCompra))
+                            Ganancia = g.Sum(v => v.Total - v.Detalles.Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted).Sum(d => d.Cantidad * d.Producto!.PrecioCompra))
                         })
                         .OrderBy(v => v.Etiqueta)
                         .ToList(),
 
                     "categoria" => ventas
                         .SelectMany(v => v.Detalles)
+                        .Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted)
                         .GroupBy(d => d.Producto.Categoria.Nombre)
                         .Select(g => new VentasAgrupadasViewModel
                         {
                             Etiqueta = g.Key,
                             Monto = g.Sum(d => d.PrecioUnitario * d.Cantidad),
                             Cantidad = (int)g.Sum(d => d.Cantidad),
-                            Ganancia = g.Sum(d => (d.PrecioUnitario - d.Producto.PrecioCompra) * d.Cantidad)
+                            Ganancia = g.Sum(d => (d.PrecioUnitario - d.Producto!.PrecioCompra) * d.Cantidad)
                         })
                         .OrderByDescending(v => v.Monto)
                         .ToList(),
@@ -352,6 +396,12 @@ namespace TheBuryProject.Services
                 .Include(vd => vd.Venta)
                 .Include(vd => vd.Producto)
                     .ThenInclude(p => p.Categoria)
+                .Where(vd =>
+                    !vd.IsDeleted &&
+                    vd.Venta != null &&
+                    !vd.Venta.IsDeleted &&
+                    vd.Producto != null &&
+                    !vd.Producto.IsDeleted)
                 .AsQueryable();
 
             if (filtro.FechaDesde.HasValue)
@@ -391,6 +441,7 @@ namespace TheBuryProject.Services
         {
             var query = _context.Ventas
                 .Include(v => v.Cliente)
+                .Where(v => !v.IsDeleted && v.Cliente != null && !v.Cliente.IsDeleted)
                 .AsQueryable();
 
             if (filtro.FechaDesde.HasValue)

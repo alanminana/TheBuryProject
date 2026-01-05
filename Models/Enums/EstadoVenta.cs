@@ -2,11 +2,13 @@ namespace TheBuryProject.Models.Enums
 {
     public enum EstadoVenta
     {
-        Cotizacion = 0,      // NUEVO: cotizaci髇 sin compromiso
-        Presupuesto = 1,     // Presupuesto (antes era 0)
-        Confirmada = 2,      // Antes era 1
-        Facturada = 3,       // Antes era 2
-        Entregada = 4,       // Antes era 3
-        Cancelada = 5        // Antes era 4
+        Cotizacion = 0,             // Cotizaci贸n sin compromiso
+        Presupuesto = 1,            // Presupuesto formal
+        Confirmada = 2,             // Venta confirmada
+        Facturada = 3,              // Facturada
+        Entregada = 4,              // Entregada
+        Cancelada = 5,              // Cancelada
+        PendienteRequisitos = 6,    // Esperando documentaci贸n, autorizaci贸n u otros requisitos
+        PendienteFinanciacion = 7   // Cr茅dito personal: esperando configuraci贸n del financiamiento
     }
 }

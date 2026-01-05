@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TheBuryProject.Filters;
+using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -10,7 +11,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = "SuperAdmin,Contador")]
+    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Contador)]
     [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionVer)]
     public class OrdenCompraController : Controller
     {
@@ -348,22 +349,6 @@ namespace TheBuryProject.Controllers
                 // Mapear a ViewModel
                 var viewModel = _mapper.Map<OrdenCompraViewModel>(orden);
 
-                // DEBUG: Log para verificar datos
-                _logger.LogInformation("=== RECEPCIONAR ORDEN {Id} ===", id);
-                _logger.LogInformation("N�mero: {Numero}", viewModel.Numero);
-                _logger.LogInformation("Proveedor: {Proveedor}", viewModel.ProveedorNombre);
-                _logger.LogInformation("Detalles Count: {Count}", viewModel.Detalles?.Count ?? 0);
-
-                if (viewModel.Detalles != null)
-                {
-                    foreach (var detalle in viewModel.Detalles)
-                    {
-                        _logger.LogInformation("  - Producto: {Nombre}, Cantidad: {Cantidad}, Recibida: {Recibida}",
-                            detalle.ProductoNombre, detalle.Cantidad, detalle.CantidadRecibida);
-                    }
-                }
-                _logger.LogInformation("=== FIN DEBUG ===");
-
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -378,7 +363,7 @@ namespace TheBuryProject.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionRecepcionar)]
-        public async Task<IActionResult> Recepcionar(int id, List<RecepcionDetalleViewModel> detalles)
+        public async Task<IActionResult> Recepcionar(int id, byte[] rowVersion, List<RecepcionDetalleViewModel> detalles)
         {
             try
             {
@@ -389,7 +374,7 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Recepcionar), new { id });
                 }
 
-                await _ordenCompraService.RecepcionarAsync(id, detalles);
+                await _ordenCompraService.RecepcionarAsync(id, rowVersion, detalles);
 
                 TempData["Success"] = "Mercader�a recepcionada exitosamente";
                 return RedirectToAction(nameof(Details), new { id });

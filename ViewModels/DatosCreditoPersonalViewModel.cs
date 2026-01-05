@@ -1,8 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace TheBuryProject.ViewModels
 {
-    public class DatosCreditoPersonalViewModel
+    public class DatosCreditoPersonallViewModel
     {
         public int CreditoId { get; set; }
         public string CreditoNumero { get; set; } = string.Empty;

@@ -1,52 +1,52 @@
-﻿using TheBuryProject.Models.Enums;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Helpers
 {
-    /// <summary>
-    /// Contiene métodos auxiliares para el ClienteController
-    /// </summary>
     public static class ClienteControllerHelper
     {
-        /// <summary>
-        /// Verifica si se tienen todos los documentos requeridos
-        /// </summary>
+        // Documentos obligatorios: DNI, Recibo de Sueldo, Servicio
+        // Nota: Veraz/CUIL son opcionales (dan puntos extra en evaluación pero no son requisito)
         public static bool VerificaDocumentosRequeridos(List<string> tiposDocumentosVerificados)
         {
-            return tiposDocumentosVerificados.Contains("DNI") &&
-                   tiposDocumentosVerificados.Contains("Recibo de Sueldo") &&
-                   tiposDocumentosVerificados.Contains("Veraz") &&
-                   (tiposDocumentosVerificados.Contains("Servicio de Luz") ||
-                    tiposDocumentosVerificados.Contains("Servicio de Gas") ||
-                    tiposDocumentosVerificados.Contains("Servicio de Agua"));
+            if (tiposDocumentosVerificados is null || tiposDocumentosVerificados.Count == 0)
+                return false;
+
+            var set = NormalizarTipos(tiposDocumentosVerificados);
+
+            return set.Contains("DNI")
+                   && set.Contains("Recibo de Sueldo")
+                   && TieneServicio(set);
         }
 
-        /// <summary>
-        /// Obtiene la lista de documentos faltantes
-        /// </summary>
         public static List<string> ObtenerDocumentosFaltantes(List<string> tiposVerificados)
         {
             var faltantes = new List<string>();
-            var documentosRequeridos = new (string nombre, Func<List<string>, bool> verificador)[]
-            {
-                ("DNI", d => d.Contains("DNI")),
-                ("Recibo de Sueldo", d => d.Contains("Recibo de Sueldo")),
-                ("Veraz", d => d.Contains("Veraz")),
-                ("Servicio (Luz/Gas/Agua)", d => d.Contains("Servicio de Luz") || d.Contains("Servicio de Gas") || d.Contains("Servicio de Agua"))
-            };
 
-            foreach (var (nombre, verificador) in documentosRequeridos)
+            if (tiposVerificados is null || tiposVerificados.Count == 0)
             {
-                if (!verificador(tiposVerificados))
-                    faltantes.Add(nombre);
+                faltantes.Add("DNI");
+                faltantes.Add("Recibo de Sueldo");
+                faltantes.Add("Servicio");
+                return faltantes;
             }
+
+            var set = NormalizarTipos(tiposVerificados);
+
+            if (!set.Contains("DNI"))
+                faltantes.Add("DNI");
+
+            if (!set.Contains("Recibo de Sueldo"))
+                faltantes.Add("Recibo de Sueldo");
+
+            if (!TieneServicio(set))
+                faltantes.Add("Servicio");
 
             return faltantes;
         }
 
-        /// <summary>
-        /// Determina el nivel de riesgo basado en el score
-        /// </summary>
         public static string DeterminarNivelRiesgo(int score)
         {
             return score switch
@@ -57,23 +57,9 @@ namespace TheBuryProject.Helpers
             };
         }
 
-        /// <summary>
-        /// Verifica si el cliente cumple con todos los requisitos
-        /// </summary>
-        public static bool VerificaCumplimientoRequisitos(EvaluacionCreditoResult evaluacion)
-        {
-            return evaluacion.TieneDocumentosCompletos &&
-                   evaluacion.PorcentajeEndeudamiento < 50 &&
-                   evaluacion.ScoreCrediticio >= 400 &&
-                   (!evaluacion.RequiereGarante || evaluacion.TieneGarante);
-        }
-
-        /// <summary>
-        /// Genera alertas y recomendaciones para el cliente
-        /// </summary>
         public static void GenerarAlertasYRecomendaciones(EvaluacionCreditoResult evaluacion)
         {
-            if (!evaluacion.TieneDocumentosCompletos)
+            if (!evaluacion.TieneDocumentosCompletos && evaluacion.DocumentosFaltantes?.Count > 0)
                 evaluacion.AlertasYRecomendaciones.Add($"⚠️ Faltan documentos: {string.Join(", ", evaluacion.DocumentosFaltantes)}");
 
             if (evaluacion.PorcentajeEndeudamiento > 40)
@@ -88,14 +74,27 @@ namespace TheBuryProject.Helpers
             if (evaluacion.MontoMaximoDisponible <= 0)
                 evaluacion.AlertasYRecomendaciones.Add("⚠️ Sin capacidad de pago disponible");
 
-            evaluacion.PuedeAprobarConExcepcion = !evaluacion.CumpleRequisitos &&
-                                                  evaluacion.IngresosMensuales > 0 &&
-                                                  evaluacion.PorcentajeEndeudamiento < 60;
-
             if (evaluacion.CumpleRequisitos)
                 evaluacion.AlertasYRecomendaciones.Add("✅ El cliente cumple con todos los requisitos");
             else if (evaluacion.PuedeAprobarConExcepcion)
                 evaluacion.AlertasYRecomendaciones.Add("⚠️ Puede aprobarse con excepción autorizada");
+        }
+
+        private static HashSet<string> NormalizarTipos(IEnumerable<string> tipos)
+        {
+            return new HashSet<string>(
+                tipos
+                    .Where(t => !string.IsNullOrWhiteSpace(t))
+                    .Select(t => t.Trim()),
+                StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static bool TieneServicio(ISet<string> tipos)
+        {
+            return tipos.Contains("Servicio")
+                   || tipos.Contains("Servicio de Luz")
+                   || tipos.Contains("Servicio de Gas")
+                   || tipos.Contains("Servicio de Agua");
         }
     }
 }

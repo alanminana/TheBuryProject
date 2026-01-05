@@ -79,7 +79,7 @@ namespace TheBuryProject.Services
             configuracion.PorcentajeDescuentoMaximo = viewModel.PorcentajeDescuentoMaximo;
             configuracion.TieneRecargo = viewModel.TieneRecargo;
             configuracion.PorcentajeRecargo = viewModel.PorcentajeRecargo;
-            configuracion.UpdatedAt = DateTime.Now;
+            configuracion.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -88,12 +88,13 @@ namespace TheBuryProject.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var configuracion = await _context.ConfiguracionesPago.FindAsync(id);
+            var configuracion = await _context.ConfiguracionesPago
+                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
             if (configuracion == null)
                 return false;
 
             configuracion.IsDeleted = true;
-            configuracion.UpdatedAt = DateTime.Now;
+            configuracion.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return true;
