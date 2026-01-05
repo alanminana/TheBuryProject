@@ -27,8 +27,58 @@ namespace TheBuryProject.Data
                 logger.LogInformation("Iniciando inicialización de base de datos...");
 
                 // Aplicar migraciones pendientes
-                await context.Database.MigrateAsync();
-                logger.LogInformation("Migraciones aplicadas exitosamente");
+                // Evitar intentar aplicar migraciones si las tablas ya existen pero falta la tabla __EFMigrationsHistory
+                var connection = context.Database.GetDbConnection();
+                await connection.OpenAsync();
+                try
+                {
+                    using var cmd = connection.CreateCommand();
+                    cmd.CommandText = "SELECT OBJECT_ID(N'dbo.AspNetRoles', N'U')";
+                    var objId = await cmd.ExecuteScalarAsync();
+
+                    var hasAspNetRoles = objId != null && objId != DBNull.Value;
+
+                    var shouldMigrate = true;
+
+                    if (hasAspNetRoles)
+                    {
+                        // Si existen las tablas de Identity, verificar si existe el historial de migraciones
+                        try
+                        {
+                            cmd.CommandText = "SELECT COUNT(*) FROM [__EFMigrationsHistory]";
+                            var countObj = await cmd.ExecuteScalarAsync();
+                            var count = 0;
+                            if (countObj != null && countObj != DBNull.Value)
+                                count = Convert.ToInt32(countObj);
+
+                            if (count == 0)
+                            {
+                                shouldMigrate = false;
+                                logger.LogWarning("La base de datos contiene tablas de Identity pero no tiene entradas en __EFMigrationsHistory. Se omitirá ApplyMigrations para evitar conflictos.");
+                            }
+                        }
+                        catch
+                        {
+                            // Si la consulta falla (por ejemplo, la tabla __EFMigrationsHistory no existe), evitar migrar
+                            shouldMigrate = false;
+                            logger.LogWarning("No se pudo leer __EFMigrationsHistory. Se omitirá ApplyMigrations para evitar conflictos con tablas existentes.");
+                        }
+                    }
+
+                    if (shouldMigrate)
+                    {
+                        await context.Database.MigrateAsync();
+                        logger.LogInformation("Migraciones aplicadas exitosamente");
+                    }
+                    else
+                    {
+                        logger.LogInformation("Se omitió la aplicación de migraciones porque ya existen tablas en la base de datos sin historial de migraciones.");
+                    }
+                }
+                finally
+                {
+                    await connection.CloseAsync();
+                }
 
                 // Ejecutar seeder de roles, módulos y permisos
                 await RolesPermisosSeeder.SeedAsync(context, roleManager);
