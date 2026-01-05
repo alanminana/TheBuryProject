@@ -63,7 +63,7 @@ namespace TheBuryProject.Services
                 }
 
                 var diasGracia = config.DiasGracia ?? 0;
-                var fechaGracia = DateTime.Now.AddDays(-diasGracia);
+                var fechaGracia = DateTime.UtcNow.AddDays(-diasGracia);
 
                 // Obtener cuotas vencidas que no tienen mora calculada
                 var cuotasVencidas = await _context.Cuotas
@@ -140,7 +140,7 @@ namespace TheBuryProject.Services
                         continue;
 
                     var montoVencido = cuotasVencidas.Sum(c => c.MontoTotal + c.MontoPunitorio - c.MontoPagado);
-                    var diasAtraso = (DateTime.Now - cuotasVencidas.Min(c => c.FechaVencimiento)).Days;
+                    var diasAtraso = (DateTime.UtcNow - cuotasVencidas.Min(c => c.FechaVencimiento)).Days;
 
                     // ✅ MEJORADO: Verificar si ya existe alerta activa
                     alertasActivasByCreditoId.TryGetValue(credito.Id, out var alertaExistente);
@@ -154,7 +154,7 @@ namespace TheBuryProject.Services
                         alertaExistente.CuotasVencidas = cuotasVencidas.Count;
                         alertaExistente.Mensaje = GenerarMensajeAlerta(credito, montoVencido, cuotasVencidas.Count, diasAtraso);
                         alertaExistente.Prioridad = DeterminarPrioridad(montoVencido, credito.MontoAprobado, diasAtraso);
-                        alertaExistente.UpdatedAt = DateTime.Now;
+                        alertaExistente.UpdatedAt = DateTime.UtcNow;
                         
                         continue;
                     }
@@ -169,7 +169,7 @@ namespace TheBuryProject.Services
                         Mensaje = GenerarMensajeAlerta(credito, montoVencido, cuotasVencidas.Count, diasAtraso),
                         MontoVencido = montoVencido,
                         CuotasVencidas = cuotasVencidas.Count,
-                        FechaAlerta = DateTime.Now,
+                        FechaAlerta = DateTime.UtcNow,
                         Resuelta = false
                     };
 
@@ -192,10 +192,10 @@ namespace TheBuryProject.Services
 
         private decimal CalcularMora(Cuota cuota)
         {
-            if (cuota.Credito == null || cuota.FechaVencimiento >= DateTime.Now)
+            if (cuota.Credito == null || cuota.FechaVencimiento >= DateTime.UtcNow)
                 return 0;
 
-            var diasAtraso = (DateTime.Now - cuota.FechaVencimiento).Days;
+            var diasAtraso = (DateTime.UtcNow - cuota.FechaVencimiento).Days;
             var tasaMensual = (cuota.Credito.TasaInteres / 100m) / 12m;
             var mora = cuota.MontoTotal * tasaMensual * (diasAtraso / 30m);
 
@@ -260,7 +260,7 @@ namespace TheBuryProject.Services
                 _context.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
 
                 alerta.Resuelta = true;
-                alerta.FechaResolucion = DateTime.Now;
+                alerta.FechaResolucion = DateTime.UtcNow;
                 if (!string.IsNullOrEmpty(observaciones))
                     alerta.Observaciones = observaciones;
 
@@ -301,7 +301,7 @@ namespace TheBuryProject.Services
 
                 // Nota: "Leída" es conceptualmente diferente de "Resuelta"
                 // Esta es una operación de UI para marcar que el usuario vio la alerta
-                alerta.UpdatedAt = DateTime.Now;
+                alerta.UpdatedAt = DateTime.UtcNow;
 
                 try
                 {
@@ -337,10 +337,10 @@ namespace TheBuryProject.Services
                                          c.Credito.Cliente != null &&
                                          !c.Credito.Cliente.IsDeleted);
 
-                if (cuota == null || cuota.Credito == null || cuota.FechaVencimiento >= DateTime.Now)
+                if (cuota == null || cuota.Credito == null || cuota.FechaVencimiento >= DateTime.UtcNow)
                     return 0;
 
-                var diasAtraso = (DateTime.Now - cuota.FechaVencimiento).Days;
+                var diasAtraso = (DateTime.UtcNow - cuota.FechaVencimiento).Days;
                 var tasaMensual = (cuota.Credito.TasaInteres / 100m) / 12m;
                 var mora = cuota.MontoTotal * tasaMensual * (diasAtraso / 30m);
 

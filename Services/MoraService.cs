@@ -45,12 +45,11 @@ namespace TheBuryProject.Services
                     _configuracion = new ConfiguracionMora
                     {
                         DiasGracia = 3,
-                        PorcentajeRecargo = 5.0m,
-                        CalculoAutomatico = true,
-                        NotificacionAutomatica = true,
-                        JobActivo = true,
-                        HoraEjecucion = new TimeSpan(8, 0, 0),
-                        CreatedAt = DateTime.Now
+                        TasaMoraBase = 5.0m,
+                        ProcesoAutomaticoActivo = true,
+                        NotificacionesActivas = true,
+                        HoraEjecucionDiaria = new TimeSpan(8, 0, 0),
+                        CreatedAt = DateTime.UtcNow
                     };
 
                     _context.ConfiguracionesMora.Add(_configuracion);
@@ -77,12 +76,11 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException("Configuración no encontrada");
 
                 config.DiasGracia = viewModel.DiasGracia;
-                config.PorcentajeRecargo = viewModel.PorcentajeRecargo;
-                config.CalculoAutomatico = viewModel.CalculoAutomatico;
-                config.NotificacionAutomatica = viewModel.NotificacionAutomatica;
-                config.JobActivo = viewModel.JobActivo;
-                config.HoraEjecucion = viewModel.HoraEjecucion;
-                config.UpdatedAt = DateTime.Now;
+                config.TasaMoraBase = viewModel.PorcentajeRecargo;
+                config.ProcesoAutomaticoActivo = viewModel.CalculoAutomatico;
+                config.NotificacionesActivas = viewModel.NotificacionAutomatica;
+                config.HoraEjecucionDiaria = viewModel.HoraEjecucion;
+                config.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
                 _configuracion = null; // Limpiar caché para recargar
@@ -103,7 +101,7 @@ namespace TheBuryProject.Services
 
         public async Task ProcesarMoraAsync()
         {
-            var inicioEjecucion = DateTime.Now;
+            var inicioEjecucion = DateTime.UtcNow;
             var log = new LogMora
             {
                 FechaEjecucion = inicioEjecucion,
@@ -183,9 +181,9 @@ namespace TheBuryProject.Services
                             Mensaje = GenerarMensajeAlerta(cliente, montoVencido, cuotasDelCredito.Count, diasMora),
                             MontoVencido = montoVencido,
                             CuotasVencidas = cuotasDelCredito.Count,
-                            FechaAlerta = DateTime.Now,
+                            FechaAlerta = DateTime.UtcNow,
                             Resuelta = false,
-                            CreatedAt = DateTime.Now
+                            CreatedAt = DateTime.UtcNow
                         };
 
                         _context.AlertasCobranza.Add(alerta);
@@ -210,7 +208,7 @@ namespace TheBuryProject.Services
                 await GenerarAlertasProximosVencimientosAsync(config);
 
                 // Actualizar configuración
-                config.UltimaEjecucion = DateTime.Now;
+                config.UltimaEjecucion = DateTime.UtcNow;
                 log.AlertasGeneradas = alertasCreadas;
                 log.Exitoso = true;
                 log.Mensaje = $"Proceso completado. {cuotasVencidas.Count} cuotas procesadas, " +
@@ -233,7 +231,7 @@ namespace TheBuryProject.Services
             finally
             {
                 // Registrar duración
-                log.DuracionEjecucion = DateTime.Now - inicioEjecucion;
+                log.DuracionEjecucion = DateTime.UtcNow - inicioEjecucion;
 
                 _context.LogsMora.Add(log);
                 await _context.SaveChangesAsync();
@@ -250,7 +248,7 @@ namespace TheBuryProject.Services
                 var hoy = DateTime.Today;
                 var diasAntesAlerta = 5; // ✅ TODO: Hacer configurable en ConfiguracionMora
                 var proximosDias = hoy.AddDays(diasAntesAlerta);
-                var now = DateTime.Now;
+                var now = DateTime.UtcNow;
 
                 var cuotasPorVencer = await _context.Cuotas
                     .Include(c => c.Credito)
@@ -421,9 +419,9 @@ namespace TheBuryProject.Services
                 _context.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
 
                 alerta.Resuelta = true;
-                alerta.FechaResolucion = DateTime.Now;
+                alerta.FechaResolucion = DateTime.UtcNow;
                 alerta.Observaciones = observaciones;
-                alerta.UpdatedAt = DateTime.Now;
+                alerta.UpdatedAt = DateTime.UtcNow;
 
                 try
                 {
@@ -457,7 +455,7 @@ namespace TheBuryProject.Services
 
                 _context.Entry(alerta).Property(a => a.RowVersion).OriginalValue = rowVersion;
 
-                alerta.UpdatedAt = DateTime.Now;
+                alerta.UpdatedAt = DateTime.UtcNow;
 
                 try
                 {
@@ -555,7 +553,7 @@ namespace TheBuryProject.Services
                 config.MaximoCuotasAcuerdo = viewModel.MaximoCuotasAcuerdo;
                 config.PorcentajeMinimoEntrega = viewModel.PorcentajeMinimoEntrega;
                 config.PermitirCondonacionMora = viewModel.PermitirCondonacionMora;
-                config.UpdatedAt = DateTime.Now;
+                config.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
                 _configuracion = null;
@@ -795,8 +793,10 @@ namespace TheBuryProject.Services
                     MontoCapitalVencido = creditos.Sum(c => c.MontoCuotasVencidas),
                     MontoMoraAcumulada = creditos.Sum(c => c.MontoMora),
                     PrioridadMaxima = alertasActivas.Any() ? alertasActivas.Max(a => a.Prioridad) : PrioridadAlerta.Baja,
+                    // Determinar estado de gestión basado en alertas activas
+                    // Nota: TipoNombre contiene TipoAlertaCobranza, no EstadoGestionCobranza
                     EstadoGestion = alertasActivas.Any() 
-                        ? (EstadoGestionCobranza)alertasActivas.Max(a => (int)Enum.Parse<EstadoGestionCobranza>(a.TipoNombre ?? "Pendiente", true))
+                        ? EstadoGestionCobranza.EnGestion 
                         : EstadoGestionCobranza.Pendiente,
                     ContactosRealizados = historial.Count,
                     UltimoContacto = historial.OrderByDescending(h => h.FechaContacto).FirstOrDefault()?.FechaContacto,
@@ -903,7 +903,7 @@ namespace TheBuryProject.Services
                     ClienteId = contacto.ClienteId,
                     AlertaCobranzaId = contacto.AlertaId ?? 0,
                     GestorId = gestorId,
-                    FechaContacto = DateTime.Now,
+                    FechaContacto = DateTime.UtcNow,
                     TipoContacto = contacto.TipoContacto,
                     Resultado = contacto.Resultado,
                     Telefono = contacto.Telefono,
@@ -913,7 +913,7 @@ namespace TheBuryProject.Services
                     ProximoContacto = contacto.ProximoContacto,
                     FechaPromesaPago = contacto.FechaPromesaPago,
                     MontoPromesaPago = contacto.MontoPromesaPago,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 _context.HistorialContactos.Add(historial);
@@ -930,7 +930,7 @@ namespace TheBuryProject.Services
                         alerta.EstadoGestion = EstadoGestionCobranza.PromesaPago;
                         alerta.FechaPromesaPago = contacto.FechaPromesaPago;
                         alerta.MontoPromesaPago = contacto.MontoPromesaPago;
-                        alerta.UpdatedAt = DateTime.Now;
+                        alerta.UpdatedAt = DateTime.UtcNow;
                     }
                 }
 
@@ -994,7 +994,7 @@ namespace TheBuryProject.Services
                 alerta.FechaPromesaPago = promesa.FechaPromesa;
                 alerta.MontoPromesaPago = promesa.MontoPromesa;
                 alerta.Observaciones = promesa.Observaciones;
-                alerta.UpdatedAt = DateTime.Now;
+                alerta.UpdatedAt = DateTime.UtcNow;
 
                 // Registrar en historial
                 var historial = new HistorialContacto
@@ -1002,13 +1002,13 @@ namespace TheBuryProject.Services
                     ClienteId = promesa.ClienteId,
                     AlertaCobranzaId = promesa.AlertaId,
                     GestorId = gestorId,
-                    FechaContacto = DateTime.Now,
+                    FechaContacto = DateTime.UtcNow,
                     TipoContacto = TipoContacto.NotaInterna,
                     Resultado = ResultadoContacto.PromesaPago,
                     Observaciones = promesa.Observaciones,
                     FechaPromesaPago = promesa.FechaPromesa,
                     MontoPromesaPago = promesa.MontoPromesa,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 _context.HistorialContactos.Add(historial);
@@ -1063,9 +1063,9 @@ namespace TheBuryProject.Services
 
                 alerta.EstadoGestion = EstadoGestionCobranza.Regularizado;
                 alerta.Resuelta = true;
-                alerta.FechaResolucion = DateTime.Now;
+                alerta.FechaResolucion = DateTime.UtcNow;
                 alerta.MotivoResolucion = "Promesa de pago cumplida";
-                alerta.UpdatedAt = DateTime.Now;
+                alerta.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Promesa cumplida - Alerta {AlertaId}", alertaId);
@@ -1091,7 +1091,7 @@ namespace TheBuryProject.Services
                 alerta.FechaPromesaPago = null;
                 alerta.MontoPromesaPago = null;
                 alerta.Observaciones = (alerta.Observaciones ?? "") + $" | Promesa incumplida: {observaciones}";
-                alerta.UpdatedAt = DateTime.Now;
+                alerta.UpdatedAt = DateTime.UtcNow;
 
                 // Escalar prioridad
                 if (alerta.Prioridad < PrioridadAlerta.Critica)
@@ -1139,8 +1139,8 @@ namespace TheBuryProject.Services
                     AlertaCobranzaId = acuerdo.AlertaId,
                     ClienteId = acuerdo.ClienteId,
                     CreditoId = acuerdo.CreditoId,
-                    NumeroAcuerdo = $"ACU-{DateTime.Now:yyyyMMddHHmmss}-{acuerdo.ClienteId}",
-                    FechaCreacion = DateTime.Now,
+                    NumeroAcuerdo = $"ACU-{DateTime.UtcNow:yyyyMMddHHmmss}-{acuerdo.ClienteId}",
+                    FechaCreacion = DateTime.UtcNow,
                     Estado = EstadoAcuerdo.Borrador,
                     MontoDeudaOriginal = acuerdo.MontoDeudaOriginal,
                     MontoMoraOriginal = acuerdo.MontoMoraOriginal,
@@ -1150,7 +1150,7 @@ namespace TheBuryProject.Services
                     CantidadCuotas = acuerdo.CantidadCuotas,
                     FechaPrimeraCuota = acuerdo.FechaPrimeraCuota,
                     MontoCuotaAcuerdo = (acuerdo.MontoTotalAcuerdo - acuerdo.MontoEntregaInicial) / acuerdo.CantidadCuotas,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 _context.AcuerdosPago.Add(nuevoAcuerdo);
@@ -1349,7 +1349,8 @@ namespace TheBuryProject.Services
             if (diasAtraso <= 0 || montoVencido <= 0)
                 return 0;
 
-            var tasaDiaria = config.PorcentajeRecargo / 100m / 30m; // Convertir a tasa diaria
+            var tasaBase = config.TasaMoraBase ?? 0m;
+            var tasaDiaria = tasaBase / 100m / 30m; // Convertir a tasa diaria
             var mora = montoVencido * tasaDiaria * diasAtraso;
 
             return Math.Round(mora, 2);

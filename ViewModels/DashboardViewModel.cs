@@ -11,7 +11,6 @@ namespace TheBuryProject.ViewModels
         public decimal VentasTotalesHoy { get; set; }
         public decimal VentasTotalesMes { get; set; }
         public decimal VentasTotalesAnio { get; set; }
-        public decimal? TotalVentasMes { get; set; }
         public int CantidadVentasMes { get; set; }
         public decimal TicketPromedio { get; set; }
 
@@ -31,7 +30,6 @@ namespace TheBuryProject.ViewModels
 
         // KPIs de Stock
         public int ProductosTotales { get; set; }
-        public int ProductosBajoStock { get; set; }
         public int ProductosStockBajo { get; set; }
         public decimal ValorTotalStock { get; set; }
 
@@ -41,5 +39,44 @@ namespace TheBuryProject.ViewModels
         public List<ProductoMasVendidoDto> ProductosMasVendidos { get; set; } = new();
         public List<EstadoCreditoDto> CreditosPorEstado { get; set; } = new();
         public List<CobranzaPorMesDto> CobranzaUltimos6Meses { get; set; } = new();
+
+        // ✅ NUEVAS: Alertas y Cuotas
+        public List<CuotaProximaVencerDto> CuotasProximasVencer { get; set; } = new();
+        public List<CuotaVencidaDto> CuotasVencidasLista { get; set; } = new();
+        public int CuotasProximasVencerCount { get; set; }
+        public decimal MontoCuotasProximasVencer { get; set; }
+    }
+
+    /// <summary>
+    /// DTO para cuotas próximas a vencer (próximos 7 días)
+    /// </summary>
+    public class CuotaProximaVencerDto
+    {
+        public int CuotaId { get; set; }
+        public int CreditoId { get; set; }
+        public string CreditoNumero { get; set; } = string.Empty;
+        public int NumeroCuota { get; set; }
+        public string ClienteNombre { get; set; } = string.Empty;
+        public int ClienteId { get; set; }
+        public DateTime FechaVencimiento { get; set; }
+        public decimal Monto { get; set; }
+        public int DiasParaVencer { get; set; }
+    }
+
+    /// <summary>
+    /// DTO para cuotas vencidas sin pagar
+    /// </summary>
+    public class CuotaVencidaDto
+    {
+        public int CuotaId { get; set; }
+        public int CreditoId { get; set; }
+        public string CreditoNumero { get; set; } = string.Empty;
+        public int NumeroCuota { get; set; }
+        public string ClienteNombre { get; set; } = string.Empty;
+        public int ClienteId { get; set; }
+        public DateTime FechaVencimiento { get; set; }
+        public decimal Monto { get; set; }
+        public int DiasVencidos { get; set; }
+        public decimal MontoPunitorio { get; set; }
     }
 }

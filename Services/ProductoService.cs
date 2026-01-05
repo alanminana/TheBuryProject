@@ -176,8 +176,8 @@ namespace TheBuryProject.Services
                     "preciocompra" => ascending ? query.OrderBy(p => p.PrecioCompra) : query.OrderByDescending(p => p.PrecioCompra),
                     "precioventa" => ascending ? query.OrderBy(p => p.PrecioVenta) : query.OrderByDescending(p => p.PrecioVenta),
                     "stock" => ascending ? query.OrderBy(p => p.StockActual) : query.OrderByDescending(p => p.StockActual),
-                    "categoria" => ascending ? query.OrderBy(p => p.Categoria.Nombre) : query.OrderByDescending(p => p.Categoria.Nombre),
-                    "marca" => ascending ? query.OrderBy(p => p.Marca.Nombre) : query.OrderByDescending(p => p.Marca.Nombre),
+                    "categoria" => ascending ? query.OrderBy(p => p.Categoria != null ? p.Categoria.Nombre : string.Empty) : query.OrderByDescending(p => p.Categoria != null ? p.Categoria.Nombre : string.Empty),
+                    "marca" => ascending ? query.OrderBy(p => p.Marca != null ? p.Marca.Nombre : string.Empty) : query.OrderByDescending(p => p.Marca != null ? p.Marca.Nombre : string.Empty),
                     _ => query.OrderBy(p => p.Nombre)
                 };
 

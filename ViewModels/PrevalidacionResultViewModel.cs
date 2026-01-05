@@ -205,4 +205,77 @@ namespace TheBuryProject.ViewModels
         /// </summary>
         Configuracion = 5
     }
+
+    /// <summary>
+    /// Resultado intermedio de evaluación crediticia.
+    /// Se usa internamente para unificar la lógica y luego mapear a PrevalidacionResultViewModel o ValidacionVentaResult.
+    /// </summary>
+    public class EvaluacionCrediticiaIntermedia
+    {
+        public int ClienteId { get; set; }
+        public decimal MontoSolicitado { get; set; }
+        
+        /// <summary>
+        /// NoViable, RequiereAutorizacion, o Aprobable
+        /// </summary>
+        public ResultadoPrevalidacion Resultado { get; set; } = ResultadoPrevalidacion.Aprobable;
+        
+        /// <summary>
+        /// Estado de aptitud crediticia del cliente (del semáforo)
+        /// </summary>
+        public TheBuryProject.Models.Enums.EstadoCrediticioCliente EstadoAptitud { get; set; } = TheBuryProject.Models.Enums.EstadoCrediticioCliente.NoEvaluado;
+        
+        /// <summary>
+        /// Lista unificada de problemas encontrados
+        /// </summary>
+        public List<ProblemaCredito> Problemas { get; set; } = new();
+        
+        // Datos de cupo
+        public decimal? LimiteCredito { get; set; }
+        public decimal CupoDisponible { get; set; }
+        public decimal CreditoUtilizado { get; set; }
+        
+        // Datos de mora
+        public bool TieneMora { get; set; }
+        public int? DiasMora { get; set; }
+        public decimal? MontoMora { get; set; }
+        
+        // Documentación
+        public bool DocumentacionCompleta { get; set; }
+        public List<string> DocumentosFaltantes { get; set; } = new();
+        public List<string> DocumentosVencidos { get; set; } = new();
+        
+        public bool EsNoViable => Resultado == ResultadoPrevalidacion.NoViable;
+        public bool RequiereAutorizacion => Resultado == ResultadoPrevalidacion.RequiereAutorizacion;
+    }
+
+    /// <summary>
+    /// Problema de crédito unificado que puede mapearse a MotivoPrevalidacion o RequisitoPendiente/RazonAutorizacion
+    /// </summary>
+    public class ProblemaCredito
+    {
+        public CategoriaMotivo Categoria { get; set; }
+        public string Titulo { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
+        public string? AccionSugerida { get; set; }
+        public string? UrlAccion { get; set; }
+        public bool EsBloqueante { get; set; }
+        public decimal? ValorAsociado { get; set; }
+        public decimal? ValorLimite { get; set; }
+        
+        /// <summary>
+        /// Detalle adicional para la razón (ej: descripción de mora)
+        /// </summary>
+        public string? DetalleAdicional { get; set; }
+        
+        /// <summary>
+        /// Mapea a TipoRequisitoPendiente cuando es bloqueante
+        /// </summary>
+        public TipoRequisitoPendiente? TipoRequisito { get; set; }
+        
+        /// <summary>
+        /// Mapea a TipoRazonAutorizacion cuando no es bloqueante
+        /// </summary>
+        public TipoRazonAutorizacion? TipoRazon { get; set; }
+    }
 }

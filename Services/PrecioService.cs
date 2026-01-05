@@ -1,4 +1,24 @@
-﻿using ClosedXML.Excel;
+﻿    /// <summary>
+    /// Aplica un cambio directo de precio a productos seleccionados o filtrados desde el catálogo.
+    /// Actualiza Producto.PrecioVenta, crea historial y permite revertir.
+    /// </summary>
+    public async Task<ResultadoAplicacionPrecios> AplicarCambioPrecioDirectoAsync(AplicarCambioPrecioDirectoViewModel model)
+    {
+        // TODO: Implementar lógica de cambio directo, historial y revertir
+        // 1. Determinar productos afectados (por IDs o filtros)
+        // 2. Para cada producto: actualizar PrecioVenta, crear PrecioHistorico
+        // 3. Soportar revertir (puedeRevertirse)
+        // 4. Retornar resultado
+        return new ResultadoAplicacionPrecios
+        {
+            Exitoso = false,
+            Mensaje = "No implementado",
+            BatchId = 0,
+            ProductosActualizados = 0,
+            FechaAplicacion = DateTime.UtcNow
+        };
+    }
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
@@ -828,7 +848,38 @@ public class PrecioService : IPrecioService
             var fechaReversion = DateTime.UtcNow;
             var now = DateTime.UtcNow;
 
+            // Crear batch de reversión para auditoría
+            var batchReversion = new PriceChangeBatch
+            {
+                Nombre = $"[REVERSIÓN] {batch.Nombre}",
+                TipoCambio = batch.TipoCambio,
+                TipoAplicacion = batch.TipoAplicacion == TipoAplicacion.Aumento 
+                    ? TipoAplicacion.Disminucion 
+                    : TipoAplicacion.Aumento,
+                ValorCambio = batch.ValorCambio,
+                AlcanceJson = batch.AlcanceJson,
+                ListasAfectadasJson = batch.ListasAfectadasJson,
+                Estado = EstadoBatch.Aplicado,
+                CantidadProductos = batch.CantidadProductos,
+                SolicitadoPor = revertidoPor,
+                FechaSolicitud = fechaReversion,
+                AprobadoPor = revertidoPor,
+                FechaAprobacion = fechaReversion,
+                AplicadoPor = revertidoPor,
+                FechaAplicacion = fechaReversion,
+                FechaVigencia = fechaReversion,
+                RequiereAutorizacion = false,
+                BatchPadreId = batchId,
+                Notas = $"Reversión del batch #{batchId}. Motivo: {motivo}",
+                MotivoReversion = motivo,
+                PorcentajePromedioCambio = -batch.PorcentajePromedioCambio
+            };
+
+            _context.PriceChangeBatches.Add(batchReversion);
+            await _context.SaveChangesAsync(); // Obtener ID del nuevo batch
+
             var nuevosPrecios = new List<ProductoPrecioLista>();
+            var itemsReversion = new List<PriceChangeItem>();
 
             foreach (var item in batch.Items.Where(i => i.Aplicado))
             {
@@ -857,32 +908,54 @@ public class PrecioService : IPrecioService
                     MargenPorcentaje = item.MargenAnterior ?? 0,
                     EsManual = false,
                     EsVigente = true,
+                    BatchId = batchReversion.Id,
                     CreadoPor = revertidoPor,
-                    Notas = $"Revertido desde batch {batchId}: {motivo}"
+                    Notas = $"Revertido desde batch #{batchId}: {motivo}"
                 };
 
                 nuevosPrecios.Add(nuevoPrecio);
 
-                // Marcar item como revertido
+                // Crear item de reversión para el nuevo batch
+                var itemReversion = new PriceChangeItem
+                {
+                    BatchId = batchReversion.Id,
+                    ProductoId = item.ProductoId,
+                    ListaId = item.ListaId,
+                    ProductoCodigo = item.ProductoCodigo,
+                    ProductoNombre = item.ProductoNombre,
+                    PrecioAnterior = item.PrecioNuevo,  // El "anterior" es el precio que estamos revirtiendo
+                    PrecioNuevo = item.PrecioAnterior,  // El "nuevo" es el precio original
+                    DiferenciaValor = item.PrecioAnterior - item.PrecioNuevo,
+                    DiferenciaPorcentaje = -item.DiferenciaPorcentaje,
+                    Costo = item.Costo,
+                    MargenAnterior = item.MargenNuevo,
+                    MargenNuevo = item.MargenAnterior,
+                    Aplicado = true
+                };
+
+                itemsReversion.Add(itemReversion);
+
+                // Marcar item original como revertido
                 item.Revertido = true;
             }
 
             _context.ProductosPrecios.AddRange(nuevosPrecios);
+            _context.PriceChangeItems.AddRange(itemsReversion);
 
-            // Actualizar batch
+            // Actualizar batch original
             batch.Estado = EstadoBatch.Revertido;
             batch.RevertidoPor = revertidoPor;
             batch.FechaReversion = fechaReversion;
-            batch.MotivoRechazo = motivo;
+            batch.MotivoReversion = motivo;
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
             _logger.LogInformation(
-                "Batch revertido exitosamente: {BatchId} por {User} - Motivo: {Motivo}",
-                batchId, revertidoPor, motivo);
+                "Batch revertido exitosamente: {BatchId} por {User} - Motivo: {Motivo}. Batch de reversión: {BatchReversionId}",
+                batchId, revertidoPor, motivo, batchReversion.Id);
 
-            return batch;
+            return batchReversion; // Retornar el batch de reversión para referencia
         }
         catch (Exception ex)
         {

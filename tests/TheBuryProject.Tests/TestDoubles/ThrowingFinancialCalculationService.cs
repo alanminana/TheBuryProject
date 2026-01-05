@@ -21,4 +21,7 @@ internal sealed class ThrowingFinancialCalculationService : IFinancialCalculatio
 
     public decimal ComputeFinancedAmount(decimal total, decimal anticipo) =>
         throw new NotImplementedException();
+
+    public decimal CalcularCFTEADesdeTasa(decimal tasaMensual) =>
+        throw new NotImplementedException();
 }

@@ -31,8 +31,9 @@ namespace TheBuryProject.Services
             return await _context.OrdenesCompra
                 .Where(o => !o.IsDeleted)
                 .Include(o => o.Proveedor)
-                .Include(o => o.Detalles.Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted))
+                .Include(o => o.Detalles.Where(d => !d.IsDeleted))
                     .ThenInclude(d => d.Producto)
+                .AsSplitQuery()
                 .OrderByDescending(o => o.FechaEmision)
                 .ToListAsync();
         }
@@ -41,12 +42,13 @@ namespace TheBuryProject.Services
         {
             var orden = await _context.OrdenesCompra
                 .Include(o => o.Proveedor)
-                .Include(o => o.Detalles.Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted))
+                .Include(o => o.Detalles.Where(d => !d.IsDeleted))
                     .ThenInclude(d => d.Producto)
-                        .ThenInclude(p => p.Marca)
-                .Include(o => o.Detalles.Where(d => !d.IsDeleted && d.Producto != null && !d.Producto.IsDeleted))
+                        .ThenInclude(p => p!.Marca)
+                .Include(o => o.Detalles.Where(d => !d.IsDeleted))
                     .ThenInclude(d => d.Producto)
-                        .ThenInclude(p => p.Categoria)
+                        .ThenInclude(p => p!.Categoria)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
 
             if (orden == null)
@@ -228,6 +230,8 @@ namespace TheBuryProject.Services
             var query = _context.OrdenesCompra
                 .Include(o => o.Proveedor)
                 .Include(o => o.Detalles.Where(d => !d.IsDeleted))
+                    .ThenInclude(d => d.Producto)
+                .AsSplitQuery()
                 .AsQueryable();
 
             query = query.Where(o => !o.IsDeleted);
@@ -281,7 +285,7 @@ namespace TheBuryProject.Services
             if (orden == null) return false;
 
             if (nuevoEstado == EstadoOrdenCompra.Recibida && orden.Estado != EstadoOrdenCompra.Recibida)
-                orden.FechaRecepcion = DateTime.Now;
+                orden.FechaRecepcion = DateTime.UtcNow;
 
             orden.Estado = nuevoEstado;
             await _context.SaveChangesAsync();
@@ -361,7 +365,7 @@ namespace TheBuryProject.Services
             if (todosRecibidos)
             {
                 orden.Estado = EstadoOrdenCompra.Recibida;
-                orden.FechaRecepcion = DateTime.Now;
+                orden.FechaRecepcion = DateTime.UtcNow;
             }
             else if (orden.Estado == EstadoOrdenCompra.Confirmada)
             {

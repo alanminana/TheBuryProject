@@ -3,157 +3,153 @@
     ViewData["Title"] = "Nuevo Producto";
 }
 
-<section class="container-fluid py-5">
+<div class="container-fluid py-4">
     <div class="row justify-content-center">
         <div class="col-lg-10">
-            <div class="mb-4">
-                <a asp-action="Index" class="link-light text-decoration-none">
-                    <i class="bi bi-arrow-left me-2"></i>Volver al listado
-                </a>
-            </div>
 
-            <div class="card bg-dark border-0 shadow-sm">
-                <div class="card-header bg-primary border-0">
-                    <h4 class="fw-bold text-dark mb-0">
-                        <i class="bi bi-plus-circle me-2"></i>Nuevo Producto
-                    </h4>
+            @* Header unificado *@
+            <partial name="_PageHeader" model='new PageHeaderModel {
+                Breadcrumb = "Inventario · Productos",
+                Title = "Nuevo Producto",
+                Icon = "plus-circle",
+                Subtitle = "Complete los datos del nuevo producto para agregarlo al catálogo.",
+                BackAction = "Index",
+                BackController = "Catalogo",
+                BackText = "Volver al catálogo",
+                ShowCatalogoLink = false
+            }' />
+
+            @* Alertas *@
+            <partial name="_Alerts" />
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>Datos del producto</span>
+                    </h5>
                 </div>
 
-                <div class="card-body p-4 text-light">
+                <div class="card-body p-4">
                     <form asp-action="Create" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center mb-4">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            <div>Corregí los errores antes de continuar</div>
-                        </div>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                         <div class="row g-4">
-                            <!-- Información Básica -->
-                            <div class="col-12">
-                                <h5 class="border-bottom border-secondary pb-2 mb-3 text-info">
-                                    <i class="bi bi-info-circle me-2"></i>Información Básica
-                                </h5>
-                            </div>
+                            @* Sección: Información Básica *@
+                            <partial name="_FormSection" model="FormSectionModel.InfoBasica()" />
 
                             <div class="col-md-4">
-                                <label class="form-label text-light fw-semibold">Código *</label>
-                                <input asp-for="Codigo" class="form-control bg-body-secondary text-light border-0" placeholder="Código" />
+                                <label asp-for="Codigo" class="form-label fw-semibold">Código *</label>
+                                <input asp-for="Codigo" class="form-control" placeholder="Código único" />
                                 <span asp-validation-for="Codigo" class="text-danger small"></span>
-                                <small class="text-secondary">Código único del producto</small>
                             </div>
 
                             <div class="col-md-8">
-                                <label class="form-label text-light fw-semibold">Nombre *</label>
-                                <input asp-for="Nombre" class="form-control bg-body-secondary text-light border-0" placeholder="Nombre" />
+                                <label asp-for="Nombre" class="form-label fw-semibold">Nombre *</label>
+                                <input asp-for="Nombre" class="form-control" placeholder="Nombre del producto" />
                                 <span asp-validation-for="Nombre" class="text-danger small"></span>
                             </div>
 
                             <div class="col-12">
-                                <label class="form-label text-light fw-semibold">Descripción (opcional)</label>
-                                <textarea asp-for="Descripcion" class="form-control bg-body-secondary text-light border-0" rows="3" placeholder="Descripción del producto..."></textarea>
+                                <label asp-for="Descripcion" class="form-label fw-semibold">Descripción</label>
+                                <textarea asp-for="Descripcion" class="form-control" rows="2" placeholder="Descripción opcional..."></textarea>
                                 <span asp-validation-for="Descripcion" class="text-danger small"></span>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label text-light fw-semibold">Categoría *</label>
-                                <select asp-for="CategoriaId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Categorias">
+                                <label asp-for="CategoriaId" class="form-label fw-semibold">Categoría *</label>
+                                <select asp-for="CategoriaId" id="CategoriaId" class="form-select" asp-items="ViewBag.Categorias">
                                     <option value="">-- Seleccione --</option>
                                 </select>
                                 <span asp-validation-for="CategoriaId" class="text-danger small"></span>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label text-light fw-semibold">Marca *</label>
-                                <select asp-for="MarcaId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Marcas">
+                                <label asp-for="SubcategoriaId" class="form-label fw-semibold">Subcategoría</label>
+                                <select asp-for="SubcategoriaId" id="SubcategoriaId" class="form-select">
+                                    <option value="">-- Seleccione primero una categoría --</option>
+                                </select>
+                                <small class="text-muted">Opcional</small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="MarcaId" class="form-label fw-semibold">Marca *</label>
+                                <select asp-for="MarcaId" id="MarcaId" class="form-select" asp-items="ViewBag.Marcas">
                                     <option value="">-- Seleccione --</option>
                                 </select>
                                 <span asp-validation-for="MarcaId" class="text-danger small"></span>
                             </div>
 
-                            <!-- Precios -->
-                            <div class="col-12 mt-4">
-                                <h5 class="border-bottom border-secondary pb-2 mb-3 text-success">
-                                    <i class="bi bi-cash-coin me-2"></i>Precios
-                                </h5>
+                            <div class="col-md-6">
+                                <label asp-for="SubmarcaId" class="form-label fw-semibold">Submarca</label>
+                                <select asp-for="SubmarcaId" id="SubmarcaId" class="form-select">
+                                    <option value="">-- Seleccione primero una marca --</option>
+                                </select>
+                                <small class="text-muted">Opcional</small>
                             </div>
 
+                            @* Sección: Precios *@
+                            <partial name="_FormSection" model="FormSectionModel.Precios()" />
+
                             <div class="col-md-6">
-                                <label class="form-label text-light fw-semibold">Precio de Compra *</label>
-                                <input asp-for="PrecioCompra" type="number" step="0.01" class="form-control bg-body-secondary text-light border-0" placeholder="0.00" />
+                                <label asp-for="PrecioCompra" class="form-label fw-semibold">Precio de Compra *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="PrecioCompra" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                                </div>
                                 <span asp-validation-for="PrecioCompra" class="text-danger small"></span>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label text-light fw-semibold">Precio de Venta *</label>
-                                <input asp-for="PrecioVenta" type="number" step="0.01" class="form-control bg-body-secondary text-light border-0" placeholder="0.00" />
+                                <label asp-for="PrecioVenta" class="form-label fw-semibold">Precio de Venta *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="PrecioVenta" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                                </div>
                                 <span asp-validation-for="PrecioVenta" class="text-danger small"></span>
                             </div>
 
-                            <!-- Inventario -->
-                            <div class="col-12 mt-4">
-                                <h5 class="border-bottom border-secondary pb-2 mb-3 text-info">
-                                    <i class="bi bi-boxes me-2"></i>Inventario
-                                </h5>
-                            </div>
+                            @* Sección: Stock *@
+                            <partial name="_FormSection" model="FormSectionModel.Stock()" />
 
-                            <div class="col-md-4">
-                                <label class="form-label text-light fw-semibold">Stock Actual *</label>
-                                <input asp-for="StockActual" type="number" step="0.01" class="form-control bg-body-secondary text-light border-0" />
+                            <div class="col-md-6">
+                                <label asp-for="StockActual" class="form-label fw-semibold">Stock Actual *</label>
+                                <input asp-for="StockActual" type="number" step="1" class="form-control" />
                                 <span asp-validation-for="StockActual" class="text-danger small"></span>
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label text-light fw-semibold">Stock Mínimo *</label>
-                                <input asp-for="StockMinimo" type="number" step="0.01" class="form-control bg-body-secondary text-light border-0" />
+                            <div class="col-md-6">
+                                <label asp-for="StockMinimo" class="form-label fw-semibold">Stock Mínimo *</label>
+                                <input asp-for="StockMinimo" type="number" step="1" class="form-control" />
                                 <span asp-validation-for="StockMinimo" class="text-danger small"></span>
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label text-light fw-semibold">Unidad de Medida *</label>
-                                <input asp-for="UnidadMedida" class="form-control bg-body-secondary text-light border-0" placeholder="UN, KG, LT..." />
-                                <span asp-validation-for="UnidadMedida" class="text-danger small"></span>
-                                <small class="text-secondary">Ej: UN, KG, MT, LT</small>
-                            </div>
-
-                            <!-- Configuración -->
-                            <div class="col-12 mt-4">
-                                <h5 class="border-bottom border-secondary pb-2 mb-3 text-light">
-                                    <i class="bi bi-gear me-2"></i>Configuración
-                                </h5>
-                            </div>
+                            @* Sección: Configuración *@
+                            <partial name="_FormSection" model="FormSectionModel.Configuracion()" />
 
                             <div class="col-md-6">
-                                <div class="card bg-body-secondary border-0">
-                                    <div class="card-body">
-                                        <div class="form-check form-switch">
-                                            <input asp-for="RequiereNumeroSerie" class="form-check-input" type="checkbox" id="switchSerie" />
-                                            <label class="form-check-label text-light" for="switchSerie">Requiere N° de Serie</label>
-                                        </div>
-                                        <small class="text-secondary"><i class="bi bi-info-circle me-1"></i>Control individual por serie</small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="card bg-body-secondary border-0">
+                                <div class="card bg-light border-0">
                                     <div class="card-body">
                                         <div class="form-check form-switch">
                                             <input asp-for="Activo" class="form-check-input" type="checkbox" id="switchActivo" checked />
-                                            <label class="form-check-label text-light" for="switchActivo">Producto Activo</label>
+                                            <label class="form-check-label" for="switchActivo">Producto Activo</label>
                                         </div>
-                                        <small class="text-secondary"><i class="bi bi-info-circle me-1"></i>Solo activos están disponibles para la venta</small>
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>Solo productos activos están disponibles para venta
+                                        </small>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <hr class="border-secondary my-4" />
+                        <hr class="my-4" />
 
-                        <div class="d-flex justify-content-end gap-2">
-                            <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
-                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                        <div class="d-flex justify-content-between">
+                            <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-primary text-dark fw-semibold btn-lg px-4">
-                                <i class="bi bi-check-circle me-2"></i>Guardar Producto
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>Guardar Producto
                             </button>
                         </div>
                     </form>
@@ -161,10 +157,60 @@
             </div>
         </div>
     </div>
-</section>
+</div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const categoriaSelect = document.getElementById('CategoriaId');
+            const subcategoriaSelect = document.getElementById('SubcategoriaId');
+            const marcaSelect = document.getElementById('MarcaId');
+            const submarcaSelect = document.getElementById('SubmarcaId');
+
+            categoriaSelect?.addEventListener('change', function () {
+                const categoriaId = this.value;
+                subcategoriaSelect.innerHTML = '<option value="">-- Cargando... --</option>';
+                
+                if (!categoriaId) {
+                    subcategoriaSelect.innerHTML = '<option value="">-- Seleccione primero una categoría --</option>';
+                    return;
+                }
+
+                fetch(`/Producto/GetSubcategorias?categoriaId=${categoriaId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        subcategoriaSelect.innerHTML = '<option value="">-- Sin subcategoría --</option>';
+                        data.forEach(item => {
+                            subcategoriaSelect.innerHTML += `<option value="${item.id}">${item.nombre}</option>`;
+                        });
+                    })
+                    .catch(() => {
+                        subcategoriaSelect.innerHTML = '<option value="">-- Error al cargar --</option>';
+                    });
+            });
+
+            marcaSelect?.addEventListener('change', function () {
+                const marcaId = this.value;
+                submarcaSelect.innerHTML = '<option value="">-- Cargando... --</option>';
+                
+                if (!marcaId) {
+                    submarcaSelect.innerHTML = '<option value="">-- Seleccione primero una marca --</option>';
+                    return;
+                }
+
+                fetch(`/Producto/GetSubmarcas?marcaId=${marcaId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        submarcaSelect.innerHTML = '<option value="">-- Sin submarca --</option>';
+                        data.forEach(item => {
+                            submarcaSelect.innerHTML += `<option value="${item.id}">${item.nombre}</option>`;
+                        });
+                    })
+                    .catch(() => {
+                        submarcaSelect.innerHTML = '<option value="">-- Error al cargar --</option>';
+                    });
+            });
+        });
+    </script>
 }

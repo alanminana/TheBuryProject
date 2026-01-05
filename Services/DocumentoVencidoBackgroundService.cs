@@ -3,14 +3,14 @@ using TheBuryProject.Services.Interfaces;
 namespace TheBuryProject.Services
 {
     /// <summary>
-    /// Servicio en background para marcar documentos vencidos automáticamente
+    /// Servicio en background para marcar documentos vencidos automï¿½ticamente
     /// Se ejecuta diariamente a las 2:00 AM
     /// </summary>
     public class DocumentoVencidoBackgroundService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<DocumentoVencidoBackgroundService> _logger;
-        // Definir la hora de ejecución (2:00 AM)
+        // Definir la hora de ejecuciï¿½n (2:00 AM)
         private readonly TimeSpan _horaEjecucion = new TimeSpan(2, 0, 0);
 
         public DocumentoVencidoBackgroundService(
@@ -23,10 +23,10 @@ namespace TheBuryProject.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("DocumentoVencidoBackgroundService iniciado. Se ejecutará diariamente a las {HoraEjecucion}", 
+            _logger.LogInformation("DocumentoVencidoBackgroundService iniciado. Se ejecutarï¿½ diariamente a las {HoraEjecucion}", 
                 _horaEjecucion.ToString(@"hh\:mm"));
 
-            // Esperar hasta la próxima ejecución programada (máximo 30 segundos en desarrollo)
+            // Esperar hasta la prï¿½xima ejecuciï¿½n programada (mï¿½ximo 30 segundos en desarrollo)
             await EsperarHastaProximaEjecucionAsync(stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
@@ -45,7 +45,7 @@ namespace TheBuryProject.Services
 
                     _logger.LogInformation("Marcado de documentos vencidos completado");
 
-                    // Esperar hasta la próxima ejecución (mañana a las 2 AM)
+                    // Esperar hasta la prï¿½xima ejecuciï¿½n (maï¿½ana a las 2 AM)
                     await EsperarUnDiaAsync(stoppingToken);
                 }
                 catch (Exception ex)
@@ -60,14 +60,14 @@ namespace TheBuryProject.Services
         }
 
         /// <summary>
-        /// Calcula cuánto tiempo esperar hasta la próxima ejecución programada
+        /// Calcula cuï¿½nto tiempo esperar hasta la prï¿½xima ejecuciï¿½n programada
         /// </summary>
         private TimeSpan CalcularTiempoEsperaHastaSiguienteEjecucion()
         {
-            var ahora = DateTime.Now;
+            var ahora = DateTime.UtcNow;
             var proximaEjecucion = ahora.Date.Add(_horaEjecucion);
 
-            // Si ya pasó la hora hoy, programar para mañana
+            // Si ya pasï¿½ la hora hoy, programar para maï¿½ana
             if (ahora >= proximaEjecucion)
             {
                 proximaEjecucion = proximaEjecucion.AddDays(1);
@@ -76,7 +76,7 @@ namespace TheBuryProject.Services
             var tiempoEspera = proximaEjecucion - ahora;
             
             _logger.LogInformation(
-                "Próxima ejecución programada para: {FechaHora} ({MinutosRestantes} minutos)",
+                "Prï¿½xima ejecuciï¿½n programada para: {FechaHora} ({MinutosRestantes} minutos)",
                 proximaEjecucion.ToString("dd/MM/yyyy HH:mm:ss"),
                 (int)tiempoEspera.TotalMinutes);
 
@@ -84,7 +84,7 @@ namespace TheBuryProject.Services
         }
 
         /// <summary>
-        /// Espera hasta la próxima ejecución programada (mañana a las 2 AM)
+        /// Espera hasta la prï¿½xima ejecuciï¿½n programada (maï¿½ana a las 2 AM)
         /// </summary>
         private async Task EsperarUnDiaAsync(CancellationToken stoppingToken)
         {
@@ -93,19 +93,19 @@ namespace TheBuryProject.Services
         }
 
         /// <summary>
-        /// Espera hasta la próxima ejecución (solo para la primera vez)
+        /// Espera hasta la prï¿½xima ejecuciï¿½n (solo para la primera vez)
         /// </summary>
         private async Task EsperarHastaProximaEjecucionAsync(CancellationToken stoppingToken)
         {
             var tiempoEspera = CalcularTiempoEsperaHastaSiguienteEjecucion();
             
-            // En producción esperar hasta la hora exacta
-            // En desarrollo, esperar máximo 30 segundos para testing
+            // En producciï¿½n esperar hasta la hora exacta
+            // En desarrollo, esperar mï¿½ximo 30 segundos para testing
             #if DEBUG
             var tiempoEsperaMaximo = TimeSpan.FromSeconds(30);
             if (tiempoEspera > tiempoEsperaMaximo)
             {
-                _logger.LogWarning("Modo DEBUG: Esperando máximo 30 segundos en lugar de {MinutosRestantes} minutos", 
+                _logger.LogWarning("Modo DEBUG: Esperando mï¿½ximo 30 segundos en lugar de {MinutosRestantes} minutos", 
                     (int)tiempoEspera.TotalMinutes);
                 tiempoEspera = tiempoEsperaMaximo;
             }

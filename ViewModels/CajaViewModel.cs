@@ -5,6 +5,17 @@ using TheBuryProject.Models.Enums;
 namespace TheBuryProject.ViewModels;
 
 /// <summary>
+/// Constantes compartidas para validación de caja
+/// </summary>
+public static class CajaConstants
+{
+    /// <summary>
+    /// Tolerancia para diferencias de arqueo (en pesos)
+    /// </summary>
+    public const decimal TOLERANCIA_DIFERENCIA = 0.01m;
+}
+
+/// <summary>
 /// ViewModel para crear/editar caja
 /// </summary>
 public class CajaViewModel
@@ -140,7 +151,7 @@ public class CerrarCajaViewModel
     [Display(Name = "Diferencia")]
     public decimal Diferencia => MontoTotalReal - MontoEsperadoSistema;
 
-    public bool TieneDiferencia => Math.Abs(Diferencia) > 0.01m;
+    public bool TieneDiferencia => Math.Abs(Diferencia) > CajaConstants.TOLERANCIA_DIFERENCIA;
 
     [StringLength(1000)]
     [Display(Name = "Justificación de Diferencia")]

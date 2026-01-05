@@ -30,7 +30,10 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Producto
-        public async Task<IActionResult> Index(
+        /// <summary>
+        /// Vista legacy de productos. Redirige al Catálogo unificado.
+        /// </summary>
+        public IActionResult Index(
             string? searchTerm = null,
             int? categoriaId = null,
             int? marcaId = null,
@@ -39,50 +42,17 @@ namespace TheBuryProject.Controllers
             string? orderBy = null,
             string? orderDirection = "asc")
         {
-            try
+            // Redirect permanente al nuevo Catálogo unificado preservando filtros
+            return RedirectToActionPermanent("Index", "Catalogo", new
             {
-                // Ejecutar b�squeda con filtros
-                var productos = await _productoService.SearchAsync(
-                    searchTerm,
-                    categoriaId,
-                    marcaId,
-                    stockBajo,
-                    soloActivos,
-                    orderBy,
-                    orderDirection
-                );
-
-                var viewModels = _mapper.Map<List<ProductoViewModel>>(productos);
-
-                // Crear ViewModel de filtros
-                var filterViewModel = new ProductoFilterViewModel
-                {
-                    SearchTerm = searchTerm,
-                    CategoriaId = categoriaId,
-                    MarcaId = marcaId,
-                    StockBajo = stockBajo,
-                    SoloActivos = soloActivos,
-                    OrderBy = orderBy,
-                    OrderDirection = orderDirection,
-                    Productos = viewModels,
-                    TotalResultados = viewModels.Count
-                };
-
-                // Cargar dropdowns para filtros
-                await CargarDropdownsFiltrosAsync(categoriaId, marcaId);
-
-                return View(filterViewModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener listado de productos");
-                TempData["Error"] = "Error al cargar los productos. Por favor, intente nuevamente.";
-
-                // Cargar dropdowns incluso en caso de error
-                await CargarDropdownsFiltrosAsync();
-
-                return View(new ProductoFilterViewModel());
-            }
+                searchTerm,
+                categoriaId,
+                marcaId,
+                stockBajo,
+                soloActivos,
+                orderBy,
+                orderDirection
+            });
         }
 
         // GET: Producto/Details/5
@@ -112,25 +82,39 @@ namespace TheBuryProject.Controllers
             }
         }
         /// <summary>
-        /// Carga los dropdowns de Categor�as y Marcas para los formularios
+        /// Carga los dropdowns de Categorías y Marcas para los formularios y filtros
         /// </summary>
-        private async Task CargarDropdownsAsync(int? categoriaSeleccionada = null, int? marcaSeleccionada = null)
+        /// <param name="categoriaSeleccionada">ID de categoría preseleccionada</param>
+        /// <param name="marcaSeleccionada">ID de marca preseleccionada</param>
+        /// <param name="paraFiltros">Si es true, usa ViewBag.CategoriasFiltro/MarcasFiltro; si no, ViewBag.Categorias/Marcas</param>
+        private async Task CargarDropdownsAsync(int? categoriaSeleccionada = null, int? marcaSeleccionada = null, bool paraFiltros = false)
         {
             var (categorias, marcas) = await _catalogLookupService.GetCategoriasYMarcasAsync();
 
-            ViewBag.Categorias = new SelectList(
+            var categoriasSelectList = new SelectList(
                 categorias.OrderBy(c => c.Nombre),
                 "Id",
                 "Nombre",
                 categoriaSeleccionada
             );
 
-            ViewBag.Marcas = new SelectList(
+            var marcasSelectList = new SelectList(
                 marcas.OrderBy(m => m.Nombre),
                 "Id",
                 "Nombre",
                 marcaSeleccionada
             );
+
+            if (paraFiltros)
+            {
+                ViewBag.CategoriasFiltro = categoriasSelectList;
+                ViewBag.MarcasFiltro = marcasSelectList;
+            }
+            else
+            {
+                ViewBag.Categorias = categoriasSelectList;
+                ViewBag.Marcas = marcasSelectList;
+            }
         }
         // GET: Producto/Create
         public async Task<IActionResult> Create()
@@ -313,28 +297,39 @@ namespace TheBuryProject.Controllers
         }
 
         /// <summary>
-        /// Carga los dropdowns de Categor�as y Marcas para los formularios
+        /// Obtiene las subcategorías (hijas) de una categoría padre para dropdown AJAX
         /// </summary>
-        /// <summary>
-        /// Carga los dropdowns para los filtros
-        /// </summary>
-        private async Task CargarDropdownsFiltrosAsync(int? categoriaSeleccionada = null, int? marcaSeleccionada = null)
+        [HttpGet]
+        public async Task<IActionResult> GetSubcategorias(int categoriaId)
         {
-            var (categorias, marcas) = await _catalogLookupService.GetCategoriasYMarcasAsync();
+            try
+            {
+                var subcategorias = await _catalogLookupService.GetSubcategoriasAsync(categoriaId);
+                return Json(subcategorias.Select(s => new { id = s.Id, nombre = s.Nombre }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener subcategorías para categoría {CategoriaId}", categoriaId);
+                return Json(new List<object>());
+            }
+        }
 
-            ViewBag.CategoriasFiltro = new SelectList(
-                categorias.OrderBy(c => c.Nombre),
-                "Id",
-                "Nombre",
-                categoriaSeleccionada
-            );
-
-            ViewBag.MarcasFiltro = new SelectList(
-                marcas.OrderBy(m => m.Nombre),
-                "Id",
-                "Nombre",
-                marcaSeleccionada
-            );
+        /// <summary>
+        /// Obtiene las submarcas (hijas) de una marca padre para dropdown AJAX
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetSubmarcas(int marcaId)
+        {
+            try
+            {
+                var submarcas = await _catalogLookupService.GetSubmarcasAsync(marcaId);
+                return Json(submarcas.Select(s => new { id = s.Id, nombre = s.Nombre }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener submarcas para marca {MarcaId}", marcaId);
+                return Json(new List<object>());
+            }
         }
 
     }

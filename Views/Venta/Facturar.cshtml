@@ -74,9 +74,10 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label asp-for="Numero" class="form-label fw-semibold"></label>
-                            <input asp-for="Numero" class="form-control" placeholder="0001-00000001" />
-                            <span asp-validation-for="Numero" class="text-danger small"></span>
+                            <label class="form-label fw-semibold">Número de Factura</label>
+                            <div class="form-control bg-light text-muted">
+                                <i class="bi bi-magic me-1"></i> Se generará automáticamente al confirmar
+                            </div>
                         </div>
 
                         <div class="col-md-3">

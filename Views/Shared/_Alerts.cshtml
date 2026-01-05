@@ -1,0 +1,50 @@
+@*
+    Partial: Alertas TempData unificadas
+    Uso: <partial name="_Alerts" />
+    
+    Muestra alertas de Success, Error, Warning, Info desde TempData
+*@
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <div>@TempData["Success"]</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>@TempData["Error"]</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show border-0 shadow-sm" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-circle-fill me-2"></i>
+            <div>@TempData["Warning"]</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@if (TempData["Info"] != null)
+{
+    <div class="alert alert-info alert-dismissible fade show border-0 shadow-sm" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <div>@TempData["Info"]</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}

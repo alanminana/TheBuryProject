@@ -80,5 +80,15 @@ namespace TheBuryProject.Services
 
             return total - anticipo;
         }
+
+        public decimal CalcularCFTEADesdeTasa(decimal tasaMensual)
+        {
+            if (tasaMensual < 0)
+                throw new ArgumentException("La tasa mensual no puede ser negativa", nameof(tasaMensual));
+
+            // CFTEA = ((1 + i)^12 - 1) * 100
+            var cftea = ((decimal)Math.Pow((double)(1 + tasaMensual), 12) - 1) * 100;
+            return Math.Round(cftea, 4);
+        }
     }
 }

@@ -94,7 +94,7 @@ namespace TheBuryProject.Services
                     Directory.CreateDirectory(uploadPath);
 
                 var extension = Path.GetExtension(viewModel.Archivo.FileName).ToLowerInvariant();
-                var nombreArchivo = $"{viewModel.ClienteId}_{viewModel.TipoDocumento}_{DateTime.Now:yyyyMMddHHmmss}{extension}";
+                var nombreArchivo = $"{viewModel.ClienteId}_{viewModel.TipoDocumento}_{DateTime.UtcNow:yyyyMMddHHmmss}{extension}";
 
                 var (pathValid, rutaCompleta, pathError) = DocumentoValidationHelper.NormalizePath(uploadPath, nombreArchivo);
                 if (!pathValid)
@@ -116,7 +116,7 @@ namespace TheBuryProject.Services
                     TipoMIME = viewModel.Archivo.ContentType,
                     TamanoBytes = viewModel.Archivo.Length,
                     Estado = EstadoDocumento.Pendiente,
-                    FechaSubida = DateTime.Now,
+                    FechaSubida = DateTime.UtcNow,
                     FechaVencimiento = viewModel.FechaVencimiento,
                     Observaciones = viewModel.Observaciones
                 };
@@ -160,12 +160,8 @@ namespace TheBuryProject.Services
             int clienteId,
             IEnumerable<TipoDocumentoCliente>? requeridos = null)
         {
-            var tiposRequeridos = requeridos?.ToList() ?? new List<TipoDocumentoCliente>
-            {
-                TipoDocumentoCliente.DNI,
-                TipoDocumentoCliente.ReciboSueldo,
-                TipoDocumentoCliente.Servicio
-            };
+            var tiposRequeridos = requeridos?.ToList() 
+                ?? DropdownConstants.DocumentosClienteRequeridos.ToList();
 
             var documentosCliente = await _context.Set<DocumentoCliente>()
                 .Where(d => d.ClienteId == clienteId && !d.IsDeleted)
@@ -201,7 +197,7 @@ namespace TheBuryProject.Services
                     return false;
 
                 documento.Estado = EstadoDocumento.Verificado;
-                documento.FechaVerificacion = DateTime.Now;
+                documento.FechaVerificacion = DateTime.UtcNow;
                 documento.VerificadoPor = verificadoPor;
                 if (!string.IsNullOrEmpty(observaciones))
                     documento.Observaciones = observaciones;
@@ -230,7 +226,7 @@ namespace TheBuryProject.Services
                     return false;
 
                 documento.Estado = EstadoDocumento.Rechazado;
-                documento.FechaVerificacion = DateTime.Now;
+                documento.FechaVerificacion = DateTime.UtcNow;
                 documento.VerificadoPor = rechazadoPor;
                 documento.MotivoRechazo = motivo;
 
@@ -326,7 +322,7 @@ namespace TheBuryProject.Services
                 if (filtro.SoloVencidos)
                     query = query.Where(d =>
                         d.Estado == EstadoDocumento.Vencido ||
-                        (d.FechaVencimiento.HasValue && d.FechaVencimiento.Value < DateTime.Today));
+                        (d.FechaVencimiento.HasValue && d.FechaVencimiento.Value < DateTime.UtcNow.Date));
 
                 var total = await query.CountAsync();
 
@@ -363,7 +359,7 @@ namespace TheBuryProject.Services
                 if (!documentosPendientes.Any())
                     return 0;
 
-                var ahora = DateTime.Now;
+                var ahora = DateTime.UtcNow;
                 foreach (var documento in documentosPendientes)
                 {
                     documento.Estado = EstadoDocumento.Verificado;
@@ -392,8 +388,8 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var today = DateTime.Today;
-                var now = DateTime.Now;
+                var today = DateTime.UtcNow.Date;
+                var now = DateTime.UtcNow;
 
                 var updated = await _context.Set<DocumentoCliente>()
                     .Where(d => !d.IsDeleted
@@ -431,7 +427,7 @@ namespace TheBuryProject.Services
                     .Where(d => idsList.Contains(d.Id) && !d.IsDeleted)
                     .ToListAsync();
 
-                var ahora = DateTime.Now;
+                var ahora = DateTime.UtcNow;
                 
                 foreach (var id in idsList)
                 {
@@ -517,7 +513,7 @@ namespace TheBuryProject.Services
                     .Where(d => idsList.Contains(d.Id) && !d.IsDeleted)
                     .ToListAsync();
 
-                var ahora = DateTime.Now;
+                var ahora = DateTime.UtcNow;
                 
                 foreach (var id in idsList)
                 {

@@ -16,13 +16,7 @@ namespace TheBuryProject.Models.Enums
         ProductoSinMovimiento = 4
     }
 
-    public enum TipoAlertaGeneral
-    {
-        Sistema = 1,
-        Operacional = 2,
-        Financiera = 3,
-        Comercial = 4
-    }
+    // TipoAlertaGeneral eliminado - no tenía usos en el código
 
     public enum PrioridadAlerta
     {

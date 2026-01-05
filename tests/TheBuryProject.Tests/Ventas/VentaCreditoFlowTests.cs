@@ -46,7 +46,8 @@ public class VentaCreditoFlowTests
             new VentaNumberGenerator(db.Context),
             precioService,
             db.HttpContextAccessor,
-            new NoopValidacionVentaService());
+            new NoopValidacionVentaService(),
+            new NoopCajaService());
     }
 
     private static async Task<(Cliente cliente, Credito credito, Producto producto)> SetupTestDataAsync(SqliteInMemoryDb db)

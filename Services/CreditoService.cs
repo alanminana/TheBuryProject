@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TheBuryProject.Data;
-using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -19,12 +18,21 @@ namespace TheBuryProject.Services
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly ILogger<CreditoService> _logger;
+        private readonly IFinancialCalculationService _financialService;
+        private readonly ICajaService _cajaService;
 
-        public CreditoService(AppDbContext context, IMapper mapper, ILogger<CreditoService> logger)
+        public CreditoService(
+            AppDbContext context, 
+            IMapper mapper, 
+            ILogger<CreditoService> logger,
+            IFinancialCalculationService financialService,
+            ICajaService cajaService)
         {
             _context = context;
             _mapper = mapper;
             _logger = logger;
+            _financialService = financialService;
+            _cajaService = cajaService;
         }
 
         #region CRUD Básico
@@ -73,7 +81,7 @@ namespace TheBuryProject.Services
                         query = query.Where(c => c.Cuotas.Any(cu =>
                             !cu.IsDeleted &&
                             (cu.Estado == EstadoCuota.Vencida ||
-                             (cu.Estado == EstadoCuota.Pendiente && cu.FechaVencimiento < DateTime.Now))));
+                             (cu.Estado == EstadoCuota.Pendiente && cu.FechaVencimiento < DateTime.UtcNow))));
                 }
 
                 var creditos = await query
@@ -159,7 +167,7 @@ namespace TheBuryProject.Services
                 viewModel.PuntajeRiesgoInicial = cliente.PuntajeRiesgo;
                 if (viewModel.Estado == 0)
                     viewModel.Estado = EstadoCredito.Solicitado;
-                viewModel.FechaSolicitud = DateTime.Now;
+                viewModel.FechaSolicitud = DateTime.UtcNow;
 
                 // CAMBIO IMPORTANTE: No calculamos cuotas ni totales
                 // El MontoAprobado se iguala al MontoSolicitado
@@ -195,7 +203,7 @@ namespace TheBuryProject.Services
                 TasaInteres = 0,
                 CantidadCuotas = 0,
                 Estado = EstadoCredito.PendienteConfiguracion,
-                FechaSolicitud = DateTime.Now
+                FechaSolicitud = DateTime.UtcNow
             };
 
             return await CreateAsync(creditoVm);
@@ -270,14 +278,14 @@ namespace TheBuryProject.Services
             {
                 // La tasa ya viene como decimal (ejemplo: 0.05 = 5%)
                 var tasaDecimal = modelo.TasaInteresMensual;
-                modelo.MontoCuota = CalcularMontoCuotaSistemaFrances(modelo.MontoSolicitado, tasaDecimal, modelo.CantidadCuotas);
+                modelo.MontoCuota = _financialService.CalcularCuotaSistemaFrances(modelo.MontoSolicitado, tasaDecimal, modelo.CantidadCuotas);
                 modelo.TotalAPagar = modelo.MontoCuota * modelo.CantidadCuotas;
                 modelo.TotalIntereses = modelo.TotalAPagar - modelo.MontoSolicitado;
-                modelo.CFTEA = CalcularCFTEA(tasaDecimal);
+                modelo.CFTEA = _financialService.CalcularCFTEADesdeTasa(tasaDecimal);
 
                 // Generar plan de pagos
                 modelo.PlanPagos = new List<CuotaSimuladaViewModel>();
-                var fechaCuota = DateTime.Now.AddMonths(1);
+                var fechaCuota = DateTime.UtcNow.AddMonths(1);
                 var saldoCapital = modelo.MontoSolicitado;
 
                 for (int i = 1; i <= modelo.CantidadCuotas; i++)
@@ -327,7 +335,7 @@ namespace TheBuryProject.Services
                     throw new Exception("Solo se pueden aprobar créditos en estado Solicitado");
 
                 credito.Estado = EstadoCredito.Aprobado;
-                credito.FechaAprobacion = DateTime.Now;
+                credito.FechaAprobacion = DateTime.UtcNow;
                 credito.AprobadoPor = aprobadoPor;
                 credito.MontoAprobado = credito.MontoSolicitado;
                 credito.SaldoPendiente = credito.MontoAprobado; // Saldo disponible completo
@@ -390,7 +398,7 @@ namespace TheBuryProject.Services
                     return false;
 
                 credito.Estado = EstadoCredito.Cancelado;
-                credito.FechaFinalizacion = DateTime.Now;
+                credito.FechaFinalizacion = DateTime.UtcNow;
                 credito.Observaciones = $"Cancelado: {motivo}";
 
                 // Cancelar cuotas pendientes
@@ -477,10 +485,12 @@ namespace TheBuryProject.Services
                 if (cuota.Estado == EstadoCuota.Pagada)
                     throw new Exception("La cuota ya está pagada");
 
+                var ahora = DateTime.UtcNow;
+
                 // Calcular punitorio si está vencida
-                if (DateTime.Now > cuota.FechaVencimiento && cuota.Estado != EstadoCuota.Pagada)
+                if (ahora > cuota.FechaVencimiento && cuota.Estado != EstadoCuota.Pagada)
                 {
-                    var diasAtraso = (DateTime.Now - cuota.FechaVencimiento).Days;
+                    var diasAtraso = (ahora - cuota.FechaVencimiento).Days;
                     // Aplicar 2% mensual de punitorio (ejemplo)
                     cuota.MontoPunitorio = cuota.MontoTotal * 0.02m * (diasAtraso / 30m);
                 }
@@ -506,6 +516,15 @@ namespace TheBuryProject.Services
 
                 await _context.SaveChangesAsync();
 
+                // ✅ Registrar movimiento de caja para el cobro de cuota
+                await _cajaService.RegistrarMovimientoCuotaAsync(
+                    cuota.Id,
+                    cuota.Credito.Numero,
+                    cuota.NumeroCuota,
+                    pago.MontoPagado,
+                    pago.MedioPago,
+                    "System"); // TODO: Obtener usuario del contexto HTTP
+
                 // Actualizar saldo del crédito
                 await RecalcularSaldoCreditoAsync(cuota.CreditoId);
 
@@ -514,6 +533,125 @@ namespace TheBuryProject.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al pagar cuota: {CuotaId}", pago.CuotaId);
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> AdelantarCuotaAsync(PagarCuotaViewModel pago)
+        {
+            try
+            {
+                // Al adelantar, se paga la ÚLTIMA cuota pendiente (reduce el plazo)
+                var ultimaCuotaPendiente = await _context.Cuotas
+                    .Include(c => c.Credito)
+                    .Where(c => c.CreditoId == pago.CreditoId &&
+                               !c.IsDeleted &&
+                               !c.Credito.IsDeleted &&
+                               (c.Estado == EstadoCuota.Pendiente || c.Estado == EstadoCuota.Parcial))
+                    .OrderByDescending(c => c.NumeroCuota)
+                    .FirstOrDefaultAsync();
+
+                if (ultimaCuotaPendiente == null)
+                {
+                    _logger.LogWarning("No hay cuotas pendientes para adelantar en crédito {CreditoId}", pago.CreditoId);
+                    return false;
+                }
+
+                // Forzar el pago a la última cuota
+                pago.CuotaId = ultimaCuotaPendiente.Id;
+                pago.NumeroCuota = ultimaCuotaPendiente.NumeroCuota;
+
+                var ahora = DateTime.UtcNow;
+
+                // En adelanto no hay punitorio (se paga antes de vencer)
+                ultimaCuotaPendiente.MontoPagado += pago.MontoPagado;
+                ultimaCuotaPendiente.FechaPago = pago.FechaPago;
+                ultimaCuotaPendiente.MedioPago = pago.MedioPago;
+                ultimaCuotaPendiente.ComprobantePago = pago.ComprobantePago;
+                
+                var observacionAdelanto = $"[ADELANTO] Cuota adelantada el {ahora:dd/MM/yyyy}";
+                ultimaCuotaPendiente.Observaciones = string.IsNullOrWhiteSpace(pago.Observaciones)
+                    ? observacionAdelanto
+                    : $"{observacionAdelanto}. {pago.Observaciones}";
+
+                if (ultimaCuotaPendiente.MontoPagado >= ultimaCuotaPendiente.MontoTotal)
+                {
+                    ultimaCuotaPendiente.Estado = EstadoCuota.Pagada;
+                }
+                else if (ultimaCuotaPendiente.MontoPagado > 0)
+                {
+                    ultimaCuotaPendiente.Estado = EstadoCuota.Parcial;
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Registrar movimiento de caja
+                await _cajaService.RegistrarMovimientoCuotaAsync(
+                    ultimaCuotaPendiente.Id,
+                    ultimaCuotaPendiente.Credito.Numero,
+                    ultimaCuotaPendiente.NumeroCuota,
+                    pago.MontoPagado,
+                    pago.MedioPago,
+                    "System");
+
+                await RecalcularSaldoCreditoAsync(ultimaCuotaPendiente.CreditoId);
+
+                _logger.LogInformation(
+                    "Cuota #{NumeroCuota} adelantada en crédito {CreditoId}. Monto: {Monto:C2}",
+                    ultimaCuotaPendiente.NumeroCuota, pago.CreditoId, pago.MontoPagado);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al adelantar cuota en crédito: {CreditoId}", pago.CreditoId);
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<CuotaViewModel?> GetPrimeraCuotaPendienteAsync(int creditoId)
+        {
+            try
+            {
+                var cuota = await _context.Cuotas
+                    .Include(c => c.Credito)
+                    .Where(c => c.CreditoId == creditoId &&
+                               !c.IsDeleted &&
+                               !c.Credito.IsDeleted &&
+                               (c.Estado == EstadoCuota.Pendiente || c.Estado == EstadoCuota.Vencida || c.Estado == EstadoCuota.Parcial))
+                    .OrderBy(c => c.NumeroCuota)
+                    .FirstOrDefaultAsync();
+
+                return cuota == null ? null : _mapper.Map<CuotaViewModel>(cuota);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener primera cuota pendiente para crédito: {CreditoId}", creditoId);
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<CuotaViewModel?> GetUltimaCuotaPendienteAsync(int creditoId)
+        {
+            try
+            {
+                var cuota = await _context.Cuotas
+                    .Include(c => c.Credito)
+                    .Where(c => c.CreditoId == creditoId &&
+                               !c.IsDeleted &&
+                               !c.Credito.IsDeleted &&
+                               (c.Estado == EstadoCuota.Pendiente || c.Estado == EstadoCuota.Parcial))
+                    .OrderByDescending(c => c.NumeroCuota)
+                    .FirstOrDefaultAsync();
+
+                return cuota == null ? null : _mapper.Map<CuotaViewModel>(cuota);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener última cuota pendiente para crédito: {CreditoId}", creditoId);
                 throw;
             }
         }
@@ -528,7 +666,7 @@ namespace TheBuryProject.Services
                     .Where(c => !c.IsDeleted &&
                                !c.Credito.IsDeleted &&
                                !c.Credito.Cliente.IsDeleted &&
-                               c.FechaVencimiento < DateTime.Now &&
+                               c.FechaVencimiento < DateTime.UtcNow &&
                                (c.Estado == EstadoCuota.Pendiente || c.Estado == EstadoCuota.Parcial || c.Estado == EstadoCuota.Vencida))
                     .OrderBy(c => c.FechaVencimiento)
                     .ToListAsync();
@@ -546,7 +684,7 @@ namespace TheBuryProject.Services
         {
             try
             {
-                var now = DateTime.Now;
+                var now = DateTime.UtcNow;
 
                 await _context.Cuotas
                     .Where(c => !c.IsDeleted &&
@@ -566,16 +704,6 @@ namespace TheBuryProject.Services
         #endregion
 
         #region Cálculos Financieros
-
-        public decimal CalcularMontoCuotaSistemaFrances(decimal monto, decimal tasaMensual, int cantidadCuotas)
-        {
-            return CreditoHelper.CalcularMontoCuotaSistemaFrances(monto, tasaMensual, cantidadCuotas);
-        }
-
-        public decimal CalcularCFTEA(decimal tasaMensual)
-        {
-            return CreditoHelper.CalcularCFTEA(tasaMensual);
-        }
 
         public async Task<bool> RecalcularSaldoCreditoAsync(int creditoId)
         {
@@ -601,7 +729,7 @@ namespace TheBuryProject.Services
                 if (credito.Cuotas.All(c => c.Estado == EstadoCuota.Pagada || c.Estado == EstadoCuota.Cancelada))
                 {
                     credito.Estado = EstadoCredito.Finalizado;
-                    credito.FechaFinalizacion = DateTime.Now;
+                    credito.FechaFinalizacion = DateTime.UtcNow;
                 }
                 else if (credito.Estado == EstadoCredito.Aprobado && credito.Cuotas.Any(c => c.Estado == EstadoCuota.Pagada))
                 {
@@ -629,7 +757,7 @@ namespace TheBuryProject.Services
                 .FirstOrDefaultAsync();
 
             var numero = ultimoCredito != null ? ultimoCredito.Id + 1 : 1;
-            return $"CRE-{DateTime.Now:yyyyMM}-{numero:D6}";
+            return $"CRE-{DateTime.UtcNow:yyyyMM}-{numero:D6}";
         }
 
         #endregion
@@ -728,10 +856,10 @@ namespace TheBuryProject.Services
 
                     // Calcular cuota usando sistema francés
                     var tasaMensualDecimal = solicitud.TasaInteres / 100m;
-                    var cuota = CalcularMontoCuotaSistemaFrances(solicitud.MontoSolicitado, tasaMensualDecimal, solicitud.CantidadCuotas);
+                    var cuota = _financialService.CalcularCuotaSistemaFrances(solicitud.MontoSolicitado, tasaMensualDecimal, solicitud.CantidadCuotas);
 
                     credito.MontoCuota = cuota;
-                    credito.CFTEA = CalcularCFTEA(tasaMensualDecimal);
+                    credito.CFTEA = _financialService.CalcularCFTEADesdeTasa(tasaMensualDecimal);
                     credito.TotalAPagar = Math.Round(cuota * solicitud.CantidadCuotas, 2);
                     credito.SaldoPendiente = credito.TotalAPagar;
 

@@ -16,5 +16,10 @@ namespace TheBuryProject.Services.Interfaces
             bool soloActivos = false,
             string? orderBy = null,
             string? orderDirection = "asc");
+
+        /// <summary>
+        /// Obtiene las subcategorías (hijas) de una categoría padre
+        /// </summary>
+        Task<IEnumerable<Categoria>> GetChildrenAsync(int parentId);
     }
 }

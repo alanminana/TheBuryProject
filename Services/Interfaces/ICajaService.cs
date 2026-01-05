@@ -1,10 +1,11 @@
 using TheBuryProject.Models.Entities;
+using TheBuryProject.Models.Enums;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Services.Interfaces
 {
     /// <summary>
-    /// Servicio centralizado para gestin de cajas, aperturas, movimientos y cierres
+    /// Servicio centralizado para gestión de cajas, aperturas, movimientos y cierres
     /// </summary>
     public interface ICajaService
     {
@@ -26,6 +27,12 @@ namespace TheBuryProject.Services.Interfaces
         Task<AperturaCaja?> ObtenerAperturaPorIdAsync(int id);
         Task<List<AperturaCaja>> ObtenerAperturasAbiertasAsync();
         Task<bool> TieneCajaAbiertaAsync(int cajaId);
+        
+        /// <summary>
+        /// Verifica si existe al menos una caja abierta en el sistema.
+        /// Usado para validar que se pueden realizar ventas.
+        /// </summary>
+        Task<bool> ExisteAlgunaCajaAbiertaAsync();
 
         #endregion
 
@@ -34,6 +41,62 @@ namespace TheBuryProject.Services.Interfaces
         Task<MovimientoCaja> RegistrarMovimientoAsync(MovimientoCajaViewModel model, string usuario);
         Task<List<MovimientoCaja>> ObtenerMovimientosDeAperturaAsync(int aperturaId);
         Task<decimal> CalcularSaldoActualAsync(int aperturaId);
+
+        /// <summary>
+        /// Registra automáticamente el movimiento de caja para una venta confirmada.
+        /// Solo aplica para ventas de contado (Efectivo, Tarjeta, Cheque, Transferencia, MercadoPago).
+        /// Las ventas a crédito personal no generan ingreso inmediato (se cobra por cuotas).
+        /// </summary>
+        /// <param name="ventaId">ID de la venta</param>
+        /// <param name="ventaNumero">Número de la venta (para referencia)</param>
+        /// <param name="monto">Monto total de la venta</param>
+        /// <param name="tipoPago">Tipo de pago de la venta</param>
+        /// <param name="usuario">Usuario que confirma la venta</param>
+        /// <returns>MovimientoCaja creado, o null si no aplica (ej: crédito personal)</returns>
+        Task<MovimientoCaja?> RegistrarMovimientoVentaAsync(
+            int ventaId,
+            string ventaNumero,
+            decimal monto,
+            TipoPago tipoPago,
+            string usuario);
+
+        /// <summary>
+        /// Obtiene la primera apertura de caja activa disponible para registrar una venta.
+        /// </summary>
+        Task<AperturaCaja?> ObtenerAperturaActivaParaVentaAsync();
+
+        /// <summary>
+        /// Registra automáticamente el movimiento de caja para el pago de una cuota de crédito.
+        /// </summary>
+        /// <param name="cuotaId">ID de la cuota pagada</param>
+        /// <param name="creditoNumero">Número del crédito (para referencia)</param>
+        /// <param name="numeroCuota">Número de la cuota</param>
+        /// <param name="monto">Monto pagado</param>
+        /// <param name="medioPago">Medio de pago (Efectivo, Tarjeta, etc.)</param>
+        /// <param name="usuario">Usuario que registra el pago</param>
+        /// <returns>MovimientoCaja creado, o null si no hay caja abierta</returns>
+        Task<MovimientoCaja?> RegistrarMovimientoCuotaAsync(
+            int cuotaId,
+            string creditoNumero,
+            int numeroCuota,
+            decimal monto,
+            string medioPago,
+            string usuario);
+
+        /// <summary>
+        /// Registra automáticamente el movimiento de caja para un anticipo de crédito.
+        /// El anticipo es un pago inicial que reduce el monto a financiar.
+        /// </summary>
+        /// <param name="creditoId">ID del crédito</param>
+        /// <param name="creditoNumero">Número del crédito (para referencia)</param>
+        /// <param name="montoAnticipo">Monto del anticipo</param>
+        /// <param name="usuario">Usuario que registra el anticipo</param>
+        /// <returns>MovimientoCaja creado, o null si no hay caja abierta o anticipo es 0</returns>
+        Task<MovimientoCaja?> RegistrarMovimientoAnticipoAsync(
+            int creditoId,
+            string creditoNumero,
+            decimal montoAnticipo,
+            string usuario);
 
         #endregion
 

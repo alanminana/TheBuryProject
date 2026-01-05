@@ -63,7 +63,7 @@ namespace TheBuryProject.Services
                     AlertaCobranzaId = alerta.Id,
                     ClienteId = alerta.ClienteId,
                     GestorId = gestorId,
-                    FechaContacto = DateTime.Now,
+                    FechaContacto = DateTime.UtcNow,
                     TipoContacto = promesa.TipoContacto,
                     Resultado = ResultadoContacto.PromesaPago,
                     Telefono = promesa.TipoContacto == TipoContacto.LlamadaTelefonica ||
@@ -83,14 +83,14 @@ namespace TheBuryProject.Services
                 alerta.EstadoGestion = EstadoGestionCobranza.PromesaPago;
                 alerta.FechaPromesaPago = promesa.FechaPromesa;
                 alerta.MontoPromesaPago = promesa.MontoPromesa;
-                alerta.UpdatedAt = DateTime.Now;
+                alerta.UpdatedAt = DateTime.UtcNow;
                 alerta.UpdatedBy = gestorId;
 
                 // Si no tiene gestor asignado, asignar al que registra
                 if (string.IsNullOrEmpty(alerta.GestorAsignadoId))
                 {
                     alerta.GestorAsignadoId = gestorId;
-                    alerta.FechaAsignacion = DateTime.Now;
+                    alerta.FechaAsignacion = DateTime.UtcNow;
                 }
 
                 await _context.SaveChangesAsync();
@@ -187,7 +187,7 @@ namespace TheBuryProject.Services
                     AlertaCobranzaId = alerta.Id,
                     ClienteId = alerta.ClienteId,
                     GestorId = gestorId,
-                    FechaContacto = DateTime.Now,
+                    FechaContacto = DateTime.UtcNow,
                     TipoContacto = TipoContacto.NotaInterna,
                     Resultado = ResultadoContacto.PromesaIncumplida,
                     Observaciones = observaciones ??
@@ -201,8 +201,8 @@ namespace TheBuryProject.Services
                 // Actualizar alerta
                 alerta.EstadoGestion = EstadoGestionCobranza.EnGestion;
                 alerta.Observaciones = (alerta.Observaciones ?? "") +
-                    $"\n[{DateTime.Now:yyyy-MM-dd HH:mm}] Promesa incumplida - {gestorId}";
-                alerta.UpdatedAt = DateTime.Now;
+                    $"\n[{DateTime.UtcNow:yyyy-MM-dd HH:mm}] Promesa incumplida - {gestorId}";
+                alerta.UpdatedAt = DateTime.UtcNow;
                 alerta.UpdatedBy = gestorId;
 
                 await _context.SaveChangesAsync();
@@ -246,7 +246,7 @@ namespace TheBuryProject.Services
                     AlertaCobranzaId = alerta.Id,
                     ClienteId = alerta.ClienteId,
                     GestorId = gestorId,
-                    FechaContacto = DateTime.Now,
+                    FechaContacto = DateTime.UtcNow,
                     TipoContacto = TipoContacto.NotaInterna,
                     Resultado = ResultadoContacto.PagoRealizado,
                     Observaciones = $"Pago realizado por {montoPagado:C}. Promesa cumplida.",
@@ -262,7 +262,7 @@ namespace TheBuryProject.Services
                 {
                     alerta.EstadoGestion = EstadoGestionCobranza.Regularizado;
                     alerta.Resuelta = true;
-                    alerta.FechaResolucion = DateTime.Now;
+                    alerta.FechaResolucion = DateTime.UtcNow;
                     alerta.MotivoResolucion = $"Pago realizado: {montoPagado:C}";
                 }
                 else
@@ -275,7 +275,7 @@ namespace TheBuryProject.Services
 
                 alerta.FechaPromesaPago = null;
                 alerta.MontoPromesaPago = null;
-                alerta.UpdatedAt = DateTime.Now;
+                alerta.UpdatedAt = DateTime.UtcNow;
                 alerta.UpdatedBy = gestorId;
 
                 await _context.SaveChangesAsync();

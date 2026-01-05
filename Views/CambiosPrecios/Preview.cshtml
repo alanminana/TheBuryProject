@@ -4,38 +4,20 @@
     ViewData["Title"] = "Detalle de simulación";
 }
 
-<div class="container-fluid px-0 py-4">
+<div class="container-fluid py-4">
 
-    <div class="d-flex align-items-start justify-content-between mb-4">
-        <div>
-            <div class="text-muted text-uppercase small mb-1">Gestión de precios · Cambios masivos</div>
-            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
-                <i class="bi bi-eye"></i>
-                <span>Detalle de simulación</span>
-            </h1>
-            <p class="text-muted small mb-0">Revisión de items, advertencias y acciones disponibles.</p>
-        </div>
+    @* Header unificado *@
+    <partial name="_PageHeader" model='new PageHeaderModel {
+        Breadcrumb = "Gestión de precios · Cambios masivos",
+        Title = "Detalle de simulación",
+        Icon = "eye",
+        Subtitle = "Revisión de items, advertencias y acciones disponibles.",
+        BackAction = "Index",
+        BackText = "Volver"
+    }' />
 
-        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver
-        </a>
-    </div>
-
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-1"></i>@TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-1"></i>@TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+    @* Alertas unificadas *@
+    <partial name="_Alerts" />
 
     <div class="row">
         <div class="col-12 col-xl-4">

@@ -54,7 +54,8 @@ public class VentaAutorizacionE3Tests
             new VentaNumberGenerator(db.Context),
             precioService,
             db.HttpContextAccessor,
-            new NoopValidacionVentaService());
+            new NoopValidacionVentaService(),
+            new NoopCajaService());
     }
 
     private static async Task<(Cliente cliente, Producto producto, Venta venta)> SetupVentaPendienteAutorizacionAsync(SqliteInMemoryDb db)
@@ -308,7 +309,7 @@ public class VentaAutorizacionE3Tests
         using var db = new SqliteInMemoryDb(userName: "admin");
         var (_, _, venta) = await SetupVentaPendienteAutorizacionAsync(db);
         var ventaService = CreateVentaService(db);
-        var antesDeAutorizar = DateTime.Now.AddSeconds(-1);
+        var antesDeAutorizar = DateTime.UtcNow.AddSeconds(-1);
 
         // Act
         await ventaService.AutorizarVentaAsync(venta.Id, "admin", "Aprobado");
@@ -317,7 +318,7 @@ public class VentaAutorizacionE3Tests
         var ventaActualizada = await db.Context.Ventas.FindAsync(venta.Id);
         Assert.NotNull(ventaActualizada?.FechaAutorizacion);
         Assert.True(ventaActualizada.FechaAutorizacion >= antesDeAutorizar);
-        Assert.True(ventaActualizada.FechaAutorizacion <= DateTime.Now.AddSeconds(1));
+        Assert.True(ventaActualizada.FechaAutorizacion <= DateTime.UtcNow.AddSeconds(1));
     }
 
     [Fact]

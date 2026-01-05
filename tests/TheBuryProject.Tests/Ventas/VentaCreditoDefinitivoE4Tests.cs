@@ -50,7 +50,8 @@ public class VentaCreditoDefinitivoE4Tests
             new VentaNumberGenerator(db.Context),
             precioService,
             db.HttpContextAccessor,
-            new NoopValidacionVentaService());
+            new NoopValidacionVentaService(),
+            new NoopCajaService());
     }
 
     private static async Task<(Cliente cliente, Producto producto, Credito credito)> SetupTestDataAsync(SqliteInMemoryDb db)

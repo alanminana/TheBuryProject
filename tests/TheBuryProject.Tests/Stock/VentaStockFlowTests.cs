@@ -97,7 +97,8 @@ public class VentaStockFlowTests
             new VentaNumberGenerator(db.Context),
             precioService,
             db.HttpContextAccessor,
-            new NoopValidacionVentaService());
+            new NoopValidacionVentaService(),
+            new NoopCajaService());
 
         var okConfirmar = await ventaService.ConfirmarVentaAsync(venta.Id);
         Assert.True(okConfirmar);

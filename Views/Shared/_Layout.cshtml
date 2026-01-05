@@ -63,19 +63,16 @@
                         <span>Clientes</span>
                     </a>
 
-                    <!-- INVENTARIO -->
-                    <div class="section-title">Inventario</div>
-                    <a class="nav-link" asp-controller="Producto" asp-action="Index">
-                        <i class="bi bi-box-seam"></i>
-                        <span>Productos</span>
+                    <!-- CATÁLOGO -->
+                    <div class="section-title">Catálogo</div>
+                    <a class="nav-link" asp-controller="Catalogo" asp-action="Index">
+                        <i class="bi bi-grid"></i>
+                        <span>Catálogo</span>
                     </a>
                     <a class="nav-link" asp-controller="Proveedor" asp-action="Index">
                         <i class="bi bi-truck"></i>
                         <span>Proveedores</span>
                     </a>
-
-                    <!-- PRECIOS -->
-                    <div class="section-title">Precios</div>
                     <a class="nav-link" asp-controller="ListasPrecios" asp-action="Index">
                         <i class="bi bi-tags"></i>
                         <span>Listas de Precios</span>
@@ -220,6 +217,9 @@
 
     <!-- Modals (fuera del layout-container para evitar problemas de z-index/transform) -->
     @await RenderSectionAsync("Modals", required: false)
+    
+    <!-- Modal de confirmación global -->
+    <partial name="_ConfirmModal" />
 
     <!-- Vendor JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

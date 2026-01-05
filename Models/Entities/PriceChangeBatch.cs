@@ -158,6 +158,21 @@ public class PriceChangeBatch  : AuditableEntity
     public bool RequiereAutorizacion { get; set; }
 
     /// <summary>
+    /// ID del batch padre (para reversiones)
+    /// </summary>
+    public int? BatchPadreId { get; set; }
+
+    /// <summary>
+    /// Batch padre - usado cuando este batch es una reversión
+    /// </summary>
+    public virtual PriceChangeBatch? BatchPadre { get; set; }
+
+    /// <summary>
+    /// Batch de reversión - si este batch fue revertido, referencia al batch de reversión
+    /// </summary>
+    public virtual PriceChangeBatch? BatchReversion { get; set; }
+
+    /// <summary>
     /// Porcentaje promedio de cambio (para estadísticas)
     /// </summary>
     public decimal? PorcentajePromedioCambio { get; set; }

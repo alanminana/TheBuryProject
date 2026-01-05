@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using TheBuryProject.Models.Enums;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Helpers
 {
     public static class ClienteControllerHelper
     {
+        // Documentos obligatorios: DNI, Recibo de Sueldo, Servicio
+        // Nota: Veraz/CUIL son opcionales (dan puntos extra en evaluación pero no son requisito)
         public static bool VerificaDocumentosRequeridos(List<string> tiposDocumentosVerificados)
         {
             if (tiposDocumentosVerificados is null || tiposDocumentosVerificados.Count == 0)
@@ -17,7 +18,6 @@ namespace TheBuryProject.Helpers
 
             return set.Contains("DNI")
                    && set.Contains("Recibo de Sueldo")
-                   && set.Contains("Veraz")
                    && TieneServicio(set);
         }
 
@@ -29,7 +29,6 @@ namespace TheBuryProject.Helpers
             {
                 faltantes.Add("DNI");
                 faltantes.Add("Recibo de Sueldo");
-                faltantes.Add("Veraz");
                 faltantes.Add("Servicio");
                 return faltantes;
             }
@@ -41,9 +40,6 @@ namespace TheBuryProject.Helpers
 
             if (!set.Contains("Recibo de Sueldo"))
                 faltantes.Add("Recibo de Sueldo");
-
-            if (!set.Contains("Veraz"))
-                faltantes.Add("Veraz");
 
             if (!TieneServicio(set))
                 faltantes.Add("Servicio");
@@ -59,12 +55,6 @@ namespace TheBuryProject.Helpers
                 >= 500 => "Medio",
                 _ => "Alto"
             };
-        }
-
-        public static bool VerificaCumplimientoRequisitos(EvaluacionCreditoResult evaluacion)
-        {
-            // Evita duplicar reglas: delega en el helper central.
-            return EvaluacionCrediticiaHelper.VerificaCumplimientoRequisitos(evaluacion);
         }
 
         public static void GenerarAlertasYRecomendaciones(EvaluacionCreditoResult evaluacion)
