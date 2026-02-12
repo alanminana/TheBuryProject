@@ -23,7 +23,7 @@
     </a>
 }
 
-<form asp-action="ConfigurarVenta" method="post" class="needs-validation" novalidate data-total-venta="@Model.Monto.ToString(CultureInfo.InvariantCulture)">
+<form asp-action="ConfigurarVenta" method="post" class="needs-validation" novalidate data-total-venta="@Model.Monto.ToString(CultureInfo.InvariantCulture)" data-tasa-mensual="@(Model.TasaMensual.HasValue ? Model.TasaMensual.Value.ToString(CultureInfo.InvariantCulture) : "0")">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="CreditoId" />
     <input type="hidden" asp-for="VentaId" />
@@ -88,18 +88,102 @@
                             <h5 class="mb-0">Condiciones del crédito</h5>
                         </div>
                         <div class="card-body">
+                            <!-- TAREA 9: Método de Cálculo -->
+                            <div class="mb-4">
+                                <label asp-for="MetodoCalculo" class="form-label d-flex align-items-center gap-2">
+                                    <i class="bi bi-calculator"></i> Método de cálculo
+                                    <span class="badge bg-danger" style="font-size: 0.65rem;">Obligatorio</span>
+                                </label>
+                                <select asp-for="MetodoCalculo" class="form-select bg-body-secondary text-light border-0" id="metodoCalculoSelect" required>
+                                    <option value="" disabled selected>🔽 Seleccione método de cálculo</option>
+                                    <option value="0">🤖 Automático (Por Cliente)</option>
+                                    <option value="1">📋 Usar Perfil</option>
+                                    @if (ViewBag.ClienteConfigPersonalizada?.TieneConfiguracionCliente == true)
+                                    {
+                                        <option value="2">👤 Usar Cliente</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="2" disabled>👤 Usar Cliente (Sin configuración)</option>
+                                    }
+                                    <option value="3">🌍 Global (Sistema)</option>
+                                    <option value="4">✏️ Manual</option>
+                                </select>
+                                <span asp-validation-for="MetodoCalculo" class="text-danger small"></span>
+                                <input type="hidden" asp-for="ClienteId" />
+                                <input type="hidden" asp-for="FuenteConfiguracion" id="fuenteConfigHidden" />
+                                <div class="form-text text-muted" id="metodoHelpText">
+                                    Selecciona cómo calcular tasa, gastos y cuotas.
+                                </div>
+                                <!-- PUNTO 2: Aviso visible cuando no hay método seleccionado -->
+                                <div class="alert alert-warning d-flex align-items-center gap-2 mt-3" id="avisoMetodoRequerido" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    <div>
+                                        <strong>⚠️ Método de cálculo requerido:</strong> Debe seleccionar un método para habilitar el formulario y poder guardar.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAREA 9: Selector de Perfil (visible solo si MetodoCalculo = UsarPerfil) -->
+                            <div class="mb-4" id="perfilSelectorDiv" style="display: none;">
+                                <label asp-for="PerfilCreditoSeleccionadoId" class="form-label d-flex align-items-center gap-2">
+                                    <i class="bi bi-list-stars"></i> Perfil de Crédito
+                                </label>
+                                <select asp-for="PerfilCreditoSeleccionadoId" class="form-select bg-body-secondary text-light border-0" id="perfilCreditoSelect">
+                                    <option value="">Seleccionar perfil...</option>
+                                    @if (ViewBag.PerfilesActivos != null)
+                                    {
+                                        foreach (var perfil in ViewBag.PerfilesActivos)
+                                        {
+                                            <option value="@perfil.Id" 
+                                                    data-tasa="@perfil.TasaMensual" 
+                                                    data-gastos="@perfil.GastosAdministrativos"
+                                                    data-min-cuotas="@perfil.MinCuotas"
+                                                    data-max-cuotas="@perfil.MaxCuotas">
+                                                @perfil.Nombre
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                                <div class="form-text text-muted">
+                                    Selecciona el perfil para precargar sus valores.
+                                </div>
+                            </div>
+
+                            <!-- Data attributes para JavaScript -->
+                            <div id="configData"
+                                 data-tasa-global="@ViewBag.ClienteConfigPersonalizada?.TasaGlobal"
+                                 data-gastos-globales="@ViewBag.ClienteConfigPersonalizada?.GastosGlobales"
+                                 data-tasa-cliente="@ViewBag.ClienteConfigPersonalizada?.TasaPersonalizada"
+                                 data-gastos-cliente="@ViewBag.ClienteConfigPersonalizada?.GastosPersonalizados"
+                                 data-cuotas-max-cliente="@ViewBag.ClienteConfigPersonalizada?.CuotasMaximas"
+                                 data-cuotas-min-cliente="@ViewBag.ClienteConfigPersonalizada?.CuotasMinimas"
+                                 data-tiene-config-cliente="@(ViewBag.ClienteConfigPersonalizada?.TieneConfiguracionCliente == true ? "true" : "false")"
+                                 data-tiene-perfil-preferido="@(ViewBag.ClienteConfigPersonalizada?.TienePerfilPreferido == true ? "true" : "false")"
+                                 data-perfil-preferido-id="@ViewBag.ClienteConfigPersonalizada?.PerfilPreferidoId"
+                                 data-perfil-tasa="@ViewBag.ClienteConfigPersonalizada?.PerfilTasa"
+                                 data-perfil-gastos="@ViewBag.ClienteConfigPersonalizada?.PerfilGastos"
+                                 data-perfil-min-cuotas="@ViewBag.ClienteConfigPersonalizada?.PerfilMinCuotas"
+                                 data-perfil-max-cuotas="@ViewBag.ClienteConfigPersonalizada?.PerfilMaxCuotas"></div>
+                            
                             <div class="mb-3">
                                 <label asp-for="CantidadCuotas" class="form-label"></label>
                                 <input asp-for="CantidadCuotas" class="form-control bg-body-secondary text-light border-0" type="number" min="1" max="120" id="cuotasInput" />
                                 <span asp-validation-for="CantidadCuotas" class="text-danger small"></span>
+                                <small class="text-muted" id="cuotasMaxInfo">Rango: <span id="cuotasMinLabel">1</span> - <span id="cuotasMaxLabel">24</span> cuotas</small>
                             </div>
-                            <div class="mb-3">
-                                <label asp-for="TasaMensual" class="form-label"></label>
+                                                        <div class="mb-3">
+                                <label class="form-label d-flex align-items-center gap-2">
+                                    Tasa mensual aplicada
+                                    <span class="badge bg-info text-dark" id="tasaBadge" style="font-size: 0.65rem;">Global</span>
+                                </label>
                                 <div class="input-group">
-                                    <input asp-for="TasaMensual" class="form-control bg-body-secondary text-light border-0" type="number" step="0.01" min="0.01" max="100" id="tasaMensualInput" />
+                                    <input asp-for="TasaMensual" class="form-control bg-body-secondary text-light border-0" id="tasaMensualInput" type="number" step="0.01" min="0" />
                                     <span class="input-group-text bg-secondary text-light border-0">%</span>
                                 </div>
-                                <span asp-validation-for="TasaMensual" class="text-danger small"></span>
+                                <div class="form-text text-muted" id="tasaHelpText">
+                                    Cambia automáticamente según la fuente seleccionada.
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label asp-for="GastosAdministrativos" class="form-label"></label>
@@ -164,7 +248,7 @@
                                 </ul>
                             </div>
                             <div class="p-3 mt-3 rounded error-block d-none" id="errorCalculadora">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Ingresa anticipo, cuotas y tasa para ver los cálculos. La fecha ayuda a definir el primer vencimiento.
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Ingresa anticipo y cuotas para ver los cálculos. La fecha ayuda a definir el primer vencimiento.
                             </div>
                         </div>
                     </div>
@@ -175,7 +259,7 @@
                 <a href="@backUrl" class="btn btn-outline-secondary">
                     <i class="bi bi-x-circle"></i> Cancelar
                 </a>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" id="btnGuardarCredito" disabled>
                     <i class="bi bi-check-circle"></i> Confirmar Crédito
                 </button>
             </div>
@@ -187,3 +271,5 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/creditos-configurar.js" asp-append-version="true"></script>
 }
+
+

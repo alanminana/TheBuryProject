@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Base;
+using Microsoft.AspNetCore.Identity;
 using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.Models.Entities
@@ -66,6 +67,11 @@ namespace TheBuryProject.Models.Entities
         public string? DatosCreditoPersonallJson { get; set; }
 
         // Información adicional
+        public int? AperturaCajaId { get; set; }
+
+        [StringLength(450)]
+        public string? VendedorUserId { get; set; }
+
         [StringLength(200)]
         public string? VendedorNombre { get; set; }
 
@@ -89,6 +95,8 @@ namespace TheBuryProject.Models.Entities
         // Navigation properties
         public virtual Cliente Cliente { get; set; } = null!;
         public virtual Credito? Credito { get; set; }
+        public virtual AperturaCaja? AperturaCaja { get; set; }
+        public virtual ApplicationUser? VendedorUser { get; set; }
         public virtual ICollection<VentaDetalle> Detalles { get; set; } = new List<VentaDetalle>();
         public virtual ICollection<Factura> Facturas { get; set; } = new List<Factura>();
         public virtual DatosTarjeta? DatosTarjeta { get; set; }

@@ -13,6 +13,7 @@ const CatalogoSeleccion = (function () {
 
     // Estado interno
     let productosSeleccionados = new Map(); // Map<id, {codigo, nombre, precio}>
+    let inicializado = false;
 
     // Elementos DOM (se inicializan en init)
     const elementos = {};
@@ -24,6 +25,8 @@ const CatalogoSeleccion = (function () {
      * Inicializa el módulo
      */
     function init() {
+        if (inicializado) return;
+
         // Cachear elementos DOM - Tabla
         elementos.tabla = document.getElementById('tablaProductosCatalogo');
         elementos.checkMaster = document.getElementById('checkMaster');
@@ -33,39 +36,31 @@ const CatalogoSeleccion = (function () {
         elementos.formCambioPreciosRapido = document.getElementById('formCambioPreciosRapido');
         elementos.selectAlcance = document.getElementById('selectAlcanceCambio');
         elementos.inputPorcentaje = document.getElementById('inputPorcentajeCambio');
-        elementos.selectListas = document.getElementById('selectListasCambio');
         elementos.btnAplicar = document.getElementById('btnAplicarRapido');
-        elementos.btnHistorial = document.getElementById('btnHistorialRapido');
         elementos.btnLimpiar = document.getElementById('btnLimpiarSeleccion');
         elementos.badgeSeleccionados = document.getElementById('badgeSeleccionados');
         elementos.contadorSeleccionados = document.getElementById('contadorSeleccionados');
         elementos.hiddenProductoIds = document.getElementById('hiddenProductoIds');
         elementos.hiddenFiltrosJson = document.getElementById('hiddenFiltrosJson');
         elementos.hiddenAlcance = document.getElementById('hiddenAlcance');
-
-        // Feedback de validación
-        elementos.feedbackPorcentaje = document.getElementById('feedbackPorcentaje');
+        elementos.inputMotivo = document.getElementById('inputMotivoCambio');
 
         // Modal de confirmación
         elementos.modalConfirmar = document.getElementById('modalConfirmarAplicar');
         elementos.confirmarAlcance = document.getElementById('confirmarAlcance');
         elementos.confirmarCantidad = document.getElementById('confirmarCantidad');
         elementos.confirmarPorcentaje = document.getElementById('confirmarPorcentaje');
-        elementos.confirmarLista = document.getElementById('confirmarLista');
+        elementos.confirmarMotivo = document.getElementById('confirmarMotivo');
         elementos.btnConfirmarAplicar = document.getElementById('btnConfirmarAplicar');
         elementos.areaErrorConfirmar = document.getElementById('areaErrorConfirmar');
         elementos.mensajeErrorConfirmar = document.getElementById('mensajeErrorConfirmar');
-
-        // Modal alternativo (detalle)
-        elementos.modal = document.getElementById('modalCambiarPrecios');
-        elementos.modalContador = document.getElementById('modalContadorProductos');
-        elementos.modalListaProductos = document.getElementById('modalListaProductos');
-        elementos.modalHiddenProductoIds = document.getElementById('modalHiddenProductoIds');
 
         if (!elementos.tabla) {
             console.warn('[CatalogoSeleccion] Tabla no encontrada');
             return;
         }
+
+        inicializado = true;
 
         // Event listeners
         bindEventListeners();
@@ -94,17 +89,14 @@ const CatalogoSeleccion = (function () {
         elementos.inputPorcentaje?.addEventListener('input', onPorcentajeInput);
         elementos.inputPorcentaje?.addEventListener('blur', onPorcentajeBlur);
         elementos.inputPorcentaje?.addEventListener('keydown', onPorcentajeKeydown);
-        elementos.btnHistorial?.addEventListener('click', onHistorialClick);
         elementos.btnLimpiar?.addEventListener('click', limpiarSeleccion);
 
         // Modal de confirmación: poblar datos cuando se abre
         elementos.modalConfirmar?.addEventListener('show.bs.modal', onModalConfirmarShow);
+        elementos.modalConfirmar?.addEventListener('hidden.bs.modal', onModalConfirmarHidden);
         
         // Botón confirmar aplicar
         elementos.btnConfirmarAplicar?.addEventListener('click', onConfirmarAplicar);
-
-        // Modal detalle: sincronizar IDs cuando se abre
-        elementos.modal?.addEventListener('show.bs.modal', onModalShow);
 
         // Atajos de teclado
         document.addEventListener('keydown', onGlobalKeydown);
@@ -122,8 +114,7 @@ const CatalogoSeleccion = (function () {
         // Poblar datos del modal
         const alcance = elementos.selectAlcance?.value;
         const porcentaje = elementos.inputPorcentaje?.value || '0';
-        const listasSeleccionadas = elementos.selectListas ? 
-            Array.from(elementos.selectListas.selectedOptions).map(o => o.text) : [];
+        const motivo = elementos.inputMotivo?.value?.trim() || '';
 
         // Alcance
         if (elementos.confirmarAlcance) {
@@ -156,12 +147,30 @@ const CatalogoSeleccion = (function () {
             }
         }
 
-        // Lista
-        if (elementos.confirmarLista) {
-            elementos.confirmarLista.textContent = listasSeleccionadas.join(', ') || 'Ninguna';
+        // Motivo
+        if (elementos.confirmarMotivo) {
+            elementos.confirmarMotivo.textContent = motivo || 'Sin motivo';
         }
 
         console.log('[CatalogoSeleccion] Modal confirmación abierto');
+    }
+
+    function onModalConfirmarHidden() {
+        limpiarArtefactosModal();
+    }
+
+    function limpiarArtefactosModal() {
+        const modalesAbiertos = document.querySelectorAll('.modal.show').length;
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+
+        if (modalesAbiertos === 0) {
+            backdrops.forEach(backdrop => backdrop.remove());
+            document.body.classList.remove('modal-open');
+        } else if (backdrops.length > 1) {
+            backdrops.forEach((backdrop, index) => {
+                if (index > 0) backdrop.remove();
+            });
+        }
     }
 
     /**
@@ -170,43 +179,36 @@ const CatalogoSeleccion = (function () {
     async function onConfirmarAplicar() {
         const alcance = elementos.selectAlcance?.value;
         const porcentaje = elementos.inputPorcentaje?.value?.trim();
-        const listasSeleccionadas = elementos.selectListas ? 
-            Array.from(elementos.selectListas.selectedOptions).map(o => parseInt(o.value)) : [];
+        const motivo = elementos.inputMotivo?.value?.trim() || '';
 
         // Validar
         if (!validarPorcentaje(porcentaje)) {
             mostrarErrorConfirmar('Porcentaje inválido');
             return;
         }
-
-        if (listasSeleccionadas.length === 0) {
-            mostrarErrorConfirmar('Seleccione al menos una lista de precios');
+        if (motivo && motivo.length < 10) {
+            mostrarErrorConfirmar('El motivo debe tener al menos 10 caracteres');
             return;
         }
 
         // Preparar datos
         const requestData = {
-            modo: alcance,
-            porcentaje: parseFloat(porcentaje),
-            listasPrecioIds: listasSeleccionadas
+            alcance: alcance,
+            valorPorcentaje: parseFloat(porcentaje),
+            motivo: motivo || null
         };
 
         if (alcance === 'seleccionados') {
-            requestData.productoIds = Array.from(productosSeleccionados.keys()).map(id => parseInt(id));
-            if (requestData.productoIds.length === 0) {
+            const ids = Array.from(productosSeleccionados.keys()).map(id => parseInt(id));
+            requestData.productoIdsText = ids.join(',');
+            if (!requestData.productoIdsText) {
                 mostrarErrorConfirmar('Seleccione al menos un producto');
                 return;
             }
         } else {
             // Filtrados: enviar filtros
             const filtrosJson = elementos.hiddenFiltrosJson?.value;
-            if (filtrosJson) {
-                try {
-                    requestData.filtros = JSON.parse(filtrosJson);
-                } catch (e) {
-                    console.warn('Error parsing filtros:', e);
-                }
-            }
+            requestData.filtrosJson = filtrosJson || null;
         }
 
         // Deshabilitar botón
@@ -218,7 +220,7 @@ const CatalogoSeleccion = (function () {
             // Obtener token CSRF
             const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
-            const response = await fetch('/CambiosPrecios/AplicarRapido', {
+            const response = await fetch('/Catalogo/AplicarCambioPrecioDirecto', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -228,26 +230,33 @@ const CatalogoSeleccion = (function () {
             });
 
             const result = await response.json();
+            const exitoso = result.exitoso ?? result.Exitoso;
+            const mensaje = result.mensaje ?? result.Mensaje;
+            const eventoId = result.cambioPrecioEventoId ?? result.CambioPrecioEventoId;
 
-            if (result.success) {
+            if (response.ok && exitoso) {
                 // Cerrar modal
                 const modal = bootstrap.Modal.getInstance(elementos.modalConfirmar);
                 modal?.hide();
 
                 // Mostrar éxito
                 if (typeof toastr !== 'undefined') {
-                    toastr.success(result.mensaje || `Cambio aplicado: ${result.productosAfectados} productos actualizados`);
+                    toastr.success(mensaje || 'Cambio aplicado correctamente.');
                 }
 
                 // Recargar página para ver cambios
                 setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
+                    if (eventoId) {
+                        window.location.href = `/Catalogo/DetalleCambioPrecio/${eventoId}`;
+                    } else {
+                        window.location.reload();
+                    }
+                }, 800);
             } else {
-                mostrarErrorConfirmar(result.error || 'Error al aplicar el cambio');
+                mostrarErrorConfirmar(result.error || mensaje || 'Error al aplicar el cambio');
             }
         } catch (error) {
-            console.error('Error en AplicarRapido:', error);
+            console.error('Error en AplicarCambioPrecioDirecto:', error);
             mostrarErrorConfirmar('Error de conexión. Intente nuevamente.');
         } finally {
             elementos.btnConfirmarAplicar.disabled = false;
@@ -263,18 +272,6 @@ const CatalogoSeleccion = (function () {
             elementos.mensajeErrorConfirmar.textContent = mensaje;
             elementos.areaErrorConfirmar.style.display = 'block';
         }
-    }
-
-    /**
-     * Handler cuando se abre el modal de cambio de precios (detalle)
-     */
-    function onModalShow() {
-        // Sincronizar IDs de productos seleccionados al campo hidden del modal
-        const ids = Array.from(productosSeleccionados.keys());
-        if (elementos.modalHiddenProductoIds) {
-            elementos.modalHiddenProductoIds.value = ids.join(',');
-        }
-        console.log('[CatalogoSeleccion] Modal abierto, IDs sincronizados:', ids.join(','));
     }
 
     /**
@@ -511,25 +508,6 @@ const CatalogoSeleccion = (function () {
     }
 
     /**
-     * Handler para click en Historial
-     */
-    function onHistorialClick() {
-        const alcance = elementos.selectAlcance?.value;
-
-        if (alcance === 'seleccionados' && productosSeleccionados.size > 0) {
-            const ids = Array.from(productosSeleccionados.keys());
-            if (ids.length === 1) {
-                window.location.href = `/CambiosPrecios/Historial?productoId=${ids[0]}`;
-            } else {
-                window.location.href = `/CambiosPrecios/Index?productoIdsText=${ids.join(',')}`;
-            }
-        } else {
-            // Ir al historial general
-            window.location.href = '/CambiosPrecios/Index';
-        }
-    }
-
-    /**
      * Handler para submit del formulario
      * Prepara los datos según el modo seleccionado (Seleccionados vs Filtrados)
      */
@@ -543,17 +521,6 @@ const CatalogoSeleccion = (function () {
             setValidacionPorcentaje(false);
             mostrarError('Ingrese un porcentaje válido (ej: 10 para aumentar, -5 para descuento)');
             elementos.inputPorcentaje?.focus();
-            return false;
-        }
-
-        // Validar listas de precios seleccionadas
-        const listasSeleccionadas = elementos.selectListas ? 
-            Array.from(elementos.selectListas.selectedOptions).map(o => o.value) : [];
-        
-        if (listasSeleccionadas.length === 0) {
-            e.preventDefault();
-            mostrarError('Seleccione al menos una lista de precios');
-            elementos.selectListas?.focus();
             return false;
         }
 
@@ -660,8 +627,6 @@ const CatalogoSeleccion = (function () {
         // Actualizar estado del botón simular
         actualizarBotonSimular();
 
-        // Actualizar modal (si existe)
-        actualizarModal();
     }
 
     /**
@@ -689,28 +654,6 @@ const CatalogoSeleccion = (function () {
     // Alias para compatibilidad
     function actualizarBotonSimular() {
         actualizarBotonAplicar();
-    }
-
-    /**
-     * Actualizar modal con productos seleccionados
-     */
-    function actualizarModal() {
-        if (elementos.modalContador) {
-            elementos.modalContador.textContent = productosSeleccionados.size;
-        }
-
-        if (elementos.modalListaProductos) {
-            const items = [];
-            productosSeleccionados.forEach((data, id) => {
-                items.push(`${data.codigo} - ${data.nombre}`);
-            });
-            
-            if (items.length <= 5) {
-                elementos.modalListaProductos.textContent = items.join(', ');
-            } else {
-                elementos.modalListaProductos.textContent = items.slice(0, 5).join(', ') + ` y ${items.length - 5} más...`;
-            }
-        }
     }
 
     /**

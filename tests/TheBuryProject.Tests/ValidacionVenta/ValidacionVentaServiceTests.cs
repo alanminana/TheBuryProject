@@ -299,7 +299,7 @@ namespace TheBuryProject.Tests.ValidacionVenta
             // Assert
             var razonMora = resultado.RazonesAutorizacion.FirstOrDefault(r => r.Tipo == TipoRazonAutorizacion.MoraActiva);
             Assert.NotNull(razonMora);
-            Assert.Contains("mora", razonMora.DetalleAdicional?.ToLower() ?? "");
+            Assert.Contains("mora", razonMora!.DetalleAdicional?.ToLower() ?? "");
         }
 
         #endregion

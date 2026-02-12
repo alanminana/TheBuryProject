@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TheBuryProject.Data;
+using TheBuryProject.Filters;
 using TheBuryProject.Helpers;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
@@ -17,7 +18,8 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
+    [Authorize]
+    [PermisoRequerido(Modulo = "clientes", Accion = "view")]
     public class ClienteController : Controller
     {
         private readonly IClienteService _clienteService;
@@ -117,10 +119,11 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        public IActionResult Create(string? returnUrl = null)
+        public async Task<IActionResult> Create(string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
             CargarDropdowns();
+            await CargarPerfilesCredito(); // TAREA 8: Cargar perfiles para el selector
             return View(new ClienteViewModel());
         }
 
@@ -171,6 +174,7 @@ namespace TheBuryProject.Controllers
 
                 var viewModel = _mapper.Map<ClienteViewModel>(cliente!);
                 CargarDropdowns();
+                await CargarPerfilesCredito(viewModel.PerfilCreditoPreferidoId); // TAREA 8: Cargar perfiles con selección actual
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -267,9 +271,7 @@ namespace TheBuryProject.Controllers
         /// Asigna o actualiza el límite de crédito (cupo) de un cliente.
         /// </summary>
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
-        public async Task<IActionResult> AsignarLimiteCredito(int clienteId, decimal limiteCredito, string? motivo = null, string? returnUrl = null)
+        [ValidateAntiForgeryToken]        public async Task<IActionResult> AsignarLimiteCredito(int clienteId, decimal limiteCredito, string? motivo = null, string? returnUrl = null)
         {
             try
             {
@@ -371,6 +373,19 @@ namespace TheBuryProject.Controllers
                     Text = n.GetDisplayName()
                 })
                 .ToList();
+        }
+
+        // TAREA 8: Cargar perfiles de crédito para el selector
+        private async Task CargarPerfilesCredito(int? perfilSeleccionadoId = null)
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            var perfiles = await context.PerfilesCredito
+                .Where(p => !p.IsDeleted && p.Activo)
+                .OrderBy(p => p.Orden)
+                .ThenBy(p => p.Nombre)
+                .ToListAsync();
+            
+            ViewBag.PerfilesCredito = new SelectList(perfiles, "Id", "Nombre", perfilSeleccionadoId);
         }
 
         private async Task<EvaluacionCreditoResult> EvaluarCapacidadCrediticia(int clienteId, ClienteDetalleViewModel modelo)

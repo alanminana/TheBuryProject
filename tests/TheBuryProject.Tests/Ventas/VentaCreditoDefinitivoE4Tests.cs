@@ -24,8 +24,12 @@ public class VentaCreditoDefinitivoE4Tests
 {
     #region Helper Methods
 
-    private static VentaService CreateVentaService(SqliteInMemoryDb db)
+    private static VentaService CreateVentaService(
+        SqliteInMemoryDb db,
+        AperturaCaja? aperturaActiva = null)
     {
+        aperturaActiva ??= db.CrearAperturaCajaActivaAsync().GetAwaiter().GetResult();
+
         var mapperConfig = new MapperConfiguration(cfg => { cfg.AddProfile<MappingProfile>(); }, NullLoggerFactory.Instance);
         var mapper = mapperConfig.CreateMapper();
 
@@ -51,7 +55,7 @@ public class VentaCreditoDefinitivoE4Tests
             precioService,
             db.HttpContextAccessor,
             new NoopValidacionVentaService(),
-            new NoopCajaService());
+            new NoopCajaService(aperturaActiva: aperturaActiva));
     }
 
     private static async Task<(Cliente cliente, Producto producto, Credito credito)> SetupTestDataAsync(SqliteInMemoryDb db)
@@ -134,7 +138,7 @@ public class VentaCreditoDefinitivoE4Tests
             ClienteId = cliente.Id,
             FechaVenta = DateTime.UtcNow,
             Estado = EstadoVenta.Presupuesto,
-            TipoPago = TipoPago.CreditoPersonall,
+            TipoPago = TipoPago.CreditoPersonal,
             Subtotal = montoTotal,
             IVA = 0,
             Total = montoTotal,
@@ -185,6 +189,62 @@ public class VentaCreditoDefinitivoE4Tests
         
         Assert.Equal(3, cuotas.Count);
         Assert.All(cuotas, c => Assert.Equal(credito.Id, c.CreditoId));
+    }
+
+    [Fact]
+    public async Task ConfirmarVenta_TasaInteresCero_PermiteConfirmar()
+    {
+        using var db = new SqliteInMemoryDb(userName: "tester");
+        var (cliente, producto, credito) = await SetupTestDataAsync(db);
+        credito.TasaInteres = 0m;
+        await db.Context.SaveChangesAsync();
+
+        var montoTotal = 600m;
+        var planCredito = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            CreditoId = credito.Id,
+            MontoAFinanciar = montoTotal,
+            CantidadCuotas = 3,
+            MontoCuota = montoTotal / 3,
+            TotalAPagar = montoTotal,
+            TasaInteresMensual = 0m,
+            FechaPrimeraCuota = DateTime.Today.AddMonths(1),
+            InteresTotal = 0m
+        });
+
+        var venta = new Venta
+        {
+            Numero = $"VTA-E4-{Guid.NewGuid():N}".Substring(0, 20),
+            ClienteId = cliente.Id,
+            FechaVenta = DateTime.UtcNow,
+            Estado = EstadoVenta.Presupuesto,
+            TipoPago = TipoPago.CreditoPersonal,
+            Subtotal = montoTotal,
+            IVA = 0,
+            Total = montoTotal,
+            RequiereAutorizacion = false,
+            EstadoAutorizacion = EstadoAutorizacionVenta.NoRequiere,
+            DatosCreditoPersonallJson = planCredito,
+            Detalles = new List<VentaDetalle>
+            {
+                new()
+                {
+                    ProductoId = producto.Id,
+                    Cantidad = (int)(montoTotal / producto.PrecioVenta),
+                    PrecioUnitario = producto.PrecioVenta,
+                    Subtotal = montoTotal
+                }
+            }
+        };
+
+        db.Context.Ventas.Add(venta);
+        await db.Context.SaveChangesAsync();
+
+        var ventaService = CreateVentaService(db);
+
+        var resultado = await ventaService.ConfirmarVentaAsync(venta.Id);
+
+        Assert.True(resultado);
     }
 
     [Fact]
@@ -525,3 +585,4 @@ public class VentaCreditoDefinitivoE4Tests
 
     #endregion
 }
+

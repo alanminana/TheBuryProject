@@ -4,6 +4,9 @@
     ViewData["Title"] = "Gestión de Usuarios";
     var cleanedQuery = QueryString.Create(Context.Request.Query.Where(kvp => !string.Equals(kvp.Key, "returnUrl", StringComparison.OrdinalIgnoreCase)));
     var listReturnUrl = Context.Request.Path + cleanedQuery;
+    var mostrarInactivos = (bool)(ViewData["MostrarInactivos"] ?? false);
+    var usuariosActivos = Model.Count(u => u.Activo);
+    var usuariosInactivos = Model.Count(u => !u.Activo);
 }
 
 <div class="container-fluid">
@@ -26,8 +29,35 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
+    
+    @if (usuariosInactivos > 0 && !mostrarInactivos)
+    {
+        <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-info-circle me-2"></i>
+                Hay <strong>@usuariosInactivos usuario(s) inactivo(s)</strong> que no se muestran en la lista.
+                <small class="d-block text-muted mt-1">Los usuarios inactivos aún mantienen sus roles asignados.</small>
+            </div>
+            <a asp-action="Index" asp-route-mostrarInactivos="true" class="btn btn-sm btn-outline-info">
+                <i class="bi bi-eye me-1"></i>Ver Inactivos
+            </a>
+        </div>
+    }
+    
+    @if (mostrarInactivos)
+    {
+        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-funnel me-2"></i>
+                Mostrando <strong>todos los usuarios</strong> (activos e inactivos)
+            </div>
+            <a asp-action="Index" asp-route-mostrarInactivos="false" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-eye-slash me-1"></i>Ocultar Inactivos
+            </a>
+        </div>
+    }
 
-    <div class="card">
+    <div class="card">"
         <div class="card-body">
             @if (Model.Any())
             {
@@ -65,7 +95,11 @@
                                         }
                                     </td>
                                     <td class="text-center">
-                                        @if (usuario.LockoutEnd.HasValue && usuario.LockoutEnd.Value > DateTimeOffset.Now)
+                                        @if (!usuario.Activo)
+                                        {
+                                            <span class="badge bg-dark">Inactivo</span>
+                                        }
+                                        else if (usuario.LockoutEnd.HasValue && usuario.LockoutEnd.Value > DateTimeOffset.Now)
                                         {
                                             <span class="badge bg-danger">Bloqueado</span>
                                         }

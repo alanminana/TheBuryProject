@@ -7,6 +7,10 @@
     ViewData["Title"] = Model.Cliente.NombreCompleto;
     var returnUrl = ViewData["ReturnUrl"] as string;
     var backUrl = returnUrl ?? Url.Action("Index", "Cliente")!;
+    var abrirVerificarTodosRaw = TempData["AbrirVerificarTodos"]?.ToString();
+    var abrirVerificarTodos = !string.IsNullOrWhiteSpace(abrirVerificarTodosRaw)
+        && (abrirVerificarTodosRaw == "1"
+            || abrirVerificarTodosRaw.Equals("true", StringComparison.OrdinalIgnoreCase));
     
     // Determinar estado general del cliente para el workflow
     var tieneDocumentosCompletos = Model.EvaluacionCredito.TieneDocumentosCompletos;
@@ -18,7 +22,7 @@
     var aptitud = Model.AptitudCrediticia;
 }
 
-<section class="container-fluid py-4 text-light">
+<section class="container-fluid py-4 text-light" @(abrirVerificarTodos ? "data-abrir-verificar-todos=\"1\"" : "")>
     
     <!-- Header del Cliente con Semáforo -->
     <div class="d-flex justify-content-between align-items-start mb-4">
@@ -381,70 +385,7 @@
         </div>
     </div>
 
-    <!-- Modal Subir Documento -->
-    @{
-        var returnToClienteDocumentosUrl = Url.Action(
-            "Details",
-            "Cliente",
-            new { id = Model.Cliente.Id, tab = "documentos", returnUrl = ViewData["ReturnUrl"] })!;
-    }
-    <div class="modal fade" id="subirDocumentoModal" tabindex="-1" aria-labelledby="subirDocumentoModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content bg-dark text-light">
-                <form asp-controller="DocumentoCliente" asp-action="Upload" method="post" enctype="multipart/form-data">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="ClienteId" value="@Model.Cliente.Id" />
-                    <input type="hidden" name="ReturnToDetails" value="true" />
-                    <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
-                    
-                    <div class="modal-header border-secondary">
-                        <h5 class="modal-title" id="subirDocumentoModalLabel">
-                            <i class="bi bi-upload me-2"></i>Subir Documento
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Tipo de Documento *</label>
-                            <select name="TipoDocumento" class="form-select bg-body-secondary text-light border-0" required>
-                                <option value="">Seleccione...</option>
-                                @foreach (TipoDocumentoCliente tipo in Enum.GetValues(typeof(TipoDocumentoCliente)))
-                                {
-                                    <option value="@((int)tipo)">@tipo.GetDisplayName()</option>
-                                }
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Archivo *</label>
-                            <input type="file" name="Archivo" class="form-control bg-body-secondary text-light border-0"
-                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required />
-                            <small class="text-secondary">PDF, JPG, PNG, DOC, DOCX (Max 5MB)</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Vencimiento</label>
-                            <input type="date" name="FechaVencimiento" class="form-control bg-body-secondary text-light border-0" />
-                        </div>
-                        
-                        <div class="mb-0">
-                            <label class="form-label">Observaciones</label>
-                            <textarea name="Observaciones" class="form-control bg-body-secondary text-light border-0"
-                                      rows="2" placeholder="Opcional"></textarea>
-                        </div>
-                    </div>
-                    
-                    <div class="modal-footer border-secondary">
-                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-info">
-                            <i class="bi bi-upload me-2"></i>Subir
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <partial name="~/Views/Shared/Modals/_DocumentosClienteModals.cshtml" model="Model" />
 }
 
 @section Scripts {

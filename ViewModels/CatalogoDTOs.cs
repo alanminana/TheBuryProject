@@ -494,5 +494,10 @@ namespace TheBuryProject.ViewModels
         /// Fecha en que se aplicó
         /// </summary>
         public DateTime FechaAplicacion { get; set; }
+
+        /// <summary>
+        /// ID del evento de cambio directo (si aplica)
+        /// </summary>
+        public int? CambioPrecioEventoId { get; set; }
     }
 }

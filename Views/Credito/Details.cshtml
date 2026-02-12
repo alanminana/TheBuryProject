@@ -342,7 +342,7 @@
 </section>
 
 <!-- Modal Rechazar -->
-<div class="modal fade" id="rechazarModal" tabindex="-1">
+<div class="modal fade" id="rechazarModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form asp-action="Rechazar" method="post">
             <input type="hidden" name="id" value="@Model.Credito.Id" />
@@ -366,7 +366,7 @@
 </div>
 
 <!-- Modal Cancelar -->
-<div class="modal fade" id="cancelarModal" tabindex="-1">
+<div class="modal fade" id="cancelarModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form asp-action="Cancelar" method="post">
             <input type="hidden" name="id" value="@Model.Credito.Id" />

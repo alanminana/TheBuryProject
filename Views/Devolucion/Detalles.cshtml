@@ -371,7 +371,7 @@
 </div>
 
 <!-- Modal Rechazar -->
-<div class="modal fade" id="modalRechazar" tabindex="-1">
+<div class="modal fade" id="modalRechazar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form asp-action="Rechazar" asp-route-id="@Model.Devolucion.Id" method="post">
@@ -397,7 +397,7 @@
 </div>
 
 <!-- Modal Crear RMA -->
-<div class="modal fade" id="modalCrearRMA" tabindex="-1">
+<div class="modal fade" id="modalCrearRMA" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form asp-action="CrearRMA" method="post">

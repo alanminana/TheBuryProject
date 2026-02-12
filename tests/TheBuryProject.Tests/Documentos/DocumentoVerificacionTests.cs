@@ -111,10 +111,10 @@ public class DocumentoVerificacionTests
         Assert.True(resultado);
         var docActualizado = await db.Context.Set<DocumentoCliente>().FindAsync(documento.Id);
         Assert.NotNull(docActualizado);
-        Assert.Equal(EstadoDocumento.Verificado, docActualizado.Estado);
-        Assert.Equal("admin", docActualizado.VerificadoPor);
-        Assert.NotNull(docActualizado.FechaVerificacion);
-        Assert.Equal("Todo correcto", docActualizado.Observaciones);
+        Assert.Equal(EstadoDocumento.Verificado, docActualizado!.Estado);
+        Assert.Equal("admin", docActualizado!.VerificadoPor);
+        Assert.NotNull(docActualizado!.FechaVerificacion);
+        Assert.Equal("Todo correcto", docActualizado!.Observaciones);
     }
 
     [Fact]
@@ -147,8 +147,8 @@ public class DocumentoVerificacionTests
         Assert.True(resultado);
         var docActualizado = await db.Context.Set<DocumentoCliente>().FindAsync(documento.Id);
         Assert.NotNull(docActualizado);
-        Assert.Equal(EstadoDocumento.Verificado, docActualizado.Estado);
-        Assert.Null(docActualizado.Observaciones);
+        Assert.Equal(EstadoDocumento.Verificado, docActualizado!.Estado);
+        Assert.Null(docActualizado!.Observaciones);
     }
 
     #endregion
@@ -171,10 +171,10 @@ public class DocumentoVerificacionTests
         Assert.True(resultado);
         var docActualizado = await db.Context.Set<DocumentoCliente>().FindAsync(documento.Id);
         Assert.NotNull(docActualizado);
-        Assert.Equal(EstadoDocumento.Rechazado, docActualizado.Estado);
-        Assert.Equal("admin", docActualizado.VerificadoPor);
-        Assert.Equal("Documento ilegible", docActualizado.MotivoRechazo);
-        Assert.NotNull(docActualizado.FechaVerificacion);
+        Assert.Equal(EstadoDocumento.Rechazado, docActualizado!.Estado);
+        Assert.Equal("admin", docActualizado!.VerificadoPor);
+        Assert.Equal("Documento ilegible", docActualizado!.MotivoRechazo);
+        Assert.NotNull(docActualizado!.FechaVerificacion);
     }
 
     [Fact]
@@ -316,7 +316,7 @@ public class DocumentoVerificacionTests
 
         var docEliminado = await db.Context.Set<DocumentoCliente>().FindAsync(documentos[0].Id);
         Assert.NotNull(docEliminado);
-        Assert.Equal(EstadoDocumento.Pendiente, docEliminado.Estado); // Sigue pendiente porque esta eliminado
+        Assert.Equal(EstadoDocumento.Pendiente, docEliminado!.Estado); // Sigue pendiente porque esta eliminado
     }
 
     #endregion
@@ -497,3 +497,4 @@ public class DocumentoVerificacionTests
 
     #endregion
 }
+

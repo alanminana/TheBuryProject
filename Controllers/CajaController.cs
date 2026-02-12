@@ -1,9 +1,10 @@
-﻿// FILE: Controllers/CajaController.cs
+// FILE: Controllers/CajaController.cs
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Filters;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
@@ -15,16 +16,17 @@ namespace TheBuryProject.Controllers
     /// Controlador para gestión de cajas y arqueos
     /// </summary>
     [Authorize]
+    [PermisoRequerido(Modulo = "caja", Accion = "view")]
     public class CajaController : Controller
     {
         private readonly ICajaService _cajaService;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<CajaController> _logger;
         private readonly IMapper _mapper;
 
         public CajaController(
             ICajaService cajaService,
-            UserManager<IdentityUser> userManager,
+            UserManager<ApplicationUser> userManager,
             ILogger<CajaController> logger,
             IMapper mapper)
         {
@@ -39,7 +41,6 @@ namespace TheBuryProject.Controllers
         /// <summary>
         /// Módulo principal de cajas: muestra cajas activas/inactivas y aperturas abiertas
         /// </summary>
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Contador)]
         public async Task<IActionResult> Index()
         {
             var cajas = await _cajaService.ObtenerTodasCajasAsync();
@@ -55,7 +56,6 @@ namespace TheBuryProject.Controllers
             return View(viewModel); // Views/Caja/Index.cshtml (CajasListViewModel)
         }
 
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public IActionResult Create()
         {
             return View();
@@ -63,7 +63,6 @@ namespace TheBuryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> Create(CajaViewModel model)
         {
             if (!ModelState.IsValid)
@@ -85,7 +84,6 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> Edit(int id)
         {
             var caja = await _cajaService.ObtenerCajaPorIdAsync(id);
@@ -103,7 +101,6 @@ namespace TheBuryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> Edit(int id, CajaViewModel model)
         {
             if (id != model.Id)
@@ -140,7 +137,6 @@ namespace TheBuryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
         public async Task<IActionResult> Delete(int id, byte[]? rowVersion)
         {
             try
@@ -167,7 +163,6 @@ namespace TheBuryProject.Controllers
 
         #region Apertura de Caja
 
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
         public async Task<IActionResult> Abrir(int? cajaId)
         {
             var cajas = await SetCajasActivasSelectListAsync(cajaId);
@@ -189,7 +184,6 @@ namespace TheBuryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
         public async Task<IActionResult> Abrir(AbrirCajaViewModel model)
         {
             if (!ModelState.IsValid)
@@ -227,7 +221,6 @@ namespace TheBuryProject.Controllers
 
         #region Movimientos
 
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
         public async Task<IActionResult> RegistrarMovimiento(int aperturaId)
         {
             var apertura = await _cajaService.ObtenerAperturaPorIdAsync(aperturaId);
@@ -251,7 +244,6 @@ namespace TheBuryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
         public async Task<IActionResult> RegistrarMovimiento(MovimientoCajaViewModel model)
         {
             if (!ModelState.IsValid)
@@ -281,7 +273,6 @@ namespace TheBuryProject.Controllers
 
         #region Cierre de Caja
 
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> Cerrar(int aperturaId, string? returnUrl = null)
         {
             try
@@ -315,7 +306,6 @@ namespace TheBuryProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> Cerrar(CerrarCajaViewModel model, string? returnUrl = null)
         {
             if (!ModelState.IsValid)
@@ -359,7 +349,6 @@ namespace TheBuryProject.Controllers
 
         #region Detalles y Reportes
 
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
         public async Task<IActionResult> DetallesApertura(int id)
         {
             try
@@ -375,7 +364,6 @@ namespace TheBuryProject.Controllers
             }
         }
 
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
         public async Task<IActionResult> DetallesCierre(int id, string? returnUrl = null)
         {
             var cierre = await _cajaService.ObtenerCierrePorIdAsync(id);
@@ -393,7 +381,6 @@ namespace TheBuryProject.Controllers
         /// <summary>
         /// Historial de cierres de caja con filtros
         /// </summary>
-        [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Contador)]
         public async Task<IActionResult> Historial(int? cajaId, DateTime? fechaDesde, DateTime? fechaHasta)
         {
             var viewModel = await _cajaService.ObtenerEstadisticasCierresAsync(cajaId, fechaDesde, fechaHasta);

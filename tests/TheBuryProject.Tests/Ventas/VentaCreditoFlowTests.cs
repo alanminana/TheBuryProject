@@ -20,8 +20,12 @@ namespace TheBuryProject.Tests.Ventas;
 /// </summary>
 public class VentaCreditoFlowTests
 {
-    private static VentaService CreateVentaService(SqliteInMemoryDb db)
+    private static VentaService CreateVentaService(
+        SqliteInMemoryDb db,
+        AperturaCaja? aperturaActiva = null)
     {
+        aperturaActiva ??= db.CrearAperturaCajaActivaAsync().GetAwaiter().GetResult();
+
         var mapperConfig = new MapperConfiguration(cfg => { cfg.AddProfile<MappingProfile>(); }, NullLoggerFactory.Instance);
         var mapper = mapperConfig.CreateMapper();
 
@@ -47,7 +51,7 @@ public class VentaCreditoFlowTests
             precioService,
             db.HttpContextAccessor,
             new NoopValidacionVentaService(),
-            new NoopCajaService());
+            new NoopCajaService(aperturaActiva: aperturaActiva));
     }
 
     private static async Task<(Cliente cliente, Credito credito, Producto producto)> SetupTestDataAsync(SqliteInMemoryDb db)
@@ -117,7 +121,7 @@ public class VentaCreditoFlowTests
             ClienteId = cliente.Id,
             CreditoId = credito.Id,
             Estado = EstadoVenta.Presupuesto,
-            TipoPago = TipoPago.CreditoPersonall,
+            TipoPago = TipoPago.CreditoPersonal,
             FechaVenta = DateTime.UtcNow,
             Subtotal = 600,
             IVA = 0,
@@ -177,7 +181,7 @@ public class VentaCreditoFlowTests
             ClienteId = cliente.Id,
             CreditoId = credito.Id,
             Estado = EstadoVenta.Presupuesto,
-            TipoPago = TipoPago.CreditoPersonall,
+            TipoPago = TipoPago.CreditoPersonal,
             FechaVenta = DateTime.UtcNow,
             Subtotal = 600,
             IVA = 0,
@@ -255,7 +259,7 @@ public class VentaCreditoFlowTests
             ClienteId = cliente.Id,
             CreditoId = credito.Id,
             Estado = EstadoVenta.Presupuesto,
-            TipoPago = TipoPago.CreditoPersonall,
+            TipoPago = TipoPago.CreditoPersonal,
             FechaVenta = DateTime.UtcNow,
             Subtotal = 600,
             IVA = 0,
@@ -332,7 +336,7 @@ public class VentaCreditoFlowTests
             ClienteId = cliente.Id,
             CreditoId = credito.Id,
             Estado = EstadoVenta.Presupuesto, // No confirmada
-            TipoPago = TipoPago.CreditoPersonall,
+            TipoPago = TipoPago.CreditoPersonal,
             FechaVenta = DateTime.UtcNow,
             Subtotal = 600,
             IVA = 0,
@@ -406,7 +410,7 @@ public class VentaCreditoFlowTests
             ClienteId = cliente.Id,
             CreditoId = credito.Id,
             Estado = EstadoVenta.Presupuesto,
-            TipoPago = TipoPago.CreditoPersonall,
+            TipoPago = TipoPago.CreditoPersonal,
             FechaVenta = DateTime.UtcNow,
             Subtotal = 600,
             IVA = 0,
@@ -491,7 +495,7 @@ public class VentaCreditoFlowTests
             ClienteId = cliente.Id,
             // E4: CreditoId NO se asigna aquí, se asigna desde JSON al confirmar
             Estado = EstadoVenta.Presupuesto,
-            TipoPago = TipoPago.CreditoPersonall,
+            TipoPago = TipoPago.CreditoPersonal,
             FechaVenta = DateTime.UtcNow,
             Subtotal = 600,
             IVA = 0,
@@ -530,3 +534,4 @@ public class VentaCreditoFlowTests
         Assert.Empty(ventaConfirmada.VentaCreditoCuotas);
     }
 }
+

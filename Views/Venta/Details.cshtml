@@ -315,7 +315,7 @@
                                     <th>Código</th>
                                     <th>Producto</th>
                                     <th class="text-center">Cantidad</th>
-                                    <th class="text-end">Precio Unit.</th>
+                                    <th class="text-end">Precio Unit. (c/IVA)</th>
                                     <th class="text-end">Descuento</th>
                                     <th class="text-end">Subtotal</th>
                                 </tr>
@@ -334,10 +334,10 @@
                                 }
                             </tbody>
                             <tfoot class="table-secondary text-dark">
-                                <tr><td colspan="5" class="text-end fw-semibold">Subtotal:</td><td class="text-end">@Model.Subtotal.ToString("C2")</td></tr>
+                                <tr><td colspan="5" class="text-end fw-semibold">Subtotal (IVA incluido):</td><td class="text-end">@Model.Subtotal.ToString("C2")</td></tr>
                                 @if (Model.Descuento > 0)
                                 { <tr><td colspan="5" class="text-end fw-semibold">Descuento:</td><td class="text-end text-danger">-@Model.Descuento.ToString("C2")</td></tr> }
-                                <tr><td colspan="5" class="text-end fw-semibold">IVA (21%):</td><td class="text-end">@Model.IVA.ToString("C2")</td></tr>
+                                <tr><td colspan="5" class="text-end fw-semibold"><small class="text-muted">IVA (21% desglosado):</small></td><td class="text-end"><small class="text-muted">@Model.IVA.ToString("C2")</small></td></tr>
                                 <tr class="table-success">
                                     <td colspan="5" class="text-end fs-5">TOTAL:</td>
                                     <td class="text-end fs-5 fw-bold">@Model.Total.ToString("C2")</td>

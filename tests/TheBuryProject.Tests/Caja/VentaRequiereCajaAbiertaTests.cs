@@ -62,8 +62,10 @@ public class VentaRequiereCajaAbiertaTests
 
         var (cliente, producto) = await SetupTestDataAsync(db);
 
+        var apertura = await db.CrearAperturaCajaActivaAsync();
+
         // ✅ Crear VentaService con NoopCajaService que indica SÍ hay caja abierta
-        var ventaService = CreateVentaService(db, hayCajaAbierta: true);
+        var ventaService = CreateVentaService(db, hayCajaAbierta: true, apertura);
 
         var ventaViewModel = new VentaViewModel
         {
@@ -88,11 +90,19 @@ public class VentaRequiereCajaAbiertaTests
         // Assert
         Assert.NotNull(resultado);
         Assert.True(resultado.Id > 0);
+        Assert.Equal(apertura.Id, resultado.AperturaCajaId);
+        Assert.Equal("tester", resultado.VendedorNombre);
+
+        var userId = db.Context.Users.Single(u => u.UserName == "tester").Id;
+        Assert.Equal(userId, resultado.VendedorUserId);
     }
 
     #region Helpers
 
-    private static VentaService CreateVentaService(SqliteInMemoryDb db, bool hayCajaAbierta)
+    private static VentaService CreateVentaService(
+        SqliteInMemoryDb db,
+        bool hayCajaAbierta,
+        AperturaCaja? aperturaActiva = null)
     {
         var mapperConfig = new MapperConfiguration(cfg => { cfg.AddProfile<MappingProfile>(); }, NullLoggerFactory.Instance);
         var mapper = mapperConfig.CreateMapper();
@@ -119,7 +129,7 @@ public class VentaRequiereCajaAbiertaTests
             precioService,
             db.HttpContextAccessor,
             new NoopValidacionVentaService(),
-            new NoopCajaService(hayCajaAbierta)); // ✅ Parámetro para controlar si hay caja abierta
+            new NoopCajaService(hayCajaAbierta, aperturaActiva)); // ✅ Parámetro para controlar si hay caja abierta
     }
 
     private static async Task<(Cliente cliente, Producto producto)> SetupTestDataAsync(SqliteInMemoryDb db)

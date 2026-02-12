@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Filters;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
@@ -13,20 +14,21 @@ namespace TheBuryProject.Controllers;
 /// Controlador para gestión de devoluciones, garantías y RMAs
 /// </summary>
 [Authorize]
+[PermisoRequerido(Modulo = "devoluciones", Accion = "view")]
 public class DevolucionController : Controller
 {
     private readonly IDevolucionService _devolucionService;
     private readonly IClienteService _clienteService;
     private readonly IVentaService _ventaService;
     private readonly IProveedorService _proveedorService;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
     public DevolucionController(
         IDevolucionService devolucionService,
         IClienteService clienteService,
         IVentaService ventaService,
         IProveedorService proveedorService,
-        UserManager<IdentityUser> userManager)
+        UserManager<ApplicationUser> userManager)
     {
         _devolucionService = devolucionService;
         _clienteService = clienteService;
@@ -40,7 +42,6 @@ public class DevolucionController : Controller
     /// <summary>
     /// Lista de todas las devoluciones
     /// </summary>
-[Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public async Task<IActionResult> Index()
     {
         var todasDevoluciones = await _devolucionService.ObtenerTodasDevolucionesAsync();
@@ -246,7 +247,6 @@ public class DevolucionController : Controller
     /// <summary>
     /// Aprobar devolución
     /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Aprobar(int id, byte[]? rowVersion)
@@ -274,7 +274,6 @@ public class DevolucionController : Controller
     /// <summary>
     /// Rechazar devolución
     /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Rechazar(int id, string motivo, byte[]? rowVersion)
@@ -307,7 +306,6 @@ public class DevolucionController : Controller
     /// <summary>
     /// Completar devolución (procesar stock)
     /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Completar(int id, byte[]? rowVersion)
@@ -338,7 +336,6 @@ public class DevolucionController : Controller
     /// <summary>
     /// Lista de garantías
     /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public async Task<IActionResult> Garantias()
     {
         var todasGarantias = await _devolucionService.ObtenerTodasGarantiasAsync();
@@ -364,7 +361,6 @@ public class DevolucionController : Controller
     /// <summary>
     /// Estadísticas de RMAs y devoluciones
     /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public async Task<IActionResult> RMAs(DateTime? desde, DateTime? hasta)
     {
         var fechaDesde = desde ?? DateTime.Now.AddMonths(-1);
@@ -388,7 +384,6 @@ public class DevolucionController : Controller
     /// <summary>
     /// Crear RMA para una devolución
     /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearRMA(int devolucionId, int proveedorId, string motivoSolicitud, byte[]? devolucionRowVersion)
@@ -457,7 +452,6 @@ public class DevolucionController : Controller
     /// <summary>
     /// Estadísticas de devoluciones
     /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
     public async Task<IActionResult> Estadisticas(DateTime? desde, DateTime? hasta)
     {
         var fechaDesde = desde ?? DateTime.Now.AddMonths(-1);

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TheBuryProject.Services.Interfaces;
@@ -11,12 +11,12 @@ namespace TheBuryProject.Controllers;
 public class NotificacionController : ControllerBase
 {
     private readonly INotificacionService _notificacionService;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<NotificacionController> _logger;
 
     public NotificacionController(
         INotificacionService notificacionService,
-        UserManager<IdentityUser> userManager,
+        UserManager<ApplicationUser> userManager,
         ILogger<NotificacionController> logger)
     {
         _notificacionService = notificacionService;

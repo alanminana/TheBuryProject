@@ -27,6 +27,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<AperturaCaja?> ObtenerAperturaPorIdAsync(int id);
         Task<List<AperturaCaja>> ObtenerAperturasAbiertasAsync();
         Task<bool> TieneCajaAbiertaAsync(int cajaId);
+        Task<AperturaCaja?> ObtenerAperturaActivaParaUsuarioAsync(string usuario);
         
         /// <summary>
         /// Verifica si existe al menos una caja abierta en el sistema.

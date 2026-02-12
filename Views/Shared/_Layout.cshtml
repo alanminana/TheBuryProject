@@ -19,9 +19,13 @@
 
 <body>
     @{
-        var cleanedQuery = QueryString.Create(Context.Request.Query.Where(kvp => !string.Equals(kvp.Key, "returnUrl", StringComparison.OrdinalIgnoreCase)));
+        var cleanedQuery = QueryString.Create(
+        Context.Request.Query.Where(kvp =>
+        !string.Equals(kvp.Key, "returnUrl", StringComparison.OrdinalIgnoreCase)));
+
         var currentUrl = Context.Request.Path + cleanedQuery;
     }
+
     <div class="layout-container">
 
         <!-- SIDEBAR -->
@@ -35,93 +39,163 @@
                 <nav class="nav flex-column sidebar-nav mt-2">
 
                     <!-- PRINCIPAL -->
-                    <div class="section-title">Principal</div>
-                    <a class="nav-link" asp-controller="Dashboard" asp-action="Index">
-                        <i class="bi bi-speedometer2"></i>
-                        <span>Dashboard</span>
-                    </a>
+                    @if (User.TienePermiso("dashboard", "view"))
+                    {
+                        <div class="section-title">Principal</div>
+                        <a class="nav-link" asp-controller="Dashboard" asp-action="Index">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    }
 
                     <!-- VENTAS -->
-                    <div class="section-title">Ventas</div>
-                    <a class="nav-link" asp-controller="Venta" asp-action="Index">
-                        <i class="bi bi-cart-check"></i>
-                        <span>Ventas</span>
-                    </a>
-                    <a class="nav-link" asp-controller="Credito" asp-action="Index">
-                        <i class="bi bi-credit-card"></i>
-                        <span>Créditos</span>
-                    </a>
-                    <a class="nav-link" asp-controller="DocumentoCliente" asp-action="Index">
-                        <i class="bi bi-file-earmark-text"></i>
-                        <span>Documentos</span>
-                    </a>
+                    @{
+                        var mostrarSeccionVentas = User.TieneCualquierPermiso(
+                            ("ventas", "view"),
+                            ("creditos", "view"),
+                            ("documentoscliente", "view")
+                        );
+                    }
+                    @if (mostrarSeccionVentas)
+                    {
+                        <div class="section-title">Ventas</div>
+                        @if (User.TienePermiso("ventas", "view"))
+                        {
+                            <a class="nav-link" asp-controller="Venta" asp-action="Index">
+                                <i class="bi bi-cart-check"></i>
+                                <span>Ventas</span>
+                            </a>
+                        }
+                        @if (User.TienePermiso("creditos", "view"))
+                        {
+                            <a class="nav-link" asp-controller="Credito" asp-action="Index">
+                                <i class="bi bi-credit-card"></i>
+                                <span>Créditos</span>
+                            </a>
+                        }
+                        @if (User.TienePermiso("documentoscliente", "view"))
+                        {
+                            <a class="nav-link" asp-controller="DocumentoCliente" asp-action="Index">
+                                <i class="bi bi-file-earmark-text"></i>
+                                <span>Documentos</span>
+                            </a>
+                        }
+                    }
 
                     <!-- CLIENTES -->
-                    <div class="section-title">Clientes</div>
-                    <a class="nav-link" asp-controller="Cliente" asp-action="Index">
-                        <i class="bi bi-person-lines-fill"></i>
-                        <span>Clientes</span>
-                    </a>
+                    @if (User.TienePermiso("clientes", "view"))
+                    {
+                        <div class="section-title">Clientes</div>
+                        <a class="nav-link" asp-controller="Cliente" asp-action="Index">
+                            <i class="bi bi-person-lines-fill"></i>
+                            <span>Clientes</span>
+                        </a>
+                    }
 
                     <!-- CATÁLOGO -->
-                    <div class="section-title">Catálogo</div>
-                    <a class="nav-link" asp-controller="Catalogo" asp-action="Index">
-                        <i class="bi bi-grid"></i>
-                        <span>Catálogo</span>
-                    </a>
-                    <a class="nav-link" asp-controller="Proveedor" asp-action="Index">
-                        <i class="bi bi-truck"></i>
-                        <span>Proveedores</span>
-                    </a>
-                    <a class="nav-link" asp-controller="ListasPrecios" asp-action="Index">
-                        <i class="bi bi-tags"></i>
-                        <span>Listas de Precios</span>
-                    </a>
-                    <a class="nav-link" asp-controller="CambiosPrecios" asp-action="Index">
-                        <i class="bi bi-shuffle"></i>
-                        <span>Cambios Masivos</span>
-                    </a>
+                    @{
+                        var mostrarSeccionCatalogo = User.TieneCualquierPermiso(
+                            ("catalogo", "view"),
+                            ("proveedores", "view")
+                        );
+                    }
+                    @if (mostrarSeccionCatalogo)
+                    {
+                        <div class="section-title">Catálogo</div>
+                        @if (User.TienePermiso("catalogo", "view"))
+                        {
+                            <a class="nav-link" asp-controller="Catalogo" asp-action="Index">
+                                <i class="bi bi-grid"></i>
+                                <span>Catálogo</span>
+                            </a>
+                        }
+                        @if (User.TienePermiso("proveedores", "view"))
+                        {
+                            <a class="nav-link" asp-controller="Proveedor" asp-action="Index">
+                                <i class="bi bi-truck"></i>
+                                <span>Proveedores</span>
+                            </a>
+                        }
+                    }
 
                     <!-- OPERACIONES -->
-                    <div class="section-title">Operaciones</div>
-                    <a class="nav-link" asp-controller="Caja" asp-action="Index">
-                        <i class="bi bi-cash-stack"></i>
-                        <span>Cajas</span>
-                    </a>
-                    <a class="nav-link" asp-controller="Devolucion" asp-action="Index">
-                        <i class="bi bi-arrow-return-left"></i>
-                        <span>Devoluciones</span>
-                    </a>
-                    <a class="nav-link" asp-controller="Autorizacion" asp-action="Index" asp-route-returnUrl="@currentUrl">
-                        <i class="bi bi-shield-check"></i>
-                        <span>Autorizaciones</span>
-                    </a>
+                    @{
+                        var mostrarSeccionOperaciones = User.TieneCualquierPermiso(
+                            ("caja", "view"),
+                            ("devoluciones", "view"),
+                            ("autorizaciones", "view")
+                        );
+                    }
+                    @if (mostrarSeccionOperaciones)
+                    {
+                        <div class="section-title">Operaciones</div>
+                        @if (User.TienePermiso("caja", "view"))
+                        {
+                            <a class="nav-link" asp-controller="Caja" asp-action="Index">
+                                <i class="bi bi-cash-stack"></i>
+                                <span>Cajas</span>
+                            </a>
+                        }
+                        @if (User.TienePermiso("devoluciones", "view"))
+                        {
+                            <a class="nav-link" asp-controller="Devolucion" asp-action="Index">
+                                <i class="bi bi-arrow-return-left"></i>
+                                <span>Devoluciones</span>
+                            </a>
+                        }
+                        @if (User.TienePermiso("autorizaciones", "view"))
+                        {
+                            <a class="nav-link" asp-controller="Autorizacion" asp-action="Index" asp-route-returnUrl="@currentUrl">
+                                <i class="bi bi-shield-check"></i>
+                                <span>Autorizaciones</span>
+                            </a>
+                        }
+                    }
 
                     <!-- ADMINISTRACIÓN -->
-                    <div class="section-title">Administración</div>
-                    <a class="nav-link" asp-controller="Usuarios" asp-action="Index" asp-route-returnUrl="@currentUrl">
-                        <i class="bi bi-people"></i>
-                        <span>Usuarios</span>
-                    </a>
-                    <a class="nav-link" asp-controller="Roles" asp-action="Index" asp-route-returnUrl="@currentUrl">
-                        <i class="bi bi-shield"></i>
-                        <span>Roles</span>
-                    </a>
-                    <a class="nav-link" asp-controller="Modulos" asp-action="Index" asp-route-returnUrl="@currentUrl">
-                        <i class="bi bi-grid"></i>
-                        <span>Módulos</span>
-                    </a>
-                    <a class="nav-link" asp-controller="Acciones" asp-action="Index" asp-route-returnUrl="@currentUrl">
-                        <i class="bi bi-lightning"></i>
-                        <span>Acciones</span>
-                    </a>
+                    @{
+                        var mostrarSeccionAdministracion = User.TieneCualquierPermiso(
+                            ("usuarios", "view"),
+                            ("roles", "view"),
+                            ("modulos", "view"),
+                            ("acciones", "view")
+                        );
+                    }
+                    @if (mostrarSeccionAdministracion)
+                    {
+                        <div class="section-title">Administración</div>
+                        @if (User.TienePermiso("usuarios", "view"))
+                        {
+                            <a class="nav-link" asp-controller="Usuarios" asp-action="Index" asp-route-returnUrl="@currentUrl">
+                                <i class="bi bi-people"></i>
+                                <span>Usuarios</span>
+                            </a>
+                        }
+                        @if (User.TienePermiso("roles", "view"))
+                        {
+                            <a class="nav-link" asp-controller="Roles" asp-action="Index" asp-route-returnUrl="@currentUrl">
+                                <i class="bi bi-shield"></i>
+                                <span>Roles</span>
+                            </a>
+                        }
+                        @if (User.TienePermiso("modulos", "view"))
+                        {
+                            <a class="nav-link" asp-controller="Modulos" asp-action="Index" asp-route-returnUrl="@currentUrl">
+                                <i class="bi bi-grid"></i>
+                                <span>Módulos</span>
+                            </a>
+                        }
+                        @if (User.TienePermiso("acciones", "view"))
+                        {
+                            <a class="nav-link" asp-controller="Acciones" asp-action="Index" asp-route-returnUrl="@currentUrl">
+                                <i class="bi bi-lightning"></i>
+                                <span>Acciones</span>
+                            </a>
+                        }
+                    }
 
                     <!-- SISTEMA -->
-                    <div class="section-title">Sistema</div>
-                    <a class="nav-link" asp-controller="ConfiguracionPago" asp-action="Index">
-                        <i class="bi bi-gear"></i>
-                        <span>Configuración</span>
-                    </a>
+                    <!-- Módulo de Configuración de Pagos movido al modal de Ventas -->
                 </nav>
             </div>
         </aside>
@@ -135,13 +209,10 @@
             <!-- TOPBAR -->
             <header class="topbar">
                 <div class="d-flex align-items-center gap-2">
-
-                    <!-- Botón: en mobile abre/cierra sidebar; en desktop fija/desfija -->
                     <button id="toggleSidebar" class="btn btn-sm btn-outline-secondary d-flex align-items-center">
                         <i class="bi bi-list"></i>
                     </button>
 
-                    <!-- Buscador -->
                     <div class="input-group input-group-sm topbar-search">
                         <span class="input-group-text border-0 bg-transparent">
                             <i class="bi bi-search text-muted"></i>
@@ -201,6 +272,7 @@
                             </li>
                         </ul>
                     </div>
+
                 </div>
             </header>
 
@@ -215,10 +287,12 @@
         </div>
     </div>
 
-    <!-- Modals (fuera del layout-container para evitar problemas de z-index/transform) -->
+    <!-- =========================================================
+         MODALS: SIEMPRE fuera de .page-animate (evita issues con transform)
+         ========================================================= -->
     @await RenderSectionAsync("Modals", required: false)
-    
-    <!-- Modal de confirmación global -->
+
+    <!-- Modal global (siempre disponible) -->
     <partial name="_ConfirmModal" />
 
     <!-- Vendor JS -->
@@ -232,7 +306,6 @@
     <script src="~/js/modal-form-submit.js" asp-append-version="true"></script>
     -->
     <script src="~/js/notificaciones.js" asp-append-version="true"></script>
-
     <script src="~/js/layout.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)

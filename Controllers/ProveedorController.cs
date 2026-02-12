@@ -1,9 +1,10 @@
-﻿// ProveedorController.cs
+// ProveedorController.cs
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Filters;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
@@ -12,7 +13,8 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Contador)]
+    [Authorize]
+    [PermisoRequerido(Modulo = "proveedores", Accion = "view")]
     public class ProveedorController : Controller
     {
         private readonly IProveedorService _proveedorService;

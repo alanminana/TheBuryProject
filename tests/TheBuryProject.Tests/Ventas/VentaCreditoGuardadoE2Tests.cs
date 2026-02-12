@@ -28,8 +28,13 @@ public class VentaCreditoGuardadoE2Tests
 {
     #region Helper Methods
 
-    private static VentaService CreateVentaService(SqliteInMemoryDb db, Mock<IValidacionVentaService> mockValidacionVenta)
+    private static VentaService CreateVentaService(
+        SqliteInMemoryDb db,
+        Mock<IValidacionVentaService> mockValidacionVenta,
+        AperturaCaja? aperturaActiva = null)
     {
+        aperturaActiva ??= db.CrearAperturaCajaActivaAsync().GetAwaiter().GetResult();
+
         var mapperConfig = new MapperConfiguration(cfg => { cfg.AddProfile<MappingProfile>(); }, NullLoggerFactory.Instance);
         var mapper = mapperConfig.CreateMapper();
 
@@ -55,7 +60,7 @@ public class VentaCreditoGuardadoE2Tests
             precioService,
             db.HttpContextAccessor,
             mockValidacionVenta.Object,
-            new NoopCajaService());
+            new NoopCajaService(aperturaActiva: aperturaActiva));
     }
 
     private static async Task<(Cliente cliente, Producto producto)> SetupTestDataAsync(SqliteInMemoryDb db)
@@ -102,7 +107,7 @@ public class VentaCreditoGuardadoE2Tests
         {
             ClienteId = clienteId,
             FechaVenta = DateTime.Now,
-            TipoPago = TipoPago.CreditoPersonall,
+            TipoPago = TipoPago.CreditoPersonal,
             Estado = EstadoVenta.Presupuesto,
             Detalles = new List<VentaDetalleViewModel>
             {
@@ -243,10 +248,10 @@ public class VentaCreditoGuardadoE2Tests
         // Verificar en base de datos
         var ventaEnDb = await db.Context.Ventas.FirstOrDefaultAsync(v => v.Id == resultado.Id);
         Assert.NotNull(ventaEnDb);
-        Assert.True(ventaEnDb.RequiereAutorizacion);
-        Assert.Equal(EstadoAutorizacionVenta.PendienteAutorizacion, ventaEnDb.EstadoAutorizacion);
-        Assert.NotNull(ventaEnDb.RazonesAutorizacionJson);
-        Assert.Contains("Cliente tiene mora activa", ventaEnDb.RazonesAutorizacionJson);
+        Assert.True(ventaEnDb!.RequiereAutorizacion);
+        Assert.Equal(EstadoAutorizacionVenta.PendienteAutorizacion, ventaEnDb!.EstadoAutorizacion);
+        Assert.NotNull(ventaEnDb!.RazonesAutorizacionJson);
+        Assert.Contains("Cliente tiene mora activa", ventaEnDb!.RazonesAutorizacionJson!);
     }
 
     [Fact]
@@ -283,10 +288,11 @@ public class VentaCreditoGuardadoE2Tests
 
         // Assert
         var ventaEnDb = await db.Context.Ventas.FirstOrDefaultAsync(v => v.Id == resultado.Id);
-        Assert.NotNull(ventaEnDb?.RazonesAutorizacionJson);
+        Assert.NotNull(ventaEnDb);
+        Assert.NotNull(ventaEnDb!.RazonesAutorizacionJson);
         
         // Parsear el JSON y verificar contenido
-        var razones = System.Text.Json.JsonSerializer.Deserialize<List<dynamic>>(ventaEnDb.RazonesAutorizacionJson);
+        var razones = System.Text.Json.JsonSerializer.Deserialize<List<dynamic>>(ventaEnDb!.RazonesAutorizacionJson!);
         Assert.NotNull(razones);
         Assert.Single(razones);
     }
@@ -321,13 +327,14 @@ public class VentaCreditoGuardadoE2Tests
             .Include(v => v.VentaCreditoCuotas)
             .FirstOrDefaultAsync(v => v.Id == resultado.Id);
         
-        Assert.NotNull(ventaEnDb?.CreditoId); // SÍ se crea crédito pendiente
-        Assert.Empty(ventaEnDb?.VentaCreditoCuotas ?? new List<VentaCreditoCuota>()); // Sin cuotas aún
+        Assert.NotNull(ventaEnDb);
+        Assert.NotNull(ventaEnDb!.CreditoId);
+        Assert.Empty(ventaEnDb!.VentaCreditoCuotas);
         
         // Verificar que el crédito está en estado pendiente
-        var credito = await db.Context.Creditos.FirstOrDefaultAsync(c => c.Id == ventaEnDb.CreditoId);
+        var credito = await db.Context.Creditos.FirstOrDefaultAsync(c => c.Id == ventaEnDb.CreditoId!.Value);
         Assert.NotNull(credito);
-        Assert.Equal(EstadoCredito.PendienteConfiguracion, credito.Estado);
+        Assert.Equal(EstadoCredito.PendienteConfiguracion, credito!.Estado);
     }
 
     #endregion
@@ -363,7 +370,7 @@ public class VentaCreditoGuardadoE2Tests
         // Verificar que se guardó
         var ventaEnDb = await db.Context.Ventas.FirstOrDefaultAsync(v => v.Id == resultado.Id);
         Assert.NotNull(ventaEnDb);
-        Assert.False(ventaEnDb.RequiereAutorizacion);
+        Assert.False(ventaEnDb!.RequiereAutorizacion);
     }
 
     [Fact]
@@ -391,13 +398,14 @@ public class VentaCreditoGuardadoE2Tests
             .Include(v => v.VentaCreditoCuotas)
             .FirstOrDefaultAsync(v => v.Id == resultado.Id);
         
-        Assert.NotNull(ventaEnDb?.CreditoId); // SÍ se crea crédito pendiente
-        Assert.Empty(ventaEnDb?.VentaCreditoCuotas ?? new List<VentaCreditoCuota>()); // Sin cuotas aún
+        Assert.NotNull(ventaEnDb);
+        Assert.NotNull(ventaEnDb!.CreditoId);
+        Assert.Empty(ventaEnDb!.VentaCreditoCuotas);
         
         // Verificar que el crédito está en estado pendiente de configuración
-        var credito = await db.Context.Creditos.FirstOrDefaultAsync(c => c.Id == ventaEnDb.CreditoId);
+        var credito = await db.Context.Creditos.FirstOrDefaultAsync(c => c.Id == ventaEnDb.CreditoId!.Value);
         Assert.NotNull(credito);
-        Assert.Equal(EstadoCredito.PendienteConfiguracion, credito.Estado);
+        Assert.Equal(EstadoCredito.PendienteConfiguracion, credito!.Estado);
     }
 
     [Fact]
@@ -422,7 +430,8 @@ public class VentaCreditoGuardadoE2Tests
 
         // Assert - Tipo de pago debe mantenerse
         var ventaEnDb = await db.Context.Ventas.FirstOrDefaultAsync(v => v.Id == resultado.Id);
-        Assert.Equal(TipoPago.CreditoPersonall, ventaEnDb?.TipoPago);
+        Assert.NotNull(ventaEnDb);
+        Assert.Equal(TipoPago.CreditoPersonal, ventaEnDb!.TipoPago);
     }
 
     #endregion
@@ -454,3 +463,5 @@ public class VentaCreditoGuardadoE2Tests
 
     #endregion
 }
+
+

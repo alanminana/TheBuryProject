@@ -7,6 +7,9 @@
         const descuentoDiv = form.querySelector("#descuentoMaxDiv");
         const recargoCheck = form.querySelector("#tieneRecargoCheck");
         const recargoDiv = form.querySelector("#recargoDiv");
+        const tipoPagoSelect = form.querySelector("#tipoPagoSelect");
+        const tasaCreditoDiv = form.querySelector("#creditoPersonalTasaDiv");
+        const creditoPersonalValue = form.dataset.creditoPersonalValue;
 
         const toggle = (check, target, inputId) => {
             if (!check || !target) return;
@@ -28,6 +31,22 @@
         toggle(descuentoCheck, descuentoDiv, form.dataset.porcentajeDescuentoId);
         toggle(recargoCheck, recargoDiv, form.dataset.porcentajeRecargoId);
 
+        const toggleCreditoPersonal = () => {
+            if (!tipoPagoSelect || !tasaCreditoDiv) return;
+
+            const isCreditoPersonal = tipoPagoSelect.value === creditoPersonalValue;
+            tasaCreditoDiv.style.display = isCreditoPersonal ? "block" : "none";
+
+            if (!isCreditoPersonal && form.dataset.tasaCreditoId) {
+                const tasaInput = document.getElementById(form.dataset.tasaCreditoId);
+                if (tasaInput) {
+                    tasaInput.value = "";
+                }
+            }
+        };
+
+        toggleCreditoPersonal();
+
         if (descuentoCheck && descuentoDiv) {
             descuentoCheck.addEventListener("change", () =>
                 toggle(descuentoCheck, descuentoDiv, form.dataset.porcentajeDescuentoId)
@@ -38,6 +57,10 @@
             recargoCheck.addEventListener("change", () =>
                 toggle(recargoCheck, recargoDiv, form.dataset.porcentajeRecargoId)
             );
+        }
+
+        if (tipoPagoSelect && tasaCreditoDiv) {
+            tipoPagoSelect.addEventListener("change", toggleCreditoPersonal);
         }
     });
 })();

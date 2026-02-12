@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TheBuryProject.Filters;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -14,7 +15,8 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+    [Authorize]
+    [PermisoRequerido(Modulo = "movimientos", Accion = "view")]
     public class MovimientoStockController : Controller
     {
         private readonly IMovimientoStockService _movimientoStockService;

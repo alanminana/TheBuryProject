@@ -1,7 +1,8 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Filters;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Services.Interfaces;
@@ -9,7 +10,8 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+    [Authorize]
+    [PermisoRequerido(Modulo = "marcas", Accion = "view")]
     public class MarcaController : Controller
     {
         private readonly IMarcaService _marcaService;

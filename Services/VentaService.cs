@@ -1,4 +1,5 @@
 using AutoMapper;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Constants;
@@ -86,6 +87,7 @@ namespace TheBuryProject.Services
 
         public async Task<VentaViewModel?> GetByIdAsync(int id)
         {
+            _logger.LogDebug("GetByIdAsync venta {Id} requested", id);
             var venta = await _context.Ventas
                 .Include(v => v.Cliente)
                 .Include(v => v.Credito)
@@ -101,7 +103,10 @@ namespace TheBuryProject.Services
                     (v.Credito == null || (!v.Credito.IsDeleted && v.Credito.Cliente != null && !v.Credito.Cliente.IsDeleted)));
 
             if (venta == null)
+            {
+                _logger.LogWarning("GetByIdAsync venta {Id} not found or deleted", id);
                 return null;
+            }
 
             var viewModel = _mapper.Map<VentaViewModel>(venta);
 
@@ -111,12 +116,20 @@ namespace TheBuryProject.Services
                 viewModel.CreditoEstado = venta.Credito.Estado;
             }
 
-            if (venta.TipoPago == TipoPago.CreditoPersonall &&
+            if (venta.TipoPago == TipoPago.CreditoPersonal &&
                 venta.CreditoId.HasValue &&
                 venta.VentaCreditoCuotas.Any())
             {
                 viewModel.DatosCreditoPersonall = await ObtenerDatosCreditoVentaAsync(id);
             }
+
+            _logger.LogDebug(
+                "GetByIdAsync venta {Id} loaded. Detalles:{Detalles} Facturas:{Facturas} Cuotas:{Cuotas} TipoPago:{TipoPago}",
+                id,
+                venta.Detalles.Count(d => !d.IsDeleted),
+                venta.Facturas.Count(f => !f.IsDeleted),
+                venta.VentaCreditoCuotas.Count,
+                venta.TipoPago);
 
             return viewModel;
         }
@@ -128,11 +141,16 @@ namespace TheBuryProject.Services
         public async Task<VentaViewModel> CreateAsync(VentaViewModel viewModel)
         {
             // ✅ Validar que haya al menos una caja abierta antes de permitir ventas
-            if (!await _cajaService.ExisteAlgunaCajaAbiertaAsync())
+            var currentUser = _httpContextAccessor.HttpContext?.User;
+            var currentUserName = currentUser?.Identity?.Name ?? "System";
+            var currentUserId = await ObtenerUserIdActualAsync(currentUser, currentUserName);
+
+            var aperturaActiva = await _cajaService.ObtenerAperturaActivaParaUsuarioAsync(currentUserName);
+            if (aperturaActiva == null)
             {
                 throw new InvalidOperationException(
-                    "No se puede registrar la venta: no hay ninguna caja abierta. " +
-                    "Por favor, abra una caja antes de realizar ventas.");
+                    "No se puede registrar la venta: no hay una caja abierta para el usuario actual. " +
+                    "Abra una caja antes de realizar ventas.");
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -140,6 +158,11 @@ namespace TheBuryProject.Services
             try
             {
                 var venta = _mapper.Map<Venta>(viewModel);
+                venta.AperturaCajaId = aperturaActiva.Id;
+
+                var vendedorResuelto = await ResolverVendedorAsync(viewModel, currentUser, currentUserId, currentUserName);
+                venta.VendedorUserId = vendedorResuelto.UserId;
+                venta.VendedorNombre = vendedorResuelto.Nombre;
 
                 venta.Numero = await _numberGenerator.GenerarNumeroAsync(viewModel.Estado);
 
@@ -151,7 +174,7 @@ namespace TheBuryProject.Services
 
                 // Validación unificada para crédito personal
                 ValidacionVentaResult? validacion = null;
-                if (viewModel.TipoPago == TipoPago.CreditoPersonall)
+                if (viewModel.TipoPago == TipoPago.CreditoPersonal)
                 {
                     validacion = await _validacionVentaService.ValidarVentaCreditoPersonalAsync(
                         viewModel.ClienteId, 
@@ -176,7 +199,7 @@ namespace TheBuryProject.Services
                 await _context.SaveChangesAsync();
 
                 // Para crédito personal, crear el crédito inmediatamente después de guardar la venta
-                if (viewModel.TipoPago == TipoPago.CreditoPersonall && 
+                if (viewModel.TipoPago == TipoPago.CreditoPersonal && 
                     venta.Estado == EstadoVenta.PendienteFinanciacion &&
                     !venta.CreditoId.HasValue)
                 {
@@ -296,12 +319,29 @@ namespace TheBuryProject.Services
 
         public async Task<VentaViewModel?> UpdateAsync(int id, VentaViewModel viewModel)
         {
+            _logger.LogDebug(
+                "UpdateAsync venta {Id} start. Detalles:{Detalles} RowVersion:{RowVersionLength} TipoPago:{TipoPago}",
+                id,
+                viewModel.Detalles.Count,
+                viewModel.RowVersion?.Length ?? 0,
+                viewModel.TipoPago);
+
             var venta = await _context.Ventas
                 .Include(v => v.Detalles)
                 .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
 
             if (venta == null)
+            {
+                _logger.LogWarning("UpdateAsync venta {Id} not found or deleted", id);
                 return null;
+            }
+
+            _logger.LogDebug(
+                "UpdateAsync venta {Id} loaded. Estado:{Estado} Autorizacion:{EstadoAutorizacion} Detalles:{Detalles}",
+                id,
+                venta.Estado,
+                venta.EstadoAutorizacion,
+                venta.Detalles.Count(d => !d.IsDeleted));
 
             _validator.ValidarEstadoParaEdicion(venta);
 
@@ -321,10 +361,22 @@ namespace TheBuryProject.Services
 
             try
             {
+                _logger.LogDebug(
+                    "UpdateAsync venta {Id} before SaveChanges. Subtotal:{Subtotal} Total:{Total} DetallesTotal:{DetallesTotal} DetallesActivos:{DetallesActivos}",
+                    id,
+                    venta.Subtotal,
+                    venta.Total,
+                    venta.Detalles.Count,
+                    venta.Detalles.Count(d => !d.IsDeleted));
+                _logger.LogInformation(
+                    "ConfirmarVentaCreditoAsync venta {Id} antes de SaveChanges. Estado:{Estado}",
+                    id,
+                    venta.Estado);
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
+                _logger.LogWarning("UpdateAsync venta {Id} concurrency conflict", id);
                 throw new InvalidOperationException(
                     "La venta fue modificada por otro usuario. Recargá la página y volvé a intentar.");
             }
@@ -359,27 +411,46 @@ namespace TheBuryProject.Services
 
             try
             {
+                _logger.LogInformation("ConfirmarVentaAsync inicio venta {Id}", id);
                 var venta = await CargarVentaCompleta(id);
                 if (venta == null)
+                {
+                    _logger.LogWarning("ConfirmarVentaAsync venta {Id} no encontrada", id);
                     return false;
+                }
+
+                _logger.LogInformation(
+                    "ConfirmarVentaAsync venta {Id} cargada. Estado:{Estado} TipoPago:{TipoPago} Detalles:{Detalles}",
+                    id,
+                    venta.Estado,
+                    venta.TipoPago,
+                    venta.Detalles.Count(d => !d.IsDeleted));
 
                 // Validación previa del estado
                 _validator.ValidarEstadoParaConfirmacion(venta);
                 _validator.ValidarStock(venta);
 
                 // Para crédito personal, re-validar requisitos antes de confirmar
-                if (venta.TipoPago == TipoPago.CreditoPersonall)
+                if (venta.TipoPago == TipoPago.CreditoPersonal)
                 {
                     var validacion = await _validacionVentaService.ValidarConfirmacionVentaAsync(id);
                     
                     if (validacion.PendienteRequisitos)
                     {
+                        _logger.LogWarning(
+                            "ConfirmarVentaAsync venta {Id} pendiente requisitos. Motivo:{Motivo}",
+                            id,
+                            validacion.MensajeResumen);
                         throw new InvalidOperationException(
                             $"No se puede confirmar la venta. {validacion.MensajeResumen}");
                     }
 
                     if (validacion.RequiereAutorizacion && venta.EstadoAutorizacion != EstadoAutorizacionVenta.Autorizada)
                     {
+                        _logger.LogWarning(
+                            "ConfirmarVentaAsync venta {Id} requiere autorizacion y no esta autorizada. EstadoAutorizacion:{EstadoAutorizacion}",
+                            id,
+                            venta.EstadoAutorizacion);
                         throw new InvalidOperationException(
                             $"La venta requiere autorización. {validacion.MensajeResumen}");
                     }
@@ -392,7 +463,7 @@ namespace TheBuryProject.Services
                 await DescontarStockYRegistrarMovimientos(venta);
 
                 // E4: Procesar crédito personal solo si hay datos JSON y la venta está autorizada
-                if (venta.TipoPago == TipoPago.CreditoPersonall && 
+                if (venta.TipoPago == TipoPago.CreditoPersonal && 
                     !string.IsNullOrEmpty(venta.DatosCreditoPersonallJson))
                 {
                     // Verificar que la venta esté autorizada (o no requiera autorización)
@@ -414,19 +485,26 @@ namespace TheBuryProject.Services
                 venta.RequisitosPendientesJson = null;
                 venta.DatosCreditoPersonallJson = null;
 
+                _logger.LogInformation(
+                    "ConfirmarVentaAsync venta {Id} antes de SaveChanges. Estado:{Estado}",
+                    id,
+                    venta.Estado);
                 await _context.SaveChangesAsync();
 
                 // NOTA: El movimiento de caja se registra al FACTURAR, no al confirmar
                 // Esto permite que el cobro real coincida con el documento fiscal
 
                 await transaction.CommitAsync();
+                _logger.LogInformation("ConfirmarVentaCreditoAsync venta {Id} confirmada", id);
 
+                _logger.LogInformation("ConfirmarVentaAsync venta {Id} confirmada", id);
                 _logger.LogInformation("Venta {Id} confirmada exitosamente", id);
                 return true;
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                _logger.LogError(ex, "ConfirmarVentaAsync error venta {Id}", id);
                 _logger.LogError(ex, "Error al confirmar venta {Id}", id);
                 throw;
             }
@@ -442,17 +520,41 @@ namespace TheBuryProject.Services
 
             try
             {
+                _logger.LogInformation("ConfirmarVentaCreditoAsync inicio venta {Id}", id);
                 var venta = await CargarVentaCompleta(id);
                 if (venta == null)
+                {
+                    _logger.LogWarning("ConfirmarVentaCreditoAsync venta {Id} no encontrada", id);
                     return false;
+                }
 
-                if (venta.TipoPago != TipoPago.CreditoPersonall)
+                _logger.LogInformation(
+                    "ConfirmarVentaCreditoAsync venta {Id} cargada. Estado:{Estado} TipoPago:{TipoPago} CreditoId:{CreditoId}",
+                    id,
+                    venta.Estado,
+                    venta.TipoPago,
+                    venta.CreditoId);
+
+                _logger.LogInformation(
+                    "ConfirmarVentaCreditoAsync venta {Id} tipo pago {TipoPago}",
+                    id,
+                    venta.TipoPago);
+                if (venta.TipoPago != TipoPago.CreditoPersonal)
                     throw new InvalidOperationException("Esta venta no es de tipo Crédito Personal.");
 
+                _logger.LogInformation(
+                    "ConfirmarVentaCreditoAsync venta {Id} CreditoId:{CreditoId}",
+                    id,
+                    venta.CreditoId);
                 if (!venta.CreditoId.HasValue)
                     throw new InvalidOperationException("La venta no tiene un crédito asociado.");
 
                 var credito = await _context.Creditos.FindAsync(venta.CreditoId.Value);
+                _logger.LogInformation(
+                    "ConfirmarVentaCreditoAsync venta {Id} credito encontrado:{Encontrado} Estado:{Estado}",
+                    id,
+                    credito != null,
+                    credito?.Estado);
                 if (credito == null)
                     throw new InvalidOperationException("Crédito no encontrado.");
 
@@ -469,6 +571,10 @@ namespace TheBuryProject.Services
                         credito.Id, credito.Estado);
                     credito.Estado = EstadoCredito.Configurado;
                 }
+
+                if (credito.TasaInteres < 0m)
+                    throw new InvalidOperationException(
+                        "La tasa de interes mensual de Credito Personal no puede ser negativa.");
 
                 // Validar stock antes de confirmar
                 _validator.ValidarStock(venta);
@@ -489,6 +595,10 @@ namespace TheBuryProject.Services
                 venta.FechaConfirmacion = DateTime.UtcNow;
                 venta.RequisitosPendientesJson = null;
 
+                _logger.LogInformation(
+                    "ConfirmarVentaCreditoAsync venta {Id} antes de SaveChanges. Estado:{Estado}",
+                    id,
+                    venta.Estado);
                 await _context.SaveChangesAsync();
 
                 // ✅ Registrar anticipo en caja si lo hay (anticipo = total venta - monto financiado)
@@ -504,6 +614,7 @@ namespace TheBuryProject.Services
                 }
 
                 await transaction.CommitAsync();
+                _logger.LogInformation("ConfirmarVentaCreditoAsync venta {Id} confirmada", id);
 
                 _logger.LogInformation(
                     "Venta {VentaId} confirmada con crédito {CreditoId} generado ({Cuotas} cuotas)",
@@ -513,6 +624,7 @@ namespace TheBuryProject.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                _logger.LogError(ex, "ConfirmarVentaCreditoAsync error venta {Id}", id);
                 _logger.LogError(ex, "Error al confirmar venta con crédito {Id}", id);
                 throw;
             }
@@ -586,7 +698,7 @@ namespace TheBuryProject.Services
                     await DevolverStock(venta, motivo);
                 }
 
-                if (venta.TipoPago == TipoPago.CreditoPersonall)
+                if (venta.TipoPago == TipoPago.CreditoPersonal)
                 {
                     // Si la venta fue confirmada, restaurar el crédito
                     if (venta.Estado == EstadoVenta.Confirmada || venta.Estado == EstadoVenta.Facturada)
@@ -643,7 +755,7 @@ namespace TheBuryProject.Services
 
             // ✅ Registrar movimiento de caja al facturar (solo para ventas que NO son crédito personal)
             // Las ventas a crédito se cobran vía cuotas, no al facturar
-            if (venta.TipoPago != TipoPago.CreditoPersonall)
+            if (venta.TipoPago != TipoPago.CreditoPersonal)
             {
                 var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
                 await _cajaService.RegistrarMovimientoVentaAsync(
@@ -782,7 +894,7 @@ namespace TheBuryProject.Services
 
         public async Task<bool> RequiereAutorizacionAsync(VentaViewModel viewModel)
         {
-            if (viewModel.TipoPago != TipoPago.CreditoPersonall)
+            if (viewModel.TipoPago != TipoPago.CreditoPersonal)
                 return false;
 
             // Usar el servicio de validación unificado
@@ -1004,6 +1116,82 @@ namespace TheBuryProject.Services
 
         #region MÃ©todos Privados - Helpers
 
+        private static bool PuedeDelegarVendedor(ClaimsPrincipal? user)
+        {
+            if (user == null)
+            {
+                return false;
+            }
+
+            return user.IsInRole(Roles.SuperAdmin) ||
+                   user.IsInRole(Roles.Administrador) ||
+                   user.IsInRole(Roles.Gerente);
+        }
+
+        private async Task<string?> ObtenerUserIdActualAsync(ClaimsPrincipal? user, string userName)
+        {
+            var userId = user?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userId) && !string.IsNullOrWhiteSpace(userName))
+            {
+                userId = await _context.Users
+                    .AsNoTracking()
+                    .Where(u => u.UserName == userName)
+                    .Select(u => u.Id)
+                    .FirstOrDefaultAsync();
+            }
+
+            return userId;
+        }
+
+        private async Task<(string? UserId, string Nombre)> ResolverVendedorAsync(
+            VentaViewModel viewModel,
+            ClaimsPrincipal? currentUser,
+            string? currentUserId,
+            string currentUserName)
+        {
+            if (string.IsNullOrWhiteSpace(currentUserId))
+            {
+                currentUserId = await ObtenerUserIdActualAsync(currentUser, currentUserName);
+            }
+
+            var puedeDelegar = PuedeDelegarVendedor(currentUser);
+            var vendedorSeleccionadoId = viewModel.VendedorUserId;
+
+            if (!puedeDelegar ||
+                string.IsNullOrWhiteSpace(vendedorSeleccionadoId) ||
+                vendedorSeleccionadoId == currentUserId)
+            {
+                return (currentUserId, currentUserName);
+            }
+
+            var vendedor = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == vendedorSeleccionadoId);
+
+            if (vendedor == null)
+            {
+                throw new InvalidOperationException("El vendedor seleccionado no existe.");
+            }
+
+            var esVendedor = await (
+                from userRole in _context.UserRoles
+                join role in _context.Roles on userRole.RoleId equals role.Id
+                where userRole.UserId == vendedorSeleccionadoId && role.Name == Roles.Vendedor
+                select userRole).AnyAsync();
+
+            if (!esVendedor)
+            {
+                throw new InvalidOperationException("El usuario seleccionado no tiene el rol de vendedor.");
+            }
+
+            var nombre = !string.IsNullOrWhiteSpace(vendedor.UserName)
+                ? vendedor.UserName
+                : vendedor.Email ?? "Sin asignar";
+
+            return (vendedor.Id, nombre);
+        }
+
         private IQueryable<Venta> AplicarFiltros(IQueryable<Venta> query, VentaFilterViewModel? filter)
         {
             if (filter == null)
@@ -1089,40 +1277,60 @@ namespace TheBuryProject.Services
 
         private CalculoTotalesVentaResponse CalcularTotalesInterno(IEnumerable<DetalleCalculoVentaRequest> detalles, decimal descuentoGeneral, bool descuentoEsPorcentaje)
         {
-            var subtotal = detalles
+            // IMPORTANTE: Los precios unitarios YA INCLUYEN IVA
+            // Se calcula el subtotal con IVA incluido
+            var subtotalConIVA = detalles
                 .Select(d => Math.Max(0, (d.PrecioUnitario * d.Cantidad) - d.Descuento))
                 .Sum();
 
             var descuentoCalculado = descuentoEsPorcentaje
-                ? subtotal * (descuentoGeneral / 100)
+                ? subtotalConIVA * (descuentoGeneral / 100)
                 : descuentoGeneral;
 
-            var subtotalConDescuento = Math.Max(0, subtotal - descuentoCalculado);
-            var iva = subtotalConDescuento * VentaConstants.IVA_RATE;
-            var total = subtotalConDescuento + iva;
+            // El total ya incluye IVA (precio final con descuentos aplicados)
+            var total = Math.Max(0, subtotalConIVA - descuentoCalculado);
+            
+            // Descomponer el IVA para mostrarlo por separado
+            // Base imponible = Total / 1.21
+            var subtotalSinIVA = total / VentaConstants.IVA_DIVISOR;
+            var iva = total - subtotalSinIVA;
 
             return new CalculoTotalesVentaResponse
             {
-                Subtotal = subtotal,
+                Subtotal = subtotalConIVA,  // Subtotal con IVA incluido
                 DescuentoGeneralAplicado = descuentoCalculado,
-                IVA = iva,
-                Total = total
+                IVA = iva,  // IVA desglosado (informativo)
+                Total = total  // Total final (ya incluye IVA)
             };
         }
 
         private void ActualizarDatosVenta(Venta venta, VentaViewModel viewModel)
         {
+            _logger.LogDebug(
+                "ActualizarDatosVenta venta {Id}. ClienteId:{ClienteId} TipoPago:{TipoPago} CreditoId:{CreditoId} Descuento:{Descuento}",
+                venta.Id,
+                viewModel.ClienteId,
+                viewModel.TipoPago,
+                viewModel.CreditoId,
+                viewModel.Descuento);
+
             venta.ClienteId = viewModel.ClienteId;
             venta.FechaVenta = viewModel.FechaVenta;
             venta.TipoPago = viewModel.TipoPago;
             venta.Descuento = viewModel.Descuento;
-            venta.VendedorNombre = viewModel.VendedorNombre;
             venta.Observaciones = viewModel.Observaciones;
             venta.CreditoId = viewModel.CreditoId;
         }
 
         private void ActualizarDetalles(Venta venta, List<VentaDetalleViewModel> detallesVM)
         {
+            var existentes = venta.Detalles.Count(d => !d.IsDeleted);
+            _logger.LogDebug(
+                "ActualizarDetalles venta {Id}. Existentes:{Existentes} Entrantes:{Entrantes}",
+                venta.Id,
+                existentes,
+                detallesVM.Count);
+
             foreach (var existente in venta.Detalles.Where(d => !d.IsDeleted))
             {
                 existente.IsDeleted = true;
@@ -1185,10 +1393,18 @@ namespace TheBuryProject.Services
         {
             var detalles = venta.Detalles.Where(d => !d.IsDeleted).ToList();
             if (detalles.Count == 0)
+            {
+                _logger.LogDebug("AplicarPrecioVigenteADetallesAsync venta {Id} sin detalles activos", venta.Id);
                 return;
+            }
 
             var listaPredeterminada = await _precioService.GetListaPredeterminadaAsync();
             var productoIds = detalles.Select(d => d.ProductoId).Distinct().ToList();
+            _logger.LogDebug(
+                "AplicarPrecioVigenteADetallesAsync venta {Id} productos:{Productos} ListaId:{ListaId}",
+                venta.Id,
+                productoIds.Count,
+                listaPredeterminada?.Id);
 
             var preciosListaPorProductoId = new Dictionary<int, decimal>();
             if (listaPredeterminada != null && productoIds.Count > 0)
@@ -1273,7 +1489,7 @@ namespace TheBuryProject.Services
 
         private async Task VerificarAutorizacionSiCorrespondeAsync(Venta venta, VentaViewModel viewModel)
         {
-            if (viewModel.TipoPago == TipoPago.CreditoPersonall)
+            if (viewModel.TipoPago == TipoPago.CreditoPersonal)
             {
                 // Usar el servicio de validación unificado
                 var validacion = await _validacionVentaService.ValidarVentaCreditoPersonalAsync(
@@ -1307,7 +1523,7 @@ namespace TheBuryProject.Services
 
             // Para crédito personal: guardar plan como JSON, NO crear cuotas todavía
             // Las cuotas se crean solo al confirmar la venta
-            if (viewModel.DatosCreditoPersonall != null && viewModel.TipoPago == TipoPago.CreditoPersonall)
+            if (viewModel.DatosCreditoPersonall != null && viewModel.TipoPago == TipoPago.CreditoPersonal)
             {
                 await GuardarPlanCreditoPersonallAsync(ventaId, viewModel.DatosCreditoPersonall);
             }

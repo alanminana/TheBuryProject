@@ -301,53 +301,71 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
-                        <!-- Ventas -->
-                        <div class="col-lg-3 col-md-4 col-sm-6">
-                            <a asp-controller="Venta" asp-action="Create" class="btn btn-outline-primary w-100 py-3 text-start">
-                                <i class="bi bi-cart-plus fs-4 d-block mb-2"></i>
-                                <strong>Nueva Venta</strong>
-                            </a>
-                        </div>
+                        @* Nueva Venta - requiere ventas.create *@
+                        @if (User.TienePermiso("ventas", "create"))
+                        {
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <a asp-controller="Venta" asp-action="Create" class="btn btn-outline-primary w-100 py-3 text-start">
+                                    <i class="bi bi-cart-plus fs-4 d-block mb-2"></i>
+                                    <strong>Nueva Venta</strong>
+                                </a>
+                            </div>
+                        }
 
-                        <!-- Clientes -->
-                        <div class="col-lg-3 col-md-4 col-sm-6">
-                            <a asp-controller="Cliente" asp-action="Index" class="btn btn-outline-info w-100 py-3 text-start">
-                                <i class="bi bi-people fs-4 d-block mb-2"></i>
-                                <strong>Clientes</strong>
-                            </a>
-                        </div>
+                        @* Clientes - requiere clientes.view *@
+                        @if (User.TienePermiso("clientes", "view"))
+                        {
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <a asp-controller="Cliente" asp-action="Index" class="btn btn-outline-info w-100 py-3 text-start">
+                                    <i class="bi bi-people fs-4 d-block mb-2"></i>
+                                    <strong>Clientes</strong>
+                                </a>
+                            </div>
+                        }
 
-                        <!-- Créditos -->
-                        <div class="col-lg-3 col-md-4 col-sm-6">
-                            <a asp-controller="Credito" asp-action="Index" class="btn btn-outline-success w-100 py-3 text-start">
-                                <i class="bi bi-credit-card fs-4 d-block mb-2"></i>
-                                <strong>Créditos</strong>
-                            </a>
-                        </div>
+                        @* Créditos - requiere creditos.view *@
+                        @if (User.TienePermiso("creditos", "view"))
+                        {
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <a asp-controller="Credito" asp-action="Index" class="btn btn-outline-success w-100 py-3 text-start">
+                                    <i class="bi bi-credit-card fs-4 d-block mb-2"></i>
+                                    <strong>Créditos</strong>
+                                </a>
+                            </div>
+                        }
 
-                        <!-- Productos -->
-                        <div class="col-lg-3 col-md-4 col-sm-6">
-                            <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-secondary w-100 py-3 text-start">
-                                <i class="bi bi-box-seam fs-4 d-block mb-2"></i>
-                                <strong>Catálogo</strong>
-                            </a>
-                        </div>
+                        @* Catálogo - requiere cotizaciones.view *@
+                        @if (User.TienePermiso("cotizaciones", "view"))
+                        {
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-secondary w-100 py-3 text-start">
+                                    <i class="bi bi-box-seam fs-4 d-block mb-2"></i>
+                                    <strong>Catálogo</strong>
+                                </a>
+                            </div>
+                        }
 
-                        <!-- Proveedores -->
-                        <div class="col-lg-3 col-md-4 col-sm-6">
-                            <a asp-controller="Proveedor" asp-action="Index" class="btn btn-outline-primary w-100 py-3 text-start">
-                                <i class="bi bi-building fs-4 d-block mb-2"></i>
-                                <strong>Proveedores</strong>
-                            </a>
-                        </div>
+                        @* Proveedores - requiere proveedores.view *@
+                        @if (User.TienePermiso("proveedores", "view"))
+                        {
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <a asp-controller="Proveedor" asp-action="Index" class="btn btn-outline-primary w-100 py-3 text-start">
+                                    <i class="bi bi-building fs-4 d-block mb-2"></i>
+                                    <strong>Proveedores</strong>
+                                </a>
+                            </div>
+                        }
 
-                        <!-- Órdenes de Compra -->
-                        <div class="col-lg-3 col-md-4 col-sm-6">
-                            <a asp-controller="OrdenCompra" asp-action="Index" class="btn btn-outline-primary w-100 py-3 text-start">
-                                <i class="bi bi-file-earmark-text fs-4 d-block mb-2"></i>
-                                <strong>Órdenes Compra</strong>
-                            </a>
-                        </div>
+                        @* Órdenes de Compra - requiere ordenescompra.view *@
+                        @if (User.TienePermiso("ordenescompra", "view"))
+                        {
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <a asp-controller="OrdenCompra" asp-action="Index" class="btn btn-outline-primary w-100 py-3 text-start">
+                                    <i class="bi bi-file-earmark-text fs-4 d-block mb-2"></i>
+                                    <strong>Órdenes Compra</strong>
+                                </a>
+                            </div>
+                        }
 
                         <!-- Stock -->
                         <div class="col-lg-3 col-md-4 col-sm-6">

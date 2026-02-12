@@ -28,8 +28,12 @@ public class VentaAutorizacionE3Tests
 {
     #region Helper Methods
 
-    private static VentaService CreateVentaService(SqliteInMemoryDb db)
+    private static VentaService CreateVentaService(
+        SqliteInMemoryDb db,
+        AperturaCaja? aperturaActiva = null)
     {
+        aperturaActiva ??= db.CrearAperturaCajaActivaAsync().GetAwaiter().GetResult();
+
         var mapperConfig = new MapperConfiguration(cfg => { cfg.AddProfile<MappingProfile>(); }, NullLoggerFactory.Instance);
         var mapper = mapperConfig.CreateMapper();
 
@@ -55,7 +59,7 @@ public class VentaAutorizacionE3Tests
             precioService,
             db.HttpContextAccessor,
             new NoopValidacionVentaService(),
-            new NoopCajaService());
+            new NoopCajaService(aperturaActiva: aperturaActiva));
     }
 
     private static async Task<(Cliente cliente, Producto producto, Venta venta)> SetupVentaPendienteAutorizacionAsync(SqliteInMemoryDb db)
@@ -106,7 +110,7 @@ public class VentaAutorizacionE3Tests
             ClienteId = cliente.Id,
             FechaVenta = DateTime.UtcNow,
             Estado = EstadoVenta.Presupuesto,
-            TipoPago = TipoPago.CreditoPersonall,
+            TipoPago = TipoPago.CreditoPersonal,
             Subtotal = 1000,
             IVA = 0,
             Total = 1000,
@@ -154,7 +158,7 @@ public class VentaAutorizacionE3Tests
         
         var ventaActualizada = await db.Context.Ventas.FindAsync(venta.Id);
         Assert.NotNull(ventaActualizada);
-        Assert.Equal(EstadoAutorizacionVenta.Autorizada, ventaActualizada.EstadoAutorizacion);
+        Assert.Equal(EstadoAutorizacionVenta.Autorizada, ventaActualizada!.EstadoAutorizacion);
     }
 
     [Fact]
@@ -316,9 +320,10 @@ public class VentaAutorizacionE3Tests
 
         // Assert
         var ventaActualizada = await db.Context.Ventas.FindAsync(venta.Id);
-        Assert.NotNull(ventaActualizada?.FechaAutorizacion);
-        Assert.True(ventaActualizada.FechaAutorizacion >= antesDeAutorizar);
-        Assert.True(ventaActualizada.FechaAutorizacion <= DateTime.UtcNow.AddSeconds(1));
+        Assert.NotNull(ventaActualizada);
+        Assert.NotNull(ventaActualizada!.FechaAutorizacion);
+        Assert.True(ventaActualizada!.FechaAutorizacion!.Value >= antesDeAutorizar);
+        Assert.True(ventaActualizada!.FechaAutorizacion.Value <= DateTime.UtcNow.AddSeconds(1));
     }
 
     [Fact]
@@ -428,3 +433,5 @@ public class VentaAutorizacionE3Tests
 
     #endregion
 }
+
+

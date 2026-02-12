@@ -67,6 +67,13 @@ namespace TheBuryProject.Models.Entities
         public decimal PrecioVenta { get; set; }
 
         /// <summary>
+        /// Porcentaje de IVA aplicable al producto (ej: 21, 10.5, 27)
+        /// </summary>
+        [Required(ErrorMessage = "El porcentaje de IVA es obligatorio")]
+        [Range(0, 100, ErrorMessage = "El IVA debe estar entre 0 y 100")]
+        public decimal PorcentajeIVA { get; set; } = 21m;
+
+        /// <summary>
         /// Indica si el producto requiere n�mero de serie para control individual
         /// </summary>
         public bool RequiereNumeroSerie { get; set; } = false;

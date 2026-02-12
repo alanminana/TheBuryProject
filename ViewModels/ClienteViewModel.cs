@@ -114,6 +114,31 @@ namespace TheBuryProject.ViewModels
         [StringLength(500)]
         public string? Observaciones { get; set; }
 
+        // ✅ CONFIGURACIÓN PERSONALIZADA DE CRÉDITO (TAREA 6 + TAREA 8)
+        
+        [Display(Name = "Perfil de Crédito Preferido")]
+        public int? PerfilCreditoPreferidoId { get; set; }
+
+        [Display(Name = "Tasa de Interés Mensual (%)")]
+        [Range(0, 100, ErrorMessage = "La tasa debe estar entre 0% y 100%")]
+        public decimal? TasaInteresMensualPersonalizada { get; set; }
+
+        [Display(Name = "Gastos Administrativos (%)")]
+        [Range(0, 100, ErrorMessage = "Los gastos deben estar entre 0% y 100%")]
+        public decimal? GastosAdministrativosPersonalizados { get; set; }
+
+        [Display(Name = "Cuotas Máximas")]
+        [Range(1, 120, ErrorMessage = "Las cuotas deben estar entre 1 y 120")]
+        public int? CuotasMaximasPersonalizadas { get; set; }
+
+        [Display(Name = "Monto Mínimo ($)")]
+        [Range(0, 9999999999.99, ErrorMessage = "El monto mínimo debe ser positivo")]
+        public decimal? MontoMinimoPersonalizado { get; set; }
+
+        [Display(Name = "Monto Máximo ($)")]
+        [Range(0, 9999999999.99, ErrorMessage = "El monto máximo debe ser positivo")]
+        public decimal? MontoMaximoPersonalizado { get; set; }
+
         // ✅ GARANTE
         public int? GaranteId { get; set; }
 

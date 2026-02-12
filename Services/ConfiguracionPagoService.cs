@@ -53,6 +53,37 @@ namespace TheBuryProject.Services
             return configuracion == null ? null : _mapper.Map<ConfiguracionPagoViewModel>(configuracion);
         }
 
+        public async Task<decimal> ObtenerTasaInteresMensualCreditoPersonalAsync()
+        {
+            var configuracion = await _context.ConfiguracionesPago
+                .FirstOrDefaultAsync(c => c.TipoPago == TipoPago.CreditoPersonal && !c.IsDeleted);
+
+            if (configuracion == null)
+            {
+                configuracion = new ConfiguracionPago
+                {
+                    TipoPago = TipoPago.CreditoPersonal,
+                    Nombre = TipoPago.CreditoPersonal.ToString(),
+                    Activo = true,
+                    TasaInteresMensualCreditoPersonal = 0m
+                };
+
+                _context.ConfiguracionesPago.Add(configuracion);
+                await _context.SaveChangesAsync();
+
+                _logger.LogWarning(
+                    "ConfiguracionPago CreditoPersonal no existia. Se creo con tasa 0.");
+            }
+
+            if (!configuracion.TasaInteresMensualCreditoPersonal.HasValue)
+            {
+                _logger.LogWarning(
+                    "ConfiguracionPago CreditoPersonal sin tasa definida. Se usa 0.");
+            }
+
+            return configuracion.TasaInteresMensualCreditoPersonal ?? 0m;
+        }
+
         public async Task<ConfiguracionPagoViewModel> CreateAsync(ConfiguracionPagoViewModel viewModel)
         {
             var configuracion = _mapper.Map<ConfiguracionPago>(viewModel);
@@ -79,6 +110,10 @@ namespace TheBuryProject.Services
             configuracion.PorcentajeDescuentoMaximo = viewModel.PorcentajeDescuentoMaximo;
             configuracion.TieneRecargo = viewModel.TieneRecargo;
             configuracion.PorcentajeRecargo = viewModel.PorcentajeRecargo;
+            configuracion.TasaInteresMensualCreditoPersonal =
+                viewModel.TipoPago == TipoPago.CreditoPersonal
+                    ? viewModel.TasaInteresMensualCreditoPersonal
+                    : null;
             configuracion.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();

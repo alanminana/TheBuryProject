@@ -1,11 +1,21 @@
 namespace TheBuryProject.Models.Constants
 {
     /// <summary>
-    /// Constantes para el módulo de ventas
+    /// Constantes para el mï¿½dulo de ventas
     /// </summary>
     public static class VentaConstants
     {
+        /// <summary>
+        /// Tasa de IVA (21%)
+        /// </summary>
         public const decimal IVA_RATE = 0.21m;
+        
+        /// <summary>
+        /// Divisor para calcular base imponible desde precio con IVA (1 + 0.21 = 1.21)
+        /// Uso: precioConIVA / IVA_DIVISOR = precioSinIVA
+        /// </summary>
+        public const decimal IVA_DIVISOR = 1.21m;
+        
         public const int DIAS_VENCIMIENTO_ALERTA = 30;
         public const string PREFIJO_COTIZACION = "COT";
         public const string PREFIJO_VENTA = "VTA";
@@ -25,10 +35,10 @@ namespace TheBuryProject.Models.Constants
         public static class ErrorMessages
         {
             public const string VENTA_NO_ENCONTRADA = "Venta no encontrada";
-            public const string VENTA_YA_CANCELADA = "La venta ya está cancelada";
-            public const string REQUIERE_AUTORIZACION = "La venta requiere autorización antes de continuar";
-            public const string CREDITO_NO_ENCONTRADO = "Crédito no encontrado";
-            public const string CREDITO_INSUFICIENTE = "El monto a financiar (${0:N2}) supera el crédito disponible (${1:N2})";
+            public const string VENTA_YA_CANCELADA = "La venta ya estï¿½ cancelada";
+            public const string REQUIERE_AUTORIZACION = "La venta requiere autorizaciï¿½n antes de continuar";
+            public const string CREDITO_NO_ENCONTRADO = "Crï¿½dito no encontrado";
+            public const string CREDITO_INSUFICIENTE = "El monto a financiar (${0:N2}) supera el crï¿½dito disponible (${1:N2})";
         }
     }
 }

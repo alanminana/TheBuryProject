@@ -563,8 +563,8 @@ namespace TheBuryProject.Tests.ValidacionVenta
             Assert.Equal(ResultadoPrevalidacion.NoViable, resultado.Resultado);
             var motivoCupo = resultado.Motivos.FirstOrDefault(m => m.Categoria == CategoriaMotivo.Cupo);
             Assert.NotNull(motivoCupo);
-            Assert.Equal("Sin límite de crédito", motivoCupo.Titulo);
-            Assert.True(motivoCupo.EsBloqueante);
+            Assert.Equal("Sin límite de crédito", motivoCupo!.Titulo);
+            Assert.True(motivoCupo!.EsBloqueante);
         }
 
         [Fact]
@@ -600,10 +600,10 @@ namespace TheBuryProject.Tests.ValidacionVenta
             Assert.Equal(ResultadoPrevalidacion.RequiereAutorizacion, resultado.Resultado);
             var motivoCupo = resultado.Motivos.FirstOrDefault(m => m.Categoria == CategoriaMotivo.Cupo);
             Assert.NotNull(motivoCupo);
-            Assert.Equal("Cupo insuficiente", motivoCupo.Titulo);
-            Assert.Contains("150.000", motivoCupo.Descripcion); // Monto solicitado
-            Assert.Contains("80.000", motivoCupo.Descripcion);  // Cupo disponible
-            Assert.False(motivoCupo.EsBloqueante); // Requiere autorización, no bloqueante
+            Assert.Equal("Cupo insuficiente", motivoCupo!.Titulo);
+            Assert.Contains("150.000", motivoCupo!.Descripcion); // Monto solicitado
+            Assert.Contains("80.000", motivoCupo!.Descripcion);  // Cupo disponible
+            Assert.False(motivoCupo!.EsBloqueante); // Requiere autorización, no bloqueante
         }
 
         [Fact]
@@ -645,11 +645,12 @@ namespace TheBuryProject.Tests.ValidacionVenta
             Assert.Equal(ResultadoPrevalidacion.NoViable, resultado.Resultado);
             var motivoDoc = resultado.Motivos.FirstOrDefault(m => m.Categoria == CategoriaMotivo.Documentacion);
             Assert.NotNull(motivoDoc);
-            Assert.Equal("Documentación incompleta", motivoDoc.Titulo);
-            Assert.Contains("DNI Frente", motivoDoc.Descripcion);
-            Assert.True(motivoDoc.EsBloqueante);
+            Assert.Equal("Documentación incompleta", motivoDoc!.Titulo);
+            Assert.Contains("DNI Frente", motivoDoc!.Descripcion);
+            Assert.True(motivoDoc!.EsBloqueante);
         }
 
         #endregion
     }
 }
+

@@ -183,7 +183,7 @@ public class VentaFacturacionAutorizacionFlowTests
             Numero = "VTA-AUTH-0001",
             ClienteId = cliente.Id,
             Estado = EstadoVenta.Presupuesto,
-            TipoPago = TipoPago.CreditoPersonall,
+            TipoPago = TipoPago.CreditoPersonal,
             FechaVenta = DateTime.UtcNow,
             Subtotal = 100,
             IVA = 0,
@@ -200,7 +200,7 @@ public class VentaFacturacionAutorizacionFlowTests
             Numero = "VTA-AUTH-0002",
             ClienteId = cliente.Id,
             Estado = EstadoVenta.Presupuesto,
-            TipoPago = TipoPago.CreditoPersonall,
+            TipoPago = TipoPago.CreditoPersonal,
             FechaVenta = DateTime.UtcNow,
             Subtotal = 200,
             IVA = 0,
@@ -262,3 +262,4 @@ public class VentaFacturacionAutorizacionFlowTests
         Assert.Equal("No cumple requisitos", venta2Db.MotivoRechazo);
     }
 }
+

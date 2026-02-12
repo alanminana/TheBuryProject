@@ -93,7 +93,7 @@
                             <option value="">Todos</option>
                             @foreach (var vendedor in ViewBag.Vendedores)
                             {
-                                <option value="@vendedor.Value" selected="@(filtro?.VendedorId?.ToString() == vendedor.Value)">
+                                <option value="@vendedor.Value" selected="@(filtro?.VendedorId == vendedor.Value)">
                                     @vendedor.Text
                                 </option>
                             }
@@ -108,7 +108,7 @@
                             <option value="2" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaDebito)">Tarjeta Débito</option>
                             <option value="3" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.TarjetaCredito)">Tarjeta Crédito</option>
                             <option value="4" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.Cheque)">Cheque</option>
-                            <option value="5" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.CreditoPersonall)">Crédito Personal</option>
+                            <option value="5" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.CreditoPersonal)">Crédito Personal</option>
                             <option value="6" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.MercadoPago)">Mercado Pago</option>
                             <option value="7" selected="@(filtro?.TipoPago == TheBuryProject.Models.Enums.TipoPago.CuentaCorriente)">Cuenta Corriente</option>
                         </select>

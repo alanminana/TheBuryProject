@@ -90,6 +90,13 @@
 
                             @* Sección: Precios *@
                             <partial name="_FormSection" model="FormSectionModel.Precios()" />
+                            
+                            <div class="col-12">
+                                <div class="alert alert-info d-flex align-items-center py-2 mb-3">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <small>Los precios de venta deben <strong>incluir IVA (21%)</strong>. El sistema desglosa el IVA automáticamente en las facturas.</small>
+                                </div>
+                            </div>
 
                             <div class="col-md-6">
                                 <label asp-for="PrecioCompra" class="form-label fw-semibold">Precio de Compra *</label>
@@ -101,12 +108,26 @@
                             </div>
 
                             <div class="col-md-6">
-                                <label asp-for="PrecioVenta" class="form-label fw-semibold">Precio de Venta *</label>
+                                <label asp-for="PrecioVenta" class="form-label fw-semibold">Precio de Venta (c/IVA) *</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
                                     <input asp-for="PrecioVenta" type="number" step="0.01" class="form-control" placeholder="0.00" />
                                 </div>
                                 <span asp-validation-for="PrecioVenta" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="PorcentajeIVA" class="form-label fw-semibold">IVA Aplicable *</label>
+                                <select asp-for="PorcentajeIVA" class="form-select">
+                                    <option value="0">0% - Sin IVA</option>
+                                    <option value="10.5">10.5% - IVA Reducido</option>
+                                    <option value="21" selected>21% - IVA General</option>
+                                    <option value="27">27% - IVA Incrementado</option>
+                                </select>
+                                <span asp-validation-for="PorcentajeIVA" class="text-danger small"></span>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>El IVA se suma al precio de venta
+                                </small>
                             </div>
 
                             @* Sección: Stock *@

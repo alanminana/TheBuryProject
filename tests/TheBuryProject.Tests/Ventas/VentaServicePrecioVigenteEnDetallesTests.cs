@@ -90,6 +90,8 @@ public class VentaServicePrecioVigenteEnDetallesTests
             db.HttpContextAccessor,
             configuration);
 
+        var apertura = await db.CrearAperturaCajaActivaAsync();
+
         var ventaService = new VentaService(
             db.Context,
             mapper,
@@ -103,7 +105,7 @@ public class VentaServicePrecioVigenteEnDetallesTests
             precioService,
             db.HttpContextAccessor,
             new NoopValidacionVentaService(),
-            new NoopCajaService());
+            new NoopCajaService(aperturaActiva: apertura));
 
         var vm = new VentaViewModel
         {
@@ -235,6 +237,8 @@ public class VentaServicePrecioVigenteEnDetallesTests
             db.HttpContextAccessor,
             configuration);
 
+        var apertura = await db.CrearAperturaCajaActivaAsync();
+
         var ventaService = new VentaService(
             db.Context,
             mapper,
@@ -248,7 +252,7 @@ public class VentaServicePrecioVigenteEnDetallesTests
             precioService,
             db.HttpContextAccessor,
             new NoopValidacionVentaService(),
-            new NoopCajaService());
+            new NoopCajaService(aperturaActiva: apertura));
 
         var creada = await ventaService.CreateAsync(new VentaViewModel
         {
@@ -359,6 +363,8 @@ public class VentaServicePrecioVigenteEnDetallesTests
             db.HttpContextAccessor,
             configuration);
 
+        var apertura = await db.CrearAperturaCajaActivaAsync();
+
         var ventaService = new VentaService(
             db.Context,
             mapper,
@@ -372,7 +378,7 @@ public class VentaServicePrecioVigenteEnDetallesTests
             precioService,
             db.HttpContextAccessor,
             new NoopValidacionVentaService(),
-            new NoopCajaService());
+            new NoopCajaService(aperturaActiva: apertura));
 
         var creada = await ventaService.CreateAsync(new VentaViewModel
         {

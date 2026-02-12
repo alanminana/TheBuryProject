@@ -59,9 +59,17 @@
                                 }
                             </div>
                         </div>
+                        
+                        <div class="alert alert-info d-flex align-items-start">
+                            <i class="bi bi-info-circle me-2 mt-1"></i>
+                            <div>
+                                <strong>Confirmación de Email:</strong>
+                                <p class="mb-0 small">Marque el checkbox para que el usuario pueda iniciar sesión inmediatamente. Si no lo marca, podría tener problemas de login.</p>
+                            </div>
+                        </div>
 
                         <div class="mb-3 form-check">
-                            <input asp-for="EmailConfirmed" class="form-check-input" />
+                            <input asp-for="EmailConfirmed" class="form-check-input" checked />
                             <label asp-for="EmailConfirmed" class="form-check-label"></label>
                         </div>
 

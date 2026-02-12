@@ -10,7 +10,15 @@
     <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
         <div class="d-flex align-items-center">
             <i class="bi bi-check-circle-fill me-2"></i>
-            <div>@TempData["Success"]</div>
+            <div>
+                @TempData["Success"]
+                @if (TempData["SuccessLinkUrl"] != null)
+                {
+                    <a class="ms-2 text-decoration-underline" href="@TempData["SuccessLinkUrl"]">
+                        @(TempData["SuccessLinkText"] ?? "Ver detalle")
+                    </a>
+                }
+            </div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>

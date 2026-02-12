@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="~/css/venta.css" asp-append-version="true" />
 }
 
+@Html.AntiForgeryToken()
+
 <section class="container-fluid py-4 text-light venta-section">
     <div class="row g-3">
         <div class="col-12">
@@ -21,12 +23,38 @@
                     <p class="mb-0 text-muted">Filtrá, consultá y accedé rápidamente a las acciones principales.</p>
                 </div>
                 <div class="btn-group">
-                    <a asp-action="Cotizar" class="btn btn-outline-info">
-                        <i class="bi bi-file-earmark-text"></i> Cotizar
-                    </a>
-                    <a asp-action="Create" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Nueva Venta
-                    </a>
+                    @* Botón Configurar Pagos - requiere permiso configuraciones.view *@
+                    @if (User.TienePermiso("configuraciones", "view"))
+                    {
+                        <button type="button" class="btn btn-outline-warning" id="btnConfigPago">
+                            <i class="bi bi-gear"></i> Configurar recargos / descuentos
+                        </button>
+                    }
+
+                    @* Botón Cotizar - requiere permiso ventas.create *@
+                    @if (User.TienePermiso("ventas", "create"))
+                    {
+                        <a asp-action="Cotizar" class="btn btn-outline-info">
+                            <i class="bi bi-file-earmark-text"></i> Cotizar
+                        </a>
+                    }
+
+                    @* Botón Nueva Venta - requiere permiso ventas.create + caja abierta *@
+                    @if (User.TienePermiso("ventas", "create"))
+                    {
+                        @if ((ViewBag.PuedeCrearVenta as bool?) == true)
+                        {
+                            <a asp-action="Create" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Nueva Venta
+                            </a>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-primary" disabled title="Debe abrir una caja para registrar una venta.">
+                                <i class="bi bi-plus-circle"></i> Nueva Venta
+                            </button>
+                        }
+                    }
                 </div>
             </div>
         </div>
@@ -166,19 +194,30 @@
                                             <td class="text-end fw-semibold">@venta.Total.ToString("C2")</td>
                                             <td class="text-center">
                                                 <div class="btn-group btn-group-sm">
-                                                    <a asp-action="Details" asp-route-id="@venta.Id" class="btn btn-outline-light" title="Ver Detalles">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
-                                                    @if (venta.PuedeAutorizar)
+                                                    @* Ver Detalles - requiere ventas.view *@
+                                                    @if (User.TienePermiso("ventas", "view"))
+                                                    {
+                                                        <a asp-action="Details" asp-route-id="@venta.Id" class="btn btn-outline-light" title="Ver Detalles">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                    }
+
+                                                    @* Autorizar/Rechazar - requiere ventas.authorize + lógica de negocio *@
+                                                    @if (venta.PuedeAutorizar && User.TienePermiso("ventas", "authorize"))
                                                     {
                                                         <a asp-action="Autorizar" asp-route-id="@venta.Id" class="btn btn-outline-success" title="Autorizar">
                                                             <i class="bi bi-check-lg"></i>
                                                         </a>
+                                                    }
+                                                    @if (venta.PuedeAutorizar && User.TienePermiso("ventas", "reject"))
+                                                    {
                                                         <a asp-action="Rechazar" asp-route-id="@venta.Id" class="btn btn-outline-danger" title="Rechazar">
                                                             <i class="bi bi-x-lg"></i>
                                                         </a>
                                                     }
-                                                    @if (venta.PuedeEditar)
+
+                                                    @* Editar - requiere ventas.update + lógica de negocio *@
+                                                    @if (venta.PuedeEditar && User.TienePermiso("ventas", "update"))
                                                     {
                                                         <a asp-action="Edit" asp-route-id="@venta.Id" class="btn btn-outline-warning" title="Editar">
                                                             <i class="bi bi-pencil"></i>
@@ -206,3 +245,41 @@
         </div>
     </div>
 </section>
+
+@section Modals {
+    <!-- Modal de configuración de pagos -->
+    <div class="modal fade" id="modalConfigPago" tabindex="-1" aria-labelledby="modalConfigPagoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header bg-secondary border-0">
+                    <h5 class="modal-title" id="modalConfigPagoLabel">
+                        <i class="bi bi-gear me-2"></i>Configurar Recargos / Descuentos por Tipo de Pago
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="configPagoContent">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-3">Cargando configuraciones...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-secondary border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarConfig">
+                        <i class="bi bi-save"></i> Guardar Configuración
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/venta-config-pago.js" asp-append-version="true"></script>
+}

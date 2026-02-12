@@ -13,12 +13,21 @@
             <p class="text-secondary mb-0">Administrá los proveedores registrados en el sistema</p>
         </div>
         <div class="col-auto d-flex gap-2 flex-wrap">
-            <a asp-controller="OrdenCompra" asp-action="Index" class="btn btn-outline-light fw-semibold shadow-sm">
-                <i class="bi bi-cart-check me-2"></i>Ver Órdenes de Compra
-            </a>
-            <a asp-action="Create" class="btn btn-info text-dark fw-semibold shadow-sm">
-                <i class="bi bi-plus-circle me-2"></i>Nuevo Proveedor
-            </a>
+            @* Ver Órdenes de Compra - requiere ordenescompra.view *@
+            @if (User.TienePermiso("ordenescompra", "view"))
+            {
+                <a asp-controller="OrdenCompra" asp-action="Index" class="btn btn-outline-light fw-semibold shadow-sm">
+                    <i class="bi bi-cart-check me-2"></i>Ver Órdenes de Compra
+                </a>
+            }
+
+            @* Nuevo Proveedor - requiere proveedores.create *@
+            @if (User.TienePermiso("proveedores", "create"))
+            {
+                <a asp-action="Create" class="btn btn-info text-dark fw-semibold shadow-sm">
+                    <i class="bi bi-plus-circle me-2"></i>Nuevo Proveedor
+                </a>
+            }
         </div>
     </div>
 

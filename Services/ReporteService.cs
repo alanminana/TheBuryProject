@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel;
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -29,6 +29,7 @@ namespace TheBuryProject.Services
             {
                 var query = _context.Ventas
                     .Include(v => v.Cliente)
+                    .Include(v => v.VendedorUser)
                     .Include(v => v.Detalles.Where(d =>
                         !d.IsDeleted &&
                         d.Producto != null &&
@@ -52,8 +53,9 @@ namespace TheBuryProject.Services
                 if (filtro.TipoPago.HasValue)
                     query = query.Where(v => v.TipoPago == filtro.TipoPago.Value);
 
-                // Nota: VendedorNombre es un string, no hay relación con Usuario
-                // El filtro por vendedor requeriría comparación de strings
+                if (!string.IsNullOrWhiteSpace(filtro.VendedorId))
+                    query = query.Where(v => v.VendedorUserId == filtro.VendedorId);
+
 
                 if (filtro.ProductoId.HasValue)
                     query = query.Where(v => v.Detalles.Any(d =>
@@ -94,7 +96,9 @@ namespace TheBuryProject.Services
                         NumeroVenta = v.Numero,
                         FechaVenta = v.FechaVenta,
                         ClienteNombre = v.Cliente?.NombreCompleto ?? "Anónimo",
-                        VendedorNombre = v.VendedorNombre ?? "Sin asignar",
+                        VendedorNombre = !string.IsNullOrWhiteSpace(v.VendedorNombre)
+                            ? v.VendedorNombre
+                            : v.VendedorUser?.UserName ?? "Sin asignar",
                         TipoPago = v.TipoPago,
                         Subtotal = v.Subtotal,
                         Descuento = v.Descuento,

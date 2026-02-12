@@ -1,0 +1,56 @@
+@* Offcanvas para ver historial de cambios de precio de un producto *@
+<div class="offcanvas offcanvas-end bg-dark text-light" tabindex="-1" id="historialOffcanvas" aria-labelledby="historialLabel" style="width: 500px;">
+    <div class="offcanvas-header border-bottom border-secondary">
+        <div>
+            <h5 class="offcanvas-title fw-bold mb-1" id="historialLabel">
+                <i class="bi bi-clock-history text-info"></i> Historial de Precios
+            </h5>
+            <p class="mb-0 small text-secondary" id="productoNombreHistorial">Cargando...</p>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div id="loadingHistorial" class="text-center py-5">
+            <div class="spinner-border text-info" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+
+        <div id="contenidoHistorial" class="d-none">
+            <!-- Precio actual -->
+            <div class="card bg-success bg-opacity-10 border-success mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-success d-block mb-1">Precio actual</small>
+                            <h4 class="text-light mb-0" id="precioActualHistorial">-</h4>
+                        </div>
+                        <i class="bi bi-currency-dollar fs-2 text-success opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de cambios -->
+            <div class="mb-3">
+                <h6 class="fw-semibold mb-2">
+                    <i class="bi bi-list-ul me-1"></i>Cambios anteriores
+                </h6>
+                <div id="listaCambiosPrecio">
+                    <!-- Se llena por JS -->
+                </div>
+            </div>
+        </div>
+
+        <div id="errorHistorial" class="d-none">
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Error al cargar el historial. Intente nuevamente.
+            </div>
+        </div>
+
+        <div id="sinHistorial" class="d-none text-center py-5">
+            <i class="bi bi-inbox fs-1 text-secondary d-block mb-3"></i>
+            <p class="text-secondary">No hay cambios registrados para este producto</p>
+        </div>
+    </div>
+</div>

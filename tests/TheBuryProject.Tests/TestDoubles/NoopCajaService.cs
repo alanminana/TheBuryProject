@@ -10,10 +10,12 @@ namespace TheBuryProject.Tests.TestDoubles;
 internal sealed class NoopCajaService : ICajaService
 {
     private readonly bool _hayCajaAbierta;
+    private readonly TheBuryProject.Models.Entities.AperturaCaja? _aperturaActiva;
 
-    public NoopCajaService(bool hayCajaAbierta = true)
+    public NoopCajaService(bool hayCajaAbierta = true, TheBuryProject.Models.Entities.AperturaCaja? aperturaActiva = null)
     {
         _hayCajaAbierta = hayCajaAbierta;
+        _aperturaActiva = aperturaActiva;
     }
 
     // ✅ Método clave: por defecto retorna true para permitir ventas en tests
@@ -39,6 +41,8 @@ internal sealed class NoopCajaService : ICajaService
     public Task<List<TheBuryProject.Models.Entities.AperturaCaja>> ObtenerAperturasAbiertasAsync() 
         => Task.FromResult(new List<TheBuryProject.Models.Entities.AperturaCaja>());
     public Task<bool> TieneCajaAbiertaAsync(int cajaId) => Task.FromResult(_hayCajaAbierta);
+    public Task<TheBuryProject.Models.Entities.AperturaCaja?> ObtenerAperturaActivaParaUsuarioAsync(string usuario)
+        => Task.FromResult(_hayCajaAbierta ? _aperturaActiva : null);
 
     public Task<TheBuryProject.Models.Entities.MovimientoCaja> RegistrarMovimientoAsync(MovimientoCajaViewModel model, string usuario) 
         => throw new NotImplementedException();

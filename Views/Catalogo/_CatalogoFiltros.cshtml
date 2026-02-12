@@ -1,0 +1,179 @@
+@model TheBuryProject.ViewModels.CatalogoUnificadoViewModel
+
+@{
+    var filtrosActivos = !string.IsNullOrEmpty(Model.SearchTerm) 
+        || Model.CategoriaId.HasValue 
+        || Model.MarcaId.HasValue 
+        || Model.StockBajo 
+        || Model.SoloActivos 
+        || Model.ListaPrecioId.HasValue;
+}
+
+<div class="row align-items-center mb-4">
+    <div class="col">
+        <h1 class="h3 fw-bold text-light mb-0">
+            <i class="bi bi-collection text-info"></i> Catálogo de Productos
+        </h1>
+        <p class="text-secondary mb-0">Visualizá y gestioná el catálogo completo con precios por lista</p>
+    </div>
+    <div class="col-auto d-flex flex-wrap gap-2">
+        <!-- Botón Nuevo Producto -->
+        <a asp-controller="Producto" asp-action="Create" class="btn btn-success fw-semibold shadow-sm">
+            <i class="bi bi-plus-circle me-2"></i>Nuevo Producto
+        </a>
+
+        <!-- Botón Gestión de Categorías -->
+        <a asp-controller="Categoria" asp-action="Index" class="btn btn-primary fw-semibold shadow-sm">
+            <i class="bi bi-tag me-2"></i>Categorías
+        </a>
+
+        <!-- Botón Gestión de Marcas -->
+        <a asp-controller="Marca" asp-action="Index" class="btn btn-info text-dark fw-semibold shadow-sm">
+            <i class="bi bi-award me-2"></i>Marcas
+        </a>
+
+        <!-- Botón Cambios de Precios (solo para administradores) -->
+        @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente"))
+        {
+            <a asp-controller="CambiosPrecios" asp-action="Index" class="btn btn-outline-warning fw-semibold shadow-sm">
+                <i class="bi bi-shuffle me-2"></i>Cambios de Precios
+            </a>
+        }
+    </div>
+</div>
+
+<!-- Sección de filtros -->
+<div class="card bg-dark border-0 shadow-sm mb-4 filter-card">
+    <button class="card-header bg-secondary text-light d-flex justify-content-between align-items-center @(filtrosActivos ? string.Empty : "collapsed")"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#filtrosCollapse"
+            aria-expanded="@(filtrosActivos.ToString().ToLower())">
+        <span class="fw-semibold">
+            <i class="bi bi-funnel"></i> Filtros de búsqueda
+            @if (filtrosActivos)
+            {
+                <span class="badge bg-info text-dark ms-2">Activos</span>
+            }
+        </span>
+        <i class="bi bi-chevron-down"></i>
+    </button>
+
+    <div id="filtrosCollapse" class="collapse @(filtrosActivos ? "show" : string.Empty)">
+        <div class="card-body">
+            <form method="get" asp-controller="Catalogo" asp-action="Index" id="formFiltros" class="row g-3">
+                <!-- Búsqueda general -->
+                <div class="col-md-4">
+                    <label for="searchTerm" class="form-label text-light">
+                        <i class="bi bi-search"></i> Búsqueda
+                    </label>
+                    <input type="text" class="form-control" id="searchTerm" name="searchTerm" 
+                           value="@Model.SearchTerm" placeholder="Código o nombre...">
+                </div>
+
+                <!-- Categoría -->
+                <div class="col-md-3">
+                    <label for="categoriaId" class="form-label text-light">
+                        <i class="bi bi-tag"></i> Categoría
+                    </label>
+                    <select class="form-select" id="categoriaId" name="categoriaId">
+                        <option value="">Todas</option>
+                        @foreach (var cat in Model.Categorias)
+                        {
+                            <option value="@cat.Id" selected="@(Model.CategoriaId == cat.Id)">
+                                @cat.Nombre
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Marca -->
+                <div class="col-md-3">
+                    <label for="marcaId" class="form-label text-light">
+                        <i class="bi bi-award"></i> Marca
+                    </label>
+                    <select class="form-select" id="marcaId" name="marcaId">
+                        <option value="">Todas</option>
+                        @foreach (var marca in Model.Marcas)
+                        {
+                            <option value="@marca.Id" selected="@(Model.MarcaId == marca.Id)">
+                                @marca.Nombre
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Lista de Precios -->
+                <div class="col-md-2">
+                    <label for="listaPrecioId" class="form-label text-light">
+                        <i class="bi bi-cash-stack"></i> Lista de Precios
+                    </label>
+                    <select class="form-select" id="listaPrecioId" name="listaPrecioId">
+                        <option value="">Todas</option>
+                        @foreach (var lista in Model.ListasPrecios)
+                        {
+                            <option value="@lista.Id" selected="@(Model.ListaPrecioId == lista.Id)">
+                                @lista.Nombre
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Checkboxes -->
+                <div class="col-md-6">
+                    <label class="form-label text-light d-block">Opciones</label>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="stockBajo" name="stockBajo" 
+                               value="true" checked="@Model.StockBajo">
+                        <label class="form-check-label text-light" for="stockBajo">
+                            <i class="bi bi-exclamation-triangle text-warning"></i> Solo stock bajo
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="soloActivos" name="soloActivos" 
+                               value="true" checked="@Model.SoloActivos">
+                        <label class="form-check-label text-light" for="soloActivos">
+                            <i class="bi bi-check-circle text-success"></i> Solo activos
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Ordenamiento -->
+                <div class="col-md-3">
+                    <label for="orderBy" class="form-label text-light">
+                        <i class="bi bi-sort-down"></i> Ordenar por
+                    </label>
+                    <select class="form-select" id="orderBy" name="orderBy">
+                        <option value="">Sin orden específico</option>
+                        <option value="codigo" selected="@(Model.OrderBy == "codigo")">Código</option>
+                        <option value="nombre" selected="@(Model.OrderBy == "nombre")">Nombre</option>
+                        <option value="precio" selected="@(Model.OrderBy == "precio")">Precio</option>
+                        <option value="stock" selected="@(Model.OrderBy == "stock")">Stock</option>
+                        <option value="categoria" selected="@(Model.OrderBy == "categoria")">Categoría</option>
+                        <option value="marca" selected="@(Model.OrderBy == "marca")">Marca</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="orderDirection" class="form-label text-light">
+                        <i class="bi bi-arrow-down-up"></i> Dirección
+                    </label>
+                    <select class="form-select" id="orderDirection" name="orderDirection">
+                        <option value="asc" selected="@(Model.OrderDirection == "asc")">Ascendente</option>
+                        <option value="desc" selected="@(Model.OrderDirection == "desc")">Descendente</option>
+                    </select>
+                </div>
+
+                <!-- Botones -->
+                <div class="col-12 d-flex gap-2 justify-content-end">
+                    <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Limpiar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel-fill me-1"></i>Aplicar filtros
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

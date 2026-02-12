@@ -11,7 +11,7 @@
             actualizarTablaProductos();
             calcularTotales();
             // Resetear prevalidación cuando cambian los productos
-            if (tipoPagoSelect?.value === 'CreditoPersonall') {
+            if (tipoPagoSelect?.value === TIPO_PAGO_CREDITO_PERSONAL) {
                 resetEstadoPrevalidacion();
             }
         }
@@ -36,6 +36,7 @@
     const cuotasDiv = document.getElementById('cuotasDiv');
     const infoCuotas = document.getElementById('infoCuotas');
     const tipoPagoSelect = document.getElementById('tipoPagoSelect');
+    const TIPO_PAGO_CREDITO_PERSONAL = '5';
     const productosBody = document.getElementById('productosBody');
     const descuentoGeneralInput = document.getElementById('descuentoGeneral');
     const clienteSelect = document.getElementById('clienteSelect');
@@ -109,7 +110,7 @@
             }
             
             // Validar prevalidación para Crédito Personal
-            if (tipoPagoSelect?.value === 'CreditoPersonall') {
+            if (tipoPagoSelect?.value === TIPO_PAGO_CREDITO_PERSONAL) {
                 if (!estadoPrevalidacion.verificado) {
                     e.preventDefault();
                     alert('Debe verificar la aptitud crediticia del cliente antes de continuar.');
@@ -141,7 +142,7 @@
     function handleTipoPagoChangeForPrevalidacion(tipoPago) {
         const avisoCreditoPersonal = document.getElementById('avisoCreditoPersonal');
         
-        if (tipoPago === 'CreditoPersonall') {
+        if (tipoPago === TIPO_PAGO_CREDITO_PERSONAL) {
             prevalidacionRow?.classList.remove('d-none');
             avisoCreditoPersonal?.classList.remove('d-none');
             actualizarBotonVerificar();
@@ -298,7 +299,7 @@
         const btnGuardar = form?.querySelector('button[type="submit"]');
         if (!btnGuardar) return;
         
-        const esCreditoPersonal = tipoPagoSelect?.value === 'CreditoPersonall';
+        const esCreditoPersonal = tipoPagoSelect?.value === TIPO_PAGO_CREDITO_PERSONAL;
         
         if (esCreditoPersonal) {
             if (!estadoPrevalidacion.verificado) {
@@ -499,3 +500,4 @@
 
     init();
 })();
+

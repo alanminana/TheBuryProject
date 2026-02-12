@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using TheBuryProject.Data.Seeds;
 using TheBuryProject.Models.Constants;
+using TheBuryProject.Models.Entities;
 
 namespace TheBuryProject.Data
 {
@@ -68,10 +70,37 @@ namespace TheBuryProject.Data
                         }
                     }
 
+                    if (shouldMigrate && hasAspNetRoles)
+                    {
+                        try
+                        {
+                            var knownMigrations = context.Database.GetMigrations().ToHashSet();
+                            var appliedMigrations = await context.Database.GetAppliedMigrationsAsync();
+                            var hasAnyKnown = appliedMigrations.Any(m => knownMigrations.Contains(m));
+                            if (!hasAnyKnown)
+                            {
+                                shouldMigrate = false;
+                                logger.LogWarning("El historial de migraciones no corresponde al proyecto actual. Se omitira ApplyMigrations para evitar conflictos.");
+                            }
+                        }
+                        catch
+                        {
+                            shouldMigrate = false;
+                            logger.LogWarning("No se pudo validar el historial de migraciones. Se omitira ApplyMigrations para evitar conflictos.");
+                        }
+                    }
+
                     if (shouldMigrate)
                     {
-                        await context.Database.MigrateAsync();
-                        logger.LogInformation("Migraciones aplicadas exitosamente");
+                        try
+                        {
+                            await context.Database.MigrateAsync();
+                            logger.LogInformation("Migraciones aplicadas exitosamente");
+                        }
+                        catch (SqlException ex) when (ex.Number == 2714)
+                        {
+                            logger.LogWarning(ex, "Se omitieron migraciones porque ya existen tablas en la base de datos.");
+                        }
                     }
                     else
                     {
@@ -110,7 +139,7 @@ namespace TheBuryProject.Data
         {
             var configuration = services.GetRequiredService<IConfiguration>();
             var env = services.GetService<IWebHostEnvironment>();
-            var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 
             var adminEmail = configuration["Admin:Email"] ?? "admin@thebury.com";
             var adminPassword = configuration["Admin:Password"]; // debe venir de user-secrets / ENV
@@ -135,11 +164,13 @@ namespace TheBuryProject.Data
 
             if (adminUser == null)
             {
-                adminUser = new IdentityUser
+                adminUser = new ApplicationUser
                 {
                     UserName = adminEmail,
                     Email = adminEmail,
-                    EmailConfirmed = true
+                    EmailConfirmed = true,
+                    Activo = true,
+                    FechaCreacion = DateTime.UtcNow
                 };
 
                 var result = await userManager.CreateAsync(adminUser, adminPassword);
@@ -180,7 +211,7 @@ namespace TheBuryProject.Data
         {
             using var scope = serviceProvider.CreateScope();
             var services = scope.ServiceProvider;
-            var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             var logger = services.GetRequiredService<ILogger<Program>>();
 
             var testUsers = new[]
@@ -199,11 +230,13 @@ namespace TheBuryProject.Data
                 var user = await userManager.FindByEmailAsync(testUser.Email);
                 if (user == null)
                 {
-                    user = new IdentityUser
+                    user = new ApplicationUser
                     {
                         UserName = testUser.Email,
                         Email = testUser.Email,
-                        EmailConfirmed = true
+                        EmailConfirmed = true,
+                        Activo = true,
+                        FechaCreacion = DateTime.UtcNow
                     };
 
                     var result = await userManager.CreateAsync(user, testUser.Password);

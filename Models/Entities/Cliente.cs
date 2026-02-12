@@ -135,6 +135,55 @@ namespace TheBuryProject.Models.Entities
         /// </summary>
         public DateTime? FechaUltimaEvaluacion { get; set; }
 
+        // ==========================
+        // Configuración de Crédito Personal (valores personalizados por cliente)
+        // ==========================
+
+        // ==========================
+        // CONFIGURACIÓN DE CRÉDITO PERSONAL (TAREA 6 + TAREA 8)
+        // ==========================
+
+        /// <summary>
+        /// Perfil de crédito preferido para este cliente (TAREA 8.1.1)
+        /// Si se especifica, se usarán los valores del perfil como defaults
+        /// </summary>
+        public int? PerfilCreditoPreferidoId { get; set; }
+
+        /// <summary>
+        /// Navegación al perfil de crédito preferido
+        /// </summary>
+        public virtual PerfilCredito? PerfilCreditoPreferido { get; set; }
+
+        /// <summary>
+        /// Tasa de interés mensual personalizada para este cliente (%). 
+        /// Si es null, se usa la tasa del perfil preferido o la global del sistema.
+        /// </summary>
+        public decimal? TasaInteresMensualPersonalizada { get; set; }
+
+        /// <summary>
+        /// Porcentaje de gastos administrativos personalizados para este cliente (%).
+        /// Si es null, se usan los gastos del perfil preferido o los globales del sistema.
+        /// </summary>
+        public decimal? GastosAdministrativosPersonalizados { get; set; }
+
+        /// <summary>
+        /// Cantidad máxima de cuotas permitidas para este cliente.
+        /// Si es null, se usa el límite del perfil preferido o el global del sistema (generalmente 24).
+        /// </summary>
+        public int? CuotasMaximasPersonalizadas { get; set; }
+
+        /// <summary>
+        /// Monto mínimo de crédito permitido para este cliente.
+        /// Si es null, se usa el mínimo global del sistema.
+        /// </summary>
+        public decimal? MontoMinimoPersonalizado { get; set; }
+
+        /// <summary>
+        /// Monto máximo de crédito permitido para este cliente.
+        /// Si es null, se usa LimiteCredito o el máximo global.
+        /// </summary>
+        public decimal? MontoMaximoPersonalizado { get; set; }
+
         // Estado
         public bool Activo { get; set; } = true;
 

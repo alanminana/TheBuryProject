@@ -11,9 +11,14 @@
         <h2 class="fw-bold mb-0 text-danger">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>Cuotas Vencidas
         </h2>
-        <a href="@backUrl" class="btn btn-outline-light">
-            <i class="bi bi-arrow-left me-2"></i>Volver a Créditos
-        </a>
+        <div>
+            <button type="button" class="btn btn-outline-warning me-2" data-bs-toggle="modal" data-bs-target="#modalConfiguracionMora">
+                <i class="bi bi-gear-fill me-2"></i>Configuración de mora
+            </button>
+            <a href="@backUrl" class="btn btn-outline-light">
+                <i class="bi bi-arrow-left me-2"></i>Volver a Créditos
+            </a>
+        </div>
     </div>
 
     @if (TempData["Success"] != null)
@@ -56,15 +61,29 @@
                         <tbody>
                             @foreach (var cuota in Model.OrderBy(c => c.FechaVencimiento))
                             {
-                                var filaClase = cuota.DiasAtraso > 30 ? "table-danger" : "table-warning";
-                                <tr class="@filaClase text-dark">
-                                    <td class="fw-semibold">@cuota.CreditoId</td>
-                                    <td><span class="badge bg-dark text-light">@cuota.NumeroCuota</span></td>
+                                <tr style="border-left: 4px solid @cuota.ColorAlerta;">
+                                    <td class="fw-semibold">
+                                        <a asp-action="Details" asp-route-id="@cuota.CreditoId" asp-route-returnUrl="@listReturnUrl" class="text-decoration-none text-info">
+                                            @cuota.CreditoNumero
+                                        </a>
+                                        <br />
+                                        <small class="text-muted">@cuota.ClienteNombre</small>
+                                    </td>
+                                    <td><span class="badge bg-secondary">@cuota.NumeroCuota</span></td>
                                     <td>@cuota.FechaVencimiento.ToString("dd/MM/yyyy")</td>
-                                    <td><span class="badge bg-danger">@cuota.DiasAtraso días</span></td>
+                                    <td>
+                                        <span class="badge" style="background-color: @cuota.ColorAlerta; color: white;">
+                                            @cuota.DiasAtraso días
+                                        </span>
+                                        @if (!string.IsNullOrEmpty(cuota.DescripcionAlerta))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@cuota.DescripcionAlerta</small>
+                                        }
+                                    </td>
                                     <td>@cuota.MontoTotal.ToString("C2")</td>
-                                    <td class="text-danger">@cuota.MontoPunitorio.ToString("C2")</td>
-                                    <td class="fw-bold">@cuota.SaldoPendiente.ToString("C2")</td>
+                                    <td class="text-danger fw-semibold">@cuota.MontoPunitorio.ToString("C2")</td>
+                                    <td class="fw-bold fs-5">@cuota.SaldoPendiente.ToString("C2")</td>
                                     <td>
                                         @switch (cuota.Estado)
                                         {
@@ -115,3 +134,149 @@
         </div>
     }
 </section>
+
+@section Modals {
+    <!-- Modal Configuración de Mora -->
+    <div class="modal fade" id="modalConfiguracionMora" tabindex="-1" aria-labelledby="modalConfiguracionMoraLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold" id="modalConfiguracionMoraLabel">
+                        <i class="bi bi-gear-fill me-2 text-warning"></i>Configuración de Mora
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Configuración Base -->
+                    <div class="card bg-secondary bg-opacity-25 border-secondary mb-4">
+                        <div class="card-header bg-secondary bg-opacity-50">
+                            <h6 class="mb-0"><i class="bi bi-calculator me-2"></i>Configuración de Interés Punitorio</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="tasaMoraDiaria" class="form-label">Tasa Diaria (%)</label>
+                                    <input type="number" class="form-control bg-dark text-light border-secondary" id="tasaMoraDiaria" step="0.0001" min="0" max="100" required>
+                                    <small class="text-muted">Porcentaje de interés punitorio por día</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="diasGracia" class="form-label">Días de Gracia</label>
+                                    <input type="number" class="form-control bg-dark text-light border-secondary" id="diasGracia" min="0" required>
+                                    <small class="text-muted">Días antes de aplicar el interés</small>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="procesoAutomaticoActivo">
+                                <label class="form-check-label" for="procesoAutomaticoActivo">
+                                    Proceso automático activo
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alertas de Mora -->
+                    <div class="card bg-secondary bg-opacity-25 border-secondary">
+                        <div class="card-header bg-secondary bg-opacity-50 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="bi bi-bell-fill me-2"></i>Alertas de Mora</h6>
+                            <button type="button" class="btn btn-sm btn-success" id="btnAgregarAlerta">
+                                <i class="bi bi-plus-circle me-1"></i>Agregar Alerta
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover" id="tablaAlertas">
+                                    <thead>
+                                        <tr>
+                                            <th width="20%">Días</th>
+                                            <th width="25%">Descripción</th>
+                                            <th width="15%">Color</th>
+                                            <th width="15%">Prioridad</th>
+                                            <th width="10%">Activa</th>
+                                            <th width="15%">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyAlertas">
+                                        <!-- Alertas dinámicas -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Días negativos = antes del vencimiento | Días positivos = después del vencimiento | 0 = día del vencimiento
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnGuardarConfiguracion">
+                        <i class="bi bi-check-circle me-2"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar/Editar Alerta -->
+    <div class="modal fade" id="modalAlerta" tabindex="-1" aria-labelledby="modalAlertaLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="modalAlertaLabel">
+                        <i class="bi bi-bell-fill me-2"></i><span id="tituloModalAlerta">Agregar Alerta</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="alertaIndex">
+                    <div class="mb-3">
+                        <label for="alertaDias" class="form-label">Días relativos al vencimiento</label>
+                        <input type="number" class="form-control bg-dark text-light border-secondary" id="alertaDias" required>
+                        <small class="text-muted">Negativo = antes | Positivo = después | 0 = día de vencimiento</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="alertaDescripcion" class="form-label">Descripción</label>
+                        <input type="text" class="form-control bg-dark text-light border-secondary" id="alertaDescripcion" maxlength="100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="alertaColor" class="form-label">Color de Alerta</label>
+                        <div class="input-group">
+                            <input type="color" class="form-control form-control-color bg-dark border-secondary" id="alertaColor" value="#ff0000">
+                            <input type="text" class="form-control bg-dark text-light border-secondary" id="alertaColorHex" value="#FF0000" pattern="^#[0-9A-Fa-f]{6}$">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="alertaPrioridad" class="form-label">Nivel de Prioridad</label>
+                        <select class="form-select bg-dark text-light border-secondary" id="alertaPrioridad" required>
+                            <option value="1">1 - Baja</option>
+                            <option value="2">2 - Media-Baja</option>
+                            <option value="3" selected>3 - Media</option>
+                            <option value="4">4 - Media-Alta</option>
+                            <option value="5">5 - Alta</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="alertaActiva" checked>
+                        <label class="form-check-label" for="alertaActiva">
+                            Alerta activa
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnGuardarAlerta">
+                        <i class="bi bi-check-circle me-2"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/mora-config-modal.js"></script>
+}

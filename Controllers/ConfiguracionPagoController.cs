@@ -1,25 +1,38 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper;
+using TheBuryProject.Data;
+using TheBuryProject.Filters;
+using TheBuryProject.Helpers;
 using TheBuryProject.Models.Constants;
+using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+    [Authorize]
+    [PermisoRequerido(Modulo = "configuraciones", Accion = "view")]
     public class ConfiguracionPagoController : Controller
     {
         private readonly IConfiguracionPagoService _configuracionPagoService;
         private readonly ILogger<ConfiguracionPagoController> _logger;
+        private readonly IDbContextFactory<AppDbContext> _contextFactory;
+        private readonly IMapper _mapper;
 
         public ConfiguracionPagoController(
             IConfiguracionPagoService configuracionPagoService,
-            ILogger<ConfiguracionPagoController> logger)
+            ILogger<ConfiguracionPagoController> logger,
+            IDbContextFactory<AppDbContext> contextFactory,
+            IMapper mapper)
         {
             _configuracionPagoService = configuracionPagoService;
             _logger = logger;
+            _contextFactory = contextFactory;
+            _mapper = mapper;
         }
 
         // GET: ConfiguracionPago
@@ -63,7 +76,7 @@ namespace TheBuryProject.Controllers
         // GET: ConfiguracionPago/Create
         public IActionResult Create()
         {
-            ViewBag.TiposPago = new SelectList(Enum.GetValues(typeof(TipoPago)));
+            ViewBag.TiposPago = EnumHelper.GetSelectList<TipoPago>();
             return View(new ConfiguracionPagoViewModel());
         }
 
@@ -74,9 +87,17 @@ namespace TheBuryProject.Controllers
         {
             try
             {
+                if (viewModel.TipoPago == TipoPago.CreditoPersonal &&
+                    !viewModel.TasaInteresMensualCreditoPersonal.HasValue)
+                {
+                    ModelState.AddModelError(
+                        nameof(viewModel.TasaInteresMensualCreditoPersonal),
+                        "La tasa mensual es requerida para Credito Personal.");
+                }
+
                 if (!ModelState.IsValid)
                 {
-                    ViewBag.TiposPago = new SelectList(Enum.GetValues(typeof(TipoPago)));
+                    ViewBag.TiposPago = EnumHelper.GetSelectList<TipoPago>();
                     return View(viewModel);
                 }
 
@@ -88,7 +109,7 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al crear configuración de pago");
                 ModelState.AddModelError("", "Error al crear la configuración: " + ex.Message);
-                ViewBag.TiposPago = new SelectList(Enum.GetValues(typeof(TipoPago)));
+                ViewBag.TiposPago = EnumHelper.GetSelectList<TipoPago>();
                 return View(viewModel);
             }
         }
@@ -105,7 +126,7 @@ namespace TheBuryProject.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                ViewBag.TiposPago = new SelectList(Enum.GetValues(typeof(TipoPago)));
+                ViewBag.TiposPago = EnumHelper.GetSelectList<TipoPago>();
                 return View(configuracion);
             }
             catch (Exception ex)
@@ -123,9 +144,17 @@ namespace TheBuryProject.Controllers
         {
             try
             {
+                if (viewModel.TipoPago == TipoPago.CreditoPersonal &&
+                    !viewModel.TasaInteresMensualCreditoPersonal.HasValue)
+                {
+                    ModelState.AddModelError(
+                        nameof(viewModel.TasaInteresMensualCreditoPersonal),
+                        "La tasa mensual es requerida para Credito Personal.");
+                }
+
                 if (!ModelState.IsValid)
                 {
-                    ViewBag.TiposPago = new SelectList(Enum.GetValues(typeof(TipoPago)));
+                    ViewBag.TiposPago = EnumHelper.GetSelectList<TipoPago>();
                     return View(viewModel);
                 }
 
@@ -143,7 +172,7 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al actualizar configuración: {Id}", id);
                 ModelState.AddModelError("", "Error al actualizar la configuración: " + ex.Message);
-                ViewBag.TiposPago = new SelectList(Enum.GetValues(typeof(TipoPago)));
+                ViewBag.TiposPago = EnumHelper.GetSelectList<TipoPago>();
                 return View(viewModel);
             }
         }
@@ -252,8 +281,6 @@ namespace TheBuryProject.Controllers
 
         // GET: API para calcular cuotas
         [HttpGet]
-        // GET: API para calcular cuotas
-        [HttpGet]
         public async Task<IActionResult> CalcularCuotas(int tarjetaId, decimal monto, int cuotas)
         {
             try
@@ -295,5 +322,164 @@ namespace TheBuryProject.Controllers
                 return StatusCode(500, "Error al calcular las cuotas");
             }
         }
+
+        /// <summary>
+        /// Obtiene todas las configuraciones de pago para el modal de configuración
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous] // Permite acceso sin autenticación de rol Admin para consultar
+        public async Task<IActionResult> GetConfiguracionesModal()
+        {
+            try
+            {
+                var configuraciones = await _configuracionPagoService.GetAllAsync();
+                return Json(new { success = true, data = configuraciones });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener configuraciones para modal");
+                return Json(new { success = false, message = "Error al obtener configuraciones" });
+            }
+        }
+
+        /// <summary>
+        /// Guarda múltiples configuraciones de pago desde el modal
+        /// </summary>
+        [HttpPost]
+        [IgnoreAntiforgeryToken] // Se permite sin token porque ya requiere autenticación de rol
+        public async Task<IActionResult> GuardarConfiguracionesModal([FromBody] List<ConfiguracionPagoViewModel> configuraciones)
+        {
+            try
+            {
+                if (configuraciones == null || !configuraciones.Any())
+                {
+                    return Json(new { success = false, message = "No se recibieron configuraciones" });
+                }
+
+                foreach (var config in configuraciones)
+                {
+                    if (config.Id > 0)
+                    {
+                        // Actualizar existente
+                        await _configuracionPagoService.UpdateAsync(config.Id, config);
+                    }
+                    else
+                    {
+                        // Crear nueva
+                        await _configuracionPagoService.CreateAsync(config);
+                    }
+                }
+
+                return Json(new { success = true, message = "Configuraciones guardadas exitosamente" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al guardar configuraciones desde modal");
+                return Json(new { success = false, message = "Error al guardar las configuraciones: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Obtiene todos los perfiles de crédito (TAREA 7.1.2)
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPerfilesCredito()
+        {
+            try
+            {
+                await using var context = await _contextFactory.CreateDbContextAsync();
+                var perfiles = await context.PerfilesCredito
+                    .Where(p => !p.IsDeleted)
+                    .OrderBy(p => p.Orden)
+                    .ThenBy(p => p.Nombre)
+                    .ToListAsync();
+
+                var viewModels = _mapper.Map<List<PerfilCreditoViewModel>>(perfiles);
+                return Json(new { success = true, data = viewModels });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener perfiles de crédito");
+                return Json(new { success = false, message = "Error al obtener perfiles de crédito" });
+            }
+        }
+
+        /// <summary>
+        /// Guarda perfiles de crédito y defaults globales desde el modal (TAREA 7)
+        /// </summary>
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> GuardarCreditoPersonalModal(
+            [FromBody] CreditoPersonalConfigViewModel config)
+        {
+            try
+            {
+                await using var context = await _contextFactory.CreateDbContextAsync();
+
+                // Actualizar defaults globales en ConfiguracionPago (TipoPago = CreditoPersonal)
+                var configCreditoPersonal = await context.ConfiguracionesPago
+                    .FirstOrDefaultAsync(c => c.TipoPago == TipoPago.CreditoPersonal);
+
+                if (configCreditoPersonal != null && config.DefaultsGlobales != null)
+                {
+                    configCreditoPersonal.TasaInteresMensualCreditoPersonal = config.DefaultsGlobales.TasaMensual;
+                    configCreditoPersonal.GastosAdministrativosDefaultCreditoPersonal = config.DefaultsGlobales.GastosAdministrativos;
+                    configCreditoPersonal.MinCuotasDefaultCreditoPersonal = config.DefaultsGlobales.MinCuotas;
+                    configCreditoPersonal.MaxCuotasDefaultCreditoPersonal = config.DefaultsGlobales.MaxCuotas;
+                    configCreditoPersonal.UpdatedAt = DateTime.UtcNow;
+                }
+
+                // Guardar perfiles de crédito
+                if (config.Perfiles != null)
+                {
+                    foreach (var perfilViewModel in config.Perfiles)
+                    {
+                        if (perfilViewModel.Id > 0)
+                        {
+                            // Actualizar existente
+                            var perfil = await context.PerfilesCredito.FindAsync(perfilViewModel.Id);
+                            if (perfil != null)
+                            {
+                                _mapper.Map(perfilViewModel, perfil);
+                                perfil.UpdatedAt = DateTime.UtcNow;
+                            }
+                        }
+                        else
+                        {
+                            // Crear nuevo
+                            var nuevoPerfil = _mapper.Map<PerfilCredito>(perfilViewModel);
+                            nuevoPerfil.CreatedAt = DateTime.UtcNow;
+                            context.PerfilesCredito.Add(nuevoPerfil);
+                        }
+                    }
+                }
+
+                await context.SaveChangesAsync();
+                return Json(new { success = true, message = "Configuración de crédito personal guardada exitosamente" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al guardar configuración de crédito personal");
+                return Json(new { success = false, message = "Error al guardar: " + ex.Message });
+            }
+        }
+    }
+
+    /// <summary>
+    /// ViewModel para recibir configuración completa de crédito personal
+    /// </summary>
+    public class CreditoPersonalConfigViewModel
+    {
+        public DefaultsGlobalesViewModel? DefaultsGlobales { get; set; }
+        public List<PerfilCreditoViewModel>? Perfiles { get; set; }
+    }
+
+    public class DefaultsGlobalesViewModel
+    {
+        public decimal TasaMensual { get; set; }
+        public decimal GastosAdministrativos { get; set; }
+        public int MinCuotas { get; set; }
+        public int MaxCuotas { get; set; }
     }
 }

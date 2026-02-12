@@ -9,21 +9,41 @@ const CatalogoAcciones = (function () {
     let pasoActual = 1;
     let datosSimulacion = null;
     let antiForgeryToken = null;
+    let inicializado = false;
 
     // Elementos DOM (se inicializan en init)
     const elementos = {};
+
+    function leerInitConfig() {
+        const el = document.getElementById('catalogo-init');
+        if (!el) return null;
+        try {
+            return JSON.parse(el.textContent || '{}');
+        } catch {
+            return null;
+        }
+    }
+
+    function obtenerCsrfToken() {
+        const input = document.querySelector('input[name="__RequestVerificationToken"]');
+        return input ? input.value : '';
+    }
 
     /**
      * Inicializa el módulo con datos del ViewModel
      * @param {Object} config - Configuración con listas, categorías, marcas y token
      */
     function init(config) {
-        antiForgeryToken = config.antiForgeryToken || document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        if (inicializado) return;
 
         // Cachear elementos DOM
         elementos.offcanvas = document.getElementById('offcanvasAccionesMasivas');
+        if (!elementos.offcanvas) return;
+
+        inicializado = true;
+        antiForgeryToken = (config && config.antiForgeryToken) || obtenerCsrfToken();
+
         elementos.nombreCambio = document.getElementById('nombreCambio');
-        elementos.listasPrecios = document.getElementById('listasPrecios');
         elementos.categorias = document.getElementById('categorias');
         elementos.marcas = document.getElementById('marcas');
         elementos.productosIds = document.getElementById('productosIds');
@@ -33,11 +53,11 @@ const CatalogoAcciones = (function () {
         elementos.btnAnterior = document.getElementById('btnAnterior');
         elementos.btnSiguiente = document.getElementById('btnSiguiente');
         elementos.btnAplicar = document.getElementById('btnAplicar');
+        elementos.btnVolverPreview = document.getElementById('btnVolverPreview');
 
         // Poblar dropdowns
-        poblarDropdown(elementos.listasPrecios, config.listasPrecios || []);
-        poblarDropdown(elementos.categorias, config.categorias || []);
-        poblarDropdown(elementos.marcas, config.marcas || []);
+        poblarDropdown(elementos.categorias, (config && config.categorias) || []);
+        poblarDropdown(elementos.marcas, (config && config.marcas) || []);
 
         // Event listeners
         elementos.tipoCambio?.addEventListener('change', actualizarSufijo);
@@ -45,6 +65,10 @@ const CatalogoAcciones = (function () {
 
         // Reset al abrir offcanvas
         elementos.offcanvas?.addEventListener('show.bs.offcanvas', resetearFormulario);
+        elementos.btnAnterior?.addEventListener('click', pasoAnterior);
+        elementos.btnSiguiente?.addEventListener('click', pasoSiguiente);
+        elementos.btnAplicar?.addEventListener('click', aplicarCambios);
+        elementos.btnVolverPreview?.addEventListener('click', () => volverPaso(3));
 
         console.log('[CatalogoAcciones] Inicializado');
     }
@@ -125,7 +149,7 @@ const CatalogoAcciones = (function () {
         if (elementos.tipoCambio) elementos.tipoCambio.value = 'porcentaje';
 
         // Deseleccionar dropdowns
-        [elementos.listasPrecios, elementos.categorias, elementos.marcas].forEach(sel => {
+        [elementos.categorias, elementos.marcas].forEach(sel => {
             if (sel) {
                 Array.from(sel.options).forEach(opt => opt.selected = false);
             }
@@ -276,23 +300,22 @@ const CatalogoAcciones = (function () {
             nombre: elementos.nombreCambio?.value?.trim() || 'Cambio masivo',
             tipoCambio: elementos.tipoCambio?.value || 'porcentaje',
             valor: parseFloat(elementos.valorCambio?.value) || 0,
-            listasIds: getSelectedIds(elementos.listasPrecios),
+            listasIds: null,
             categoriasIds: getSelectedIds(elementos.categorias),
             marcasIds: getSelectedIds(elementos.marcas),
             productosIds: parseProductoIds(elementos.productosIds?.value)
         };
 
-        // Si no hay listas seleccionadas, enviar null para "todas"
-        if (solicitud.listasIds.length === 0) solicitud.listasIds = null;
         if (solicitud.categoriasIds.length === 0) solicitud.categoriasIds = null;
         if (solicitud.marcasIds.length === 0) solicitud.marcasIds = null;
 
         try {
+            const token = obtenerCsrfToken() || antiForgeryToken || '';
             const response = await fetch('/Catalogo/SimularCambioPrecios', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'RequestVerificationToken': antiForgeryToken
+                    'RequestVerificationToken': token
                 },
                 body: JSON.stringify(solicitud)
             });
@@ -395,11 +418,12 @@ const CatalogoAcciones = (function () {
         };
 
         try {
+            const token = obtenerCsrfToken() || antiForgeryToken || '';
             const response = await fetch('/Catalogo/AplicarCambioPrecios', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'RequestVerificationToken': antiForgeryToken
+                    'RequestVerificationToken': token
                 },
                 body: JSON.stringify(solicitud)
             });
@@ -453,6 +477,12 @@ const CatalogoAcciones = (function () {
     function formatearNumero(num) {
         return (num || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const config = leerInitConfig() || {};
+        if (config.esAdminPrecios === false) return;
+        init(config);
+    });
 
     // API pública
     return {

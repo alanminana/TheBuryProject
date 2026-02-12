@@ -284,11 +284,23 @@
         <div class="card bg-dark border-0 shadow-sm mb-3">
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-6">
-                        <label asp-for="VendedorNombre" class="form-label"></label>
-                        <input asp-for="VendedorNombre" class="form-control bg-body-secondary text-light border-0" />
-                        <span asp-validation-for="VendedorNombre" class="text-danger small"></span>
-                    </div>
+                    @if ((bool?)ViewBag.PuedeDelegarVendedor == true)
+                    {
+                        <div class="col-md-6">
+                            <label asp-for="VendedorUserId" class="form-label"></label>
+                            <select asp-for="VendedorUserId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Vendedores">
+                                <option value="">Seleccione un vendedor...</option>
+                            </select>
+                            <span asp-validation-for="VendedorUserId" class="text-danger small"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="col-md-6">
+                            <label class="form-label">Vendedor</label>
+                            <input class="form-control bg-body-secondary text-light border-0" value="@User.Identity?.Name" readonly />
+                        </div>
+                    }
                     <div class="col-md-6">
                         <label asp-for="Observaciones" class="form-label"></label>
                         <textarea asp-for="Observaciones" class="form-control bg-body-secondary text-light border-0" rows="2"></textarea>
@@ -314,8 +326,8 @@
                         <div class="value" id="lblDescuento">$0.00</div>
                     </div>
                     <div class="summary-item">
-                        <div class="label">IVA (@(((decimal)ViewBag.IvaRate * 100).ToString("0"))%)</div>
-                        <div class="value" id="lblIVA">$0.00</div>
+                        <div class="label"><small class="text-muted">IVA 21% (desglosado)</small></div>
+                        <div class="value text-muted" id="lblIVA">$0.00</div>
                         <input type="hidden" id="ivaRate" value="@ViewBag.IvaRate" />
                         <input type="hidden" asp-for="IVA" id="hiddenIVA" />
                     </div>

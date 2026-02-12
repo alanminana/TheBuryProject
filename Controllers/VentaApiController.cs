@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TheBuryProject.Filters;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -9,7 +10,8 @@ using TheBuryProject.ViewModels.Requests;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
+    [Authorize]
+    [PermisoRequerido(Modulo = "ventas", Accion = "view")]
     [ApiController]
     [Route("api/ventas/[action]")]
     public class VentaApiController : ControllerBase

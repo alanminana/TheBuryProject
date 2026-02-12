@@ -1,19 +1,7 @@
-    /// <summary>
-    /// Aplica un cambio directo de precio a productos seleccionados o filtrados desde el catálogo.
-    /// Actualiza Producto.PrecioVenta, crea historial y permite revertir.
-    /// </summary>
-    /// <param name="model">Datos del cambio directo</param>
-    /// <returns>Resultado con éxito/error y conteo de actualizaciones</returns>
-    Task<ResultadoAplicacionPrecios> AplicarCambioPrecioDirectoAsync(AplicarCambioPrecioDirectoViewModel model);
-using TheBuryProject.Models.Entities;
-using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.Services.Interfaces;
 
-/// <summary>
-/// Servicio para gesti�n avanzada de precios con historial
-/// Soporta simulaci�n, autorizaci�n, aplicaci�n y reversi�n de cambios masivos
-/// </summary>
+
 public interface IPrecioService
 {
     // ============================================
@@ -92,6 +80,31 @@ public interface IPrecioService
     /// Calcula el precio autom�tico basado en costo y reglas de la lista
     /// </summary>
     Task<decimal> CalcularPrecioAutomaticoAsync(int productoId, int listaId, decimal costo);
+
+    // ============================================
+    // CAMBIO DIRECTO DE PRECIO (CATALOGO)
+    // ============================================
+
+    /// <summary>
+    /// Aplica un cambio directo de precio a productos seleccionados o filtrados desde el catalogo.
+    /// Actualiza Producto.PrecioVenta, crea historial y permite revertir.
+    /// </summary>
+    Task<ResultadoAplicacionPrecios> AplicarCambioPrecioDirectoAsync(AplicarCambioPrecioDirectoViewModel model);
+
+    /// <summary>
+    /// Obtiene eventos de cambios directos de precios.
+    /// </summary>
+    Task<List<CambioPrecioEvento>> GetCambioPrecioEventosAsync(int take = 200);
+
+    /// <summary>
+    /// Obtiene un evento de cambio directo con detalles.
+    /// </summary>
+    Task<CambioPrecioEvento?> GetCambioPrecioEventoAsync(int eventoId);
+
+    /// <summary>
+    /// Revierte un evento de cambio directo de precios.
+    /// </summary>
+    Task<(bool Exitoso, string Mensaje, int? EventoReversionId)> RevertirCambioPrecioEventoAsync(int eventoId);
 
     // ============================================
     // CAMBIOS MASIVOS - SIMULACI�N

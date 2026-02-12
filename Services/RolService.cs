@@ -18,12 +18,12 @@ namespace TheBuryProject.Services;
 public class RolService : IRolService
 {
     private readonly RoleManager<IdentityRole> _roleManager;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly AppDbContext _context;
 
     public RolService(
         RoleManager<IdentityRole> roleManager,
-        UserManager<IdentityUser> userManager,
+        UserManager<ApplicationUser> userManager,
         AppDbContext context)
     {
         _roleManager = roleManager;
@@ -69,14 +69,22 @@ public class RolService : IRolService
         if (role == null)
             return IdentityResult.Failed(new IdentityError { Description = "Rol no encontrado" });
 
-        var usersInRole = await _userManager.GetUsersInRoleAsync(role.Name!);
-        if (usersInRole.Any())
+        // Obtener todos los usuarios con este rol
+        var allUsersInRole = await _userManager.GetUsersInRoleAsync(role.Name!);
+        
+        // Filtrar solo usuarios activos
+        var activeUsersInRole = allUsersInRole.Where(u => u.Activo).ToList();
+        
+        if (activeUsersInRole.Any())
         {
             return IdentityResult.Failed(new IdentityError
             {
-                Description = $"No se puede eliminar el rol porque tiene {usersInRole.Count} usuario(s) asignado(s)"
+                Description = $"No se puede eliminar el rol porque tiene {activeUsersInRole.Count} usuario(s) activo(s) asignado(s)"
             });
         }
+        
+        // Si solo hay usuarios inactivos, permitir eliminación
+        // Los usuarios inactivos mantendrán el rol asignado pero no se consideran un impedimento
 
         await ClearPermissionsForRoleAsync(roleId);
         return await _roleManager.DeleteAsync(role);
@@ -245,8 +253,18 @@ public class RolService : IRolService
 
     #region Gestión de Usuarios en Roles
 
-    public async Task<List<IdentityUser>> GetUsersInRoleAsync(string roleName)
-        => (await _userManager.GetUsersInRoleAsync(roleName)).ToList();
+    public async Task<List<ApplicationUser>> GetUsersInRoleAsync(string roleName, bool includeInactive = false)
+    {
+        var allUsers = await _userManager.GetUsersInRoleAsync(roleName);
+        
+        if (includeInactive)
+        {
+            return allUsers.ToList();
+        }
+        
+        // Por defecto, solo devolver usuarios activos
+        return allUsers.Where(u => u.Activo).ToList();
+    }
 
     public async Task<IdentityResult> AssignRoleToUserAsync(string userId, string roleName)
     {

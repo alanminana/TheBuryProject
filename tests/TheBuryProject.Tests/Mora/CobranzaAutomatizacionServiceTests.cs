@@ -113,8 +113,8 @@ public class CobranzaAutomatizacionServiceTests
         // Assert
         var tramoPreventivo = tramos.FirstOrDefault(t => t.DiasDesde < 0);
         Assert.NotNull(tramoPreventivo);
-        Assert.Equal("Preventivo", tramoPreventivo.Nombre);
-        Assert.Equal(-5, tramoPreventivo.DiasDesde);
+        Assert.Equal("Preventivo", tramoPreventivo!.Nombre);
+        Assert.Equal(-5, tramoPreventivo!.DiasDesde);
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class CobranzaAutomatizacionServiceTests
         // Assert
         var tramoCritico = tramos.FirstOrDefault(t => t.Nombre == "Mora Crítica");
         Assert.NotNull(tramoCritico);
-        Assert.Contains(tramoCritico.Acciones, a => a.Tipo == TipoAccionAutomatica.BloquearCliente);
+        Assert.Contains(tramoCritico!.Acciones, a => a.Tipo == TipoAccionAutomatica.BloquearCliente);
     }
 
     #endregion
@@ -160,7 +160,7 @@ public class CobranzaAutomatizacionServiceTests
 
         // Assert
         Assert.NotNull(tramo);
-        Assert.Equal(nombreEsperado, tramo.Nombre);
+        Assert.Equal(nombreEsperado, tramo!.Nombre);
     }
 
     #endregion
@@ -369,3 +369,4 @@ public class CobranzaAutomatizacionServiceTests
 
     #endregion
 }
+

@@ -48,15 +48,21 @@
                 <i class="bi bi-shuffle me-2"></i>Cambios de Precios
             </a>
 
-            <!-- Botón a movimiento de stock -->
-            <a asp-controller="MovimientoStock" asp-action="Index" class="btn btn-outline-warning fw-semibold shadow-sm text-dark">
-                <i class="bi bi-arrow-left-right me-2"></i>Movimientos de Stock
-            </a>
+            @* Movimientos de Stock - requiere movimientos.view *@
+            @if (User.TienePermiso("movimientos", "view"))
+            {
+                <a asp-controller="MovimientoStock" asp-action="Index" class="btn btn-outline-warning fw-semibold shadow-sm text-dark">
+                    <i class="bi bi-arrow-left-right me-2"></i>Movimientos de Stock
+                </a>
+            }
 
-            <!-- Botón nuevo producto -->
-            <a asp-action="Create" class="btn btn-info text-dark fw-semibold shadow-sm">
-                <i class="bi bi-plus-circle me-2"></i>Nuevo Producto
-            </a>
+            @* Nuevo Producto - requiere productos.create *@
+            @if (User.TienePermiso("productos", "create"))
+            {
+                <a asp-action="Create" class="btn btn-info text-dark fw-semibold shadow-sm">
+                    <i class="bi bi-plus-circle me-2"></i>Nuevo Producto
+                </a>
+            }
         </div>
     </div>
 

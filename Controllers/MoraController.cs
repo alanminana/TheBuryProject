@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -11,7 +11,8 @@ using TheBuryProject.ViewModels.Mora;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Contador)]
+    [Authorize]
+    [PermisoRequerido(Modulo = "cobranzas", Accion = "viewarrears")]
     public class MoraController : Controller
     {
         private readonly IMoraService _moraService;

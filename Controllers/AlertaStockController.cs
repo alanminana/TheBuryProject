@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TheBuryProject.Filters;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -8,7 +9,8 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+    [Authorize]
+    [PermisoRequerido(Modulo = "stock", Accion = "viewalerts")]
     public class AlertaStockController : Controller
     {
         private readonly IAlertaStockService _alertaStockService;

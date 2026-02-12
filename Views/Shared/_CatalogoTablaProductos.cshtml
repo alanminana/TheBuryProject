@@ -18,7 +18,7 @@
 @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente") || User.HasClaim("Permission", "precios:simulate"))
 {
     <div id="barraCambioPrecios" class="sticky-top bg-dark border border-secondary rounded shadow mb-3 p-3" style="top: 60px; z-index: 1020;">
-        <form id="formCambioPreciosRapido" asp-controller="CambiosPrecios" asp-action="SimularDesdeCatalogo" method="post">
+        <form id="formCambioPreciosRapido" asp-controller="Catalogo" asp-action="AplicarCambioPrecioDirecto" method="post">
             <div class="row g-2 align-items-center">
                 @* Indicador de selección *@
                 <div class="col-auto">
@@ -33,7 +33,7 @@
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-secondary border-secondary text-light">Aplicar a</span>
                         <select class="form-select form-select-sm bg-dark text-light border-secondary" 
-                                name="alcance" id="selectAlcanceCambio" style="min-width: 180px;">
+                                name="Alcance" id="selectAlcanceCambio" style="min-width: 180px;">
                             <option value="seleccionados">Seleccionados (<span id="contadorEnSelect">0</span>)</option>
                             <option value="filtrados">Resultados filtrados (@Model.TotalResultados)</option>
                         </select>
@@ -44,39 +44,30 @@
                 <div class="col-auto">
                     <div class="input-group input-group-sm" style="width: 140px;">
                         <input type="number" class="form-control bg-dark text-light border-secondary text-end" 
-                               name="ValorInput" id="inputPorcentajeCambio" 
-                               placeholder="±10" step="0.1" 
+                               name="ValorPorcentaje" id="inputPorcentajeCambio" 
+                               placeholder="+/-10" step="0.1" 
                                title="Valor positivo = aumento, negativo = descuento">
                         <span class="input-group-text bg-secondary border-secondary text-light">%</span>
                     </div>
                 </div>
 
-                @{
-                    // Determinar cuál lista preseleccionar (la actual o la primera)
-                    var listaPreseleccionadaId = Model.ListaPrecioId ?? Model.ListasPrecios.FirstOrDefault()?.Id ?? 0;
-                }
-                @* Listas de precios (hidden por defecto, se puede expandir) *@
+                @* Motivo (opcional) *@
                 <div class="col-auto">
-                    <select class="form-select form-select-sm bg-dark text-light border-secondary" 
-                            name="ListasPrecioIds" id="selectListasCambio" multiple style="min-width: 150px; height: 31px;" title="Listas de precios a afectar">
-                        @foreach (var lista in Model.ListasPrecios)
-                        {
-                            var isSelected = lista.Id == listaPreseleccionadaId;
-                            <option value="@lista.Id" selected="@isSelected">@lista.Nombre</option>
-                        }
-                    </select>
+                    <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary"
+                           name="Motivo" id="inputMotivoCambio" placeholder="Motivo (opcional)" style="min-width: 220px;">
                 </div>
-
-                @* Botones de acción *@
+                @* Botones de accion *@
                 <div class="col-auto">
                     <div class="btn-group btn-group-sm">
                         <button type="button" class="btn btn-success" id="btnAplicarRapido" disabled
                                 data-bs-toggle="modal" data-bs-target="#modalConfirmarAplicar">
                             <i class="bi bi-check-circle me-1"></i>Aplicar
                         </button>
-                        <button type="button" class="btn btn-outline-info" id="btnHistorialRapido">
+                        
+                        <a class="btn btn-outline-info" asp-controller="Catalogo" asp-action="HistorialCambiosPrecio">
                             <i class="bi bi-clock-history me-1"></i>Historial
-                        </button>
+                        </a>
+
                     </div>
                 </div>
 
@@ -93,7 +84,6 @@
 
             @* Campos ocultos *@
             <input type="hidden" name="ProductoIdsText" id="hiddenProductoIds">
-            <input type="hidden" name="TipoCambio" value="Porcentual">
             <input type="hidden" name="Alcance" id="hiddenAlcance" value="seleccionados">
             @{
                 // Serializar filtros de forma segura para atributo HTML
@@ -112,74 +102,6 @@
         </form>
     </div>
 
-    <!-- Modal Confirmar Aplicar Cambio de Precios -->
-    <div class="modal fade" id="modalConfirmarAplicar" tabindex="-1" aria-labelledby="modalConfirmarAplicarLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content bg-dark text-white border-warning">
-                <div class="modal-header border-warning">
-                    <h5 class="modal-title" id="modalConfirmarAplicarLabel">
-                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirmar Cambio de Precios
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-warning bg-warning bg-opacity-10 border-warning mb-3">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong>Esta acción aplicará los cambios directamente.</strong>
-                    </div>
-                    
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <div class="card bg-secondary bg-opacity-25 border-0">
-                                <div class="card-body py-2 px-3">
-                                    <small class="text-muted">Alcance</small>
-                                    <div class="fw-semibold" id="confirmarAlcance">-</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="card bg-secondary bg-opacity-25 border-0">
-                                <div class="card-body py-2 px-3">
-                                    <small class="text-muted">Productos</small>
-                                    <div class="fw-semibold" id="confirmarCantidad">-</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="card bg-secondary bg-opacity-25 border-0">
-                                <div class="card-body py-2 px-3">
-                                    <small class="text-muted">Cambio</small>
-                                    <div class="fw-semibold" id="confirmarPorcentaje">-</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="card bg-secondary bg-opacity-25 border-0">
-                                <div class="card-body py-2 px-3">
-                                    <small class="text-muted">Lista de precios</small>
-                                    <div class="fw-semibold" id="confirmarLista">-</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-3" id="areaErrorConfirmar" style="display: none;">
-                        <div class="alert alert-danger mb-0">
-                            <i class="bi bi-x-circle me-2"></i><span id="mensajeErrorConfirmar"></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg me-1"></i>Cancelar
-                    </button>
-                    <button type="button" class="btn btn-success" id="btnConfirmarAplicar">
-                        <i class="bi bi-check-circle me-1"></i>Confirmar y Aplicar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 }
 
 <div class="card bg-dark border-0 shadow-sm">
@@ -368,131 +290,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-dark border-0 shadow-sm h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-tags text-info fs-4 d-block mb-2"></i>
-                    <h6 class="text-secondary mb-1">Lista de Precios</h6>
-                    <h5 class="fw-bold text-info mb-0 text-truncate" title="@Model.ListaPrecioActualNombre">
-                        @Model.ListaPrecioActualNombre
-                    </h5>
-                </div>
-            </div>
-        </div>
+        
     </div>
 }
 
-<!-- Modal Cambiar Precios Seleccionados -->
-<div class="modal fade" id="modalCambiarPrecios" tabindex="-1" aria-labelledby="modalCambiarPreciosLabel" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content bg-dark text-white border-secondary">
-            <form id="formCambiarPreciosSeleccion" asp-controller="CambiosPrecios" asp-action="SimularDesdeCatalogo" method="post">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title" id="modalCambiarPreciosLabel">
-                        <i class="bi bi-cash-coin text-warning me-2"></i>Cambiar Precios
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Resumen de selección -->
-                    <div class="alert alert-info bg-info bg-opacity-10 border-info mb-4">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-info-circle fs-4 me-3"></i>
-                            <div>
-                                <strong>Productos seleccionados:</strong> <span id="modalContadorProductos">0</span>
-                                <div id="modalListaProductos" class="small text-muted mt-1" style="max-height: 60px; overflow-y: auto;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row g-3">
-                        <!-- Tipo de Acción -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-gear text-secondary me-1"></i>Tipo de Cambio
-                            </label>
-                            <select class="form-select bg-dark text-white border-secondary" name="TipoCambio" id="selectTipoCambio" required>
-                                <option value="Porcentual">Porcentual (%)</option>
-                                <option value="Fijo">Monto Fijo ($)</option>
-                            </select>
-                        </div>
-
-                        <!-- Dirección -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-arrow-left-right text-secondary me-1"></i>Dirección
-                            </label>
-                            <div class="d-flex gap-3 mt-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="direccion" id="dirAumentar" value="aumentar" checked>
-                                    <label class="form-check-label text-success" for="dirAumentar">
-                                        <i class="bi bi-arrow-up-circle me-1"></i>Aumentar
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="direccion" id="dirDisminuir" value="disminuir">
-                                    <label class="form-check-label text-danger" for="dirDisminuir">
-                                        <i class="bi bi-arrow-down-circle me-1"></i>Disminuir
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Valor -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-123 text-secondary me-1"></i>Valor
-                            </label>
-                            <div class="input-group">
-                                <input type="number" class="form-control bg-dark text-white border-secondary" 
-                                       name="ValorInput" id="inputValorCambio" step="0.01" min="0.01" required
-                                       placeholder="Ej: 10">
-                                <span class="input-group-text bg-secondary border-secondary" id="sufijoCambio">%</span>
-                            </div>
-                            <small class="text-muted">El valor se aplicará según la dirección seleccionada</small>
-                        </div>
-
-                        <!-- Listas de Precios -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-tags text-secondary me-1"></i>Listas de Precios
-                            </label>
-                            <select class="form-select bg-dark text-white border-secondary" name="ListasPrecioIds" id="selectListasPrecios" multiple size="3" required>
-                                @if (Model.ListasPrecios != null)
-                                {
-                                    foreach (var lista in Model.ListasPrecios)
-                                    {
-                                        <option value="@lista.Id">@lista.Nombre</option>
-                                    }
-                                }
-                            </select>
-                            <small class="text-muted">Mantén Ctrl para seleccionar varias</small>
-                        </div>
-
-                        <!-- Nota -->
-                        <div class="col-12">
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-chat-left-text text-secondary me-1"></i>Nota / Justificación
-                            </label>
-                            <textarea class="form-control bg-dark text-white border-secondary" name="Nota" id="inputNotaCambio" 
-                                      rows="2" placeholder="Ej: Ajuste por inflación enero 2025"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Campos ocultos -->
-                    <input type="hidden" name="ProductoIdsText" id="modalHiddenProductoIds">
-                    <input type="hidden" name="Alcance" value="seleccionados">
-                    <input type="hidden" name="OrigenCatalogo" value="true">
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg me-1"></i>Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-warning">
-                        <i class="bi bi-eye me-1"></i>Vista Previa de Cambios
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>

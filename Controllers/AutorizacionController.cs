@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using TheBuryProject.Filters;
@@ -13,10 +13,11 @@ namespace TheBuryProject.Controllers;
 /// Controlador para gestión de autorizaciones y umbrales
 /// </summary>
 [Authorize]
+[PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
 public class AutorizacionController : Controller
 {
     private readonly IAutorizacionService _autorizacionService;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
     private string? GetSafeReturnUrl(string? returnUrl)
         => !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : null;
@@ -35,7 +36,7 @@ public class AutorizacionController : Controller
 
     public AutorizacionController(
         IAutorizacionService autorizacionService,
-        UserManager<IdentityUser> userManager)
+        UserManager<ApplicationUser> userManager)
     {
         _autorizacionService = autorizacionService;
         _userManager = userManager;
@@ -45,9 +46,7 @@ public class AutorizacionController : Controller
 
     /// <summary>
     /// Lista de todos los umbrales configurados
-    /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Administrador)]
-    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
+    /// </summary>    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     public async Task<IActionResult> Index(string? returnUrl)
     {
         ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
@@ -67,9 +66,7 @@ public class AutorizacionController : Controller
 
     /// <summary>
     /// Formulario para crear nuevo umbral
-    /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
-    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
+    /// </summary>    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpGet]
     public IActionResult CrearUmbral(string? returnUrl)
     {
@@ -80,9 +77,7 @@ public class AutorizacionController : Controller
 
     /// <summary>
     /// Procesar creación de umbral
-    /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
-    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
+    /// </summary>    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CrearUmbral(UmbralAutorizacionViewModel model, string? returnUrl)
@@ -120,9 +115,7 @@ public class AutorizacionController : Controller
 
     /// <summary>
     /// Formulario para editar umbral
-    /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
-    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
+    /// </summary>    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpGet]
     public async Task<IActionResult> EditarUmbral(int id, string? returnUrl)
     {
@@ -151,9 +144,7 @@ public class AutorizacionController : Controller
 
     /// <summary>
     /// Procesar edición de umbral
-    /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
-    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
+    /// </summary>    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditarUmbral(UmbralAutorizacionViewModel model, string? returnUrl)
@@ -190,9 +181,7 @@ public class AutorizacionController : Controller
 
     /// <summary>
     /// Eliminar umbral
-    /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
-    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
+    /// </summary>    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.GestionarUmbrales)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EliminarUmbral(int id, string? returnUrl)
@@ -216,9 +205,7 @@ public class AutorizacionController : Controller
 
     /// <summary>
     /// Lista de solicitudes de autorización
-    /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Administrador)]
-    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
+    /// </summary>    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Ver)]
     public async Task<IActionResult> Solicitudes(string? returnUrl)
     {
         ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
@@ -331,9 +318,7 @@ public class AutorizacionController : Controller
 
     /// <summary>
     /// Aprobar solicitud
-    /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Administrador)]
-    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Aprobar)]
+    /// </summary>    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Aprobar)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AprobarSolicitud(int id, string? comentario, string? returnUrl)
@@ -354,9 +339,7 @@ public class AutorizacionController : Controller
 
     /// <summary>
     /// Rechazar solicitud
-    /// </summary>
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Administrador)]
-    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Rechazar)]
+    /// </summary>    [PermisoRequerido(Modulo = AutorizacionesConstants.Modulo, Accion = AutorizacionesConstants.Acciones.Rechazar)]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RechazarSolicitud(int id, string comentario, string? returnUrl)

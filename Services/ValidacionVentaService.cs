@@ -580,7 +580,7 @@ namespace TheBuryProject.Services
             }
 
             // Si no es crédito personal, no hay validaciones adicionales
-            if (venta.TipoPago != TipoPago.CreditoPersonall)
+            if (venta.TipoPago != TipoPago.CreditoPersonal)
             {
                 return new ValidacionVentaResult(); // Puede proceder
             }

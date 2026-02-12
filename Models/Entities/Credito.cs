@@ -24,6 +24,48 @@ namespace TheBuryProject.Models.Entities
         public decimal TotalAPagar { get; set; }
         public decimal SaldoPendiente { get; set; }
 
+        // TAREA 9.3: Auditabilidad del método de cálculo aplicado
+        /// <summary>
+        /// Método de cálculo usado al configurar este crédito
+        /// </summary>
+        public MetodoCalculoCredito? MetodoCalculoAplicado { get; set; }
+
+        /// <summary>
+        /// Fuente de configuración resultante (compatibilidad TAREA 6)
+        /// </summary>
+        public FuenteConfiguracionCredito? FuenteConfiguracionAplicada { get; set; }
+
+        /// <summary>
+        /// ID del perfil de crédito aplicado (si se usó método UsarPerfil)
+        /// </summary>
+        public int? PerfilCreditoAplicadoId { get; set; }
+
+        /// <summary>
+        /// Nombre del perfil aplicado (snapshot para auditoría)
+        /// </summary>
+        [StringLength(100)]
+        public string? PerfilCreditoAplicadoNombre { get; set; }
+
+        /// <summary>
+        /// Gastos administrativos aplicados al momento de la configuración
+        /// </summary>
+        public decimal GastosAdministrativos { get; set; }
+
+        /// <summary>
+        /// Tasa de interés mensual aplicada al momento de la configuración (auditoría)
+        /// </summary>
+        public decimal? TasaInteresAplicada { get; set; }
+
+        /// <summary>
+        /// Mínimo de cuotas permitido al momento de configuración
+        /// </summary>
+        public int? CuotasMinimasPermitidas { get; set; }
+
+        /// <summary>
+        /// Máximo de cuotas permitido al momento de configuración
+        /// </summary>
+        public int? CuotasMaximasPermitidas { get; set; }
+
         public EstadoCredito Estado { get; set; } = EstadoCredito.Solicitado;
 
         public DateTime FechaSolicitud { get; set; } = DateTime.UtcNow;
@@ -47,6 +89,7 @@ namespace TheBuryProject.Models.Entities
         // Navigation Properties
         public virtual Cliente Cliente { get; set; } = null!;
         public virtual Garante? Garante { get; set; }
+        public virtual PerfilCredito? PerfilCreditoAplicado { get; set; } // TAREA 9.3
         public virtual ICollection<Cuota> Cuotas { get; set; } = new List<Cuota>();
     }
 }

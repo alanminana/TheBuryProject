@@ -250,6 +250,11 @@ namespace TheBuryProject.Helpers
                 .ForMember(d => d.ConfiguracionPago, o => o.Ignore());
 
             // =======================
+            // PerfilCredito (TAREA 7.1.2)
+            // =======================
+            CreateMap<PerfilCredito, PerfilCreditoViewModel>().ReverseMap();
+
+            // =======================
             // DatosTarjeta
             // =======================
             CreateMap<DatosTarjeta, DatosTarjetaViewModel>();
@@ -310,6 +315,10 @@ namespace TheBuryProject.Helpers
                 .ForMember(d => d.DiasGracia, o => o.MapFrom(s => s.DiasGracia))
                 .ReverseMap()
                 .ForMember(d => d.DiasGracia, o => o.MapFrom(s => s.DiasGraciaMora != 0 ? s.DiasGraciaMora : s.DiasGracia));
+            
+            // Mapeo para AlertaMora
+            CreateMap<AlertaMora, AlertaMoraViewModel>().ReverseMap();
+            
             CreateMap<AlertaCobranza, AlertaCobranzaViewModel>()
                 .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
                     src.Cliente != null ? src.Cliente.ToDisplayName() : string.Empty))

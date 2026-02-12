@@ -11,3 +11,5 @@ Este proyecto está desarrollado en ASP.NET y ya contiene una cantidad considera
 Ejecutá estas tareas cada vez que analices, generes o edites código en este repositorio.
 
 siempre tene en cuenta el archivo automapper que existe 
+
+si te paso tareas, al final de todo informame que tareas fueron realizadas, y si es necesario, que pruebas se generaron o modificaron.

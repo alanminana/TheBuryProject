@@ -1,14 +1,16 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using TheBuryProject.Filters;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+    [Authorize]
+    [PermisoRequerido(Modulo = "reportes", Accion = "view")]
     public class ReporteController : Controller
     {
         private readonly IReporteService _reporteService;
@@ -16,7 +18,7 @@ namespace TheBuryProject.Controllers
         private readonly IProductoService _productoService;
         private readonly ICategoriaService _categoriaService;
         private readonly IMarcaService _marcaService;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<ReporteController> _logger;
 
         public ReporteController(
@@ -25,7 +27,7 @@ namespace TheBuryProject.Controllers
             IProductoService productoService,
             ICategoriaService categoriaService,
             IMarcaService marcaService,
-            UserManager<IdentityUser> userManager,
+            UserManager<ApplicationUser> userManager,
             ILogger<ReporteController> logger)
         {
             _reporteService = reporteService;

@@ -163,8 +163,8 @@ namespace TheBuryProject.Tests.Catalogo
             Assert.Equal(2, resultado.ListaPrecioId);
             Assert.Equal("Tarjeta", resultado.ListaPrecioNombre);
             var fila = resultado.Filas.First();
-            Assert.Equal(170, fila.PrecioActual); // Debe usar precio de lista tarjeta
-            Assert.True(fila.TienePrecioLista);
+            Assert.Equal(170, fila!.PrecioActual); // Debe usar precio de lista tarjeta
+            Assert.True(fila!.TienePrecioLista);
         }
 
         [Fact]
@@ -216,9 +216,9 @@ namespace TheBuryProject.Tests.Catalogo
 
             // Assert
             var fila = resultado.Filas.First();
-            Assert.Equal(150, fila.PrecioActual); // Debe usar PrecioVenta del producto
-            Assert.False(fila.TienePrecioLista);
-            Assert.Equal(150, fila.PrecioBase);
+            Assert.Equal(150, fila!.PrecioActual); // Debe usar PrecioVenta del producto
+            Assert.False(fila!.TienePrecioLista);
+            Assert.Equal(150, fila!.PrecioBase);
         }
 
         #endregion
@@ -259,10 +259,10 @@ namespace TheBuryProject.Tests.Catalogo
 
             // Assert
             Assert.NotNull(fila);
-            Assert.Equal(1, fila.ProductoId);
-            Assert.Equal("PROD001", fila.Codigo);
-            Assert.Equal("Televisor", fila.Nombre);
-            Assert.Equal(1500, fila.PrecioActual);
+            Assert.Equal(1, fila!.ProductoId);
+            Assert.Equal("PROD001", fila!.Codigo);
+            Assert.Equal("Televisor", fila!.Nombre);
+            Assert.Equal(1500, fila!.PrecioActual);
         }
 
         [Fact]
@@ -315,8 +315,8 @@ namespace TheBuryProject.Tests.Catalogo
 
             // Assert
             Assert.NotNull(fila);
-            Assert.Equal(180, fila.PrecioActual);
-            Assert.True(fila.TienePrecioLista);
+            Assert.Equal(180, fila!.PrecioActual);
+            Assert.True(fila!.TienePrecioLista);
         }
 
         #endregion
@@ -351,7 +351,7 @@ namespace TheBuryProject.Tests.Catalogo
 
             // Assert
             Assert.NotNull(fila);
-            Assert.Equal(margenEsperado, fila.MargenPorcentaje);
+            Assert.Equal(margenEsperado, fila!.MargenPorcentaje);
         }
 
         #endregion
@@ -387,7 +387,7 @@ namespace TheBuryProject.Tests.Catalogo
 
             // Assert
             Assert.NotNull(fila);
-            Assert.Equal(estadoEsperado, fila.EstadoStock);
+            Assert.Equal(estadoEsperado, fila!.EstadoStock);
         }
 
         #endregion
@@ -778,4 +778,5 @@ namespace TheBuryProject.Tests.Catalogo
         #endregion
     }
 }
+
 

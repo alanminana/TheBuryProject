@@ -1,0 +1,238 @@
+@model TheBuryProject.ViewModels.CatalogoUnificadoViewModel
+
+@{
+    var puedeEditarPrecios = User.IsInRole("SuperAdmin") || User.IsInRole("Gerente");
+}
+
+<!-- Información del catálogo -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-dark border-info shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-box-seam fs-1 text-info"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-secondary mb-0 small">Total Productos</p>
+                        <h4 class="text-light mb-0">@Model.TotalResultados</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-dark border-success shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-check-circle fs-1 text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-secondary mb-0 small">Productos Activos</p>
+                        <h4 class="text-light mb-0">@Model.ProductosActivos</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-dark border-warning shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-secondary mb-0 small">Stock Bajo</p>
+                        <h4 class="text-light mb-0">@Model.ProductosStockBajo</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-dark border-primary shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-cash-stack fs-1 text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-secondary mb-0 small">Lista de Precios</p>
+                        <h6 class="text-light mb-0">@Model.ListaPrecioActualNombre</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de productos -->
+<div class="card bg-dark border-0 shadow-sm">
+    <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">
+            <i class="bi bi-table"></i> Productos del Catálogo
+            @if (Model.TotalResultados > 0)
+            {
+                <span class="badge bg-info text-dark ms-2">@Model.TotalResultados</span>
+            }
+        </span>
+        @if (puedeEditarPrecios)
+        {
+            <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="offcanvas" data-bs-target="#accMasivasOffcanvas">
+                <i class="bi bi-sliders me-1"></i>Acciones Masivas
+            </button>
+        }
+    </div>
+    <div class="card-body p-0">
+        @if (Model.TotalResultados == 0)
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox fs-1 text-secondary d-block mb-3"></i>
+                <p class="text-secondary mb-0">No se encontraron productos con los filtros aplicados</p>
+                <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-primary mt-3">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Limpiar filtros
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead class="table-secondary">
+                        <tr>
+                            @if (puedeEditarPrecios)
+                            {
+                                <th style="width: 50px;" class="text-center">
+                                    <input type="checkbox" class="form-check-input" id="selectAll">
+                                </th>
+                            }
+                            <th style="width: 100px;">Código</th>
+                            <th>Nombre</th>
+                            <th style="width: 150px;">Categoría</th>
+                            <th style="width: 150px;">Marca</th>
+                            <th class="text-end" style="width: 120px;">Precio Actual</th>
+                            <th class="text-end" style="width: 100px;">Stock</th>
+                            <th class="text-center" style="width: 100px;">Estado</th>
+                            <th class="text-center" style="width: 120px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var producto in Model.Productos)
+                        {
+                            <tr data-producto-id="@producto.ProductoId">
+                                @if (puedeEditarPrecios)
+                                {
+                                    <td class="text-center">
+                                        <input type="checkbox" class="form-check-input producto-check" 
+                                               value="@producto.ProductoId">
+                                    </td>
+                                }
+                                <td>
+                                    <code class="text-info">@producto.Codigo</code>
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong>@producto.Nombre</strong>
+                                        @if (!string.IsNullOrEmpty(producto.Descripcion))
+                                        {
+                                            <br />
+                                            <small class="text-secondary">@producto.Descripcion</small>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(producto.CategoriaNombre))
+                                    {
+                                        <span class="badge bg-primary">
+                                            <i class="bi bi-tag me-1"></i>@producto.CategoriaNombre
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(producto.MarcaNombre))
+                                    {
+                                        <span class="badge bg-info text-dark">
+                                            <i class="bi bi-award me-1"></i>@producto.MarcaNombre
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <strong class="text-success">@producto.PrecioActual.ToString("C2")</strong>
+                                    @if (producto.TienePrecioLista)
+                                    {
+                                        <br />
+                                        <small class="text-secondary">
+                                            Base: @producto.PrecioBase.ToString("C2")
+                                        </small>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    @if (producto.StockCritico)
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>@producto.StockActual
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-light">@producto.StockActual</span>
+                                    }
+                                    <br />
+                                    <small class="text-secondary">Mín: @producto.StockMinimo</small>
+                                </td>
+                                <td class="text-center">
+                                    @if (producto.Activo)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>Activo
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Inactivo
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a asp-controller="Producto" asp-action="Details" asp-route-id="@producto.ProductoId" 
+                                           class="btn btn-outline-info" title="Ver Detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-controller="Producto" asp-action="Edit" asp-route-id="@producto.ProductoId" 
+                                           class="btn btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        @if (puedeEditarPrecios)
+                                        {
+                                            <button type="button" class="btn btn-outline-primary btn-ver-historial" 
+                                                    data-producto-id="@producto.ProductoId" 
+                                                    data-producto-nombre="@producto.Nombre"
+                                                    title="Ver Historial de Precios">
+                                                <i class="bi bi-clock-history"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

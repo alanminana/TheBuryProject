@@ -55,6 +55,11 @@ namespace TheBuryProject.ViewModels
         public int? CreditoId { get; set; }
         public string? CreditoNumero { get; set; }
 
+        public int? AperturaCajaId { get; set; }
+
+        [Display(Name = "Vendedor")]
+        public string? VendedorUserId { get; set; }
+
         // Autorización
         [Display(Name = "Estado Autorización")]
         public EstadoAutorizacionVenta EstadoAutorizacion { get; set; } = EstadoAutorizacionVenta.NoRequiere;
@@ -280,7 +285,7 @@ namespace TheBuryProject.ViewModels
         /// - Está en PendienteFinanciacion O tiene crédito PendienteConfiguracion
         /// </summary>
         public bool PuedeConfigurarCredito =>
-            TipoPago == TipoPago.CreditoPersonall &&
+            TipoPago == TipoPago.CreditoPersonal &&
             CreditoId.HasValue &&
             (Estado == EstadoVenta.PendienteFinanciacion || CreditoPendienteConfiguracion);
 

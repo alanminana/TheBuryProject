@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,11 +13,11 @@ namespace TheBuryProject.Controllers;
 /// <summary>
 /// Controller para gestión de usuarios del sistema
 /// </summary>
-[Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador)]
+[Authorize]
 [PermisoRequerido(Modulo = "usuarios", Accion = "view")]
 public class UsuariosController : Controller
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly AppDbContext _context;
     private readonly IRolService _rolService;
     private readonly ILogger<UsuariosController> _logger;
@@ -38,7 +38,7 @@ public class UsuariosController : Controller
     }
 
     public UsuariosController(
-        UserManager<IdentityUser> userManager,
+        UserManager<ApplicationUser> userManager,
         AppDbContext context,
         IRolService rolService,
         ILogger<UsuariosController> logger)
@@ -53,11 +53,19 @@ public class UsuariosController : Controller
     /// Lista todos los usuarios del sistema
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Index(string? returnUrl)
+    public async Task<IActionResult> Index(string? returnUrl, bool mostrarInactivos = false)
     {
         try
         {
-            var users = await _context.Users
+            var query = _context.Users.AsQueryable();
+            
+            // Filtrar usuarios activos por defecto (soft delete)
+            if (!mostrarInactivos)
+            {
+                query = query.Where(u => u.Activo);
+            }
+            
+            var users = await query
                 .OrderBy(u => u.UserName)
                 .ToListAsync();
 
@@ -77,9 +85,11 @@ public class UsuariosController : Controller
                 EmailConfirmed = user.EmailConfirmed,
                 LockoutEnabled = user.LockoutEnabled,
                 LockoutEnd = user.LockoutEnd,
-                Roles = rolesLookup.GetValueOrDefault(user.Id, new List<string>())
+                Roles = rolesLookup.GetValueOrDefault(user.Id, new List<string>()),
+                Activo = user.Activo
             }).ToList();
-
+            
+            ViewData["MostrarInactivos"] = mostrarInactivos;
             return View(viewModels);
         }
         catch (Exception ex)
@@ -123,7 +133,8 @@ public class UsuariosController : Controller
                 LockoutEnabled = user.LockoutEnabled,
                 LockoutEnd = user.LockoutEnd,
                 Roles = roles.ToList(),
-                Permisos = permisos
+                Permisos = permisos,
+                Activo = user.Activo
             };
 
             return View(viewModel);
@@ -166,11 +177,13 @@ public class UsuariosController : Controller
 
         try
         {
-            var user = new IdentityUser
+            var user = new ApplicationUser
             {
                 UserName = model.UserName,
                 Email = model.Email,
-                EmailConfirmed = model.EmailConfirmed
+                EmailConfirmed = model.EmailConfirmed,
+                Activo = true, // Usuarios nuevos siempre activos
+                FechaCreacion = DateTime.UtcNow
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -301,7 +314,7 @@ public class UsuariosController : Controller
     }
 
     /// <summary>
-    /// Muestra formulario para eliminar un usuario
+    /// Muestra formulario para desactivar un usuario (soft delete)
     /// </summary>
     [HttpGet]
     [PermisoRequerido(Modulo = "usuarios", Accion = "delete")]
@@ -336,19 +349,19 @@ public class UsuariosController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al cargar formulario de eliminación para usuario {UserId}", id);
-            TempData["Error"] = "Error al cargar el formulario de eliminación";
+            _logger.LogError(ex, "Error al cargar formulario de desactivación para usuario {UserId}", id);
+            TempData["Error"] = "Error al cargar el formulario de desactivación";
             return RedirectToAction(nameof(Index));
         }
     }
 
     /// <summary>
-    /// Elimina un usuario
+    /// Desactiva un usuario (soft delete)
     /// </summary>
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     [PermisoRequerido(Modulo = "usuarios", Accion = "delete")]
-    public async Task<IActionResult> DeleteConfirmed(string id, string? returnUrl)
+    public async Task<IActionResult> DeleteConfirmed(string id, string? returnUrl, string? motivo)
     {
         try
         {
@@ -359,13 +372,19 @@ public class UsuariosController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
-            var result = await _userManager.DeleteAsync(user);
+            // Soft delete: marcar como inactivo en lugar de eliminar
+            user.Activo = false;
+            user.FechaDesactivacion = DateTime.UtcNow;
+            user.DesactivadoPor = User.Identity?.Name;
+            user.MotivoDesactivacion = motivo;
+
+            var result = await _userManager.UpdateAsync(user);
 
             if (result.Succeeded)
             {
-                _logger.LogInformation("Usuario eliminado: {UserId} por usuario {User}",
-                    id, User.Identity?.Name);
-                TempData["Success"] = "Usuario eliminado exitosamente";
+                _logger.LogInformation("Usuario desactivado: {UserId} por usuario {User}. Motivo: {Motivo}",
+                    id, User.Identity?.Name, motivo ?? "No especificado");
+                TempData["Success"] = "Usuario desactivado exitosamente. El usuario no podrá iniciar sesión, pero se mantiene el historial de ventas y auditorías.";
             }
             else
             {
@@ -374,8 +393,59 @@ public class UsuariosController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al eliminar usuario {UserId}", id);
-            TempData["Error"] = "Error al eliminar el usuario";
+            _logger.LogError(ex, "Error al desactivar usuario {UserId}", id);
+            TempData["Error"] = "Error al desactivar el usuario";
+        }
+
+        return RedirectToReturnUrlOrIndex(returnUrl);
+    }
+
+    /// <summary>
+    /// Reactiva un usuario previamente desactivado
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [PermisoRequerido(Modulo = "usuarios", Accion = "delete")] // Mismo permiso que desactivar
+    public async Task<IActionResult> Reactivar(string id, string? returnUrl)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                TempData["Error"] = "Usuario no encontrado";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (user.Activo)
+            {
+                TempData["Warning"] = "El usuario ya está activo";
+                return RedirectToReturnUrlOrIndex(returnUrl);
+            }
+
+            // Reactivar usuario
+            user.Activo = true;
+            user.FechaDesactivacion = null;
+            user.DesactivadoPor = null;
+            user.MotivoDesactivacion = null;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("Usuario reactivado: {UserId} por usuario {User}",
+                    id, User.Identity?.Name);
+                TempData["Success"] = "Usuario reactivado exitosamente";
+            }
+            else
+            {
+                TempData["Error"] = string.Join(", ", result.Errors.Select(e => e.Description));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al reactivar usuario {UserId}", id);
+            TempData["Error"] = "Error al reactivar el usuario";
         }
 
         return RedirectToReturnUrlOrIndex(returnUrl);
@@ -560,6 +630,52 @@ public class UsuariosController : Controller
         }
 
         return View(model);
+    }
+
+    /// <summary>
+    /// Confirma el email de un usuario manualmente (sin token)
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [PermisoRequerido(Modulo = "usuarios", Accion = "update")]
+    public async Task<IActionResult> ConfirmarEmail(string id, string? returnUrl)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (user.EmailConfirmed)
+            {
+                TempData["Info"] = "El email ya estaba confirmado";
+                return RedirectToReturnUrlOrDetails(id, returnUrl);
+            }
+
+            // Generar token y confirmar email
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("Email confirmado para usuario {UserId} por {Admin}",
+                    id, User.Identity?.Name);
+                TempData["Success"] = $"Email confirmado exitosamente para {user.Email}. Ahora puede iniciar sesión.";
+            }
+            else
+            {
+                TempData["Error"] = "Error al confirmar el email: " + string.Join(", ", result.Errors.Select(e => e.Description));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al confirmar email de usuario {UserId}", id);
+            TempData["Error"] = "Error al confirmar el email";
+        }
+
+        return RedirectToReturnUrlOrDetails(id, returnUrl);
     }
 
     /// <summary>

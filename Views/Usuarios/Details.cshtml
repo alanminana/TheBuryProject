@@ -54,8 +54,29 @@
             </div>
         </div>
     </div>
+    
+    @if (!Model.EmailConfirmed && Model.Activo)
+    {
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Email no confirmado:</strong> Este usuario podría tener problemas para iniciar sesión.
+                        <small class="d-block mt-1">Haga clic en "Confirmar Email" para activar el acceso inmediatamente.</small>
+                    </div>
+                    <form asp-action="ConfirmarEmail" asp-route-id="@Model.Id" asp-route-returnUrl="@pageReturnUrl" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-warning" onclick="return confirm('¿Confirmar el email de este usuario?')">
+                            <i class="bi bi-check-circle me-1"></i>Confirmar Email
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
 
-    <div class="row">
+    <div class="row">"
         <div class="col-md-4">
             <div class="card mb-3">
                 <div class="card-header bg-primary text-white">

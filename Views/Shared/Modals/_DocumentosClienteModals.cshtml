@@ -1,0 +1,181 @@
+@model TheBuryProject.ViewModels.ClienteDetalleViewModel
+@using TheBuryProject.Models.Enums
+@using TheBuryProject.Helpers
+
+@{
+    var returnToClienteDocumentosUrl = Url.Action(
+        "Details",
+        "Cliente",
+        new { id = Model.Cliente.Id, tab = "documentos", returnUrl = ViewData["ReturnUrl"] })!;
+}
+
+<!-- Modal Verificar Documento Individual -->
+<div class="modal fade" id="verificarDocumentoModal" tabindex="-1" aria-labelledby="verificarDocumentoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <form asp-controller="DocumentoCliente" asp-action="Verificar" method="post" id="formVerificarDocumento">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="verificarDocId" />
+                <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light" id="verificarDocumentoModalLabel">
+                        <i class="bi bi-check-circle text-success me-2"></i>Verificar Documento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-light">¿Confirma que el documento es correcto?</p>
+                    <div class="alert alert-secondary">
+                        <strong id="verificarDocTipo"></strong><br />
+                        <small id="verificarDocNombre" class="text-muted"></small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-light">Observaciones (opcional)</label>
+                        <textarea name="observaciones" class="form-control bg-body-secondary text-light border-0" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-2"></i>Verificar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Rechazar Documento Individual -->
+<div class="modal fade" id="rechazarDocumentoModal" tabindex="-1" aria-labelledby="rechazarDocumentoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <form asp-controller="DocumentoCliente" asp-action="Rechazar" method="post" id="formRechazarDocumento">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="rechazarDocId" />
+                <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light" id="rechazarDocumentoModalLabel">
+                        <i class="bi bi-x-circle text-danger me-2"></i>Rechazar Documento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-secondary">
+                        <strong id="rechazarDocTipo"></strong><br />
+                        <small id="rechazarDocNombre" class="text-muted"></small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-light">Motivo del rechazo *</label>
+                        <textarea name="motivo" class="form-control bg-body-secondary text-light border-0" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle me-2"></i>Rechazar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Verificar Todos -->
+<div class="modal fade" id="verificarTodosModal" tabindex="-1" aria-labelledby="verificarTodosModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <form asp-controller="DocumentoCliente" asp-action="VerificarTodos" method="post" id="formVerificarTodos">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="clienteId" value="@Model.Cliente.Id" />
+                <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light" id="verificarTodosModalLabel">
+                        <i class="bi bi-check-all text-success me-2"></i>Verificar Todos los Documentos
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-light">Se verificarán los siguientes documentos pendientes:</p>
+                    <ul class="list-group list-group-flush bg-transparent">
+                        @foreach (var doc in Model.Documentos.Where(d => d.Estado == EstadoDocumento.Pendiente))
+                        {
+                            <li class="list-group-item bg-dark text-light border-secondary">
+                                <i class="bi bi-file-earmark text-info me-2"></i>
+                                <strong>@doc.TipoDocumentoNombre</strong> - @doc.NombreArchivo
+                            </li>
+                        }
+                    </ul>
+                    <div class="mb-3 mt-3">
+                        <label class="form-label text-light">Observaciones para todos (opcional)</label>
+                        <textarea name="observaciones" class="form-control bg-body-secondary text-light border-0" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-all me-2"></i>Verificar Todos
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Subir Documento -->
+<div class="modal fade" id="subirDocumentoModal" tabindex="-1" aria-labelledby="subirDocumentoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <form asp-controller="DocumentoCliente" asp-action="Upload" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ClienteId" value="@Model.Cliente.Id" />
+                <input type="hidden" name="ReturnToDetails" value="true" />
+                <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
+                
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="subirDocumentoModalLabel">
+                        <i class="bi bi-upload me-2"></i>Subir Documento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Documento *</label>
+                        <select name="TipoDocumento" class="form-select bg-body-secondary text-light border-0" required>
+                            <option value="">Seleccione...</option>
+                            @foreach (TipoDocumentoCliente tipo in Enum.GetValues(typeof(TipoDocumentoCliente)))
+                            {
+                                <option value="@((int)tipo)">@tipo.GetDisplayName()</option>
+                            }
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Archivo *</label>
+                        <input type="file" name="Archivo" class="form-control bg-body-secondary text-light border-0"
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required />
+                        <small class="text-secondary">PDF, JPG, PNG, DOC, DOCX (Max 5MB)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Vencimiento</label>
+                        <input type="date" name="FechaVencimiento" class="form-control bg-body-secondary text-light border-0" />
+                    </div>
+                    
+                    <div class="mb-0">
+                        <label class="form-label">Observaciones</label>
+                        <textarea name="Observaciones" class="form-control bg-body-secondary text-light border-0"
+                                  rows="2" placeholder="Opcional"></textarea>
+                    </div>
+                </div>
+                
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="bi bi-upload me-2"></i>Subir
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Models.Base;
@@ -9,7 +10,7 @@ namespace TheBuryProject.Data
     /// <summary>
     /// Contexto principal de la base de datos del sistema.
     /// </summary>
-    public class AppDbContext : IdentityDbContext
+    public class AppDbContext : IdentityDbContext<ApplicationUser>
     {
         private readonly IHttpContextAccessor? _httpContextAccessor;
 
@@ -52,11 +53,13 @@ namespace TheBuryProject.Data
         public DbSet<Factura> Facturas { get; set; }
         public DbSet<ConfiguracionPago> ConfiguracionesPago { get; set; }
         public DbSet<ConfiguracionTarjeta> ConfiguracionesTarjeta { get; set; }
+        public DbSet<PerfilCredito> PerfilesCredito { get; set; }
         public DbSet<DatosTarjeta> DatosTarjeta { get; set; }
         public DbSet<DatosCheque> DatosCheque { get; set; }
         public DbSet<VentaCreditoCuota> VentaCreditoCuotas { get; set; }
 
         public DbSet<ConfiguracionMora> ConfiguracionesMora { get; set; }
+        public DbSet<AlertaMora> AlertasMora { get; set; }
         public DbSet<ConfiguracionCredito> ConfiguracionesCredito { get; set; }
         public DbSet<LogMora> LogsMora { get; set; }
         public DbSet<AlertaCobranza> AlertasCobranza { get; set; }
@@ -90,6 +93,8 @@ namespace TheBuryProject.Data
         public DbSet<ProductoPrecioLista> ProductosPrecios { get; set; }
         public DbSet<PriceChangeBatch> PriceChangeBatches { get; set; }
         public DbSet<PriceChangeItem> PriceChangeItems { get; set; }
+        public DbSet<CambioPrecioEvento> CambioPrecioEventos { get; set; }
+        public DbSet<CambioPrecioDetalle> CambioPrecioDetalles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -142,6 +147,7 @@ namespace TheBuryProject.Data
                 entity.HasIndex(d => d.ClienteId);
                 entity.HasIndex(d => d.Estado);
             });
+
             // =======================
             // Configuración de Categoria
             // =======================
@@ -169,7 +175,6 @@ namespace TheBuryProject.Data
                     .WithMany(e => e.Children)
                     .HasForeignKey(e => e.ParentId)
                     .OnDelete(DeleteBehavior.Restrict);
-
             });
 
             // =======================
@@ -189,7 +194,6 @@ namespace TheBuryProject.Data
                     .WithMany(e => e.Children)
                     .HasForeignKey(e => e.ParentId)
                     .OnDelete(DeleteBehavior.Restrict);
-
             });
 
             // =======================
@@ -246,7 +250,6 @@ namespace TheBuryProject.Data
                 entity.HasIndex(e => e.ProductoId);
                 entity.HasIndex(e => e.FechaCambio);
                 entity.HasIndex(e => e.UsuarioModificacion);
-
             });
 
             // =======================
@@ -281,7 +284,6 @@ namespace TheBuryProject.Data
                     .WithMany()
                     .HasForeignKey(e => e.CreditoId)
                     .OnDelete(DeleteBehavior.Restrict);
-
             });
 
             // =======================
@@ -292,7 +294,6 @@ namespace TheBuryProject.Data
                 entity.HasIndex(e => e.Cuit)
                     .IsUnique()
                     .HasFilter("IsDeleted = 0");
-
             });
 
             // =======================
@@ -311,7 +312,6 @@ namespace TheBuryProject.Data
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(e => new { e.ProveedorId, e.ProductoId }).IsUnique();
-
             });
 
             // =======================
@@ -330,7 +330,6 @@ namespace TheBuryProject.Data
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(e => new { e.ProveedorId, e.MarcaId }).IsUnique();
-
             });
 
             // =======================
@@ -349,7 +348,6 @@ namespace TheBuryProject.Data
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(e => new { e.ProveedorId, e.CategoriaId }).IsUnique();
-
             });
 
             // =======================
@@ -370,7 +368,6 @@ namespace TheBuryProject.Data
                 entity.Property(e => e.Descuento).HasPrecision(18, 2);
                 entity.Property(e => e.Iva).HasPrecision(18, 2);
                 entity.Property(e => e.Total).HasPrecision(18, 2);
-
             });
 
             // =======================
@@ -378,6 +375,8 @@ namespace TheBuryProject.Data
             // =======================
             modelBuilder.Entity<OrdenCompraDetalle>(entity =>
             {
+                entity.ToTable("OrdenCompraDetalle");
+                
                 entity.HasOne(e => e.OrdenCompra)
                     .WithMany(o => o.Detalles)
                     .HasForeignKey(e => e.OrdenCompraId)
@@ -390,7 +389,6 @@ namespace TheBuryProject.Data
 
                 entity.Property(e => e.PrecioUnitario).HasPrecision(18, 2);
                 entity.Property(e => e.Subtotal).HasPrecision(18, 2);
-
             });
 
             // =======================
@@ -411,7 +409,6 @@ namespace TheBuryProject.Data
                     .OnDelete(DeleteBehavior.SetNull);
 
                 entity.Property(e => e.Monto).HasPrecision(18, 2);
-
             });
 
             // =======================
@@ -432,7 +429,6 @@ namespace TheBuryProject.Data
                 entity.Property(e => e.Cantidad).HasPrecision(18, 2);
                 entity.Property(e => e.StockAnterior).HasPrecision(18, 2);
                 entity.Property(e => e.StockNuevo).HasPrecision(18, 2);
-
             });
 
             // =======================
@@ -452,6 +448,21 @@ namespace TheBuryProject.Data
                     .HasDefaultValue(false);
 
                 entity.Property(e => e.PuntajeRiesgo).HasPrecision(5, 2);
+
+                // ✅ Fix warning: Cliente.LimiteCredito
+                entity.Property(e => e.LimiteCredito).HasPrecision(18, 2);
+
+                // ✅ Configuración personalizada de crédito por cliente
+                entity.Property(e => e.TasaInteresMensualPersonalizada).HasPrecision(8, 4);
+                entity.Property(e => e.GastosAdministrativosPersonalizados).HasPrecision(8, 4);
+                entity.Property(e => e.MontoMinimoPersonalizado).HasPrecision(18, 2);
+                entity.Property(e => e.MontoMaximoPersonalizado).HasPrecision(18, 2);
+
+                // Relación con Perfil de Crédito Preferido (TAREA 8)
+                entity.HasOne(e => e.PerfilCreditoPreferido)
+                    .WithMany()
+                    .HasForeignKey(e => e.PerfilCreditoPreferidoId)
+                    .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasOne(e => e.Garante)
                     .WithMany()
@@ -475,6 +486,12 @@ namespace TheBuryProject.Data
                     .HasForeignKey(e => e.ClienteId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                // TAREA 9.3: Relación con perfil aplicado (auditoría)
+                entity.HasOne(e => e.PerfilCreditoAplicado)
+                    .WithMany()
+                    .HasForeignKey(e => e.PerfilCreditoAplicadoId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
                 entity.Property(e => e.MontoSolicitado).HasPrecision(18, 2);
                 entity.Property(e => e.MontoAprobado).HasPrecision(18, 2);
                 entity.Property(e => e.TasaInteres).HasPrecision(5, 2);
@@ -484,6 +501,10 @@ namespace TheBuryProject.Data
                 entity.Property(e => e.CFTEA).HasPrecision(5, 2);
                 entity.Property(e => e.TotalAPagar).HasPrecision(18, 2);
                 entity.Property(e => e.SaldoPendiente).HasPrecision(18, 2);
+
+                // TAREA 9.3 / PUNTO 5: Precision para campos de auditoría
+                entity.Property(e => e.GastosAdministrativos).HasPrecision(18, 2);
+                entity.Property(e => e.TasaInteresAplicada).HasPrecision(8, 4);
 
                 entity.HasOne(e => e.Garante)
                     .WithMany()
@@ -507,7 +528,6 @@ namespace TheBuryProject.Data
                     .WithMany()
                     .HasForeignKey(e => e.GaranteClienteId)
                     .OnDelete(DeleteBehavior.Restrict);
-
             });
 
             // =======================
@@ -525,7 +545,6 @@ namespace TheBuryProject.Data
                 entity.HasIndex(e => e.FechaSubida);
                 entity.HasIndex(e => e.FechaVencimiento);
                 entity.HasIndex(e => e.TipoDocumento);
-
             });
 
             // =======================
@@ -545,7 +564,6 @@ namespace TheBuryProject.Data
                 entity.Property(e => e.MontoTotal).HasPrecision(18, 2);
                 entity.Property(e => e.MontoPagado).HasPrecision(18, 2);
                 entity.Property(e => e.MontoPunitorio).HasPrecision(18, 2);
-
             });
 
             // =======================
@@ -591,10 +609,13 @@ namespace TheBuryProject.Data
                 entity.Property(e => e.Descuento).HasPrecision(18, 2);
                 entity.Property(e => e.IVA).HasPrecision(18, 2);
                 entity.Property(e => e.Total).HasPrecision(18, 2);
+                entity.Property(e => e.VendedorUserId).HasMaxLength(450);
 
                 entity.HasIndex(e => e.Numero).IsUnique();
                 entity.HasIndex(e => e.FechaVenta);
                 entity.HasIndex(e => e.Estado);
+                entity.HasIndex(e => e.AperturaCajaId);
+                entity.HasIndex(e => e.VendedorUserId);
 
                 entity.HasOne(e => e.Cliente)
                     .WithMany()
@@ -604,6 +625,18 @@ namespace TheBuryProject.Data
                 entity.HasOne(e => e.Credito)
                     .WithMany()
                     .HasForeignKey(e => e.CreditoId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
+
+                entity.HasOne(e => e.AperturaCaja)
+                    .WithMany()
+                    .HasForeignKey(e => e.AperturaCajaId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
+
+                entity.HasOne(e => e.VendedorUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.VendedorUserId)
                     .OnDelete(DeleteBehavior.Restrict)
                     .IsRequired(false);
 
@@ -680,6 +713,10 @@ namespace TheBuryProject.Data
 
                 entity.Property(e => e.PorcentajeDescuentoMaximo).HasPrecision(5, 2);
                 entity.Property(e => e.PorcentajeRecargo).HasPrecision(5, 2);
+                
+                // Configuración de crédito personal defaults globales
+                entity.Property(e => e.TasaInteresMensualCreditoPersonal).HasPrecision(8, 4);
+                entity.Property(e => e.GastosAdministrativosDefaultCreditoPersonal).HasPrecision(18, 2);
 
                 entity.HasIndex(e => e.TipoPago).IsUnique();
 
@@ -687,6 +724,25 @@ namespace TheBuryProject.Data
                     .WithOne(t => t.ConfiguracionPago)
                     .HasForeignKey(t => t.ConfiguracionPagoId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // =======================
+            // PerfilCredito (TAREA 7.1.2)
+            // =======================
+            modelBuilder.Entity<PerfilCredito>(entity =>
+            {
+                entity.ToTable("PerfilesCredito");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Nombre)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.TasaMensual).HasPrecision(8, 4);
+                entity.Property(e => e.GastosAdministrativos).HasPrecision(18, 2);
+
+                entity.HasIndex(e => e.Nombre).IsUnique();
+                entity.HasIndex(e => e.Orden);
             });
 
             // =======================
@@ -943,7 +999,6 @@ namespace TheBuryProject.Data
                 entity.HasIndex(e => e.Prioridad);
                 entity.HasIndex(e => e.Estado);
                 entity.HasIndex(e => e.NotificacionUrgente);
-
             });
 
             // =======================
@@ -985,6 +1040,45 @@ namespace TheBuryProject.Data
             });
 
             // =======================
+            // AlertaMora
+            // =======================
+            modelBuilder.Entity<AlertaMora>(entity =>
+            {
+                entity.ToTable("AlertasMora");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Descripcion)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.ColorAlerta)
+                    .IsRequired()
+                    .HasMaxLength(7); // #RRGGBB
+
+                entity.HasOne(e => e.ConfiguracionMora)
+                    .WithMany()
+                    .HasForeignKey(e => e.ConfiguracionMoraId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // ✅ ConfiguracionCredito (Fix warnings EF Core)
+            // =======================
+            modelBuilder.Entity<ConfiguracionCredito>(entity =>
+            {
+                entity.ToTable("ConfiguracionesCredito");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.LimiteCreditoDefault).HasPrecision(18, 2);
+                entity.Property(e => e.LimiteCreditoMinimo).HasPrecision(18, 2);
+                entity.Property(e => e.MontoMoraParaNoApto).HasPrecision(18, 2);
+                entity.Property(e => e.MontoMoraParaRequerirAutorizacion).HasPrecision(18, 2);
+                entity.Property(e => e.PorcentajeCupoMinimoRequerido).HasPrecision(5, 2);
+            });
+
+            // =======================
             // LogMora
             // =======================
             modelBuilder.Entity<LogMora>(entity =>
@@ -997,7 +1091,6 @@ namespace TheBuryProject.Data
 
                 entity.HasIndex(e => e.FechaEjecucion);
                 entity.HasIndex(e => e.Exitoso);
-
             });
 
             // =======================
@@ -1008,7 +1101,6 @@ namespace TheBuryProject.Data
                 entity.HasIndex(e => e.Codigo)
                     .IsUnique()
                     .HasFilter("IsDeleted = 0");
-
             });
 
             // =======================
@@ -1020,7 +1112,6 @@ namespace TheBuryProject.Data
                     .WithMany(c => c.Aperturas)
                     .HasForeignKey(e => e.CajaId)
                     .OnDelete(DeleteBehavior.Restrict);
-
             });
 
             // =======================
@@ -1032,7 +1123,6 @@ namespace TheBuryProject.Data
                     .WithMany(a => a.Movimientos)
                     .HasForeignKey(e => e.AperturaCajaId)
                     .OnDelete(DeleteBehavior.Restrict);
-
 
                 entity.HasIndex(e => e.FechaMovimiento);
                 entity.HasIndex(e => e.Tipo);
@@ -1049,7 +1139,6 @@ namespace TheBuryProject.Data
                     .HasForeignKey<CierreCaja>(e => e.AperturaCajaId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-
                 entity.HasIndex(e => e.FechaCierre);
                 entity.HasIndex(e => e.TieneDiferencia);
             });
@@ -1059,12 +1148,69 @@ namespace TheBuryProject.Data
             // =======================
             modelBuilder.Entity<Notificacion>(entity =>
             {
-
                 entity.HasIndex(e => e.UsuarioDestino);
                 entity.HasIndex(e => e.Leida);
                 entity.HasIndex(e => e.FechaNotificacion);
                 entity.HasIndex(e => e.Tipo);
                 entity.HasIndex(e => e.Prioridad);
+            });
+
+            // =======================
+            // ✅ Fix warnings: DevolucionDetalle
+            // =======================
+            modelBuilder.Entity<DevolucionDetalle>(entity =>
+            {
+                entity.ToTable("DevolucionDetalles");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.PrecioUnitario).HasPrecision(18, 2);
+                entity.Property(e => e.Subtotal).HasPrecision(18, 2);
+            });
+
+            // =======================
+            // ✅ Fix warnings: NotaCredito
+            // =======================
+            modelBuilder.Entity<NotaCredito>(entity =>
+            {
+                entity.ToTable("NotasCredito");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.MontoTotal).HasPrecision(18, 2);
+                entity.Property(e => e.MontoUtilizado).HasPrecision(18, 2);
+            });
+
+            // =======================
+            // ✅ Fix warnings: RMA
+            // =======================
+            modelBuilder.Entity<RMA>(entity =>
+            {
+                entity.ToTable("RMAs");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.MontoReembolso).HasPrecision(18, 2);
+            });
+
+            // =======================
+            // ✅ Fix warnings: SolicitudAutorizacion
+            // =======================
+            modelBuilder.Entity<SolicitudAutorizacion>(entity =>
+            {
+                entity.ToTable("SolicitudesAutorizacion");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.ValorPermitido).HasPrecision(18, 2);
+                entity.Property(e => e.ValorSolicitado).HasPrecision(18, 2);
+            });
+
+            // =======================
+            // ✅ Fix warnings: UmbralAutorizacion
+            // =======================
+            modelBuilder.Entity<UmbralAutorizacion>(entity =>
+            {
+                entity.ToTable("UmbralesAutorizacion");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.ValorMaximo).HasPrecision(18, 2);
             });
 
             // =======================
@@ -1095,7 +1241,6 @@ namespace TheBuryProject.Data
                 entity.HasIndex(e => e.Activa);
                 entity.HasIndex(e => e.EsPredeterminada);
                 entity.HasIndex(e => e.Orden);
-
             });
 
             // =======================
@@ -1149,7 +1294,6 @@ namespace TheBuryProject.Data
                     .WithMany()
                     .HasForeignKey(e => e.BatchId)
                     .OnDelete(DeleteBehavior.SetNull);
-
             });
 
             // =======================
@@ -1195,7 +1339,6 @@ namespace TheBuryProject.Data
                     .WithOne(e => e.BatchReversion)
                     .HasForeignKey<PriceChangeBatch>(e => e.BatchPadreId)
                     .OnDelete(DeleteBehavior.Restrict);
-
             });
 
             // =======================
@@ -1239,14 +1382,56 @@ namespace TheBuryProject.Data
                     .WithMany()
                     .HasForeignKey(e => e.ListaId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
 
+            // =======================
+            // CambioPrecioEvento
+            // =======================
+            modelBuilder.Entity<CambioPrecioEvento>(entity =>
+            {
+                entity.ToTable("CambioPrecioEventos");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Usuario).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Alcance).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.ValorPorcentaje).HasPrecision(18, 2);
+                entity.Property(e => e.Motivo).HasMaxLength(1000);
+                entity.Property(e => e.RevertidoPor).HasMaxLength(100);
+
+                entity.HasIndex(e => e.Fecha);
+                entity.HasIndex(e => e.Usuario);
+                entity.HasIndex(e => e.RevertidoEn);
+            });
+
+            // =======================
+            // CambioPrecioDetalle
+            // =======================
+            modelBuilder.Entity<CambioPrecioDetalle>(entity =>
+            {
+                entity.ToTable("CambioPrecioDetalles");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.PrecioAnterior).HasPrecision(18, 2);
+                entity.Property(e => e.PrecioNuevo).HasPrecision(18, 2);
+
+                entity.HasIndex(e => e.EventoId);
+                entity.HasIndex(e => e.ProductoId);
+
+                entity.HasOne(e => e.Evento)
+                    .WithMany(e => e.Detalles)
+                    .HasForeignKey(e => e.EventoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Producto)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductoId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Seed de datos inicial
             SeedData(modelBuilder);
         }
 
-  
         // Seed
         // =======================
 
@@ -1313,6 +1498,5 @@ namespace TheBuryProject.Data
 
             return base.SaveChangesAsync(cancellationToken);
         }
-
     }
 }

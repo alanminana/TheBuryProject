@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Filters;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Enums;
@@ -13,7 +14,8 @@ using System.Text.Json;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente)]
+    [Authorize]
+    [PermisoRequerido(Modulo = "clientes", Accion = "viewdocs")]
     public class DocumentoClienteController : Controller
     {
         private readonly IDocumentoClienteService _documentoService;

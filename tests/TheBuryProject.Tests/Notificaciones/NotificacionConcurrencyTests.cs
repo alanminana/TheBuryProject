@@ -149,43 +149,43 @@ public class NotificacionConcurrencyTests
 
     private static class TestIdentity
     {
-        public static UserManager<IdentityUser> CreateUserManager()
+        public static UserManager<ApplicationUser> CreateUserManager()
         {
             var store = new NoopUserStore();
 
-            return new UserManager<IdentityUser>(
+            return new UserManager<ApplicationUser>(
                 store,
                 Options.Create(new IdentityOptions()),
-                new PasswordHasher<IdentityUser>(),
-                Array.Empty<IUserValidator<IdentityUser>>(),
-                Array.Empty<IPasswordValidator<IdentityUser>>(),
+                new PasswordHasher<ApplicationUser>(),
+                Array.Empty<IUserValidator<ApplicationUser>>(),
+                Array.Empty<IPasswordValidator<ApplicationUser>>(),
                 new UpperInvariantLookupNormalizer(),
                 new IdentityErrorDescriber(),
                 new ServiceCollection().BuildServiceProvider(),
-                NullLogger<UserManager<IdentityUser>>.Instance);
+                NullLogger<UserManager<ApplicationUser>>.Instance);
         }
 
-        private sealed class NoopUserStore : IUserStore<IdentityUser>
+        private sealed class NoopUserStore : IUserStore<ApplicationUser>
         {
             public void Dispose() { }
-            public Task<string> GetUserIdAsync(IdentityUser user, CancellationToken cancellationToken) => Task.FromResult(user.Id);
-            public Task<string?> GetUserNameAsync(IdentityUser user, CancellationToken cancellationToken) => Task.FromResult(user.UserName);
-            public Task SetUserNameAsync(IdentityUser user, string? userName, CancellationToken cancellationToken)
+            public Task<string> GetUserIdAsync(ApplicationUser user, CancellationToken cancellationToken) => Task.FromResult(user.Id);
+            public Task<string?> GetUserNameAsync(ApplicationUser user, CancellationToken cancellationToken) => Task.FromResult(user.UserName);
+            public Task SetUserNameAsync(ApplicationUser user, string? userName, CancellationToken cancellationToken)
             {
                 user.UserName = userName;
                 return Task.CompletedTask;
             }
-            public Task<string?> GetNormalizedUserNameAsync(IdentityUser user, CancellationToken cancellationToken) => Task.FromResult(user.NormalizedUserName);
-            public Task SetNormalizedUserNameAsync(IdentityUser user, string? normalizedName, CancellationToken cancellationToken)
+            public Task<string?> GetNormalizedUserNameAsync(ApplicationUser user, CancellationToken cancellationToken) => Task.FromResult(user.NormalizedUserName);
+            public Task SetNormalizedUserNameAsync(ApplicationUser user, string? normalizedName, CancellationToken cancellationToken)
             {
                 user.NormalizedUserName = normalizedName;
                 return Task.CompletedTask;
             }
-            public Task<IdentityResult> CreateAsync(IdentityUser user, CancellationToken cancellationToken) => Task.FromResult(IdentityResult.Success);
-            public Task<IdentityResult> UpdateAsync(IdentityUser user, CancellationToken cancellationToken) => Task.FromResult(IdentityResult.Success);
-            public Task<IdentityResult> DeleteAsync(IdentityUser user, CancellationToken cancellationToken) => Task.FromResult(IdentityResult.Success);
-            public Task<IdentityUser?> FindByIdAsync(string userId, CancellationToken cancellationToken) => Task.FromResult<IdentityUser?>(null);
-            public Task<IdentityUser?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken) => Task.FromResult<IdentityUser?>(null);
+            public Task<IdentityResult> CreateAsync(ApplicationUser user, CancellationToken cancellationToken) => Task.FromResult(IdentityResult.Success);
+            public Task<IdentityResult> UpdateAsync(ApplicationUser user, CancellationToken cancellationToken) => Task.FromResult(IdentityResult.Success);
+            public Task<IdentityResult> DeleteAsync(ApplicationUser user, CancellationToken cancellationToken) => Task.FromResult(IdentityResult.Success);
+            public Task<ApplicationUser?> FindByIdAsync(string userId, CancellationToken cancellationToken) => Task.FromResult<ApplicationUser?>(null);
+            public Task<ApplicationUser?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken) => Task.FromResult<ApplicationUser?>(null);
         }
     }
 }

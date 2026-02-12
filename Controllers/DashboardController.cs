@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Services.Interfaces;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Administrador + "," + Roles.Gerente + "," + Roles.Contador)]
+    [Authorize] // Permite acceso a TODOS los usuarios autenticados
     public class DashboardController : Controller
     {
         private readonly IDashboardService _dashboardService;

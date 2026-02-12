@@ -1,4 +1,4 @@
-﻿@model List<TheBuryProject.ViewModels.CreditoViewModel>
+@model List<TheBuryProject.ViewModels.CreditoViewModel>
 @{ 
     ViewData["Title"] = "Créditos";
     var filter = ViewBag.Filter as TheBuryProject.ViewModels.CreditoFilterViewModel;
@@ -15,6 +15,9 @@
             <i class="bi bi-credit-card text-primary me-2"></i>@ViewData["Title"]
         </h2>
         <div class="d-flex gap-2">
+            <a asp-action="CuotasVencidas" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-warning fw-semibold shadow-sm">
+                <i class="bi bi-exclamation-circle me-2"></i>Ver moras
+            </a>
             <a asp-action="Simular" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-info fw-semibold shadow-sm">
                 <i class="bi bi-calculator me-2"></i>Simular Crédito
             </a>

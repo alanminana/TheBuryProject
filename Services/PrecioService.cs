@@ -2,22 +2,7 @@
     /// Aplica un cambio directo de precio a productos seleccionados o filtrados desde el catálogo.
     /// Actualiza Producto.PrecioVenta, crea historial y permite revertir.
     /// </summary>
-    public async Task<ResultadoAplicacionPrecios> AplicarCambioPrecioDirectoAsync(AplicarCambioPrecioDirectoViewModel model)
-    {
-        // TODO: Implementar lógica de cambio directo, historial y revertir
-        // 1. Determinar productos afectados (por IDs o filtros)
-        // 2. Para cada producto: actualizar PrecioVenta, crear PrecioHistorico
-        // 3. Soportar revertir (puedeRevertirse)
-        // 4. Retornar resultado
-        return new ResultadoAplicacionPrecios
-        {
-            Exitoso = false,
-            Mensaje = "No implementado",
-            BatchId = 0,
-            ProductosActualizados = 0,
-            FechaAplicacion = DateTime.UtcNow
-        };
-    }
+
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +11,7 @@ using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
+using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Services;
 
@@ -180,6 +166,389 @@ public class PrecioService : IPrecioService
             id, GetCurrentUser());
 
         return true;
+    }
+
+    #endregion
+
+    #region Cambio Directo de Precio (Catalogo)
+
+    public async Task<ResultadoAplicacionPrecios> AplicarCambioPrecioDirectoAsync(
+        AplicarCambioPrecioDirectoViewModel model)
+    {
+        if (model == null)
+        {
+            return new ResultadoAplicacionPrecios
+            {
+                Exitoso = false,
+                Mensaje = "Solicitud invalida."
+            };
+        }
+
+        if (model.ValorPorcentaje == 0)
+        {
+            return new ResultadoAplicacionPrecios
+            {
+                Exitoso = false,
+                Mensaje = "El porcentaje no puede ser 0."
+            };
+        }
+
+        var alcance = model.Alcance?.Trim().ToLowerInvariant();
+        if (alcance != "seleccionados" && alcance != "filtrados")
+        {
+            return new ResultadoAplicacionPrecios
+            {
+                Exitoso = false,
+                Mensaje = "Alcance no valido."
+            };
+        }
+
+        var query = _context.Productos
+            .Where(p => !p.IsDeleted)
+            .AsQueryable();
+
+        if (alcance == "seleccionados")
+        {
+            var productoIds = ParseProductoIds(model.ProductoIdsText);
+            if (!productoIds.Any())
+            {
+                return new ResultadoAplicacionPrecios
+                {
+                    Exitoso = false,
+                    Mensaje = "No se encontraron productos validos para aplicar el cambio."
+                };
+            }
+
+            query = query.Where(p => productoIds.Contains(p.Id));
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(model.FiltrosJson))
+            {
+                return new ResultadoAplicacionPrecios
+                {
+                    Exitoso = false,
+                    Mensaje = "Filtros invalidos para aplicar el cambio."
+                };
+            }
+
+            FiltrosCatalogoDto? filtros;
+            try
+            {
+                filtros = JsonSerializer.Deserialize<FiltrosCatalogoDto>(
+                    model.FiltrosJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Error al deserializar filtros de catalogo: {FiltrosJson}", model.FiltrosJson);
+                return new ResultadoAplicacionPrecios
+                {
+                    Exitoso = false,
+                    Mensaje = "Filtros invalidos para aplicar el cambio."
+                };
+            }
+
+            if (filtros == null)
+            {
+                return new ResultadoAplicacionPrecios
+                {
+                    Exitoso = false,
+                    Mensaje = "Filtros invalidos para aplicar el cambio."
+                };
+            }
+
+            if (filtros.CategoriaId.HasValue && filtros.CategoriaId > 0)
+                query = query.Where(p => p.CategoriaId == filtros.CategoriaId);
+
+            if (filtros.MarcaId.HasValue && filtros.MarcaId > 0)
+                query = query.Where(p => p.MarcaId == filtros.MarcaId);
+
+            if (!string.IsNullOrWhiteSpace(filtros.Busqueda))
+            {
+                var busqueda = filtros.Busqueda.ToLowerInvariant();
+                query = query.Where(p =>
+                    p.Codigo.ToLower().Contains(busqueda) ||
+                    p.Nombre.ToLower().Contains(busqueda) ||
+                    (p.Descripcion != null && p.Descripcion.ToLower().Contains(busqueda)));
+            }
+
+            if (filtros.SoloActivos.HasValue && filtros.SoloActivos.Value)
+                query = query.Where(p => p.Activo);
+
+            if (filtros.StockBajo.HasValue && filtros.StockBajo.Value)
+                query = query.Where(p => p.StockActual <= p.StockMinimo);
+        }
+
+        var productos = await query.ToListAsync();
+        if (!productos.Any())
+        {
+            return new ResultadoAplicacionPrecios
+            {
+                Exitoso = false,
+                Mensaje = "No se encontraron productos para aplicar el cambio."
+            };
+        }
+
+        var usuario = GetCurrentUser();
+        var now = DateTime.UtcNow;
+        var historicos = new List<PrecioHistorico>();
+        var porcentaje = model.ValorPorcentaje;
+        var cambios = new List<(Producto producto, decimal anterior, decimal nuevo)>();
+
+        foreach (var producto in productos)
+        {
+            var precioVentaAnterior = producto.PrecioVenta;
+            var precioVentaNuevo = Math.Round(
+                precioVentaAnterior * (1 + (porcentaje / 100m)),
+                2,
+                MidpointRounding.AwayFromZero);
+
+            if (precioVentaNuevo < 0)
+            {
+                return new ResultadoAplicacionPrecios
+                {
+                    Exitoso = false,
+                    Mensaje = $"El porcentaje genera precios negativos (Producto {producto.Codigo})."
+                };
+            }
+
+            if (precioVentaNuevo == precioVentaAnterior)
+                continue;
+
+            cambios.Add((producto, precioVentaAnterior, precioVentaNuevo));
+        }
+
+        if (!cambios.Any())
+        {
+            return new ResultadoAplicacionPrecios
+            {
+                Exitoso = false,
+                Mensaje = "No hubo cambios para aplicar."
+            };
+        }
+
+        var evento = new CambioPrecioEvento
+        {
+            Fecha = now,
+            Usuario = usuario,
+            Alcance = alcance,
+            ValorPorcentaje = porcentaje,
+            Motivo = string.IsNullOrWhiteSpace(model.Motivo) ? null : model.Motivo,
+            FiltrosJson = alcance == "filtrados" ? model.FiltrosJson : null,
+            CantidadProductos = cambios.Count,
+            CreatedAt = now,
+            CreatedBy = usuario
+        };
+
+        var detalles = cambios.Select(cambio => new CambioPrecioDetalle
+        {
+            ProductoId = cambio.producto.Id,
+            PrecioAnterior = cambio.anterior,
+            PrecioNuevo = cambio.nuevo,
+            CreatedAt = now,
+            CreatedBy = usuario
+        }).ToList();
+
+        evento.Detalles = detalles;
+
+        foreach (var cambio in cambios)
+        {
+            cambio.producto.PrecioVenta = cambio.nuevo;
+            cambio.producto.UpdatedAt = now;
+            cambio.producto.UpdatedBy = usuario;
+
+            historicos.Add(new PrecioHistorico
+            {
+                ProductoId = cambio.producto.Id,
+                PrecioCompraAnterior = cambio.producto.PrecioCompra,
+                PrecioCompraNuevo = cambio.producto.PrecioCompra,
+                PrecioVentaAnterior = cambio.anterior,
+                PrecioVentaNuevo = cambio.nuevo,
+                MotivoCambio = string.IsNullOrWhiteSpace(model.Motivo) ? null : model.Motivo,
+                FechaCambio = now,
+                UsuarioModificacion = usuario,
+                PuedeRevertirse = true,
+                CreatedAt = now,
+                CreatedBy = usuario
+            });
+        }
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            _context.CambioPrecioEventos.Add(evento);
+            _context.PreciosHistoricos.AddRange(historicos);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error al aplicar cambio directo de precio.");
+            throw;
+        }
+
+        _logger.LogInformation(
+            "Cambio directo aplicado: {Count} productos por {User}",
+            historicos.Count, usuario);
+
+        return new ResultadoAplicacionPrecios
+        {
+            Exitoso = true,
+            Mensaje = $"Se actualizaron {historicos.Count} productos correctamente.",
+            ProductosActualizados = historicos.Count,
+            FechaAplicacion = now,
+            CambioPrecioEventoId = evento.Id
+        };
+    }
+
+    public async Task<List<CambioPrecioEvento>> GetCambioPrecioEventosAsync(int take = 200)
+    {
+        return await _context.CambioPrecioEventos
+            .Where(e => !e.IsDeleted)
+            .AsNoTracking()
+            .OrderByDescending(e => e.Fecha)
+            .Take(take)
+            .ToListAsync();
+    }
+
+    public async Task<CambioPrecioEvento?> GetCambioPrecioEventoAsync(int eventoId)
+    {
+        return await _context.CambioPrecioEventos
+            .Where(e => !e.IsDeleted)
+            .Include(e => e.Detalles)
+            .ThenInclude(d => d.Producto)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == eventoId);
+    }
+
+    public async Task<(bool Exitoso, string Mensaje, int? EventoReversionId)> RevertirCambioPrecioEventoAsync(int eventoId)
+    {
+        var evento = await _context.CambioPrecioEventos
+            .Where(e => !e.IsDeleted)
+            .Include(e => e.Detalles)
+            .FirstOrDefaultAsync(e => e.Id == eventoId);
+
+        if (evento == null)
+            return (false, "Evento no encontrado.", null);
+
+        if (evento.RevertidoEn.HasValue)
+            return (false, "El evento ya fue revertido.", null);
+
+        if (string.Equals(evento.Alcance, "reversion", StringComparison.OrdinalIgnoreCase))
+            return (false, "No se puede revertir un evento de reversion.", null);
+
+        if (evento.Detalles == null || evento.Detalles.Count == 0)
+            return (false, "El evento no tiene detalles para revertir.", null);
+
+        var productoIds = evento.Detalles.Select(d => d.ProductoId).Distinct().ToList();
+        var productos = await _context.Productos
+            .Where(p => productoIds.Contains(p.Id) && !p.IsDeleted)
+            .ToListAsync();
+
+        var faltantes = productoIds.Except(productos.Select(p => p.Id)).ToList();
+        if (faltantes.Count > 0)
+            return (false, "No se encontraron todos los productos para revertir.", null);
+
+        var usuario = GetCurrentUser();
+        var now = DateTime.UtcNow;
+        var historicos = new List<PrecioHistorico>();
+
+        foreach (var detalle in evento.Detalles)
+        {
+            var producto = productos.First(p => p.Id == detalle.ProductoId);
+            var precioActual = producto.PrecioVenta;
+            var precioRevertido = detalle.PrecioAnterior;
+
+            producto.PrecioVenta = precioRevertido;
+            producto.UpdatedAt = now;
+            producto.UpdatedBy = usuario;
+
+            historicos.Add(new PrecioHistorico
+            {
+                ProductoId = producto.Id,
+                PrecioCompraAnterior = producto.PrecioCompra,
+                PrecioCompraNuevo = producto.PrecioCompra,
+                PrecioVentaAnterior = precioActual,
+                PrecioVentaNuevo = precioRevertido,
+                MotivoCambio = $"Reversion evento #{evento.Id}",
+                FechaCambio = now,
+                UsuarioModificacion = usuario,
+                PuedeRevertirse = true,
+                CreatedAt = now,
+                CreatedBy = usuario
+            });
+        }
+
+        var eventoReversion = new CambioPrecioEvento
+        {
+            Fecha = now,
+            Usuario = usuario,
+            Alcance = "reversion",
+            ValorPorcentaje = 0m,
+            Motivo = $"Reversion evento #{evento.Id}",
+            FiltrosJson = evento.FiltrosJson,
+            CantidadProductos = evento.Detalles.Count,
+            CreatedAt = now,
+            CreatedBy = usuario,
+            Detalles = evento.Detalles.Select(d => new CambioPrecioDetalle
+            {
+                ProductoId = d.ProductoId,
+                PrecioAnterior = d.PrecioNuevo,
+                PrecioNuevo = d.PrecioAnterior,
+                CreatedAt = now,
+                CreatedBy = usuario
+            }).ToList()
+        };
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            evento.RevertidoEn = now;
+            evento.RevertidoPor = usuario;
+            evento.UpdatedAt = now;
+            evento.UpdatedBy = usuario;
+
+            _context.CambioPrecioEventos.Add(eventoReversion);
+            _context.PreciosHistoricos.AddRange(historicos);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error al revertir evento de cambio directo {EventoId}.", eventoId);
+            return (false, "Error al revertir el evento.", null);
+        }
+
+        return (true, "Cambio revertido correctamente.", eventoReversion.Id);
+    }
+
+    private static List<int> ParseProductoIds(string? productoIdsText)
+    {
+        if (string.IsNullOrWhiteSpace(productoIdsText))
+            return new List<int>();
+
+        var tokens = productoIdsText.Split(
+            new[] { ',', ';', '\n', '\r', '\t', ' ' },
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        return tokens
+            .Select(token => int.TryParse(token, out var id) ? id : 0)
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+    }
+
+    private sealed class FiltrosCatalogoDto
+    {
+        public int? CategoriaId { get; set; }
+        public int? MarcaId { get; set; }
+        public string? Busqueda { get; set; }
+        public bool? SoloActivos { get; set; }
+        public bool? StockBajo { get; set; }
+        public int? ListaPrecioId { get; set; }
     }
 
     #endregion

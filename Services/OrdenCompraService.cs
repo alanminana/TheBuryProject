@@ -302,6 +302,33 @@ namespace TheBuryProject.Services
                     (excludeId == null || o.Id != excludeId.Value));
         }
 
+        public async Task<string> GenerarNumeroOrdenAsync()
+        {
+            var anio = DateTime.Now.Year;
+            var prefijo = $"OC-{anio}-";
+            
+            // Obtener el último número de orden del año actual
+            var ultimaOrden = await _context.OrdenesCompra
+                .Where(o => o.Numero.StartsWith(prefijo) && !o.IsDeleted)
+                .OrderByDescending(o => o.Numero)
+                .Select(o => o.Numero)
+                .FirstOrDefaultAsync();
+
+            int siguienteNumero = 1;
+            
+            if (ultimaOrden != null)
+            {
+                // Extraer el número secuencial del formato OC-YYYY-NNNN
+                var partes = ultimaOrden.Split('-');
+                if (partes.Length >= 3 && int.TryParse(partes[2], out int numeroActual))
+                {
+                    siguienteNumero = numeroActual + 1;
+                }
+            }
+
+            return $"{prefijo}{siguienteNumero:D4}"; // D4 = 4 dígitos con ceros a la izquierda
+        }
+
         public async Task<OrdenCompra> RecepcionarAsync(int ordenId, byte[] rowVersion, List<RecepcionDetalleViewModel> detallesRecepcion)
         {
             var orden = await GetByIdAsync(ordenId);

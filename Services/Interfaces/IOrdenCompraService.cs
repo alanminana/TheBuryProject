@@ -22,6 +22,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<IEnumerable<OrdenCompra>> GetByProveedorIdAsync(int proveedorId);
         Task<bool> CambiarEstadoAsync(int id, EstadoOrdenCompra nuevoEstado);
         Task<bool> NumeroOrdenExisteAsync(string numero, int? excludeId = null);
+        Task<string> GenerarNumeroOrdenAsync();
         Task<decimal> CalcularTotalOrdenAsync(int ordenId);
 
         // NUEVO: M�todo para recepcionar

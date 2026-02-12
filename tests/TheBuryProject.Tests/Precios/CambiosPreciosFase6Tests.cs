@@ -48,7 +48,7 @@ public class CambiosPreciosFase6Tests
         var redirectResult = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Preview", redirectResult.ActionName);
         Assert.NotNull(redirectResult.RouteValues);
-        Assert.True(redirectResult.RouteValues.ContainsKey("id"));
+        Assert.True(redirectResult.RouteValues!.ContainsKey("id"));
     }
 
     [Fact]
@@ -374,7 +374,7 @@ public class CambiosPreciosFase6Tests
 
         // Assert
         Assert.NotNull(method);
-        var attributes = method.GetCustomAttributes(typeof(TheBuryProject.Filters.PermisoRequeridoAttribute), true);
+        var attributes = method!.GetCustomAttributes(typeof(TheBuryProject.Filters.PermisoRequeridoAttribute), true);
         Assert.NotEmpty(attributes);
 
         var permisoAttr = (TheBuryProject.Filters.PermisoRequeridoAttribute)attributes[0];
@@ -390,7 +390,7 @@ public class CambiosPreciosFase6Tests
 
         // Assert
         Assert.NotNull(method);
-        var attributes = method.GetCustomAttributes(typeof(Microsoft.AspNetCore.Mvc.ValidateAntiForgeryTokenAttribute), true);
+        var attributes = method!.GetCustomAttributes(typeof(Microsoft.AspNetCore.Mvc.ValidateAntiForgeryTokenAttribute), true);
         Assert.NotEmpty(attributes);
     }
 
@@ -402,7 +402,7 @@ public class CambiosPreciosFase6Tests
 
         // Assert
         Assert.NotNull(method);
-        var attributes = method.GetCustomAttributes(typeof(Microsoft.AspNetCore.Mvc.HttpPostAttribute), true);
+        var attributes = method!.GetCustomAttributes(typeof(Microsoft.AspNetCore.Mvc.HttpPostAttribute), true);
         Assert.NotEmpty(attributes);
     }
 
@@ -823,7 +823,7 @@ public class CambiosPreciosFase6Tests
         {
             Nombre = "Test Batch",
             TipoCambio = TipoCambio.PorcentajeSobrePrecioActual,
-            TipoAplicacion = TipoAplicion.Aumento,
+            TipoAplicacion = TipoAplicacion.Aumento,
             ValorCambio = 10,
             Estado = EstadoBatch.Simulado,
             SolicitadoPor = "tester",
@@ -865,7 +865,7 @@ public class CambiosPreciosFase6Tests
             {
                 Nombre = $"Batch {i}",
                 TipoCambio = TipoCambio.PorcentajeSobrePrecioActual,
-                TipoAplicacion = TipoAplicion.Aumento,
+                TipoAplicacion = TipoAplicacion.Aumento,
                 ValorCambio = i * 5,
                 Estado = EstadoBatch.Simulado,
                 SolicitadoPor = "tester",
@@ -903,7 +903,7 @@ public class CambiosPreciosFase6Tests
         {
             Nombre = "Batch para revertir",
             TipoCambio = TipoCambio.PorcentajeSobrePrecioActual,
-            TipoAplicacion = TipoAplicion.Aumento,
+            TipoAplicacion = TipoAplicacion.Aumento,
             ValorCambio = 15,
             Estado = EstadoBatch.Aplicado,
             SolicitadoPor = "tester",
@@ -946,7 +946,7 @@ public class CambiosPreciosFase6Tests
         {
             Nombre = "Batch simulado",
             TipoCambio = TipoCambio.PorcentajeSobrePrecioActual,
-            TipoAplicacion = TipoAplicion.Aumento,
+            TipoAplicacion = TipoAplicacion.Aumento,
             ValorCambio = 10,
             Estado = EstadoBatch.Simulado, // NO aplicado
             SolicitadoPor = "tester",

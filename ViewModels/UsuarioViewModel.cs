@@ -14,6 +14,7 @@ public class UsuarioViewModel
     public bool LockoutEnabled { get; set; }
     public DateTimeOffset? LockoutEnd { get; set; }
     public List<string> Roles { get; set; } = new();
+    public bool Activo { get; set; } = true;
 }
 
 /// <summary>
@@ -43,7 +44,7 @@ public class CrearUsuarioViewModel
     public string ConfirmPassword { get; set; } = string.Empty;
 
     [Display(Name = "Email Confirmado")]
-    public bool EmailConfirmed { get; set; }
+    public bool EmailConfirmed { get; set; } = true; // Por defecto confirmado para evitar problemas de login
 
     [Display(Name = "Roles")]
     public List<string> RolesSeleccionados { get; set; } = new();
@@ -106,6 +107,7 @@ public class UsuarioDetalleViewModel
     public bool EmailConfirmed { get; set; }
     public bool LockoutEnabled { get; set; }
     public DateTimeOffset? LockoutEnd { get; set; }
+    public bool Activo { get; set; }
     public List<string> Roles { get; set; } = new();
     public List<string> Permisos { get; set; } = new();
 }

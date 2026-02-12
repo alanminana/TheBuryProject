@@ -73,7 +73,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.Presupuesto,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.PendienteConfiguracion,
                 RequiereAutorizacion = false
@@ -91,7 +91,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.Presupuesto,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.Configurado,
                 RequiereAutorizacion = false
@@ -109,7 +109,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.Confirmada, // Ya confirmada
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.Generado,
                 RequiereAutorizacion = false
@@ -130,7 +130,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             // Arrange
             var viewModel = new VentaViewModel
             {
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.PendienteConfiguracion
             };
@@ -147,7 +147,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             // Arrange
             var viewModel = new VentaViewModel
             {
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.Configurado
             };
@@ -164,7 +164,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             // Arrange
             var viewModel = new VentaViewModel
             {
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.Generado
             };
@@ -181,7 +181,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             // Arrange - Estado Activo también significa cuotas generadas
             var viewModel = new VentaViewModel
             {
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.Activo
             };
@@ -261,7 +261,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.Presupuesto,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = estado
             };
@@ -277,7 +277,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.Presupuesto,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.PendienteConfiguracion
             };
@@ -293,7 +293,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.Presupuesto,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.PendienteConfiguracion, // Podría estar inconsistente
                 FechaConfiguracionCredito = DateTime.UtcNow, // Pero el flag está establecido
@@ -317,7 +317,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.Presupuesto,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.PendienteConfiguracion,
                 FechaConfiguracionCredito = null, // Sin flag
@@ -337,7 +337,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.Presupuesto,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.Configurado,
                 FechaConfiguracionCredito = DateTime.UtcNow,
@@ -372,7 +372,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.PendienteFinanciacion,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1
             };
 
@@ -387,7 +387,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.PendienteFinanciacion,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.PendienteConfiguracion,
                 RequiereAutorizacion = false
@@ -405,7 +405,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.PendienteFinanciacion,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1
             };
 
@@ -420,7 +420,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.PendienteFinanciacion,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.PendienteConfiguracion
             };
@@ -436,7 +436,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var viewModel = new VentaViewModel
             {
                 Estado = EstadoVenta.PendienteFinanciacion,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = null // Sin crédito
             };
 
@@ -451,7 +451,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var ventaCreada = new VentaViewModel
             {
                 Estado = EstadoVenta.PendienteFinanciacion,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.PendienteConfiguracion,
                 FechaConfiguracionCredito = null,
@@ -466,7 +466,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var ventaConfigurada = new VentaViewModel
             {
                 Estado = EstadoVenta.Presupuesto, // Cambiado por ConfigurarVenta
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.Configurado,
                 FechaConfiguracionCredito = DateTime.UtcNow,
@@ -481,7 +481,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var ventaConfirmada = new VentaViewModel
             {
                 Estado = EstadoVenta.Confirmada,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 1,
                 CreditoEstado = EstadoCredito.Generado,
                 FechaConfiguracionCredito = DateTime.UtcNow,
@@ -509,7 +509,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var ventaDespuesCreate = new VentaViewModel
             {
                 Estado = EstadoVenta.PendienteFinanciacion,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 99, // Crédito creado automáticamente
                 CreditoEstado = EstadoCredito.PendienteConfiguracion,
                 FechaConfiguracionCredito = null, // Aún no configurado
@@ -534,7 +534,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var ventaSinConfigurar = new VentaViewModel
             {
                 Estado = EstadoVenta.PendienteFinanciacion, // Todavía en este estado
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 99,
                 CreditoEstado = EstadoCredito.PendienteConfiguracion, // Sin configurar
                 FechaConfiguracionCredito = null,
@@ -558,7 +558,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var ventaAntes = new VentaViewModel
             {
                 Estado = EstadoVenta.PendienteFinanciacion,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 99,
                 CreditoEstado = EstadoCredito.PendienteConfiguracion,
                 FechaConfiguracionCredito = null
@@ -571,7 +571,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var ventaDespues = new VentaViewModel
             {
                 Estado = EstadoVenta.Presupuesto, // Cambiado por controller
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 99,
                 CreditoEstado = EstadoCredito.Configurado, // Actualizado
                 FechaConfiguracionCredito = DateTime.UtcNow, // Marcado
@@ -596,7 +596,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var ventaListaParaConfirmar = new VentaViewModel
             {
                 Estado = EstadoVenta.Presupuesto,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 99,
                 CreditoEstado = EstadoCredito.Configurado,
                 FechaConfiguracionCredito = DateTime.UtcNow.AddHours(-1),
@@ -609,7 +609,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var ventaConfirmada = new VentaViewModel
             {
                 Estado = EstadoVenta.Confirmada, // Cambiado por Confirmar
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 99,
                 CreditoEstado = EstadoCredito.Generado, // Actualizado a Generado
                 FechaConfiguracionCredito = DateTime.UtcNow.AddHours(-1),
@@ -638,7 +638,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var ventaInconsistente = new VentaViewModel
             {
                 Estado = EstadoVenta.Presupuesto, // Hipotético estado erróneo
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = 99,
                 CreditoEstado = estadoCreditoFinal, // Pero el crédito ya fue generado
                 FechaConfiguracionCredito = DateTime.UtcNow.AddDays(-1)
@@ -660,7 +660,7 @@ namespace TheBuryProject.Tests.CreditoPersonal
             var ventaInvalida = new VentaViewModel
             {
                 Estado = EstadoVenta.PendienteFinanciacion,
-                TipoPago = TipoPago.CreditoPersonall,
+                TipoPago = TipoPago.CreditoPersonal,
                 CreditoId = null, // Error: debería existir
                 CreditoEstado = null
             };
@@ -676,3 +676,4 @@ namespace TheBuryProject.Tests.CreditoPersonal
         #endregion
     }
 }
+

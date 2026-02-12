@@ -14,7 +14,7 @@ namespace TheBuryProject.ViewModels
         public int? CategoriaId { get; set; }
         public int? MarcaId { get; set; }
         public TipoPago? TipoPago { get; set; }
-        public int? VendedorId { get; set; }
+        public string? VendedorId { get; set; }
 
         // Para agrupación
         public string? AgruparPor { get; set; } // "dia", "mes", "producto", "cliente", "categoria"

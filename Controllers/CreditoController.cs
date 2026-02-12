@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using TheBuryProject.Filters;
 using TheBuryProject.Helpers;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Constants;
@@ -17,12 +18,15 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
+    [Authorize]
+    [PermisoRequerido(Modulo = "creditos", Accion = "view")]
     public class CreditoController : Controller
     {
         private readonly ICreditoService _creditoService;
         private readonly IEvaluacionCreditoService _evaluacionService;
         private readonly IFinancialCalculationService _financialService;
+        private readonly IConfiguracionPagoService _configuracionPagoService;
+        private readonly IConfiguracionMoraService _configuracionMoraService;
         private readonly IDbContextFactory<AppDbContext> _contextFactory;
         private readonly IMapper _mapper;
         private readonly ILogger<CreditoController> _logger;
@@ -56,6 +60,8 @@ namespace TheBuryProject.Controllers
             ICreditoService creditoService,
             IEvaluacionCreditoService evaluacionService,
             IFinancialCalculationService financialService,
+            IConfiguracionPagoService configuracionPagoService,
+            IConfiguracionMoraService configuracionMoraService,
             IDbContextFactory<AppDbContext> contextFactory,
             IMapper mapper,
             ILogger<CreditoController> logger,
@@ -65,6 +71,8 @@ namespace TheBuryProject.Controllers
             _creditoService = creditoService;
             _evaluacionService = evaluacionService;
             _financialService = financialService;
+            _configuracionPagoService = configuracionPagoService;
+            _configuracionMoraService = configuracionMoraService;
             _contextFactory = contextFactory;
             _mapper = mapper;
             _logger = logger;
@@ -271,6 +279,8 @@ namespace TheBuryProject.Controllers
             if (montoVenta <= 0)
                 montoVenta = credito.MontoSolicitado;
 
+            var tasaMensualConfig = await _configuracionPagoService.ObtenerTasaInteresMensualCreditoPersonalAsync();
+
             if (ventaId.HasValue)
             {
                 await using var context = await _contextFactory.CreateDbContextAsync();
@@ -323,20 +333,113 @@ namespace TheBuryProject.Controllers
                 }
             }
 
+            // Cargar datos del cliente para determinar si tiene configuración personalizada
+            await using var contextCliente = await _contextFactory.CreateDbContextAsync();
+            var cliente = await contextCliente.Clientes
+                .Include(c => c.PerfilCreditoPreferido) // TAREA 8: Incluir perfil preferido
+                .FirstOrDefaultAsync(c => c.Id == credito.ClienteId && !c.IsDeleted);
+
+            // TAREA 8: Cargar perfil preferido si existe
+            PerfilCredito? perfilPreferido = cliente?.PerfilCreditoPreferido;
+
+            // Determinar fuente por defecto (si cliente tiene config personalizada, usarla; sino global)
+            var fuenteDefecto = FuenteConfiguracionCredito.Global;
+            if (cliente != null && 
+                (cliente.TasaInteresMensualPersonalizada.HasValue || 
+                 cliente.GastosAdministrativosPersonalizados.HasValue ||
+                 cliente.CuotasMaximasPersonalizadas.HasValue))
+            {
+                fuenteDefecto = FuenteConfiguracionCredito.PorCliente;
+            }
+
+            // Determinar valores según fuente (prioridad: Personalizado > Perfil > Global)
+            decimal? tasaInicial = tasaMensualConfig;
+            decimal? gastosIniciales = 0;
+            int cuotasMaximas = 24; // Global default
+            int cuotasMinimas = 1;
+
+            if (fuenteDefecto == FuenteConfiguracionCredito.PorCliente && cliente != null)
+            {
+                // TAREA 8: Prioridad → cliente personalizado > perfil preferido > global
+                tasaInicial = cliente.TasaInteresMensualPersonalizada 
+                    ?? perfilPreferido?.TasaMensual 
+                    ?? tasaMensualConfig;
+                    
+                gastosIniciales = cliente.GastosAdministrativosPersonalizados 
+                    ?? perfilPreferido?.GastosAdministrativos 
+                    ?? 0;
+                    
+                cuotasMaximas = cliente.CuotasMaximasPersonalizadas 
+                    ?? perfilPreferido?.MaxCuotas 
+                    ?? 24;
+                    
+                cuotasMinimas = perfilPreferido?.MinCuotas ?? 1;
+            }
+
+            // TAREA 9: Cargar perfiles activos para el selector
+            var perfilesActivos = await contextCliente.PerfilesCredito
+                .Where(p => !p.IsDeleted && p.Activo)
+                .OrderBy(p => p.Orden)
+                .ThenBy(p => p.Nombre)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Nombre,
+                    p.Descripcion,
+                    p.TasaMensual,
+                    p.GastosAdministrativos,
+                    p.MinCuotas,
+                    p.MaxCuotas
+                })
+                .ToListAsync();
+
             var modelo = new ConfiguracionCreditoVentaViewModel
             {
                 CreditoId = credito.Id,
                 VentaId = ventaId,
+                ClienteId = credito.ClienteId,
                 ClienteNombre = credito.ClienteNombre ?? string.Empty,
                 NumeroCredito = credito.Numero,
+                FuenteConfiguracion = fuenteDefecto,
+                MetodoCalculo = MetodoCalculoCredito.AutomaticoPorCliente, // TAREA 9: Default
+                PerfilCreditoSeleccionadoId = perfilPreferido?.Id, // TAREA 9: Preseleccionar perfil del cliente
                 Monto = montoVenta,
                 Anticipo = 0,
                 MontoFinanciado = montoVenta,
                 CantidadCuotas = credito.CantidadCuotas > 0 ? credito.CantidadCuotas : 0,
-                TasaMensual = credito.TasaInteres > 0 ? credito.TasaInteres : 0,
-                GastosAdministrativos = 0,
+                TasaMensual = tasaInicial,
+                GastosAdministrativos = gastosIniciales,
                 FechaPrimeraCuota = credito.FechaPrimeraCuota
             };
+
+            // Pasar datos del cliente a la vista para JS
+            ViewBag.ClienteConfigPersonalizada = new
+            {
+                TieneTasaPersonalizada = cliente?.TasaInteresMensualPersonalizada.HasValue ?? false,
+                TasaPersonalizada = cliente?.TasaInteresMensualPersonalizada,
+                GastosPersonalizados = cliente?.GastosAdministrativosPersonalizados,
+                CuotasMaximas = cliente?.CuotasMaximasPersonalizadas ?? cuotasMaximas,
+                CuotasMinimas = cuotasMinimas,
+                TasaGlobal = tasaMensualConfig,
+                GastosGlobales = 0, // TAREA 9: Default, puede configurarse en ConfiguracionPago
+                // TAREA 8: Información del perfil preferido
+                TienePerfilPreferido = perfilPreferido != null,
+                PerfilPreferidoId = perfilPreferido?.Id,
+                PerfilNombre = perfilPreferido?.Nombre,
+                PerfilTasa = perfilPreferido?.TasaMensual,
+                PerfilGastos = perfilPreferido?.GastosAdministrativos,
+                PerfilMinCuotas = perfilPreferido?.MinCuotas,
+                PerfilMaxCuotas = perfilPreferido?.MaxCuotas,
+                // TAREA 9: Configuración del cliente para validaciones
+                TieneConfiguracionCliente = cliente?.TasaInteresMensualPersonalizada.HasValue == true ||
+                                           cliente?.GastosAdministrativosPersonalizados.HasValue == true ||
+                                           cliente?.CuotasMaximasPersonalizadas.HasValue == true,
+                MontoMinimo = cliente?.MontoMinimoPersonalizado,
+                MontoMaximo = cliente?.MontoMaximoPersonalizado
+            };
+
+            // TAREA 9: Pasar perfiles activos a la vista
+            ViewBag.PerfilesActivos = perfilesActivos;
 
             return View(modelo);
         }
@@ -351,20 +454,210 @@ namespace TheBuryProject.Controllers
                 return View(modelo);
             }
 
+            // PUNTO 1: Validar que MetodoCalculo haya sido seleccionado
+            if (!modelo.MetodoCalculo.HasValue)
+            {
+                ModelState.AddModelError(nameof(modelo.MetodoCalculo), 
+                    "Debe seleccionar un método de cálculo.");
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+                
+                // Recargar datos para la vista
+                await using var contextReload = await _contextFactory.CreateDbContextAsync();
+                var perfilesActivos = await contextReload.PerfilesCredito
+                    .Where(p => !p.IsDeleted && p.Activo)
+                    .OrderBy(p => p.Orden)
+                    .ThenBy(p => p.Nombre)
+                    .ToListAsync();
+                ViewBag.PerfilesActivos = perfilesActivos;
+                
+                return View(modelo);
+            }
+
+            // TAREA 10: Validar que UsarCliente requiere configuración del cliente
+            if (modelo.MetodoCalculo == MetodoCalculoCredito.UsarCliente)
+            {
+                await using var contextValidacion = await _contextFactory.CreateDbContextAsync();
+                var cliente = await contextValidacion.Clientes
+                    .FirstOrDefaultAsync(c => c.Id == modelo.ClienteId && !c.IsDeleted);
+                
+                if (cliente == null || 
+                    (!cliente.TasaInteresMensualPersonalizada.HasValue && 
+                     !cliente.GastosAdministrativosPersonalizados.HasValue && 
+                     !cliente.CuotasMaximasPersonalizadas.HasValue))
+                {
+                    ModelState.AddModelError(nameof(modelo.MetodoCalculo), 
+                        "El cliente no tiene configuración de crédito personal. " +
+                        "Configure el cliente con valores personalizados o seleccione otro método.");
+                    ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+                    
+                    // Recargar datos para la vista
+                    await using var contextReload = await _contextFactory.CreateDbContextAsync();
+                    var perfilesActivos = await contextReload.PerfilesCredito
+                        .Where(p => !p.IsDeleted && p.Activo)
+                        .OrderBy(p => p.Orden)
+                        .ThenBy(p => p.Nombre)
+                        .ToListAsync();
+                    ViewBag.PerfilesActivos = perfilesActivos;
+                    
+                    return View(modelo);
+                }
+            }
+
             // Normalizar campos opcionales a valores por defecto
             var anticipo = modelo.Anticipo ?? 0m;
-            var tasaMensual = modelo.TasaMensual ?? 0m;
             var gastosAdministrativos = modelo.GastosAdministrativos ?? 0m;
+            
+            // Obtener tasa según fuente de configuración
+            var tasaMensual = modelo.TasaMensual;
+            
+            if (!tasaMensual.HasValue || modelo.FuenteConfiguracion != FuenteConfiguracionCredito.Manual)
+            {
+                // Cargar valores según fuente
+                if (modelo.FuenteConfiguracion == FuenteConfiguracionCredito.PorCliente)
+                {
+                    await using var contextCliente = await _contextFactory.CreateDbContextAsync();
+                    var cliente = await contextCliente.Clientes
+                        .FirstOrDefaultAsync(c => c.Id == modelo.ClienteId && !c.IsDeleted);
+                    
+                    if (cliente != null)
+                    {
+                        tasaMensual = cliente.TasaInteresMensualPersonalizada 
+                            ?? await _configuracionPagoService.ObtenerTasaInteresMensualCreditoPersonalAsync();
+                        
+                        if (!modelo.GastosAdministrativos.HasValue)
+                        {
+                            gastosAdministrativos = cliente.GastosAdministrativosPersonalizados ?? 0m;
+                        }
+                        
+                        _logger.LogInformation(
+                            "Crédito {CreditoId}: Usando configuración personalizada del cliente {ClienteId} - Tasa: {Tasa}%, Gastos: ${Gastos}",
+                            modelo.CreditoId, modelo.ClienteId, tasaMensual, gastosAdministrativos);
+                    }
+                    else
+                    {
+                        // Fallback a global si no hay cliente
+                        tasaMensual = await _configuracionPagoService.ObtenerTasaInteresMensualCreditoPersonalAsync();
+                        _logger.LogWarning("Cliente {ClienteId} no encontrado, usando configuración global", modelo.ClienteId);
+                    }
+                }
+                else // FuenteConfiguracionCredito.Global
+                {
+                    tasaMensual = await _configuracionPagoService.ObtenerTasaInteresMensualCreditoPersonalAsync();
+                    _logger.LogInformation(
+                        "Crédito {CreditoId}: Usando configuración global - Tasa: {Tasa}%",
+                        modelo.CreditoId, tasaMensual);
+                }
+            }
+            else
+            {
+                // Manual: usar valores ingresados por el usuario
+                // TAREA 10: Validar que tasa sea > 0 en Manual
+                if (modelo.MetodoCalculo == MetodoCalculoCredito.Manual && (!tasaMensual.HasValue || tasaMensual.Value <= 0))
+                {
+                    ModelState.AddModelError(nameof(modelo.TasaMensual), 
+                        "La tasa de interés debe ser mayor a 0% en modo Manual.");
+                    ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+                    
+                    // Recargar datos para la vista
+                    await using var contextReload = await _contextFactory.CreateDbContextAsync();
+                    var perfilesActivos = await contextReload.PerfilesCredito
+                        .Where(p => !p.IsDeleted && p.Activo)
+                        .OrderBy(p => p.Orden)
+                        .ThenBy(p => p.Nombre)
+                        .ToListAsync();
+                    ViewBag.PerfilesActivos = perfilesActivos;
+                    
+                    return View(modelo);
+                }
+                
+                _logger.LogInformation(
+                    "Crédito {CreditoId}: Configuración manual - Tasa: {Tasa}%, Gastos: ${Gastos}",
+                    modelo.CreditoId, tasaMensual, gastosAdministrativos);
+            }
 
-            var credito = await _creditoService.GetByIdAsync(modelo.CreditoId);
+            // Cargar entidad Credito desde DbContext para poder guardar campos de auditoría
+            await using var context = await _contextFactory.CreateDbContextAsync();
+            var credito = await context.Creditos
+                .FirstOrDefaultAsync(c => c.Id == modelo.CreditoId && !c.IsDeleted);
+            
             if (credito == null)
             {
                 TempData["Error"] = "Crédito no encontrado";
                 return RedirectToAction(nameof(Index));
             }
 
+            // TAREA 10: Validar rangos de cuotas según método activo
+            int cuotasMinPermitidas = 1;
+            int cuotasMaxPermitidas = 120;
+            string descripcionMetodo = "";
+            
+            switch (modelo.MetodoCalculo)
+            {
+                case MetodoCalculoCredito.Manual:
+                    cuotasMinPermitidas = 1;
+                    cuotasMaxPermitidas = 120;
+                    descripcionMetodo = "Manual";
+                    break;
+                    
+                case MetodoCalculoCredito.UsarPerfil:
+                case MetodoCalculoCredito.AutomaticoPorCliente when modelo.PerfilCreditoSeleccionadoId.HasValue:
+                    if (modelo.PerfilCreditoSeleccionadoId.HasValue)
+                    {
+                        var perfilValidacion = await context.PerfilesCredito
+                            .FirstOrDefaultAsync(p => p.Id == modelo.PerfilCreditoSeleccionadoId.Value && !p.IsDeleted);
+                        if (perfilValidacion != null)
+                        {
+                            cuotasMinPermitidas = perfilValidacion.MinCuotas;
+                            cuotasMaxPermitidas = perfilValidacion.MaxCuotas;
+                            descripcionMetodo = $"Perfil '{perfilValidacion.Nombre}'";
+                        }
+                    }
+                    break;
+                    
+                case MetodoCalculoCredito.UsarCliente:
+                    var clienteValidacion = await context.Clientes
+                        .FirstOrDefaultAsync(c => c.Id == modelo.ClienteId && !c.IsDeleted);
+                    if (clienteValidacion?.CuotasMaximasPersonalizadas.HasValue == true)
+                    {
+                        cuotasMaxPermitidas = clienteValidacion.CuotasMaximasPersonalizadas.Value;
+                        descripcionMetodo = "Cliente";
+                    }
+                    else
+                    {
+                        cuotasMaxPermitidas = 24;
+                        descripcionMetodo = "Cliente (sin config)";
+                    }
+                    break;
+                    
+                case MetodoCalculoCredito.Global:
+                case MetodoCalculoCredito.AutomaticoPorCliente:
+                default:
+                    cuotasMinPermitidas = 1;
+                    cuotasMaxPermitidas = 24;
+                    descripcionMetodo = "Global";
+                    break;
+            }
+            
+            if (modelo.CantidadCuotas < cuotasMinPermitidas || modelo.CantidadCuotas > cuotasMaxPermitidas)
+            {
+                ModelState.AddModelError(nameof(modelo.CantidadCuotas),
+                    $"La cantidad de cuotas debe estar entre {cuotasMinPermitidas} y {cuotasMaxPermitidas} " +
+                    $"según el método '{descripcionMetodo}'.");
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+                
+                // Recargar datos para la vista
+                var perfilesActivos = await context.PerfilesCredito
+                    .Where(p => !p.IsDeleted && p.Activo)
+                    .OrderBy(p => p.Orden)
+                    .ThenBy(p => p.Nombre)
+                    .ToListAsync();
+                ViewBag.PerfilesActivos = perfilesActivos;
+                
+                return View(modelo);
+            }
+
             credito.CantidadCuotas = modelo.CantidadCuotas;
-            credito.TasaInteres = tasaMensual;
+            credito.TasaInteres = tasaMensual ?? 0;
             credito.FechaPrimeraCuota = modelo.FechaPrimeraCuota;
             credito.MontoAprobado = Math.Max(0, modelo.Monto - anticipo);
             credito.MontoSolicitado = credito.MontoAprobado;
@@ -372,19 +665,108 @@ namespace TheBuryProject.Controllers
             // Marcar como Configurado (no Solicitado) para evitar loop al confirmar
             credito.Estado = EstadoCredito.Configurado;
 
+            // TAREA 9.3 / PUNTO 5: Guardar información de auditoría del método de cálculo
+            credito.MetodoCalculoAplicado = modelo.MetodoCalculo;
+            credito.FuenteConfiguracionAplicada = modelo.FuenteConfiguracion;
+            credito.GastosAdministrativos = gastosAdministrativos;
+            credito.TasaInteresAplicada = tasaMensual; // PUNTO 5: Tasa final aplicada
+
+            // TAREA 9.3: Si se usó perfil, guardar ID y nombre para auditoría
+            if (modelo.PerfilCreditoSeleccionadoId.HasValue && 
+                (modelo.MetodoCalculo == MetodoCalculoCredito.UsarPerfil || 
+                 modelo.MetodoCalculo == MetodoCalculoCredito.AutomaticoPorCliente))
+            {
+                await using var contextPerfil = await _contextFactory.CreateDbContextAsync();
+                var perfil = await contextPerfil.PerfilesCredito
+                    .FirstOrDefaultAsync(p => p.Id == modelo.PerfilCreditoSeleccionadoId.Value && !p.IsDeleted);
+                
+                if (perfil != null)
+                {
+                    credito.PerfilCreditoAplicadoId = perfil.Id;
+                    credito.PerfilCreditoAplicadoNombre = perfil.Nombre;
+                    
+                    _logger.LogInformation(
+                        "Crédito {CreditoId}: Perfil aplicado - ID: {PerfilId}, Nombre: {PerfilNombre}",
+                        modelo.CreditoId, perfil.Id, perfil.Nombre);
+                }
+            }
+
+            // PUNTO 5: Logging completo de auditoría
+            _logger.LogInformation(
+                "PUNTO 5 - Auditoría Crédito {CreditoId}: Método={Metodo}, Fuente={Fuente}, " +
+                "Tasa={Tasa:F4}%, Gastos={Gastos:C}, Cuotas=[{Min}-{Max}], Perfil={PerfilId}",
+                modelo.CreditoId,
+                modelo.MetodoCalculo,
+                modelo.FuenteConfiguracion,
+                tasaMensual,
+                gastosAdministrativos,
+                credito.CuotasMinimasPermitidas,
+                credito.CuotasMaximasPermitidas,
+                credito.PerfilCreditoAplicadoId?.ToString() ?? "N/A");
+
+            // TAREA 9.3: Guardar rango de cuotas permitidas para auditoría
+            // Determinar según el método aplicado
+            if (modelo.MetodoCalculo == MetodoCalculoCredito.Manual)
+            {
+                credito.CuotasMinimasPermitidas = 1;
+                credito.CuotasMaximasPermitidas = 120;
+            }
+            else if (modelo.PerfilCreditoSeleccionadoId.HasValue)
+            {
+                // Usar rango del perfil si se aplicó
+                await using var contextPerfil = await _contextFactory.CreateDbContextAsync();
+                var perfil = await contextPerfil.PerfilesCredito
+                    .FirstOrDefaultAsync(p => p.Id == modelo.PerfilCreditoSeleccionadoId.Value && !p.IsDeleted);
+                
+                if (perfil != null)
+                {
+                    credito.CuotasMinimasPermitidas = perfil.MinCuotas;
+                    credito.CuotasMaximasPermitidas = perfil.MaxCuotas;
+                }
+            }
+            else
+            {
+                // Global o cliente sin perfil
+                credito.CuotasMinimasPermitidas = 1;
+                credito.CuotasMaximasPermitidas = 24;
+            }
+
             if (gastosAdministrativos > 0)
             {
                 credito.Observaciones = string.IsNullOrWhiteSpace(credito.Observaciones)
                     ? $"Gastos administrativos declarados: ${gastosAdministrativos:N2}"
                     : $"{credito.Observaciones} | Gastos administrativos: ${gastosAdministrativos:N2}";
             }
+            
+            // Agregar información sobre la fuente de configuración
+            var fuenteTexto = modelo.FuenteConfiguracion switch
+            {
+                FuenteConfiguracionCredito.PorCliente => "Configuración del Cliente",
+                FuenteConfiguracionCredito.Manual => "Configuración Manual",
+                _ => "Configuración Global"
+            };
+            
+            // TAREA 9.3: Agregar info del método de cálculo a observaciones
+            var metodoTexto = modelo.MetodoCalculo switch
+            {
+                MetodoCalculoCredito.AutomaticoPorCliente => "Automático (Por Cliente)",
+                MetodoCalculoCredito.UsarPerfil => $"Perfil: {credito.PerfilCreditoAplicadoNombre ?? "N/A"}",
+                MetodoCalculoCredito.UsarCliente => "Cliente Personalizado",
+                MetodoCalculoCredito.Global => "Global",
+                MetodoCalculoCredito.Manual => "Manual",
+                _ => "Desconocido"
+            };
+            
+            credito.Observaciones = string.IsNullOrWhiteSpace(credito.Observaciones)
+                ? $"[{metodoTexto} | {fuenteTexto}]"
+                : $"{credito.Observaciones} | [{metodoTexto} | {fuenteTexto}]";
 
-            await _creditoService.UpdateAsync(credito);
+            // Guardar cambios en la entidad Credito
+            await context.SaveChangesAsync();
 
             // Actualizar la venta: marcar financiación configurada y cambiar estado
             if (modelo.VentaId.HasValue)
             {
-                await using var context = await _contextFactory.CreateDbContextAsync();
                 var venta = await context.Ventas.FindAsync(modelo.VentaId.Value);
                 if (venta != null)
                 {
@@ -422,19 +804,20 @@ namespace TheBuryProject.Controllers
         /// Simula el plan de cuotas para una venta. Los parámetros opcionales se normalizan a 0 si vienen vacíos.
         /// </summary>
         [HttpGet]
-        public IActionResult SimularPlanVenta(
+        public async Task<IActionResult> SimularPlanVenta(
             decimal totalVenta,
             decimal? anticipo,
             int cuotas,
-            decimal? tasaMensual,
             decimal? gastosAdministrativos,
-            string? fechaPrimeraCuota)
+            string? fechaPrimeraCuota,
+            decimal? tasaMensual)
         {
             try
             {
                 // Normalizar campos opcionales
                 var anticipoVal = anticipo ?? 0m;
-                var tasaVal = tasaMensual ?? 0m;
+                // Si no se proporciona tasa, usar la global
+                var tasaVal = tasaMensual ?? await _configuracionPagoService.ObtenerTasaInteresMensualCreditoPersonalAsync();
                 var gastosVal = gastosAdministrativos ?? 0m;
 
                 if (totalVenta <= 0)
@@ -937,21 +1320,39 @@ namespace TheBuryProject.Controllers
                     .OrderBy(c => c.FechaVencimiento)
                     .ToListAsync();
 
-                var cuotasViewModel = cuotas.Select(c => new CuotaViewModel
+                // Obtener alertas de mora configuradas
+                var configuracionMora = await _configuracionMoraService.GetConfiguracionAsync();
+                var alertas = configuracionMora.Alertas.Where(a => a.Activa).OrderBy(a => a.DiasRelativoVencimiento).ToList();
+
+                var cuotasViewModel = cuotas.Select(c =>
                 {
-                    Id = c.Id,
-                    CreditoId = c.CreditoId,
-                    CreditoNumero = c.Credito.Numero,
-                    ClienteNombre = c.Credito.Cliente != null ? c.Credito.Cliente.ToDisplayName() : string.Empty,
-                    NumeroCuota = c.NumeroCuota,
-                    MontoCapital = c.MontoCapital,
-                    MontoInteres = c.MontoInteres,
-                    MontoTotal = c.MontoTotal,
-                    FechaVencimiento = c.FechaVencimiento,
-                    MontoPagado = c.MontoPagado,
-                    MontoPunitorio = c.MontoPunitorio,
-                    Estado = c.Estado,
-                    MedioPago = c.MedioPago
+                    var diasRelativo = (DateTime.Today - c.FechaVencimiento).Days;
+                    
+                    // Buscar la alerta más apropiada para los días de atraso
+                    var alertaAplicable = alertas
+                        .Where(a => diasRelativo >= a.DiasRelativoVencimiento)
+                        .OrderByDescending(a => a.DiasRelativoVencimiento)
+                        .FirstOrDefault();
+
+                    return new CuotaViewModel
+                    {
+                        Id = c.Id,
+                        CreditoId = c.CreditoId,
+                        CreditoNumero = c.Credito.Numero,
+                        ClienteNombre = c.Credito.Cliente != null ? c.Credito.Cliente.ToDisplayName() : string.Empty,
+                        NumeroCuota = c.NumeroCuota,
+                        MontoCapital = c.MontoCapital,
+                        MontoInteres = c.MontoInteres,
+                        MontoTotal = c.MontoTotal,
+                        FechaVencimiento = c.FechaVencimiento,
+                        MontoPagado = c.MontoPagado,
+                        MontoPunitorio = c.MontoPunitorio,
+                        Estado = c.Estado,
+                        MedioPago = c.MedioPago,
+                        ColorAlerta = alertaAplicable?.ColorAlerta ?? "#FF0000",
+                        DescripcionAlerta = alertaAplicable?.Descripcion ?? "Cuota vencida",
+                        NivelPrioridad = alertaAplicable?.NivelPrioridad ?? 5
+                    };
                 }).ToList();
 
                 return View(cuotasViewModel);

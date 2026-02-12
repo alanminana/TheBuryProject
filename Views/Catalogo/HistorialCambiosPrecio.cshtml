@@ -1,0 +1,99 @@
+@model TheBuryProject.ViewModels.CambioPrecioHistorialViewModel
+
+@{
+    ViewData["Title"] = "Historial de Cambios de Precio";
+}
+
+<section class="container-fluid py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h4 mb-1">
+                <i class="bi bi-clock-history text-info me-2"></i>Historial de Cambios de Precio
+            </h1>
+            <p class="text-secondary small mb-0">Cambios directos aplicados en el catalogo.</p>
+        </div>
+        <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Volver al catalogo
+        </a>
+    </div>
+
+    <partial name="_Alerts" />
+
+    <div class="card bg-dark border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Usuario</th>
+                            <th class="text-end">Cambio (%)</th>
+                            <th>Alcance</th>
+                            <th class="text-center">Cantidad</th>
+                            <th>Motivo</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Eventos.Any())
+                        {
+                            foreach (var item in Model.Eventos)
+                            {
+                                var cambioClass = item.ValorPorcentaje >= 0 ? "text-success" : "text-danger";
+                                var cambioTexto = item.ValorPorcentaje >= 0
+                                    ? $"+{item.ValorPorcentaje:0.##}%"
+                                    : $"{item.ValorPorcentaje:0.##}%";
+                                <tr>
+                                    <td>@item.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@item.Usuario</td>
+                                    <td class="text-end @cambioClass fw-semibold">@cambioTexto</td>
+                                    <td>@item.Alcance</td>
+                                    <td class="text-center"><span class="badge bg-secondary">@item.CantidadProductos</span></td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.Motivo) ? "-" : item.Motivo)</td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a class="btn btn-outline-info"
+                                               asp-action="DetalleCambioPrecio"
+                                               asp-route-id="@item.Id">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            @if (item.Revertido)
+                                            {
+                                                <span class="badge bg-secondary align-self-center">Revertido</span>
+                                            }
+                                            else if ((item.Alcance ?? string.Empty).ToLowerInvariant() == "reversion")
+                                            {
+                                                <span class="badge bg-info align-self-center">Reversion</span>
+                                            }
+                                            else
+                                            {
+                                                <form asp-action="RevertirCambioPrecio"
+                                                      asp-route-eventoId="@item.Id"
+                                                      method="post"
+                                                      class="d-inline"
+                                                      onsubmit="return confirm('Confirmar reversion del cambio?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-danger">
+                                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-secondary py-4">
+                                    No hay cambios registrados.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

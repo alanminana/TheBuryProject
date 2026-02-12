@@ -65,5 +65,15 @@ namespace TheBuryProject.ViewModels
         public bool EstaVencida => Estado == EstadoCuota.Vencida || (Estado == EstadoCuota.Pendiente && FechaVencimiento < DateTime.UtcNow);
         public int DiasAtraso => EstaVencida ? (DateTime.UtcNow - FechaVencimiento).Days : 0;
         public decimal SaldoPendiente => MontoTotal + MontoPunitorio - MontoPagado;
+
+        // Propiedades de alerta visual
+        [Display(Name = "Color de Alerta")]
+        public string ColorAlerta { get; set; } = "#FF0000"; // Default rojo
+
+        [Display(Name = "Descripción Alerta")]
+        public string? DescripcionAlerta { get; set; }
+
+        [Display(Name = "Prioridad")]
+        public int NivelPrioridad { get; set; } = 5; // Default alta prioridad
     }
 }

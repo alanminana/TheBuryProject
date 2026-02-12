@@ -53,5 +53,11 @@ namespace TheBuryProject.Services.Interfaces
         /// <param name="model">Datos del cambio directo</param>
         /// <returns>Resultado con éxito/error y conteo de actualizaciones</returns>
         Task<ResultadoAplicacionPrecios> AplicarCambioPrecioDirectoAsync(AplicarCambioPrecioDirectoViewModel model);
+
+        Task<CambioPrecioHistorialViewModel> GetHistorialCambiosPrecioAsync();
+
+        Task<CambioPrecioDetalleViewModel?> GetCambioPrecioDetalleAsync(int eventoId);
+
+        Task<(bool Exitoso, string Mensaje, int? EventoReversionId)> RevertirCambioPrecioAsync(int eventoId);
     }
 }

@@ -1,0 +1,42 @@
+@* Modal para revertir un cambio de precio específico *@
+<div class="modal fade" id="modalRevertirPrecio" tabindex="-1" aria-labelledby="modalRevertirPrecioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-danger">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title fw-bold" id="modalRevertirPrecioLabel">
+                    <i class="bi bi-arrow-counterclockwise text-danger me-2"></i>Revertir cambio de precio
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>¡Atención!</strong> Esta acción revertirá el precio al valor anterior del cambio seleccionado.
+                </div>
+
+                <div class="card bg-secondary border-0 mb-3">
+                    <div class="card-body">
+                        <h6 class="fw-semibold mb-2">Detalle del cambio a revertir</h6>
+                        <div id="detalleCambioRevertir">
+                            <!-- Se llena por JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="motivoReversion" class="form-label fw-semibold">Motivo de la reversión (opcional)</label>
+                    <textarea class="form-control" id="motivoReversion" rows="2" 
+                              placeholder="Ej: Corrección de error, cambio no autorizado..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarReversion">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i>Revertir cambio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

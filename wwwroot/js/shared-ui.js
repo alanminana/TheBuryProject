@@ -27,23 +27,16 @@
         return input;
     }
 
-    // Variables para gestionar el estado del modal de confirmación
-    var pendingConfirmation = null;
-
     function getConfirmModal() {
         return document.getElementById('confirmModal');
     }
 
-    function showConfirmModal(message, options) {
+    function applyConfirmModalContent(message, options) {
         var modal = getConfirmModal();
-        if (!modal) {
-            // Fallback a confirm() nativo si el modal no existe
-            return Promise.resolve(confirm(message));
-        }
+        if (!modal) return null;
 
         options = options || {};
 
-        // Configurar el contenido del modal
         var titleEl = document.getElementById('confirmModalTitle');
         var messageEl = document.getElementById('confirmModalMessage');
         var confirmBtn = document.getElementById('confirmModalConfirmBtn');
@@ -54,12 +47,10 @@
         if (messageEl) messageEl.innerHTML = message.replace(/\n/g, '<br>');
         if (confirmBtn) {
             confirmBtn.textContent = options.confirmText || 'Confirmar';
-            // Actualizar clase del botón según variante
             confirmBtn.className = 'btn btn-' + (options.variant || 'primary');
         }
         if (cancelBtn) cancelBtn.textContent = options.cancelText || 'Cancelar';
         if (iconEl) {
-            // Actualizar icono según variante
             var iconClass = 'bi bi-question-circle';
             var colorClass = 'text-primary';
             if (options.variant === 'danger') {
@@ -71,6 +62,20 @@
             }
             iconEl.className = iconClass + ' ' + colorClass;
         }
+
+        if (!confirmBtn) return null;
+
+        return { modal: modal, confirmBtn: confirmBtn };
+    }
+
+    function showConfirmModal(message, options) {
+        var modalContext = applyConfirmModalContent(message, options);
+        if (!modalContext) {
+            return Promise.resolve(confirm(message));
+        }
+
+        var modal = modalContext.modal;
+        var confirmBtn = modalContext.confirmBtn;
 
         return new Promise(function (resolve) {
             var bsModal = bootstrap.Modal.getOrCreateInstance(modal);
@@ -108,14 +113,33 @@
         };
     }
 
+    function submitFormWithBypass(form, submitter) {
+        if (typeof form.requestSubmit === 'function') {
+            if (submitter && submitter.form === form) {
+                form.requestSubmit(submitter);
+            } else {
+                form.requestSubmit();
+            }
+            return;
+        }
+        if (typeof form.submit === 'function') {
+            form.submit();
+        }
+    }
+
     function bindConfirmations() {
-        if (document.documentElement.dataset.confirmBound === 'true') return;
-        document.documentElement.dataset.confirmBound = 'true';
+        if (window.__confirmModalBound) return;
+        window.__confirmModalBound = true;
 
         // Handler para clicks en elementos con data-confirm (no submit buttons)
         document.addEventListener('click', function (event) {
             const trigger = event.target.closest('[data-confirm]');
             if (!trigger) return;
+
+            // Si el data-confirm está en un formulario, el submit handler se encarga
+            if (trigger instanceof HTMLFormElement) {
+                return;
+            }
 
             // Los submit buttons se manejan en el handler de submit
             if ((trigger instanceof HTMLButtonElement || trigger instanceof HTMLInputElement)
@@ -146,33 +170,115 @@
             const form = event.target;
             if (!form || !(form instanceof HTMLFormElement)) return;
 
-            // Evitar doble procesamiento
-            if (form.dataset.confirmPending === 'true') {
-                form.dataset.confirmPending = 'false';
+            if (form.dataset.confirmBypass === '1') {
+                delete form.dataset.confirmBypass;
+                console.log('[ConfirmModal] bypass submit OK', {
+                    action: form.getAttribute('action'),
+                    method: form.getAttribute('method'),
+                    id: form.id || null
+                });
                 return;
             }
 
             const submitter = event.submitter;
+            const submitterInfo = {
+                id: submitter?.id || null,
+                name: submitter?.name || null,
+                type: submitter?.getAttribute?.('type') || null
+            };
 
             const rawMessage = submitter?.getAttribute?.('data-confirm') || form.getAttribute('data-confirm');
             const message = normalizeConfirmMessage(rawMessage);
-            
+
             if (message) {
                 event.preventDefault();
                 event.stopPropagation();
 
-                const options = getConfirmOptions(submitter || form);
-                showConfirmModal(message, options).then(function (confirmed) {
-                    if (confirmed) {
-                        form.dataset.confirmPending = 'true';
-                        // Re-submit el formulario
-                        if (submitter && submitter.click) {
-                            submitter.click();
-                        } else {
-                            form.requestSubmit(submitter);
-                        }
-                    }
+                console.log('[ConfirmModal] intercept submit', {
+                    action: form.getAttribute('action'),
+                    method: form.getAttribute('method'),
+                    id: form.id || null,
+                    submitter: submitterInfo
                 });
+
+                const options = getConfirmOptions(submitter || form);
+                var modalContext = applyConfirmModalContent(message, options);
+
+                if (!modalContext) {
+                    if (confirm(message)) {
+                        console.log('[ConfirmModal] confirm click (fallback confirm)', submitterInfo);
+                        form.dataset.confirmBypass = '1';
+                        submitFormWithBypass(form, submitter);
+                    }
+                    return;
+                }
+
+                var modal = modalContext.modal;
+                var confirmBtn = modalContext.confirmBtn;
+                var bsModal = bootstrap.Modal.getOrCreateInstance(modal);
+                var confirmed = false;
+                var submitted = false;
+                var timeoutId = null;
+
+                // IMPORTANTE: misma referencia para add/remove
+                var hiddenListenerOptions = { once: true };
+
+                function cleanup() {
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    // SOLO este remove (sin duplicados)
+                    modal.removeEventListener('hidden.bs.modal', onHidden, hiddenListenerOptions);
+                }
+
+                function submitWithBypass(logLabel) {
+                    if (submitted) return;
+                    submitted = true;
+
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                        timeoutId = null;
+                    }
+
+                    console.log('[ConfirmModal] ' + logLabel, {
+                        action: form.getAttribute('action'),
+                        method: form.getAttribute('method'),
+                        id: form.id || null
+                    });
+
+                    form.dataset.confirmBypass = '1';
+
+                    console.log('[ConfirmModal] bypass submit OK', {
+                        action: form.getAttribute('action'),
+                        method: form.getAttribute('method'),
+                        id: form.id || null
+                    });
+
+                    submitFormWithBypass(form, submitter);
+                }
+
+                function onConfirm() {
+                    confirmed = true;
+                    console.log('[ConfirmModal] confirm click', submitterInfo);
+                    bsModal.hide();
+
+                    timeoutId = setTimeout(function () {
+                        if (!confirmed || submitted) return;
+                        cleanup();
+                        submitWithBypass('timeout fallback -> submit');
+                    }, 800);
+                }
+
+                function onHidden() {
+                    cleanup();
+                    if (!confirmed) return;
+                    submitWithBypass('hidden -> submit');
+                }
+
+                confirmBtn.addEventListener('click', onConfirm);
+
+                // SOLO este add (sin duplicados)
+                modal.addEventListener('hidden.bs.modal', onHidden, hiddenListenerOptions);
+
+                bsModal.show();
                 return;
             }
 
@@ -249,10 +355,29 @@
         }, true);
     }
 
+    function cleanupModalArtifacts() {
+        var openModals = document.querySelectorAll('.modal.show').length;
+        var backdrops = document.querySelectorAll('.modal-backdrop');
+
+        if (openModals === 0) {
+            backdrops.forEach(function (backdrop) { backdrop.remove(); });
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        } else if (backdrops.length > 1) {
+            backdrops.forEach(function (backdrop, index) {
+                if (index > 0) backdrop.remove();
+            });
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         enableTooltips();
         bindConfirmations();
         bindAutoSubmit();
         bindTriggerClicks();
+        cleanupModalArtifacts();
     });
+
+    document.addEventListener('hidden.bs.modal', cleanupModalArtifacts);
 })();

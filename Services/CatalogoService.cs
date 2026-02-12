@@ -332,5 +332,61 @@ namespace TheBuryProject.Services
             // Lógica principal delegada al PrecioService (a implementar)
             return await _precioService.AplicarCambioPrecioDirectoAsync(model);
         }
+
+        public async Task<CambioPrecioHistorialViewModel> GetHistorialCambiosPrecioAsync()
+        {
+            var eventos = await _precioService.GetCambioPrecioEventosAsync();
+
+            return new CambioPrecioHistorialViewModel
+            {
+                Eventos = eventos.Select(e => new CambioPrecioEventoItemViewModel
+                {
+                    Id = e.Id,
+                    Fecha = e.Fecha,
+                    Usuario = e.Usuario,
+                    ValorPorcentaje = e.ValorPorcentaje,
+                    Alcance = e.Alcance,
+                    CantidadProductos = e.CantidadProductos,
+                    Motivo = e.Motivo,
+                    Revertido = e.RevertidoEn.HasValue,
+                    RevertidoEn = e.RevertidoEn,
+                    RevertidoPor = e.RevertidoPor
+                }).ToList()
+            };
+        }
+
+        public async Task<CambioPrecioDetalleViewModel?> GetCambioPrecioDetalleAsync(int eventoId)
+        {
+            var evento = await _precioService.GetCambioPrecioEventoAsync(eventoId);
+            if (evento == null)
+                return null;
+
+            return new CambioPrecioDetalleViewModel
+            {
+                EventoId = evento.Id,
+                Fecha = evento.Fecha,
+                Usuario = evento.Usuario,
+                ValorPorcentaje = evento.ValorPorcentaje,
+                Alcance = evento.Alcance,
+                CantidadProductos = evento.CantidadProductos,
+                Motivo = evento.Motivo,
+                Revertido = evento.RevertidoEn.HasValue,
+                RevertidoEn = evento.RevertidoEn,
+                RevertidoPor = evento.RevertidoPor,
+                Detalles = evento.Detalles.Select(d => new CambioPrecioDetalleItemViewModel
+                {
+                    ProductoId = d.ProductoId,
+                    Codigo = d.Producto?.Codigo ?? string.Empty,
+                    Nombre = d.Producto?.Nombre ?? $"Producto {d.ProductoId}",
+                    PrecioAnterior = d.PrecioAnterior,
+                    PrecioNuevo = d.PrecioNuevo
+                }).ToList()
+            };
+        }
+
+        public async Task<(bool Exitoso, string Mensaje, int? EventoReversionId)> RevertirCambioPrecioAsync(int eventoId)
+        {
+            return await _precioService.RevertirCambioPrecioEventoAsync(eventoId);
+        }
     }
 }

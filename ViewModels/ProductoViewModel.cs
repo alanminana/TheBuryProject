@@ -62,6 +62,11 @@ namespace TheBuryProject.ViewModels
         [DisplayFormat(DataFormatString = "{0:C2}", ApplyFormatInEditMode = false)]
         public decimal PrecioVenta { get; set; }
 
+        [Required(ErrorMessage = "El porcentaje de IVA es obligatorio")]
+        [Display(Name = "IVA (%)")]
+        [Range(0, 100, ErrorMessage = "El IVA debe estar entre 0 y 100")]
+        public decimal PorcentajeIVA { get; set; } = 21m;
+
         [Display(Name = "Stock Mínimo")]
         [Range(0, double.MaxValue, ErrorMessage = "El stock mínimo debe ser mayor o igual a 0")]
         public decimal StockMinimo { get; set; } = 0;

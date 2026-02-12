@@ -33,7 +33,8 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label asp-for="Numero" class="form-label fw-semibold text-light"></label>
-                                        <input asp-for="Numero" class="form-control bg-body-secondary text-light border-0" />
+                                        <input asp-for="Numero" class="form-control bg-body-secondary text-light border-0" readonly />
+                                        <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Número generado automáticamente</small>
                                         <span asp-validation-for="Numero" class="text-danger small"></span>
                                     </div>
                                     <div class="col-md-6">

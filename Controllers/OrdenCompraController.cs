@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -11,7 +11,7 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Contador)]
+    [Authorize]
     [PermisoRequerido(Modulo = ModuloCompras, Accion = AccionVer)]
     public class OrdenCompraController : Controller
     {
@@ -108,8 +108,12 @@ namespace TheBuryProject.Controllers
             {
                 await CargarDatosSelectListsAsync();
 
+                // Generar número de orden automáticamente
+                var numeroOrden = await _ordenCompraService.GenerarNumeroOrdenAsync();
+
                 var viewModel = new OrdenCompraViewModel
                 {
+                    Numero = numeroOrden,
                     FechaEmision = DateTime.Today,
                     Estado = EstadoOrdenCompra.Borrador
                 };

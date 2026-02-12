@@ -1,4 +1,5 @@
-﻿@model TheBuryProject.ViewModels.ConfiguracionPagoViewModel
+@model TheBuryProject.ViewModels.ConfiguracionPagoViewModel
+@using TheBuryProject.Models.Enums
 @{
     ViewData["Title"] = "Editar Configuración de Pago";
 }
@@ -64,8 +65,35 @@
                             <input asp-for="Activo" class="form-check-input" type="checkbox" />
                             <label asp-for="Activo" class="form-check-label fw-semibold"></label>
                         </div>
+                        @if (Model.TipoPago == TipoPago.CreditoPersonal)
+                        {
+                            <div class="mb-4" id="creditoPersonalTasaDiv">
+                                <h5 class="text-info mb-3">
+                                    <i class="bi bi-graph-up-arrow me-2"></i>Credito Personal
+                                </h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label asp-for="TasaInteresMensualCreditoPersonal" class="form-label fw-semibold"></label>
+                                        <div class="input-group">
+                                            <input asp-for="TasaInteresMensualCreditoPersonal"
+                                                   class="form-control bg-body-secondary text-light border-0"
+                                                   type="number" step="0.01" min="0" />
+                                            <span class="input-group-text bg-secondary text-light border-0">%</span>
+                                        </div>
+                                        <span asp-validation-for="TasaInteresMensualCreditoPersonal" class="text-danger small"></span>
+                                        <div class="form-text text-secondary">
+                                            Tasa mensual aplicada a ventas con Credito Personal.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <hr class="border-secondary" />
+                            <hr class="border-secondary" />
+                        }
+                        else
+                        {
+                            <hr class="border-secondary" />
+                        }
 
                         <!-- Descuentos -->
                         <h5 class="text-info mb-3">
@@ -137,3 +165,5 @@
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/configuracion-pago-create.js" asp-append-version="true"></script>
 }
+
+

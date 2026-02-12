@@ -339,6 +339,28 @@ namespace TheBuryProject.Services
             }
         }
 
+        public async Task<AperturaCaja?> ObtenerAperturaActivaParaUsuarioAsync(string usuario)
+        {
+            if (string.IsNullOrWhiteSpace(usuario))
+            {
+                return null;
+            }
+
+            try
+            {
+                return await _context.AperturasCaja
+                    .Include(a => a.Caja)
+                    .Where(a => !a.Cerrada && !a.IsDeleted && a.UsuarioApertura == usuario)
+                    .OrderByDescending(a => a.FechaApertura)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener apertura activa para usuario {Usuario}", usuario);
+                throw;
+            }
+        }
+
         public async Task<bool> TieneCajaAbiertaAsync(int cajaId)
         {
             try
@@ -493,14 +515,52 @@ namespace TheBuryProject.Services
                     return null;
                 }
 
-                // Obtener apertura de caja activa
-                var apertura = await ObtenerAperturaActivaParaVentaAsync();
-                if (apertura == null)
+                AperturaCaja? apertura = null;
+                int? aperturaId = null;
+                string? vendedorUserId = null;
+
+                if (ventaId > 0)
                 {
+                    var ventaData = await _context.Ventas
+                        .Where(v => v.Id == ventaId && !v.IsDeleted)
+                        .Select(v => new { v.AperturaCajaId, v.VendedorUserId })
+                        .FirstOrDefaultAsync();
+
+                    if (ventaData != null)
+                    {
+                        aperturaId = ventaData.AperturaCajaId;
+                        vendedorUserId = ventaData.VendedorUserId;
+                    }
+                }
+
+                if (aperturaId.HasValue)
+                {
+                    apertura = await _context.AperturasCaja
+                        .FirstOrDefaultAsync(a => a.Id == aperturaId.Value && !a.IsDeleted);
+
+                    if (apertura == null)
+                    {
+                        _logger.LogWarning(
+                            "Apertura asociada a la venta {VentaNumero} no encontrada o eliminada. AperturaCajaId: {AperturaCajaId}",
+                            ventaNumero,
+                            aperturaId.Value);
+                        throw new InvalidOperationException("Apertura asociada a la venta no encontrada o eliminada.");
+                    }
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(vendedorUserId))
+                    {
+                        _logger.LogWarning(
+                            "Venta {VentaNumero} no tiene AperturaCajaId y no hay soporte para resolver apertura activa por UserId.",
+                            ventaNumero);
+                        throw new InvalidOperationException("No hay apertura activa para el vendedor de la venta.");
+                    }
+
                     _logger.LogWarning(
-                        "No hay caja abierta para registrar movimiento de venta {VentaNumero}",
+                        "Venta {VentaNumero} sin AperturaCajaId ni VendedorUserId. Movimiento no trazable.",
                         ventaNumero);
-                    return null;
+                    throw new InvalidOperationException("Venta no trazable: falta apertura y vendedor.");
                 }
 
                 // Determinar el concepto según el tipo de pago

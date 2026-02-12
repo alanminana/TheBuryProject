@@ -97,7 +97,9 @@ public interface IRolService
     /// <summary>
     /// Obtiene todos los usuarios que tienen un rol específico
     /// </summary>
-    Task<List<IdentityUser>> GetUsersInRoleAsync(string roleName);
+    /// <param name="roleName">Nombre del rol</param>
+    /// <param name="includeInactive">Si es true, incluye usuarios inactivos. Por defecto false (solo activos)</param>
+    Task<List<ApplicationUser>> GetUsersInRoleAsync(string roleName, bool includeInactive = false);
 
     /// <summary>
     /// Asigna un rol a un usuario

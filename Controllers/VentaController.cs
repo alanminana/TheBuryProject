@@ -1,6 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using TheBuryProject.Filters;
+using TheBuryProject.Helpers;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Interfaces;
@@ -8,9 +15,17 @@ using TheBuryProject.ViewModels;
 
 namespace TheBuryProject.Controllers
 {
-    [Authorize(Roles = Roles.SuperAdmin + "," + Roles.Gerente + "," + Roles.Vendedor)]
+    [Authorize]
+    [PermisoRequerido(Modulo = ModuloVentas, Accion = AccionVer)]
     public class VentaController : Controller
     {
+        private const string ModuloVentas = "ventas";
+        private const string AccionVer = "view";
+        private const string AccionCrear = "create";
+        private const string AccionActualizar = "update";
+        private const string AccionAutorizar = "authorize";
+        private const string AccionRechazar = "reject";
+        private const string AccionFacturar = "invoice";
         private readonly IVentaService _ventaService;
         private readonly IConfiguracionPagoService _configuracionPagoService;
         private readonly ILogger<VentaController> _logger;
@@ -23,12 +38,19 @@ namespace TheBuryProject.Controllers
         private readonly IProductoService _productoService;
         private readonly IClienteLookupService _clienteLookup;
         private readonly IValidacionVentaService _validacionVentaService;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ICajaService _cajaService;
 
         private string? GetSafeReturnUrl(string? returnUrl)
         {
             return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
                 ? returnUrl
                 : null;
+        }
+
+        private string? GetCurrentUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier);
         }
 
         public VentaController(
@@ -43,7 +65,9 @@ namespace TheBuryProject.Controllers
             IClienteService clienteService,
             IProductoService productoService,
             IClienteLookupService clienteLookup,
-            IValidacionVentaService validacionVentaService)
+            IValidacionVentaService validacionVentaService,
+            UserManager<ApplicationUser> userManager,
+            ICajaService cajaService)
         {
             _ventaService = ventaService;
             _configuracionPagoService = configuracionPagoService;
@@ -57,6 +81,8 @@ namespace TheBuryProject.Controllers
             _productoService = productoService;
             _clienteLookup = clienteLookup;
             _validacionVentaService = validacionVentaService;
+            _userManager = userManager;
+            _cajaService = cajaService;
         }
 
         // GET: Venta
@@ -71,9 +97,15 @@ namespace TheBuryProject.Controllers
                 ViewBag.Clientes = clientesSelect;
 
                 ViewBag.Estados = new SelectList(Enum.GetValues(typeof(EstadoVenta)));
-                ViewBag.TiposPago = new SelectList(Enum.GetValues(typeof(TipoPago)));
+                ViewBag.TiposPago = EnumHelper.GetSelectList<TipoPago>();
                 ViewBag.EstadosAutorizacion = new SelectList(Enum.GetValues(typeof(EstadoAutorizacionVenta)));
                 ViewBag.Filter = filter;
+
+                var userName = User?.Identity?.Name;
+                var aperturaActiva = !string.IsNullOrWhiteSpace(userName)
+                    ? await _cajaService.ObtenerAperturaActivaParaUsuarioAsync(userName)
+                    : null;
+                ViewBag.PuedeCrearVenta = aperturaActiva != null;
 
                 return View(ventas);
             }
@@ -93,6 +125,7 @@ namespace TheBuryProject.Controllers
                 var venta = await _ventaService.GetByIdAsync(id);
                 if (venta == null)
                 {
+                    _logger.LogWarning("Edit(GET) venta {Id} not found", id);
                     TempData["Error"] = "Venta no encontrada";
                     return RedirectToAction(nameof(Index));
                 }
@@ -111,7 +144,7 @@ namespace TheBuryProject.Controllers
         [HttpGet]
         public async Task<IActionResult> Cotizar()
         {
-            await CargarViewBags();
+            await CargarViewBags(vendedorUserIdSeleccionado: GetCurrentUserId());
             ViewBag.IvaRate = VentaConstants.IVA_RATE;
             return View("Create", CrearVentaInicial(EstadoVenta.Cotizacion));
         }
@@ -119,6 +152,7 @@ namespace TheBuryProject.Controllers
         // POST: Venta/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermisoRequerido(Modulo = ModuloVentas, Accion = AccionCrear)]
         public async Task<IActionResult> Create(VentaViewModel viewModel, string? DatosCreditoPersonallJson)
         {
             try
@@ -162,7 +196,7 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al crear venta");
                 ModelState.AddModelError("", "Error al crear la venta: " + ex.Message);
-                await CargarViewBags(viewModel.ClienteId);
+                await CargarViewBags(viewModel.ClienteId, vendedorUserIdSeleccionado: viewModel.VendedorUserId);
                 ViewBag.IvaRate = VentaConstants.IVA_RATE;
                 return View(viewModel);
             }
@@ -170,9 +204,10 @@ namespace TheBuryProject.Controllers
 
         // GET: Venta/Create
         [HttpGet]
+        [PermisoRequerido(Modulo = ModuloVentas, Accion = AccionCrear)]
         public async Task<IActionResult> Create()
         {
-            await CargarViewBags();
+            await CargarViewBags(vendedorUserIdSeleccionado: GetCurrentUserId());
             ViewBag.IvaRate = VentaConstants.IVA_RATE;
             return View(CrearVentaInicial(EstadoVenta.Presupuesto));
         }
@@ -207,25 +242,53 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Venta/Edit/5
+        [PermisoRequerido(Modulo = ModuloVentas, Accion = AccionActualizar)]
         public async Task<IActionResult> Edit(int id)
         {
             try
             {
+                _logger.LogDebug(
+                    "Edit(GET) venta {Id} requested. Path:{Path} Query:{Query} User:{User}",
+                    id,
+                    Request.Path.Value ?? string.Empty,
+                    Request.QueryString.HasValue ? Request.QueryString.Value : string.Empty,
+                    User?.Identity?.Name ?? "anonymous");
+
                 var venta = await _ventaService.GetByIdAsync(id);
                 if (venta == null)
                 {
+                    _logger.LogWarning("Edit(GET) venta {Id} not found", id);
                     TempData["Error"] = "Venta no encontrada";
                     return RedirectToAction(nameof(Index));
                 }
 
                 if (venta.Estado != EstadoVenta.Cotizacion && venta.Estado != EstadoVenta.Presupuesto)
                 {
+                    _logger.LogWarning(
+                        "Edit(GET) venta {Id} estado no editable. Estado:{Estado}",
+                        id,
+                        venta.Estado);
                     TempData["Error"] = "Solo se pueden editar ventas en estado Cotización o Presupuesto";
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
-                await CargarViewBags(venta.ClienteId, venta.Detalles.Select(d => d.ProductoId).Distinct());
+                await CargarViewBags(
+                    venta.ClienteId,
+                    venta.Detalles.Select(d => d.ProductoId).Distinct(),
+                    venta.VendedorUserId);
                 ViewBag.IvaRate = VentaConstants.IVA_RATE;
+                var ventaJson = JsonSerializer.Serialize(venta, new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                });
+                _logger.LogDebug(
+                    "Edit(GET) venta {Id} model loaded. Detalles:{Detalles} TipoPago:{TipoPago} Estado:{Estado} RowVersion:{RowVersionLength} Data:{VentaJson}",
+                    id,
+                    venta.Detalles.Count,
+                    venta.TipoPago,
+                    venta.Estado,
+                    venta.RowVersion?.Length ?? 0,
+                    ventaJson);
                 return View(venta);
             }
             catch (Exception ex)
@@ -239,12 +302,37 @@ namespace TheBuryProject.Controllers
         // POST: Venta/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermisoRequerido(Modulo = ModuloVentas, Accion = AccionActualizar)]
         public async Task<IActionResult> Edit(int id, VentaViewModel viewModel)
         {
             try
             {
+                _logger.LogDebug(
+                    "Edit(POST) venta {Id} received. ModelStateValid:{ModelStateValid} Detalles:{Detalles} TipoPago:{TipoPago} RowVersion:{RowVersionLength}",
+                    id,
+                    ModelState.IsValid,
+                    viewModel.Detalles?.Count ?? 0,
+                    viewModel.TipoPago,
+                    viewModel.RowVersion?.Length ?? 0);
+
                 if (!ModelState.IsValid || !ValidarDetalles(viewModel))
                 {
+                    var errors = ModelState
+                        .Where(kvp => kvp.Value?.Errors.Count > 0)
+                        .Select(kvp => new
+                        {
+                            Field = kvp.Key,
+                            Errors = kvp.Value!.Errors.Select(e => e.ErrorMessage).ToList()
+                        })
+                        .ToList();
+                    var errorsJson = JsonSerializer.Serialize(errors, new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    });
+                    _logger.LogWarning(
+                        "Edit(POST) venta {Id} ModelState invalid. Errors:{Errors}",
+                        id,
+                        errorsJson);
                     return await RetornarVistaConDatos(viewModel);
                 }
 
@@ -252,6 +340,7 @@ namespace TheBuryProject.Controllers
 
                 if (resultado == null)
                 {
+                    _logger.LogWarning("Edit(POST) venta {Id} not found on update", id);
                     TempData["Error"] = "Venta no encontrada";
                     return RedirectToAction(nameof(Index));
                 }
@@ -288,7 +377,7 @@ namespace TheBuryProject.Controllers
             {
                 _logger.LogError(ex, "Error al actualizar venta: {Id}", id);
                 ModelState.AddModelError("", "Error al actualizar la venta: " + ex.Message);
-                await CargarViewBags(viewModel.ClienteId);
+                await CargarViewBags(viewModel.ClienteId, vendedorUserIdSeleccionado: viewModel.VendedorUserId);
                 return View(viewModel);
             }
         }
@@ -372,6 +461,7 @@ namespace TheBuryProject.Controllers
                 var venta = await _ventaService.GetByIdAsync(id);
                 if (venta == null)
                 {
+                    _logger.LogWarning("Delete(GET) venta {Id} not found", id);
                     TempData["Error"] = "Venta no encontrada";
                     return RedirectToAction(nameof(Index));
                 }
@@ -418,14 +508,28 @@ namespace TheBuryProject.Controllers
         {
             try
             {
+                _logger.LogInformation(
+                    "Confirmar(POST) venta {Id} requested. User:{User}",
+                    id,
+                    User?.Identity?.Name ?? "anonymous");
+
                 var venta = await _ventaService.GetByIdAsync(id);
                 if (venta == null)
                 {
+                    _logger.LogWarning("Confirmar(POST) venta {Id} not found", id);
                     TempData["Error"] = "Venta no encontrada";
                     return RedirectToAction(nameof(Index));
                 }
 
                 // Para crédito personal, flujo simplificado
+                _logger.LogInformation(
+                    "Confirmar(POST) venta {Id} loaded. Estado:{Estado} TipoPago:{TipoPago} RequiereAutorizacion:{RequiereAutorizacion} EstadoAutorizacion:{EstadoAutorizacion}",
+                    id,
+                    venta.Estado,
+                    venta.TipoPago,
+                    venta.RequiereAutorizacion,
+                    venta.EstadoAutorizacion);
+
                 if (venta.TipoPago == TipoPago.CreditoPersonal)
                 {
                     var returnToVentaDetailsUrl = Url.Action(nameof(Details), new { id });
@@ -435,10 +539,16 @@ namespace TheBuryProject.Controllers
                     {
                         if (!venta.CreditoId.HasValue)
                         {
+                            _logger.LogWarning(
+                                "Confirmar(POST) venta {Id} sin CreditoId en PendienteFinanciacion",
+                                id);
                             TempData["Error"] = "La venta no tiene crédito asociado. Error de datos.";
                             return RedirectToAction(nameof(Details), new { id });
                         }
                         
+                        _logger.LogInformation(
+                            "Confirmar(POST) venta {Id} pendiente financiacion, redirigiendo a configuracion",
+                            id);
                         TempData["Warning"] = "Debe configurar el plan de financiamiento antes de confirmar.";
                         return RedirectToAction(
                             "ConfigurarVenta",
@@ -449,6 +559,9 @@ namespace TheBuryProject.Controllers
                     // Verificar que tiene crédito asociado
                     if (!venta.CreditoId.HasValue)
                     {
+                        _logger.LogWarning(
+                            "Confirmar(POST) venta {Id} sin CreditoId en flujo credito personal",
+                            id);
                         TempData["Error"] = "La venta con crédito personal debe tener un crédito asociado.";
                         return RedirectToAction(nameof(Details), new { id });
                     }
@@ -460,6 +573,10 @@ namespace TheBuryProject.Controllers
                                             credito.Estado == EstadoCredito.Activo ||
                                             credito.Estado == EstadoCredito.Finalizado))
                     {
+                        _logger.LogInformation(
+                            "Confirmar(POST) venta {Id} ya confirmada con credito {EstadoCredito}",
+                            id,
+                            credito.Estado);
                         TempData["Info"] = "Esta venta ya fue confirmada con crédito generado.";
                         return RedirectToAction(nameof(Details), new { id });
                     }
@@ -468,6 +585,9 @@ namespace TheBuryProject.Controllers
                     if (!venta.FinanciamientoConfigurado && 
                         (credito == null || credito.Estado == EstadoCredito.PendienteConfiguracion))
                     {
+                        _logger.LogInformation(
+                            "Confirmar(POST) venta {Id} sin financiamiento configurado, redirigiendo a configuracion",
+                            id);
                         TempData["Warning"] = "El crédito debe configurarse antes de confirmar la venta.";
                         return RedirectToAction(
                             "ConfigurarVenta",
@@ -477,6 +597,10 @@ namespace TheBuryProject.Controllers
 
                     // REGLA 4: Financiación configurada → confirmar y generar cuotas
                     var resultadoCredito = await _ventaService.ConfirmarVentaCreditoAsync(id);
+                    _logger.LogInformation(
+                        "Confirmar(POST) venta {Id} resultado confirmacion credito {Resultado}",
+                        id,
+                        resultadoCredito);
                     if (resultadoCredito)
                     {
                         TempData["Success"] = "Venta confirmada. Crédito generado con cuotas.";
@@ -490,6 +614,10 @@ namespace TheBuryProject.Controllers
 
                 // Para otros tipos de pago
                 var resultado = await _ventaService.ConfirmarVentaAsync(id);
+                _logger.LogInformation(
+                    "Confirmar(POST) venta {Id} resultado confirmacion {Resultado}",
+                    id,
+                    resultado);
                 if (resultado)
                 {
                     TempData["Success"] = "Venta confirmada exitosamente. El stock ha sido descontado.";
@@ -563,6 +691,7 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Venta/Autorizar/5
+        [PermisoRequerido(Modulo = ModuloVentas, Accion = AccionAutorizar)]
         public async Task<IActionResult> Autorizar(int id)
         {
             try
@@ -593,10 +722,17 @@ namespace TheBuryProject.Controllers
         // POST: Venta/Autorizar/5
         [HttpPost, ActionName("Autorizar")]
         [ValidateAntiForgeryToken]
+        [PermisoRequerido(Modulo = ModuloVentas, Accion = AccionAutorizar)]
         public async Task<IActionResult> AutorizarConfirmed(int id, string motivo)
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(motivo))
+                {
+                    TempData["Error"] = "Debe indicar el motivo de la autorización";
+                    return RedirectToAction(nameof(Autorizar), new { id });
+                }
+
                 var usuarioAutoriza = User.Identity?.Name ?? Roles.Administrador;
 
                 var resultado = await _ventaService.AutorizarVentaAsync(id, usuarioAutoriza, motivo);
@@ -619,6 +755,7 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Venta/Rechazar/5
+        [PermisoRequerido(Modulo = ModuloVentas, Accion = AccionRechazar)]
         public async Task<IActionResult> Rechazar(int id)
         {
             try
@@ -649,6 +786,7 @@ namespace TheBuryProject.Controllers
         // POST: Venta/Rechazar/5
         [HttpPost, ActionName("Rechazar")]
         [ValidateAntiForgeryToken]
+        [PermisoRequerido(Modulo = ModuloVentas, Accion = AccionRechazar)]
         public async Task<IActionResult> RechazarConfirmed(int id, string motivo)
         {
             try
@@ -681,6 +819,7 @@ namespace TheBuryProject.Controllers
         }
 
         // GET: Venta/Facturar/5
+        [PermisoRequerido(Modulo = ModuloVentas, Accion = AccionFacturar)]
         public async Task<IActionResult> Facturar(int id)
         {
             try
@@ -730,6 +869,7 @@ namespace TheBuryProject.Controllers
         // POST: Venta/Facturar
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [PermisoRequerido(Modulo = ModuloVentas, Accion = AccionFacturar)]
         public async Task<IActionResult> Facturar(FacturaViewModel facturaViewModel)
         {
             try
@@ -794,8 +934,14 @@ namespace TheBuryProject.Controllers
 
         #region Métodos Privados
 
-        private async Task CargarViewBags(int? clienteIdSeleccionado = null, IEnumerable<int>? productoIdsIncluidos = null)
+        private async Task CargarViewBags(
+            int? clienteIdSeleccionado = null,
+            IEnumerable<int>? productoIdsIncluidos = null,
+            string? vendedorUserIdSeleccionado = null)
         {
+            var creditosCount = 0;
+            var vendedoresCount = 0;
+
             // Usar el servicio centralizado para obtener clientes ya formateados
             var clientes = await _clienteLookup.GetClientesSelectListAsync(clienteIdSeleccionado);
             ViewBag.Clientes = new SelectList(clientes, "Value", "Text", clienteIdSeleccionado?.ToString());
@@ -816,7 +962,7 @@ namespace TheBuryProject.Controllers
                     }),
                 "Id",
                 "Detalle");
-            ViewBag.TiposPago = new SelectList(Enum.GetValues(typeof(TipoPago)));
+            ViewBag.TiposPago = EnumHelper.GetSelectList<TipoPago>();
 
             // Cargar créditos disponibles del cliente si hay uno seleccionado
             if (clienteIdSeleccionado.HasValue)
@@ -829,9 +975,11 @@ namespace TheBuryProject.Controllers
                     {
                         c.Id,
                         Detalle = $"{c.Numero} - Saldo: ${c.SaldoPendiente:N2}"
-                    });
+                    })
+                    .ToList();
 
                 ViewBag.Creditos = new SelectList(creditosDisponibles, "Id", "Detalle");
+                creditosCount = creditosDisponibles.Count;
             }
             else
             {
@@ -840,15 +988,44 @@ namespace TheBuryProject.Controllers
 
             // Cargar tarjetas activas
             var tarjetas = await _configuracionPagoService.GetTarjetasActivasAsync();
-            ViewBag.Tarjetas = new SelectList(
-                tarjetas.Select(t => new
+            var tarjetasDisponibles = tarjetas
+                .Select(t => new
                 {
                     t.Id,
                     Detalle = $"{t.NombreTarjeta} ({t.TipoTarjeta})"
-                }),
-                "Id",
-                "Detalle"
-            );
+                })
+                .ToList();
+            ViewBag.Tarjetas = new SelectList(tarjetasDisponibles, "Id", "Detalle");
+
+            var puedeDelegarVendedor = User.IsInRole(Roles.SuperAdmin) ||
+                                       User.IsInRole(Roles.Administrador) ||
+                                       User.IsInRole(Roles.Gerente);
+            ViewBag.PuedeDelegarVendedor = puedeDelegarVendedor;
+
+            if (puedeDelegarVendedor)
+            {
+                var usuarios = await _userManager.GetUsersInRoleAsync(Roles.Vendedor);
+                var usuariosOrdenados = usuarios
+                    .OrderBy(u => u.UserName)
+                    .ToList();
+
+                ViewBag.Vendedores = new SelectList(
+                    usuariosOrdenados,
+                    "Id",
+                    "UserName",
+                    vendedorUserIdSeleccionado);
+                vendedoresCount = usuariosOrdenados.Count;
+            }
+
+            _logger.LogDebug(
+                "CargarViewBags ClienteId:{ClienteId} Clientes:{Clientes} ProductosTotal:{ProductosTotal} ProductosIncluidos:{ProductosIncluidos} Creditos:{Creditos} Tarjetas:{Tarjetas} Vendedores:{Vendedores}",
+                clienteIdSeleccionado,
+                clientes.Count(),
+                productos.Count(),
+                productoIdsIncluidos?.Distinct().Count() ?? 0,
+                creditosCount,
+                tarjetasDisponibles.Count,
+                vendedoresCount);
         }
 
         #endregion
@@ -998,7 +1175,10 @@ namespace TheBuryProject.Controllers
 
         private async Task<IActionResult> RetornarVistaConDatos(VentaViewModel viewModel)
         {
-            await CargarViewBags(viewModel.ClienteId, viewModel.Detalles.Select(d => d.ProductoId).Distinct());
+            await CargarViewBags(
+                viewModel.ClienteId,
+                viewModel.Detalles.Select(d => d.ProductoId).Distinct(),
+                viewModel.VendedorUserId);
             ViewBag.IvaRate = VentaConstants.IVA_RATE;
             return View(viewModel);
         }

@@ -1,0 +1,69 @@
+@* Views/Shared/_CatalogoModalConfirmarAplicar.cshtml *@
+
+<div class="modal fade" id="modalConfirmarAplicar" tabindex="-1" aria-labelledby="modalConfirmarAplicarLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-warning">
+            <div class="modal-header border-warning">
+                <h5 class="modal-title" id="modalConfirmarAplicarLabel">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirmar Cambio de Precios
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning bg-warning bg-opacity-10 border-warning mb-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Esta acción aplicará los cambios directamente.</strong>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="card bg-secondary bg-opacity-25 border-0">
+                            <div class="card-body py-2 px-3">
+                                <small class="text-muted">Alcance</small>
+                                <div class="fw-semibold" id="confirmarAlcance">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-secondary bg-opacity-25 border-0">
+                            <div class="card-body py-2 px-3">
+                                <small class="text-muted">Productos</small>
+                                <div class="fw-semibold" id="confirmarCantidad">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-secondary bg-opacity-25 border-0">
+                            <div class="card-body py-2 px-3">
+                                <small class="text-muted">Cambio</small>
+                                <div class="fw-semibold" id="confirmarPorcentaje">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-secondary bg-opacity-25 border-0">
+                            <div class="card-body py-2 px-3">
+                                <small class="text-muted">Motivo</small>
+                                <div class="fw-semibold" id="confirmarMotivo">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3" id="areaErrorConfirmar" style="display: none;">
+                    <div class="alert alert-danger mb-0">
+                        <i class="bi bi-x-circle me-2"></i><span id="mensajeErrorConfirmar"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success" id="btnConfirmarAplicar">
+                    <i class="bi bi-check-circle me-1"></i>Confirmar y Aplicar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
