@@ -962,6 +962,27 @@ namespace TheBuryProject.Controllers
                     }),
                 "Id",
                 "Detalle");
+
+            var categoriasFiltro = productos
+                .Where(p => p.Categoria != null)
+                .Select(p => p.Categoria!)
+                .GroupBy(c => c.Id)
+                .Select(g => g.First())
+                .OrderBy(c => c.Nombre)
+                .Select(c => new { c.Id, c.Nombre })
+                .ToList();
+
+            var marcasFiltro = productos
+                .Where(p => p.Marca != null)
+                .Select(p => p.Marca!)
+                .GroupBy(m => m.Id)
+                .Select(g => g.First())
+                .OrderBy(m => m.Nombre)
+                .Select(m => new { m.Id, m.Nombre })
+                .ToList();
+
+            ViewBag.CategoriasFiltro = new SelectList(categoriasFiltro, "Id", "Nombre");
+            ViewBag.MarcasFiltro = new SelectList(marcasFiltro, "Id", "Nombre");
             ViewBag.TiposPago = EnumHelper.GetSelectList<TipoPago>();
 
             // Cargar créditos disponibles del cliente si hay uno seleccionado

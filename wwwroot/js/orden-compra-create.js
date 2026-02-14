@@ -1,6 +1,7 @@
 (function () {
     const proveedorSelect = document.getElementById('ProveedorId');
-    const productoSelect = document.getElementById('productoSelect');
+    const productoSearchInput = document.getElementById('productoSearchInput');
+    const productoSearchResults = document.getElementById('productoSearchResults');
     const cantidadInput = document.getElementById('cantidadInput');
     const precioInput = document.getElementById('precioInput');
     const agregarDetalleBtn = document.getElementById('agregarDetalleBtn');
@@ -18,6 +19,9 @@
 
     const emptyRowTemplate = detallesBody ? detallesBody.innerHTML : '';
 
+    let productosProveedor = [];
+    let productoSeleccionado = null;
+    let indiceSugeridoActivo = -1;
     let detalles = [];
     let detalleIndex = 0;
 
@@ -32,20 +36,24 @@
     }
 
     async function cargarProductos(proveedorId) {
-        if (!productoSelect) return;
+        if (!productoSearchInput) return;
 
-        productoSelect.innerHTML = '<option value="">Seleccione un producto</option>';
-        productoSelect.disabled = true;
+        productoSearchInput.value = '';
+        productoSearchInput.disabled = true;
+        productoSeleccionado = null;
+        productosProveedor = [];
+        ocultarSugerencias();
+        precioInput.value = 0;
 
         if (!proveedorId) {
-            productoSelect.disabled = false;
+            productoSearchInput.disabled = false;
             return;
         }
 
         try {
             const baseUrl = proveedorSelect?.dataset?.productosUrl;
             if (!baseUrl) {
-                productoSelect.disabled = false;
+                productoSearchInput.disabled = false;
                 return;
             }
             const response = await fetch(`${baseUrl}/${proveedorId}`);
@@ -56,36 +64,139 @@
             const data = await response.json();
             if (!Array.isArray(data) || data.length === 0) {
                 alert('Sin productos para este proveedor.');
-                productoSelect.innerHTML = '<option>No disponibles</option>';
-                productoSelect.disabled = false;
+                productoSearchInput.disabled = false;
                 return;
             }
 
-            productoSelect.innerHTML = '<option value="">Seleccione un producto</option>';
-            data.forEach(p => {
-                const option = document.createElement('option');
-                option.value = p.id;
-                option.textContent = p.nombre;
-                option.dataset.precio = p.precio;
-                productoSelect.appendChild(option);
-            });
+            productosProveedor = data;
         } catch (error) {
             alert('Error al cargar productos: ' + error.message);
         } finally {
-            productoSelect.disabled = false;
+            productoSearchInput.disabled = false;
         }
     }
 
-    function actualizarPrecio() {
-        const selected = productoSelect.options[productoSelect.selectedIndex];
-        if (selected && selected.dataset.precio) {
-            precioInput.value = parseFloat(selected.dataset.precio).toFixed(2);
+    function filtrarProductos(term) {
+        if (!Array.isArray(productosProveedor)) return [];
+        const query = String(term || '').trim().toLowerCase();
+        if (!query) return productosProveedor.slice(0, 20);
+        return productosProveedor
+            .filter(function (p) {
+                return String(p.nombre || '').toLowerCase().includes(query);
+            })
+            .slice(0, 20);
+    }
+
+    function renderSugerencias(lista) {
+        if (!productoSearchResults) return;
+
+        if (!lista.length) {
+            productoSearchResults.innerHTML = '<div class="list-group-item small text-muted">Sin resultados</div>';
+            productoSearchResults.classList.remove('d-none');
+            return;
         }
+
+        productoSearchResults.innerHTML = lista.map(function (p, index) {
+            const precio = Number.parseFloat(p.precio || 0);
+            return `
+                <button type="button" class="list-group-item list-group-item-action producto-suggestion ${index === indiceSugeridoActivo ? 'active' : ''}" data-index="${index}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>${p.nombre}</span>
+                        <small>$${Number.isFinite(precio) ? precio.toFixed(2) : '0.00'}</small>
+                    </div>
+                </button>
+            `;
+        }).join('');
+
+        productoSearchResults.classList.remove('d-none');
+
+        productoSearchResults.querySelectorAll('.producto-suggestion').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const idx = Number.parseInt(this.dataset.index, 10);
+                if (!Number.isFinite(idx) || !lista[idx]) return;
+                seleccionarProducto(lista[idx]);
+            });
+        });
+    }
+
+    function seleccionarProducto(producto) {
+        productoSeleccionado = producto;
+        if (productoSearchInput) {
+            productoSearchInput.value = producto.nombre || '';
+        }
+        const precio = Number.parseFloat(producto.precio || 0);
+        precioInput.value = Number.isFinite(precio) ? precio.toFixed(2) : '0.00';
+        ocultarSugerencias();
+    }
+
+    function ocultarSugerencias() {
+        if (!productoSearchResults) return;
+        productoSearchResults.classList.add('d-none');
+        productoSearchResults.innerHTML = '';
+        indiceSugeridoActivo = -1;
+    }
+
+    function moverSeleccion(delta) {
+        const lista = filtrarProductos(productoSearchInput?.value || '');
+        if (!lista.length) return;
+        indiceSugeridoActivo += delta;
+        if (indiceSugeridoActivo < 0) indiceSugeridoActivo = lista.length - 1;
+        if (indiceSugeridoActivo >= lista.length) indiceSugeridoActivo = 0;
+        renderSugerencias(lista);
+    }
+
+    function bindBusquedaProductoEvents() {
+        if (!productoSearchInput) return;
+
+        productoSearchInput.addEventListener('input', function () {
+            productoSeleccionado = null;
+            indiceSugeridoActivo = -1;
+            const lista = filtrarProductos(this.value);
+            renderSugerencias(lista);
+        });
+
+        productoSearchInput.addEventListener('keydown', function (event) {
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                moverSeleccion(1);
+                return;
+            }
+
+            if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                moverSeleccion(-1);
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                ocultarSugerencias();
+                return;
+            }
+
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const lista = filtrarProductos(this.value);
+                if (indiceSugeridoActivo >= 0 && lista[indiceSugeridoActivo]) {
+                    seleccionarProducto(lista[indiceSugeridoActivo]);
+                    return;
+                }
+
+                if (lista.length === 1) {
+                    seleccionarProducto(lista[0]);
+                }
+            }
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!productoSearchInput || !productoSearchResults) return;
+            if (event.target === productoSearchInput || productoSearchResults.contains(event.target)) return;
+            ocultarSugerencias();
+        });
     }
 
     function agregarDetalle() {
-        const productoId = productoSelect.value;
-        const productoNombre = productoSelect.options[productoSelect.selectedIndex]?.text;
+        const productoId = productoSeleccionado?.id ? String(productoSeleccionado.id) : '';
+        const productoNombre = productoSeleccionado?.nombre;
         const cantidad = normalizarCantidadEntera(cantidadInput.value);
         const precio = normalizarNumero(precioInput.value);
 
@@ -113,7 +224,12 @@
         renderDetalles();
         calcularTotales();
 
-        productoSelect.value = '';
+        if (productoSearchInput) {
+            productoSearchInput.value = '';
+            productoSearchInput.focus();
+        }
+        productoSeleccionado = null;
+        ocultarSugerencias();
         cantidadInput.value = 1;
         precioInput.value = 0;
     }
@@ -225,9 +341,7 @@
             }
         }
 
-        if (productoSelect) {
-            productoSelect.addEventListener('change', actualizarPrecio);
-        }
+        bindBusquedaProductoEvents();
 
         if (agregarDetalleBtn) {
             agregarDetalleBtn.addEventListener('click', agregarDetalle);

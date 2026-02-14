@@ -99,7 +99,7 @@
                             </div>
 
                             <div class="col-md-6">
-                                <label asp-for="PrecioCompra" class="form-label fw-semibold">Precio de Compra *</label>
+                                <label asp-for="PrecioCompra" class="form-label fw-semibold">precio de costo *</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
                                     <input asp-for="PrecioCompra" type="number" step="0.01" class="form-control" placeholder="0.00" />
@@ -130,18 +130,69 @@
                                 </small>
                             </div>
 
+                            <div class="col-12">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0">Características</h6>
+                                            <button type="button" id="btnAgregarCaracteristica" class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-plus-circle me-1"></i>Agregar característica
+                                            </button>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-sm align-middle mb-0" id="tablaCaracteristicas">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="width: 40%;">Nombre</th>
+                                                        <th style="width: 50%;">Valor</th>
+                                                        <th style="width: 10%;" class="text-center">Acción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="caracteristicasBody">
+                                                    @if (Model?.Caracteristicas != null && Model.Caracteristicas.Any())
+                                                    {
+                                                        for (var i = 0; i < Model.Caracteristicas.Count; i++)
+                                                        {
+                                                            <tr>
+                                                                <td>
+                                                                    <input type="hidden" name="Caracteristicas[@i].Id" value="@Model.Caracteristicas[i].Id" class="caracteristica-id" />
+                                                                    <input type="text" class="form-control caracteristica-nombre" name="Caracteristicas[@i].Nombre" value="@Model.Caracteristicas[i].Nombre" placeholder="Ej: Pulgadas" maxlength="100" />
+                                                                </td>
+                                                                <td>
+                                                                    <input type="text" class="form-control caracteristica-valor" name="Caracteristicas[@i].Valor" value="@Model.Caracteristicas[i].Valor" placeholder="Ej: 42" maxlength="300" />
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <button type="button" class="btn btn-outline-danger btn-sm btn-eliminar-caracteristica">
+                                                                        <i class="bi bi-trash"></i>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <small class="text-muted d-block mt-2">
+                                            Ejemplos: <strong>Pulgadas = 42</strong>, <strong>Resolución = 4K</strong>, <strong>Memoria = 128GB</strong>, <strong>Color = Negro</strong>.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
                             @* Sección: Stock *@
                             <partial name="_FormSection" model="FormSectionModel.Stock()" />
 
                             <div class="col-md-6">
                                 <label asp-for="StockActual" class="form-label fw-semibold">Stock Actual *</label>
-                                <input asp-for="StockActual" type="number" step="1" class="form-control" />
+                                <input asp-for="StockActual" type="number" step="0.01" min="0" class="form-control" />
                                 <span asp-validation-for="StockActual" class="text-danger small"></span>
                             </div>
 
                             <div class="col-md-6">
                                 <label asp-for="StockMinimo" class="form-label fw-semibold">Stock Mínimo *</label>
-                                <input asp-for="StockMinimo" type="number" step="1" class="form-control" />
+                                <input asp-for="StockMinimo" type="number" step="0.01" min="0" class="form-control" />
                                 <span asp-validation-for="StockMinimo" class="text-danger small"></span>
                             </div>
 
@@ -188,6 +239,55 @@
             const subcategoriaSelect = document.getElementById('SubcategoriaId');
             const marcaSelect = document.getElementById('MarcaId');
             const submarcaSelect = document.getElementById('SubmarcaId');
+            const caracteristicasBody = document.getElementById('caracteristicasBody');
+            const btnAgregarCaracteristica = document.getElementById('btnAgregarCaracteristica');
+
+            function crearFilaCaracteristica(id = 0, nombre = '', valor = '') {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <input type="hidden" value="${id}" class="caracteristica-id" />
+                        <input type="text" class="form-control caracteristica-nombre" placeholder="Ej: Pulgadas" maxlength="100" value="${nombre}" />
+                    </td>
+                    <td>
+                        <input type="text" class="form-control caracteristica-valor" placeholder="Ej: 42" maxlength="300" value="${valor}" />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-outline-danger btn-sm btn-eliminar-caracteristica">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                return tr;
+            }
+
+            function reindexarCaracteristicas() {
+                if (!caracteristicasBody) return;
+                const filas = caracteristicasBody.querySelectorAll('tr');
+                filas.forEach((fila, index) => {
+                    const inputId = fila.querySelector('.caracteristica-id');
+                    const inputNombre = fila.querySelector('.caracteristica-nombre');
+                    const inputValor = fila.querySelector('.caracteristica-valor');
+                    if (inputId) inputId.name = `Caracteristicas[${index}].Id`;
+                    if (inputNombre) inputNombre.name = `Caracteristicas[${index}].Nombre`;
+                    if (inputValor) inputValor.name = `Caracteristicas[${index}].Valor`;
+                });
+            }
+
+            btnAgregarCaracteristica?.addEventListener('click', function () {
+                if (!caracteristicasBody) return;
+                caracteristicasBody.appendChild(crearFilaCaracteristica());
+                reindexarCaracteristicas();
+            });
+
+            caracteristicasBody?.addEventListener('click', function (event) {
+                const btn = event.target.closest('.btn-eliminar-caracteristica');
+                if (!btn) return;
+                btn.closest('tr')?.remove();
+                reindexarCaracteristicas();
+            });
+
+            reindexarCaracteristicas();
 
             categoriaSelect?.addEventListener('change', function () {
                 const categoriaId = this.value;

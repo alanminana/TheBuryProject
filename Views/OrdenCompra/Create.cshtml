@@ -77,13 +77,10 @@
                                 <div class="row g-3 align-items-end mb-3">
                                     <div class="col-md-5">
                                         <label class="form-label text-light fw-semibold">Producto</label>
-                                        <select id="productoSelect" class="form-select bg-body-secondary text-light border-0">
-                                            <option value="">Seleccione un producto</option>
-                                            @foreach (var item in (SelectList)ViewBag.Productos)
-                                            {
-                                                <option value="@item.Value">@item.Text</option>
-                                            }
-                                        </select>
+                                        <div class="position-relative">
+                                            <input type="text" id="productoSearchInput" class="form-control bg-body-secondary text-light border-0" placeholder="Buscar producto del proveedor..." autocomplete="off" />
+                                            <div id="productoSearchResults" class="list-group position-absolute w-100 shadow d-none" style="z-index: 1080;"></div>
+                                        </div>
                                     </div>
                                     <div class="col-md-3">
                                         <label class="form-label text-light fw-semibold">Cantidad</label>

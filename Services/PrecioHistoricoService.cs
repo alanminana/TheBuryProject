@@ -361,7 +361,7 @@ namespace TheBuryProject.Services
 
             if (precioCompraNuevo > precioVentaNuevo)
             {
-                simulacion.Alertas.Add("❌ ERROR: El precio de compra NO puede ser mayor al precio de venta.");
+                simulacion.Alertas.Add("❌ ERROR: El precio de costo NO puede ser mayor al precio de venta.");
                 simulacion.EsRecomendable = false;
             }
 

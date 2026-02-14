@@ -53,10 +53,10 @@ namespace TheBuryProject.Models.Entities
         public int? SubmarcaId { get; set; }
 
         /// <summary>
-        /// Precio de compra del producto
+        /// precio de costo del producto
         /// </summary>
-        [Required(ErrorMessage = "El precio de compra es obligatorio")]
-        [Range(0, double.MaxValue, ErrorMessage = "El precio de compra debe ser mayor o igual a 0")]
+        [Required(ErrorMessage = "El precio de costo es obligatorio")]
+        [Range(0, double.MaxValue, ErrorMessage = "El precio de costo debe ser mayor o igual a 0")]
         public decimal PrecioCompra { get; set; }
 
         /// <summary>
@@ -121,5 +121,10 @@ namespace TheBuryProject.Models.Entities
         /// Submarca del producto (opcional)
         /// </summary>
         public virtual Marca? Submarca { get; set; }
+
+        /// <summary>
+        /// Características variables del producto (ej: color, pulgadas, capacidad)
+        /// </summary>
+        public virtual ICollection<ProductoCaracteristica> Caracteristicas { get; set; } = new List<ProductoCaracteristica>();
     }
 }

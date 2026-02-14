@@ -104,7 +104,7 @@ namespace TheBuryProject.ViewModels
         // ============================================
 
         /// <summary>
-        /// Costo/Precio de compra del producto
+        /// Costo/precio de costo del producto
         /// </summary>
         public decimal Costo { get; set; }
 

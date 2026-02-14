@@ -1,5 +1,8 @@
 (function () {
-    const productoSelect = document.getElementById('productoSelect');
+    const form = document.getElementById('formMovimientoStock');
+    const productoIdInput = document.getElementById('productoIdInput');
+    const productoSearchInput = document.getElementById('productoSearchInput');
+    const productoSearchResults = document.getElementById('productoSearchResults');
     const productoInfo = document.getElementById('productoInfo');
     const productoCodigo = document.getElementById('productoCodigo');
     const productoNombre = document.getElementById('productoNombre');
@@ -9,9 +12,12 @@
     const stockResultado = document.getElementById('stockResultado');
 
     let stockActual = 0;
+    let productosSugeridos = [];
+    let indiceSugeridoActivo = -1;
+    let debounceBusquedaId = null;
 
     async function cargarProductoInfo(id) {
-        const baseUrl = productoSelect?.dataset?.productoInfoUrl;
+        const baseUrl = productoSearchInput?.dataset?.productoInfoUrl;
         if (!baseUrl) {
             return;
         }
@@ -36,6 +42,150 @@
             stockResultado.textContent = 'No se pudo cargar la información del producto.';
             stockResultado.className = 'form-text text-danger';
         }
+    }
+
+    function ocultarSugerencias() {
+        if (!productoSearchResults) return;
+        productoSearchResults.classList.add('d-none');
+        productoSearchResults.innerHTML = '';
+        indiceSugeridoActivo = -1;
+    }
+
+    function renderSugerencias() {
+        if (!productoSearchResults) return;
+
+        if (!productosSugeridos.length) {
+            productoSearchResults.innerHTML = '<div class="list-group-item small text-muted">Sin resultados</div>';
+            productoSearchResults.classList.remove('d-none');
+            return;
+        }
+
+        productoSearchResults.innerHTML = productosSugeridos.map(function (p, index) {
+            return `
+                <button type="button" class="list-group-item list-group-item-action producto-suggestion ${index === indiceSugeridoActivo ? 'active' : ''}" data-index="${index}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><strong>${p.codigo || ''}</strong> - ${p.nombre || ''}</span>
+                        <small class="text-muted">Stock: ${p.stockActual ?? 0}</small>
+                    </div>
+                </button>
+            `;
+        }).join('');
+
+        productoSearchResults.classList.remove('d-none');
+
+        productoSearchResults.querySelectorAll('.producto-suggestion').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const idx = Number.parseInt(this.dataset.index, 10);
+                if (!Number.isFinite(idx) || !productosSugeridos[idx]) return;
+                seleccionarProducto(productosSugeridos[idx]);
+            });
+        });
+    }
+
+    function moverSeleccion(delta) {
+        if (!productosSugeridos.length) return;
+        indiceSugeridoActivo += delta;
+
+        if (indiceSugeridoActivo < 0) indiceSugeridoActivo = productosSugeridos.length - 1;
+        if (indiceSugeridoActivo >= productosSugeridos.length) indiceSugeridoActivo = 0;
+
+        renderSugerencias();
+    }
+
+    function seleccionarProducto(producto) {
+        if (productoSearchInput) {
+            productoSearchInput.value = `${producto.codigo || ''} - ${producto.nombre || ''}`.trim();
+        }
+
+        if (productoIdInput) {
+            productoIdInput.value = producto.id;
+        }
+
+        ocultarSugerencias();
+        cargarProductoInfo(producto.id);
+    }
+
+    async function buscarProductos(term) {
+        const baseUrl = form?.dataset?.buscarProductosUrl;
+        if (!baseUrl) return;
+
+        try {
+            const params = new URLSearchParams({ term: term, take: '20' });
+            const response = await fetch(`${baseUrl}?${params.toString()}`);
+            if (!response.ok) {
+                throw new Error('No se pudo buscar productos');
+            }
+
+            const data = await response.json();
+            productosSugeridos = Array.isArray(data) ? data : [];
+            indiceSugeridoActivo = -1;
+            renderSugerencias();
+        } catch {
+            productosSugeridos = [];
+            ocultarSugerencias();
+        }
+    }
+
+    function bindBusquedaProductoEvents() {
+        if (!productoSearchInput) return;
+
+        productoSearchInput.addEventListener('input', function () {
+            const term = this.value.trim();
+
+            if (productoIdInput) {
+                productoIdInput.value = '';
+            }
+
+            if (debounceBusquedaId) {
+                clearTimeout(debounceBusquedaId);
+            }
+
+            if (term.length < 2) {
+                ocultarSugerencias();
+                productoInfo?.classList.add('d-none');
+                stockActual = 0;
+                stockResultado.textContent = '';
+                return;
+            }
+
+            debounceBusquedaId = setTimeout(function () {
+                buscarProductos(term);
+            }, 250);
+        });
+
+        productoSearchInput.addEventListener('keydown', function (event) {
+            if (!productoSearchResults || productoSearchResults.classList.contains('d-none')) return;
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                moverSeleccion(1);
+                return;
+            }
+
+            if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                moverSeleccion(-1);
+                return;
+            }
+
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (indiceSugeridoActivo >= 0 && productosSugeridos[indiceSugeridoActivo]) {
+                    seleccionarProducto(productosSugeridos[indiceSugeridoActivo]);
+                }
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                ocultarSugerencias();
+            }
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!productoSearchInput || !productoSearchResults) return;
+            if (event.target === productoSearchInput || productoSearchResults.contains(event.target)) return;
+            ocultarSugerencias();
+        });
     }
 
     function calcularStock() {
@@ -80,26 +230,15 @@
         stockResultado.className = `form-text ${clase}`.trim();
     }
 
-    productoSelect?.addEventListener('change', function () {
-        const id = this.value;
-        if (!id) {
-            productoInfo?.classList.add('d-none');
-            stockActual = 0;
-            stockResultado.textContent = '';
-            return;
-        }
-
-        cargarProductoInfo(id);
-    });
-
     tipoSelect?.addEventListener('change', calcularStock);
     cantidadInput?.addEventListener('change', calcularStock);
     cantidadInput?.addEventListener('keyup', calcularStock);
+    bindBusquedaProductoEvents();
 
     document.addEventListener('DOMContentLoaded', function () {
-        const idInicial = productoSelect?.value;
+        const idInicial = productoIdInput?.value;
         if (idInicial) {
-            productoSelect.dispatchEvent(new Event('change'));
+            cargarProductoInfo(idInicial);
         }
     });
 })();

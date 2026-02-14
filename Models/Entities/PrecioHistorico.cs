@@ -16,13 +16,13 @@ namespace TheBuryProject.Models.Entities
         public int ProductoId { get; set; }
 
         /// <summary>
-        /// Precio de compra anterior antes del cambio
+        /// precio de costo anterior antes del cambio
         /// </summary>
         [Required]
         public decimal PrecioCompraAnterior { get; set; }
 
         /// <summary>
-        /// Nuevo precio de compra despu�s del cambio
+        /// Nuevo precio de costo despu�s del cambio
         /// </summary>
         [Required]
         public decimal PrecioCompraNuevo { get; set; }
@@ -73,7 +73,7 @@ namespace TheBuryProject.Models.Entities
 
         // Propiedades calculadas
         /// <summary>
-        /// Calcula el porcentaje de cambio en el precio de compra
+        /// Calcula el porcentaje de cambio en el precio de costo
         /// </summary>
         public decimal PorcentajeCambioCompra =>
             PrecioCompraAnterior == 0 ? 0 :

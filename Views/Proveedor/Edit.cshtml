@@ -91,6 +91,7 @@
                             </div>
                             <div class="col-md-4">
                                 <label asp-for="ProductosSeleccionados" class="form-label text-light"></label>
+                                <input type="text" id="productosFiltroInput" class="form-control form-control-sm bg-body-secondary text-light border-0 mb-2" placeholder="Buscar producto por código o nombre..." />
                                 <select asp-for="ProductosSeleccionados" class="form-select bg-body-secondary text-light border-0" asp-items="Model.ProductosDisponibles" multiple size="8"></select>
                                 <small class="text-muted d-block mt-1">Destacá productos frecuentes.</small>
                             </div>
@@ -175,4 +176,38 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const filtroInput = document.getElementById('productosFiltroInput');
+            const selectProductos = document.getElementById('ProductosSeleccionados');
+            if (!filtroInput || !selectProductos) return;
+
+            const allOptions = Array.from(selectProductos.options).map(function (opt) {
+                return { value: opt.value, text: opt.text, selected: opt.selected };
+            });
+
+            function renderOptions() {
+                const term = (filtroInput.value || '').trim().toLowerCase();
+                const selectedValues = new Set(Array.from(selectProductos.selectedOptions).map(o => o.value));
+                selectProductos.innerHTML = '';
+
+                allOptions
+                    .filter(function (o) { return !term || o.text.toLowerCase().includes(term); })
+                    .forEach(function (o) {
+                        const option = document.createElement('option');
+                        option.value = o.value;
+                        option.text = o.text;
+                        option.selected = selectedValues.has(o.value) || o.selected;
+                        selectProductos.appendChild(option);
+                    });
+            }
+
+            selectProductos.addEventListener('change', function () {
+                const selectedValues = new Set(Array.from(selectProductos.selectedOptions).map(o => o.value));
+                allOptions.forEach(function (o) { o.selected = selectedValues.has(o.value); });
+            });
+
+            filtroInput.addEventListener('input', renderOptions);
+        });
+    </script>
 }

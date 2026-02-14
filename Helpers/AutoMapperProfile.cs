@@ -36,6 +36,18 @@ namespace TheBuryProject.Helpers
                 .ForMember(d => d.CreatedBy, o => o.Ignore())
                 .ForMember(d => d.IsDeleted, o => o.Ignore());
 
+            CreateMap<ProductoCaracteristica, ProductoCaracteristicaViewModel>();
+
+            CreateMap<ProductoCaracteristicaViewModel, ProductoCaracteristica>()
+                .ForMember(d => d.Producto, o => o.Ignore())
+                .ForMember(d => d.ProductoId, o => o.Ignore())
+                .ForMember(d => d.CreatedAt, o => o.Ignore())
+                .ForMember(d => d.CreatedBy, o => o.Ignore())
+                .ForMember(d => d.UpdatedAt, o => o.Ignore())
+                .ForMember(d => d.UpdatedBy, o => o.Ignore())
+                .ForMember(d => d.IsDeleted, o => o.Ignore())
+                .ForMember(d => d.RowVersion, o => o.Ignore());
+
             // =======================
             // Proveedor
             // =======================

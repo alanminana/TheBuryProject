@@ -50,9 +50,9 @@ namespace TheBuryProject.ViewModels
         [Display(Name = "Submarca")]
         public string? SubmarcaNombre { get; set; }
 
-        [Required(ErrorMessage = "El precio de compra es obligatorio")]
-        [Display(Name = "Precio de Compra")]
-        [Range(0, double.MaxValue, ErrorMessage = "El precio de compra debe ser mayor o igual a 0")]
+        [Required(ErrorMessage = "El precio de costo es obligatorio")]
+        [Display(Name = "precio de costo")]
+        [Range(0, double.MaxValue, ErrorMessage = "El precio de costo debe ser mayor o igual a 0")]
         [DisplayFormat(DataFormatString = "{0:C2}", ApplyFormatInEditMode = false)]
         public decimal PrecioCompra { get; set; }
 
@@ -77,6 +77,8 @@ namespace TheBuryProject.ViewModels
 
         [Display(Name = "Activo")]
         public bool Activo { get; set; } = true;
+
+        public List<ProductoCaracteristicaViewModel> Caracteristicas { get; set; } = new();
 
 
         /// <summary>

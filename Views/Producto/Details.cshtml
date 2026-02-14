@@ -65,13 +65,43 @@
                             <p><i class="bi bi-tag text-primary me-1"></i>@Model.MarcaNombre</p>
                         </div>
 
+                        <div class="col-12">
+                            <label class="form-label text-muted small fw-semibold">Características</label>
+                            @if (Model.Caracteristicas != null && Model.Caracteristicas.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Característica</th>
+                                                <th>Valor</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var caracteristica in Model.Caracteristicas)
+                                            {
+                                                <tr>
+                                                    <td>@caracteristica.Nombre</td>
+                                                    <td>@caracteristica.Valor</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0">Sin características registradas.</p>
+                            }
+                        </div>
+
                         @* Sección: Precios *@
                         <partial name="_FormSection" model="FormSectionModel.Precios()" />
 
                         <div class="col-md-6">
                             <div class="card bg-light border-0">
                                 <div class="card-body text-center">
-                                    <p class="text-muted small mb-1">Precio de Compra</p>
+                                    <p class="text-muted small mb-1">precio de costo</p>
                                     <p class="fw-bold fs-4 text-primary mb-0">@Model.PrecioCompra.ToString("C2")</p>
                                 </div>
                             </div>

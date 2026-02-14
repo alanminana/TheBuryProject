@@ -37,6 +37,7 @@
             <form asp-action="Edit" method="post" id="formVenta" novalidate
                   data-get-tarjetas-url="@Url.Action("GetTarjetasActivas", "Venta")"
                   data-calcular-cuotas-url="@Url.Action("CalcularCuotasTarjeta", "VentaApi")"
+                data-buscar-productos-url="@Url.Action("BuscarProductos", "VentaApi")"
                   data-get-precio-producto-url="@Url.Action("GetPrecioProducto", "VentaApi")"
                   data-calcular-totales-url="@Url.Action("CalcularTotalesVenta", "VentaApi")"
                   data-prevalidar-credito-url="@Url.Action("PrevalidarCredito", "Venta")"
@@ -53,12 +54,42 @@
                         <span class="badge badge-soft">Stock visible en cada seleccion</span>
                     </div>
                     <div class="card-body">
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1" for="productoCategoriaFiltro">Categoría</label>
+                                <select id="productoCategoriaFiltro" class="form-select form-select-sm bg-body-secondary text-light border-0" asp-items="ViewBag.CategoriasFiltro">
+                                    <option value="">Todas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small mb-1" for="productoMarcaFiltro">Marca</label>
+                                <select id="productoMarcaFiltro" class="form-select form-select-sm bg-body-secondary text-light border-0" asp-items="ViewBag.MarcasFiltro">
+                                    <option value="">Todas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1" for="productoPrecioMinFiltro">Precio mín.</label>
+                                <input type="number" id="productoPrecioMinFiltro" class="form-control form-control-sm bg-body-secondary text-light border-0" step="0.01" min="0" placeholder="0" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1" for="productoPrecioMaxFiltro">Precio máx.</label>
+                                <input type="number" id="productoPrecioMaxFiltro" class="form-control form-control-sm bg-body-secondary text-light border-0" step="0.01" min="0" placeholder="Sin tope" />
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <div class="form-check form-switch ms-md-2">
+                                    <input class="form-check-input" type="checkbox" id="productoSoloStockFiltro" checked>
+                                    <label class="form-check-label" for="productoSoloStockFiltro">Solo con stock</label>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row g-3 mb-3">
                             <div class="col-md-5">
-                                <label class="form-label" for="productoSelect">Producto</label>
-                                <select id="productoSelect" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Productos">
-                                    <option value="">Seleccione un producto...</option>
-                                </select>
+                                <label class="form-label" for="productoSearchInput">Producto</label>
+                                <div class="position-relative">
+                                    <input type="text" id="productoSearchInput" class="form-control bg-body-secondary text-light border-0" placeholder="Buscar producto por código, nombre, marca, categoría, descripción o características..." autocomplete="off" />
+                                    <div id="productoSearchResults" class="list-group position-absolute w-100 shadow d-none" style="z-index: 1080;"></div>
+                                </div>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label" for="cantidadInput">Cantidad</label>

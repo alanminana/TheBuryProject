@@ -73,6 +73,98 @@ namespace TheBuryProject.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> BuscarProductos(
+            string term,
+            int take = 20,
+            int? categoriaId = null,
+            int? marcaId = null,
+            bool soloConStock = true,
+            decimal? precioMin = null,
+            decimal? precioMax = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(term))
+                {
+                    return Ok(new List<object>());
+                }
+
+                var limite = Math.Clamp(take, 1, 50);
+                var termino = term.Trim();
+
+                var productos = (await _productoService.SearchAsync(
+                        searchTerm: termino,
+                    categoriaId: categoriaId,
+                    marcaId: marcaId,
+                        soloActivos: true,
+                        orderBy: "nombre"))
+                    .ToList();
+
+                var listaPredeterminada = await _precioService.GetListaPredeterminadaAsync();
+                var resultado = new List<object>(productos.Count);
+
+                foreach (var producto in productos)
+                {
+                    var precioVenta = producto.PrecioVenta;
+                    if (listaPredeterminada != null)
+                    {
+                        var vigente = await _precioService.GetPrecioVigenteAsync(producto.Id, listaPredeterminada.Id);
+                        if (vigente != null)
+                            precioVenta = vigente.Precio;
+                    }
+
+                    if (soloConStock && producto.StockActual <= 0)
+                        continue;
+
+                    if (precioMin.HasValue && precioVenta < precioMin.Value)
+                        continue;
+
+                    if (precioMax.HasValue && precioVenta > precioMax.Value)
+                        continue;
+
+                    var caracteristicas = producto.Caracteristicas?
+                        .Where(c => !c.IsDeleted)
+                        .Select(c => (object)new
+                        {
+                            nombre = c.Nombre,
+                            valor = c.Valor
+                        })
+                        .ToList() ?? new List<object>();
+
+                    var caracteristicasResumen = producto.Caracteristicas?
+                        .Where(c => !c.IsDeleted)
+                        .Take(3)
+                        .Select(c => c.Valor)
+                        .ToList() ?? new List<string>();
+
+                    resultado.Add(new
+                    {
+                        id = producto.Id,
+                        codigo = producto.Codigo,
+                        nombre = producto.Nombre,
+                        marca = producto.Marca?.Nombre,
+                        submarca = producto.Submarca?.Nombre,
+                        categoria = producto.Categoria?.Nombre,
+                        subcategoria = producto.Subcategoria?.Nombre,
+                        descripcion = producto.Descripcion,
+                        stockActual = producto.StockActual,
+                        precioVenta,
+                        caracteristicas,
+                        caracteristicasResumen = string.Join(" · ", caracteristicasResumen),
+                        codigoExacto = string.Equals(producto.Codigo, termino, StringComparison.OrdinalIgnoreCase)
+                    });
+                }
+
+                return Ok(resultado.Take(limite));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al buscar productos para venta con término {Term}", term);
+                return StatusCode(500, new { error = "Error al buscar productos" });
+            }
+        }
+
+        [HttpGet]
         public async Task<IActionResult> GetCreditosCliente(int clienteId)
         {
             try

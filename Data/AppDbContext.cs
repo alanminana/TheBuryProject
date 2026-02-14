@@ -28,6 +28,7 @@ namespace TheBuryProject.Data
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<Marca> Marcas { get; set; }
         public DbSet<Producto> Productos { get; set; }
+        public DbSet<ProductoCaracteristica> ProductosCaracteristicas { get; set; }
         public DbSet<PrecioHistorico> PreciosHistoricos { get; set; }
 
         public DbSet<Proveedor> Proveedores { get; set; }
@@ -229,7 +230,28 @@ namespace TheBuryProject.Data
                     .HasDefaultValue(true)
                     .ValueGeneratedNever();
 
+                entity.HasMany(e => e.Caracteristicas)
+                    .WithOne(c => c.Producto)
+                    .HasForeignKey(c => c.ProductoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
                 // SIN: entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            modelBuilder.Entity<ProductoCaracteristica>(entity =>
+            {
+                entity.ToTable("ProductosCaracteristicas");
+
+                entity.Property(e => e.Nombre)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.Valor)
+                    .IsRequired()
+                    .HasMaxLength(300);
+
+                entity.HasIndex(e => e.ProductoId);
+                entity.HasIndex(e => new { e.ProductoId, e.Nombre });
             });
 
             // =======================

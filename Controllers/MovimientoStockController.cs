@@ -245,5 +245,43 @@ namespace TheBuryProject.Controllers
                 return BadRequest("Error al obtener información del producto");
             }
         }
+
+        [HttpGet]
+        [Produces("application/json")]
+        public async Task<IActionResult> BuscarProductos(string term, int take = 20)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(term))
+                    return Ok(new List<object>());
+
+                var limite = Math.Clamp(take, 1, 30);
+                var termino = term.Trim();
+
+                var productos = await _productoService.SearchAsync(
+                    searchTerm: termino,
+                    soloActivos: true,
+                    orderBy: "nombre");
+
+                var resultado = productos
+                    .Take(limite)
+                    .Select(p => new
+                    {
+                        id = p.Id,
+                        codigo = p.Codigo,
+                        nombre = p.Nombre,
+                        descripcion = p.Descripcion,
+                        stockActual = p.StockActual
+                    })
+                    .ToList();
+
+                return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al buscar productos para ajuste de stock con término {Term}", term);
+                return StatusCode(500, new { error = "No se pudo buscar productos" });
+            }
+        }
     }
 }

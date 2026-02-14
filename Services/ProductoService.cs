@@ -41,6 +41,7 @@ namespace TheBuryProject.Services
                     .Where(p => !p.IsDeleted)
                     .Include(p => p.Categoria)
                     .Include(p => p.Marca)
+                    .Include(p => p.Caracteristicas.Where(c => !c.IsDeleted))
                     .OrderBy(p => p.Nombre)
                     .ToListAsync();
             }
@@ -59,6 +60,7 @@ namespace TheBuryProject.Services
                     .AsNoTracking()
                     .Include(p => p.Categoria)
                     .Include(p => p.Marca)
+                    .Include(p => p.Caracteristicas.Where(c => !c.IsDeleted))
                     .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
             }
             catch (Exception ex)
@@ -143,7 +145,10 @@ namespace TheBuryProject.Services
                 var query = _context.Productos
                     .AsNoTracking()
                     .Include(p => p.Categoria)
+                    .Include(p => p.Subcategoria)
                     .Include(p => p.Marca)
+                    .Include(p => p.Submarca)
+                    .Include(p => p.Caracteristicas.Where(c => !c.IsDeleted))
                     .Where(p => !p.IsDeleted)
                     .AsQueryable();
 
@@ -153,7 +158,13 @@ namespace TheBuryProject.Services
                     query = query.Where(p =>
                         p.Codigo.ToLower().Contains(term) ||
                         p.Nombre.ToLower().Contains(term) ||
-                        (p.Descripcion != null && p.Descripcion.ToLower().Contains(term)));
+                        (p.Descripcion != null && p.Descripcion.ToLower().Contains(term)) ||
+                        (p.Marca != null && p.Marca.Nombre.ToLower().Contains(term)) ||
+                        (p.Submarca != null && p.Submarca.Nombre.ToLower().Contains(term)) ||
+                        (p.Categoria != null && p.Categoria.Nombre.ToLower().Contains(term)) ||
+                        (p.Subcategoria != null && p.Subcategoria.Nombre.ToLower().Contains(term)) ||
+                        p.Caracteristicas.Any(c => !c.IsDeleted &&
+                            (c.Nombre.ToLower().Contains(term) || c.Valor.ToLower().Contains(term))));
                 }
 
                 if (categoriaId.HasValue)
@@ -204,6 +215,13 @@ namespace TheBuryProject.Services
                     throw new InvalidOperationException($"Ya existe un producto con el código '{producto.Codigo}'");
 
                 producto.CreatedAt = DateTime.UtcNow;
+                producto.Caracteristicas = NormalizarCaracteristicas(producto.Caracteristicas)
+                    .Select(c => new ProductoCaracteristica
+                    {
+                        Nombre = c.Nombre,
+                        Valor = c.Valor
+                    })
+                    .ToList();
 
                 var usuario = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
 
@@ -249,6 +267,7 @@ namespace TheBuryProject.Services
             try
             {
                 var existing = await _context.Productos
+                    .Include(p => p.Caracteristicas.Where(c => !c.IsDeleted))
                     .FirstOrDefaultAsync(p => p.Id == producto.Id && !p.IsDeleted);
 
                 if (existing == null)
@@ -311,6 +330,9 @@ namespace TheBuryProject.Services
                 existing.UnidadMedida = producto.UnidadMedida;
                 existing.Activo = producto.Activo;
                 existing.UpdatedAt = DateTime.UtcNow;
+
+                var caracteristicasNuevas = NormalizarCaracteristicas(producto.Caracteristicas).ToList();
+                SincronizarCaracteristicas(existing, caracteristicasNuevas);
 
                 await _context.SaveChangesAsync();
 
@@ -471,7 +493,7 @@ namespace TheBuryProject.Services
                 throw new InvalidOperationException("La marca es obligatoria");
 
             if (producto.PrecioCompra < 0)
-                throw new InvalidOperationException("El precio de compra no puede ser negativo");
+                throw new InvalidOperationException("El precio de costo no puede ser negativo");
 
             if (producto.PrecioVenta < 0)
                 throw new InvalidOperationException("El precio de venta no puede ser negativo");
@@ -488,6 +510,57 @@ namespace TheBuryProject.Services
 
             if (producto.StockMinimo < 0)
                 throw new InvalidOperationException("El stock mínimo no puede ser negativo");
+        }
+
+        private static IEnumerable<ProductoCaracteristica> NormalizarCaracteristicas(IEnumerable<ProductoCaracteristica>? caracteristicas)
+        {
+            if (caracteristicas == null)
+                return Enumerable.Empty<ProductoCaracteristica>();
+
+            return caracteristicas
+                .Where(c => !string.IsNullOrWhiteSpace(c.Nombre) && !string.IsNullOrWhiteSpace(c.Valor))
+                .Select(c => new ProductoCaracteristica
+                {
+                    Id = c.Id,
+                    Nombre = c.Nombre.Trim(),
+                    Valor = c.Valor.Trim()
+                });
+        }
+
+        private static void SincronizarCaracteristicas(Producto existing, IEnumerable<ProductoCaracteristica> caracteristicasNuevas)
+        {
+            var nuevasPorId = caracteristicasNuevas
+                .Where(c => c.Id > 0)
+                .ToDictionary(c => c.Id, c => c);
+
+            foreach (var caracteristicaExistente in existing.Caracteristicas.ToList())
+            {
+                if (!nuevasPorId.ContainsKey(caracteristicaExistente.Id))
+                {
+                    caracteristicaExistente.IsDeleted = true;
+                    caracteristicaExistente.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
+            foreach (var nueva in caracteristicasNuevas)
+            {
+                if (nueva.Id > 0)
+                {
+                    var existente = existing.Caracteristicas.FirstOrDefault(c => c.Id == nueva.Id && !c.IsDeleted);
+                    if (existente != null)
+                    {
+                        existente.Nombre = nueva.Nombre;
+                        existente.Valor = nueva.Valor;
+                        continue;
+                    }
+                }
+
+                existing.Caracteristicas.Add(new ProductoCaracteristica
+                {
+                    Nombre = nueva.Nombre,
+                    Valor = nueva.Valor
+                });
+            }
         }
 
         #endregion

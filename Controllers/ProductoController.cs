@@ -130,6 +130,8 @@ namespace TheBuryProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ProductoViewModel viewModel)
         {
+            viewModel.Caracteristicas = NormalizarCaracteristicas(viewModel.Caracteristicas);
+
             if (ModelState.IsValid)
             {
                 try
@@ -199,6 +201,8 @@ namespace TheBuryProject.Controllers
             {
                 return NotFound();
             }
+
+            viewModel.Caracteristicas = NormalizarCaracteristicas(viewModel.Caracteristicas);
 
             if (ModelState.IsValid)
             {
@@ -332,6 +336,22 @@ namespace TheBuryProject.Controllers
                 _logger.LogError(ex, "Error al obtener submarcas para marca {MarcaId}", marcaId);
                 return Json(new List<object>());
             }
+        }
+
+        private static List<ProductoCaracteristicaViewModel> NormalizarCaracteristicas(IEnumerable<ProductoCaracteristicaViewModel>? caracteristicas)
+        {
+            if (caracteristicas == null)
+                return new List<ProductoCaracteristicaViewModel>();
+
+            return caracteristicas
+                .Where(c => !string.IsNullOrWhiteSpace(c.Nombre) && !string.IsNullOrWhiteSpace(c.Valor))
+                .Select(c => new ProductoCaracteristicaViewModel
+                {
+                    Id = c.Id,
+                    Nombre = c.Nombre.Trim(),
+                    Valor = c.Valor.Trim()
+                })
+                .ToList();
         }
 
     }
