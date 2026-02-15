@@ -1,7 +1,9 @@
 using AutoMapper;
 using System.Security.Claims;
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
+using TheBuryProject.Helpers;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
@@ -184,8 +186,27 @@ namespace TheBuryProject.Services
                     // E2: Si NoViable, rechazar guardado completamente
                     if (validacion.NoViable)
                     {
-                        throw new InvalidOperationException(
-                            $"No es posible crear la venta con crédito personal. {validacion.MensajeResumen}");
+                        if (PuedeAplicarExcepcionDocumentalCreate(viewModel, validacion, currentUser))
+                        {
+                            var motivoExcepcion = viewModel.MotivoExcepcionDocumentalCreate!.Trim();
+                            AplicarAuditoriaExcepcionDocumentalEnCreate(venta, currentUserName, motivoExcepcion);
+
+                            validacion.NoViable = false;
+                            validacion.PendienteRequisitos = false;
+                            validacion.RequisitosPendientes = validacion.RequisitosPendientes
+                                .Where(r => r.Tipo != TipoRequisitoPendiente.DocumentacionFaltante)
+                                .ToList();
+
+                            _logger.LogWarning(
+                                "CreateAsync venta por excepción documental autorizada. Cliente:{ClienteId} Usuario:{Usuario}",
+                                viewModel.ClienteId,
+                                currentUserName);
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException(
+                                $"No es posible crear la venta con crédito personal. {validacion.MensajeResumen}");
+                        }
                     }
 
                     await AplicarResultadoValidacionAsync(venta, validacion);
@@ -196,7 +217,7 @@ namespace TheBuryProject.Services
                 }
 
                 _context.Ventas.Add(venta);
-                await _context.SaveChangesAsync();
+                await GuardarVentaConReintentoNumeroAsync(venta, viewModel.Estado);
 
                 // Para crédito personal, crear el crédito inmediatamente después de guardar la venta
                 if (viewModel.TipoPago == TipoPago.CreditoPersonal && 
@@ -228,6 +249,51 @@ namespace TheBuryProject.Services
                 _logger.LogError(ex, "Error al crear venta");
                 throw;
             }
+        }
+
+        private async Task GuardarVentaConReintentoNumeroAsync(Venta venta, EstadoVenta estado)
+        {
+            const int maxIntentos = 5;
+
+            for (var intento = 1; intento <= maxIntentos; intento++)
+            {
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    return;
+                }
+                catch (DbUpdateException ex) when (EsErrorNumeroVentaDuplicado(ex) && intento < maxIntentos)
+                {
+                    var numeroAnterior = venta.Numero;
+                    venta.Numero = await _numberGenerator.GenerarNumeroAsync(estado);
+
+                    _logger.LogWarning(
+                        ex,
+                        "Colisión de número de venta detectada. Reintentando con nuevo número. Intento:{Intento} NumeroAnterior:{NumeroAnterior} NumeroNuevo:{NumeroNuevo}",
+                        intento,
+                        numeroAnterior,
+                        venta.Numero);
+                }
+            }
+
+            throw new InvalidOperationException(
+                "No se pudo generar un número de venta único tras varios reintentos. Intente nuevamente.");
+        }
+
+        private static bool EsErrorNumeroVentaDuplicado(DbUpdateException ex)
+        {
+            var mensaje = ex.InnerException?.Message ?? ex.Message;
+            if (string.IsNullOrWhiteSpace(mensaje))
+            {
+                return false;
+            }
+
+            var mensajeNormalizado = mensaje.ToLower(CultureInfo.InvariantCulture);
+            return mensajeNormalizado.Contains("ix_ventas_numero")
+                   || mensajeNormalizado.Contains("duplicate key")
+                   || mensajeNormalizado.Contains("duplicado")
+                   || mensajeNormalizado.Contains("2601")
+                   || mensajeNormalizado.Contains("2627");
         }
 
         /// <summary>
@@ -273,6 +339,57 @@ namespace TheBuryProject.Services
             }
 
             await Task.CompletedTask;
+        }
+
+        private static bool PuedeAplicarExcepcionDocumentalCreate(
+            VentaViewModel viewModel,
+            ValidacionVentaResult validacion,
+            ClaimsPrincipal? currentUser)
+        {
+            if (!viewModel.AplicarExcepcionDocumental)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(viewModel.MotivoExcepcionDocumentalCreate))
+            {
+                return false;
+            }
+
+            if (currentUser == null || !currentUser.TienePermiso("ventas", "authorize"))
+            {
+                return false;
+            }
+
+            return validacion.RequisitosPendientes.Any()
+                   && validacion.RequisitosPendientes.All(r =>
+                       r.Tipo == TipoRequisitoPendiente.DocumentacionFaltante);
+        }
+
+        private static void AplicarAuditoriaExcepcionDocumentalEnCreate(
+            Venta venta,
+            string usuarioAutoriza,
+            string motivo)
+        {
+            var fechaUtc = DateTime.UtcNow;
+            var traza = $"EXCEPCION_DOC|{fechaUtc:O}|{usuarioAutoriza}|{motivo}";
+
+            venta.UsuarioAutoriza = usuarioAutoriza;
+            venta.FechaAutorizacion = fechaUtc;
+
+            if (string.IsNullOrWhiteSpace(venta.MotivoAutorizacion))
+            {
+                venta.MotivoAutorizacion = traza;
+            }
+            else
+            {
+                var compuesto = $"{venta.MotivoAutorizacion}\n{traza}";
+                venta.MotivoAutorizacion = compuesto.Length <= 1000
+                    ? compuesto
+                    : traza.Length <= 1000
+                        ? traza
+                        : traza.Substring(0, 1000);
+            }
         }
 
         /// <summary>
@@ -647,7 +764,7 @@ namespace TheBuryProject.Services
 
             credito.MontoCuota = cuotaMensual;
             credito.TotalAPagar = cuotaMensual * credito.CantidadCuotas;
-            credito.SaldoPendiente = credito.TotalAPagar;
+            credito.SaldoPendiente = montoFinanciado;
 
             // Crear las cuotas
             var fechaCuota = credito.FechaPrimeraCuota ?? DateTime.Today.AddMonths(1);
@@ -862,6 +979,53 @@ namespace TheBuryProject.Services
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Venta {Id} rechazada por {Usuario}. Motivo: {Motivo}", id, usuarioAutoriza, motivo);
+            return true;
+        }
+
+        public async Task<bool> RegistrarExcepcionDocumentalAsync(int id, string usuarioAutoriza, string motivo)
+        {
+            if (string.IsNullOrWhiteSpace(usuarioAutoriza) || string.IsNullOrWhiteSpace(motivo))
+            {
+                return false;
+            }
+
+            var venta = await _context.Ventas
+                .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
+
+            if (venta == null)
+            {
+                return false;
+            }
+
+            var fechaUtc = DateTime.UtcNow;
+            var motivoNormalizado = motivo.Trim();
+            var traza = $"EXCEPCION_DOC|{fechaUtc:O}|{usuarioAutoriza}|{motivoNormalizado}";
+
+            venta.UsuarioAutoriza = usuarioAutoriza;
+            venta.FechaAutorizacion = fechaUtc;
+
+            if (string.IsNullOrWhiteSpace(venta.MotivoAutorizacion))
+            {
+                venta.MotivoAutorizacion = traza;
+            }
+            else
+            {
+                var compuesto = $"{venta.MotivoAutorizacion}\n{traza}";
+                venta.MotivoAutorizacion = compuesto.Length <= 1000
+                    ? compuesto
+                    : traza.Length <= 1000
+                        ? traza
+                        : traza.Substring(0, 1000);
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogWarning(
+                "Excepción documental registrada en venta {Id} por {Usuario}. Motivo: {Motivo}",
+                id,
+                usuarioAutoriza,
+                motivoNormalizado);
+
             return true;
         }
 

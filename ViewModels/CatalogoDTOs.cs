@@ -170,6 +170,62 @@ namespace TheBuryProject.ViewModels
         /// Producto inactivo
         /// </summary>
         public bool Inactivo => !Activo;
+
+        // ============================================
+        // ÚLTIMO CAMBIO DIRECTO
+        // ============================================
+
+        /// <summary>
+        /// ID del último evento de cambio directo que afectó al producto
+        /// </summary>
+        public int? UltimoCambioEventoId { get; set; }
+
+        /// <summary>
+        /// Fecha del último cambio directo
+        /// </summary>
+        public DateTime? UltimoCambioFecha { get; set; }
+
+        /// <summary>
+        /// Usuario que realizó el último cambio directo
+        /// </summary>
+        public string? UltimoCambioUsuario { get; set; }
+
+        /// <summary>
+        /// Valor porcentual del último cambio directo
+        /// </summary>
+        public decimal? UltimoCambioPorcentaje { get; set; }
+
+        /// <summary>
+        /// Indica si el último evento fue revertido
+        /// </summary>
+        public bool UltimoCambioRevertido { get; set; }
+
+        /// <summary>
+        /// Indica si el último evento es una reversión
+        /// </summary>
+        public bool UltimoCambioEsReversion { get; set; }
+
+        /// <summary>
+        /// Determina si se puede mostrar botón de revertir en la fila
+        /// </summary>
+        public bool UltimoCambioPuedeRevertir =>
+            UltimoCambioEventoId.HasValue &&
+            !UltimoCambioRevertido &&
+            !UltimoCambioEsReversion;
+    }
+
+    /// <summary>
+    /// Resumen del último cambio directo por producto
+    /// </summary>
+    public class UltimoCambioProductoResumen
+    {
+        public int EventoId { get; set; }
+        public int ProductoId { get; set; }
+        public DateTime Fecha { get; set; }
+        public string Usuario { get; set; } = string.Empty;
+        public decimal ValorPorcentaje { get; set; }
+        public bool Revertido { get; set; }
+        public bool EsReversion { get; set; }
     }
 
     /// <summary>

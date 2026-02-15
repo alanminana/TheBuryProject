@@ -42,6 +42,9 @@ namespace TheBuryProject.Extensions
             // Servicio de aptitud crediticia (semáforo Apto/NoApto/RequiereAutorizacion)
             services.AddScoped<IClienteAptitudService, ClienteAptitudService>();
 
+            // Servicio de dominio para cálculo de límite/saldo/disponible por puntaje
+            services.AddScoped<ICreditoDisponibleService, CreditoDisponibleService>();
+
             // Servicio de validación unificada para ventas con crédito personal
             services.AddScoped<IValidacionVentaService, ValidacionVentaService>();
 

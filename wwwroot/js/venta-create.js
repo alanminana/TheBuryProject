@@ -13,6 +13,7 @@
             // Resetear prevalidación cuando cambian los productos
             if (tipoPagoSelect?.value === TIPO_PAGO_CREDITO_PERSONAL) {
                 resetEstadoPrevalidacion();
+                triggerPrevalidacionAutomatica();
             }
         }
     });
@@ -22,6 +23,7 @@
     const buscarProductosUrl = form.dataset.buscarProductosUrl;
     const calcularTotalesUrl = form.dataset.calcularTotalesUrl;
     const prevalidarCreditoUrl = form.dataset.prevalidarCreditoUrl;
+    const puedeExcepcionDocumental = form.dataset.puedeExcepcionDocumental === 'true';
     const descuentoEsPorcentaje = form.dataset.descuentoEsPorcentaje === 'true';
     const antiforgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
@@ -55,6 +57,16 @@
     const prevalidacionResultado = document.getElementById('prevalidacionResultado');
     const prevalidacionBadge = document.getElementById('prevalidacionBadge');
     const prevalidacionTexto = document.getElementById('prevalidacionTexto');
+    const resumenCreditoDisponibleInline = document.getElementById('resumenCreditoDisponibleInline');
+    const inlineCreditoDisponible = document.getElementById('inlineCreditoDisponible');
+    const inlineCreditoVenta = document.getElementById('inlineCreditoVenta');
+    const inlineCreditoExcedeMensaje = document.getElementById('inlineCreditoExcedeMensaje');
+    const inlineCreditoExcedeDisponible = document.getElementById('inlineCreditoExcedeDisponible');
+    const btnAplicarExcepcionDocumental = document.getElementById('btnAplicarExcepcionDocumental');
+    const estadoExcepcionDocumental = document.getElementById('estadoExcepcionDocumental');
+    const motivoExcepcionDocumentalInput = document.getElementById('motivoExcepcionDocumentalInput');
+    const aplicarExcepcionDocumentalHidden = document.getElementById('aplicarExcepcionDocumental');
+    const motivoExcepcionDocumentalHidden = document.getElementById('motivoExcepcionDocumentalHidden');
 
     let productosSugeridos = [];
     let indiceSugeridoActivo = -1;
@@ -65,8 +77,13 @@
     let estadoPrevalidacion = {
         verificado: false,
         permiteGuardar: false,
-        resultado: null
+        resultado: null,
+        disponible: 0,
+        montoVenta: 0
     };
+
+    let debouncePrevalidacionId = null;
+    let excepcionDocumentalActiva = false;
 
     const tarjetaHandlers = VentaCommon.initTarjetaHandlers({
         tipoPagoSelect: tipoPagoSelect,
@@ -114,12 +131,31 @@
             
             // Validar prevalidación para Crédito Personal
             if (tipoPagoSelect?.value === TIPO_PAGO_CREDITO_PERSONAL) {
+                const excedeDisponible = estadoPrevalidacion.verificado && estadoPrevalidacion.montoVenta > estadoPrevalidacion.disponible;
+                const excepcionValida = puedeExcepcionDocumental
+                    && excepcionDocumentalActiva
+                    && esNoViableSoloDocumentacion()
+                    && ((motivoExcepcionDocumentalInput?.value || '').trim().length > 0)
+                    && !excedeDisponible;
+
                 if (!estadoPrevalidacion.verificado) {
                     e.preventDefault();
                     alert('Debe verificar la aptitud crediticia del cliente antes de continuar.');
                     return;
                 }
+
+                if (estadoPrevalidacion.montoVenta > estadoPrevalidacion.disponible) {
+                    e.preventDefault();
+                    alert(`Excede el crédito disponible por puntaje. Disponible: ${formatCurrencyInline(estadoPrevalidacion.disponible)}. Ajuste el monto, cambie método de pago o actualice puntaje/límites.`);
+                    return;
+                }
+
                 if (!estadoPrevalidacion.permiteGuardar) {
+                    if (excepcionValida) {
+                        sincronizarExcepcionDocumentalHidden();
+                        return;
+                    }
+
                     e.preventDefault();
                     alert('El cliente no tiene aptitud crediticia para esta operación. Revise los motivos en el panel de verificación.');
                     return;
@@ -135,6 +171,7 @@
         // Cuando cambia el cliente, resetear prevalidación
         clienteSelect?.addEventListener('change', function () {
             resetEstadoPrevalidacion();
+            triggerPrevalidacionAutomatica();
         });
 
         document.addEventListener('click', function (event) {
@@ -346,6 +383,114 @@
     
     function bindPrevalidacionEvents() {
         btnVerificarAptitud?.addEventListener('click', verificarAptitudCrediticia);
+        btnAplicarExcepcionDocumental?.addEventListener('click', toggleExcepcionDocumental);
+        motivoExcepcionDocumentalInput?.addEventListener('input', function () {
+            sincronizarExcepcionDocumentalHidden();
+            actualizarBotonGuardar();
+        });
+    }
+
+    function esCategoriaDocumentacion(categoria) {
+        return categoria === 1 || categoria === 'Documentacion' || categoria === 'Documentación';
+    }
+
+    function esNoViableSoloDocumentacion() {
+        if (!estadoPrevalidacion?.verificado || !estadoPrevalidacion?.resultado || !Array.isArray(estadoPrevalidacion.resultado.motivos)) {
+            return false;
+        }
+
+        const bloqueantes = estadoPrevalidacion.resultado.motivos.filter(function (motivo) {
+            return motivo && motivo.esBloqueante;
+        });
+
+        return bloqueantes.length > 0 && bloqueantes.every(function (motivo) {
+            return esCategoriaDocumentacion(motivo.categoria);
+        });
+    }
+
+    function sincronizarExcepcionDocumentalHidden() {
+        if (aplicarExcepcionDocumentalHidden) {
+            aplicarExcepcionDocumentalHidden.value = excepcionDocumentalActiva ? 'true' : 'false';
+        }
+
+        if (motivoExcepcionDocumentalHidden) {
+            const motivo = (motivoExcepcionDocumentalInput?.value || '').trim();
+            motivoExcepcionDocumentalHidden.value = excepcionDocumentalActiva ? motivo : '';
+        }
+    }
+
+    function desactivarExcepcionDocumental() {
+        excepcionDocumentalActiva = false;
+
+        if (btnAplicarExcepcionDocumental) {
+            btnAplicarExcepcionDocumental.classList.remove('btn-outline-warning');
+            btnAplicarExcepcionDocumental.classList.add('btn-warning');
+            btnAplicarExcepcionDocumental.innerHTML = '<i class="bi bi-shield-exclamation me-1"></i> Aplicar Excepción Documental';
+        }
+
+        if (estadoExcepcionDocumental) {
+            estadoExcepcionDocumental.classList.remove('bg-success');
+            estadoExcepcionDocumental.classList.add('bg-secondary');
+            estadoExcepcionDocumental.textContent = 'No aplicada';
+        }
+
+        sincronizarExcepcionDocumentalHidden();
+    }
+
+    function activarExcepcionDocumental() {
+        excepcionDocumentalActiva = true;
+
+        if (btnAplicarExcepcionDocumental) {
+            btnAplicarExcepcionDocumental.classList.remove('btn-warning');
+            btnAplicarExcepcionDocumental.classList.add('btn-outline-warning');
+            btnAplicarExcepcionDocumental.innerHTML = '<i class="bi bi-shield-check me-1"></i> Quitar Excepción Documental';
+        }
+
+        if (estadoExcepcionDocumental) {
+            estadoExcepcionDocumental.classList.remove('bg-secondary');
+            estadoExcepcionDocumental.classList.add('bg-success');
+            estadoExcepcionDocumental.textContent = 'Aplicada';
+        }
+
+        sincronizarExcepcionDocumentalHidden();
+    }
+
+    function toggleExcepcionDocumental() {
+        if (!puedeExcepcionDocumental) {
+            alert('No tiene permisos para aplicar excepción documental.');
+            return;
+        }
+
+        if (!estadoPrevalidacion.verificado) {
+            alert('Primero debe verificar la aptitud crediticia.');
+            return;
+        }
+
+        if (excepcionDocumentalActiva) {
+            desactivarExcepcionDocumental();
+            actualizarBotonGuardar();
+            return;
+        }
+
+        if (!esNoViableSoloDocumentacion()) {
+            alert('La excepción documental solo aplica cuando el bloqueo es exclusivamente por documentación faltante.');
+            return;
+        }
+
+        const excedeDisponible = estadoPrevalidacion.montoVenta > estadoPrevalidacion.disponible;
+        if (excedeDisponible) {
+            alert('No se puede aplicar excepción documental si el monto excede el crédito disponible por puntaje.');
+            return;
+        }
+
+        const motivo = (motivoExcepcionDocumentalInput?.value || '').trim();
+        if (!motivo) {
+            alert('Debe ingresar el motivo de excepción documental.');
+            return;
+        }
+
+        activarExcepcionDocumental();
+        actualizarBotonGuardar();
     }
     
     function handleTipoPagoChangeForPrevalidacion(tipoPago) {
@@ -354,11 +499,14 @@
         if (tipoPago === TIPO_PAGO_CREDITO_PERSONAL) {
             prevalidacionRow?.classList.remove('d-none');
             avisoCreditoPersonal?.classList.remove('d-none');
+            resumenCreditoDisponibleInline?.classList.remove('d-none');
             actualizarBotonVerificar();
             actualizarBotonGuardar();
+            triggerPrevalidacionAutomatica();
         } else {
             prevalidacionRow?.classList.add('d-none');
             avisoCreditoPersonal?.classList.add('d-none');
+            resumenCreditoDisponibleInline?.classList.add('d-none');
             resetEstadoPrevalidacion();
             actualizarBotonGuardar();
         }
@@ -375,20 +523,70 @@
     }
     
     function resetEstadoPrevalidacion() {
+        const totalVenta = parseFloat(document.getElementById('hiddenTotal')?.value) || 0;
         estadoPrevalidacion = {
             verificado: false,
             permiteGuardar: false,
-            resultado: null
+            resultado: null,
+            disponible: 0,
+            montoVenta: totalVenta
         };
         
         if (prevalidacionPendiente) prevalidacionPendiente.classList.remove('d-none');
         if (prevalidacionCargando) prevalidacionCargando.classList.add('d-none');
         if (prevalidacionResultado) prevalidacionResultado.classList.add('d-none');
+        desactivarExcepcionDocumental();
         actualizarBotonVerificar();
+        actualizarInlineCreditoDisponible();
         actualizarBotonGuardar();
     }
+
+    function triggerPrevalidacionAutomatica() {
+        if (tipoPagoSelect?.value !== TIPO_PAGO_CREDITO_PERSONAL) {
+            return;
+        }
+
+        if (debouncePrevalidacionId) {
+            clearTimeout(debouncePrevalidacionId);
+        }
+
+        debouncePrevalidacionId = setTimeout(function () {
+            verificarAptitudCrediticia({ silencioso: true });
+        }, 250);
+    }
+
+    function formatCurrencyInline(value) {
+        return '$' + Number(value || 0).toLocaleString('es-AR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function actualizarInlineCreditoDisponible() {
+        if (tipoPagoSelect?.value !== TIPO_PAGO_CREDITO_PERSONAL) {
+            return;
+        }
+
+        const montoVenta = estadoPrevalidacion.montoVenta || (parseFloat(document.getElementById('hiddenTotal')?.value) || 0);
+        const disponible = estadoPrevalidacion.disponible || 0;
+
+        if (inlineCreditoDisponible) inlineCreditoDisponible.textContent = formatCurrencyInline(disponible);
+        if (inlineCreditoVenta) inlineCreditoVenta.textContent = formatCurrencyInline(montoVenta);
+
+        const excede = estadoPrevalidacion.verificado && montoVenta > disponible;
+
+        if (inlineCreditoExcedeDisponible) {
+            inlineCreditoExcedeDisponible.textContent = formatCurrencyInline(disponible);
+        }
+
+        if (inlineCreditoExcedeMensaje) {
+            inlineCreditoExcedeMensaje.classList.toggle('d-none', !excede);
+        }
+    }
     
-    async function verificarAptitudCrediticia() {
+    async function verificarAptitudCrediticia(options = {}) {
+        const silencioso = options.silencioso === true;
+
         if (!prevalidarCreditoUrl) {
             console.error('URL de prevalidación no configurada');
             return;
@@ -396,9 +594,13 @@
         
         const clienteId = clienteSelect?.value;
         const monto = parseFloat(document.getElementById('hiddenTotal')?.value) || 0;
+        estadoPrevalidacion.montoVenta = monto;
         
         if (!clienteId || monto <= 0) {
-            alert('Seleccione un cliente y agregue productos antes de verificar.');
+            if (!silencioso) {
+                alert('Seleccione un cliente y agregue productos antes de verificar.');
+            }
+            actualizarInlineCreditoDisponible();
             return;
         }
         
@@ -423,7 +625,9 @@
             console.error('Error en prevalidación:', error);
             if (prevalidacionCargando) prevalidacionCargando.classList.add('d-none');
             if (prevalidacionPendiente) prevalidacionPendiente.classList.remove('d-none');
-            alert('Error al verificar aptitud crediticia: ' + error.message);
+            if (!silencioso) {
+                alert('Error al verificar aptitud crediticia: ' + error.message);
+            }
         }
     }
     
@@ -431,7 +635,9 @@
         estadoPrevalidacion = {
             verificado: true,
             permiteGuardar: resultado.permiteGuardar,
-            resultado: resultado
+            resultado: resultado,
+            disponible: Number(resultado.cupoDisponible || 0),
+            montoVenta: parseFloat(document.getElementById('hiddenTotal')?.value) || 0
         };
         
         if (prevalidacionCargando) prevalidacionCargando.classList.add('d-none');
@@ -464,6 +670,7 @@
         if (limiteEl) limiteEl.textContent = formatCurrency(resultado.limiteCredito);
         if (cupoEl) cupoEl.textContent = formatCurrency(resultado.cupoDisponible);
         if (montoEl) montoEl.textContent = formatCurrency(parseFloat(document.getElementById('hiddenTotal')?.value) || 0);
+        actualizarInlineCreditoDisponible();
         
         // Mostrar mora si existe
         const moraDiv = document.getElementById('prevalidacionMora');
@@ -499,6 +706,12 @@
         } else if (motivosDiv) {
             motivosDiv.innerHTML = '';
         }
+
+        if (excepcionDocumentalActiva && !esNoViableSoloDocumentacion()) {
+            desactivarExcepcionDocumental();
+        } else {
+            sincronizarExcepcionDocumentalHidden();
+        }
         
         // Actualizar estado del botón Guardar
         actualizarBotonGuardar();
@@ -511,18 +724,37 @@
         const esCreditoPersonal = tipoPagoSelect?.value === TIPO_PAGO_CREDITO_PERSONAL;
         
         if (esCreditoPersonal) {
+            const excedeDisponible = estadoPrevalidacion.verificado && estadoPrevalidacion.montoVenta > estadoPrevalidacion.disponible;
+            const excepcionValida = puedeExcepcionDocumental
+                && excepcionDocumentalActiva
+                && esNoViableSoloDocumentacion()
+                && ((motivoExcepcionDocumentalInput?.value || '').trim().length > 0)
+                && !excedeDisponible;
+
             if (!estadoPrevalidacion.verificado) {
                 // No verificado aún - deshabilitar con mensaje
                 btnGuardar.disabled = true;
                 btnGuardar.classList.remove('btn-primary', 'btn-success');
                 btnGuardar.classList.add('btn-secondary');
                 btnGuardar.title = 'Debe verificar la aptitud crediticia antes de guardar';
-            } else if (!estadoPrevalidacion.permiteGuardar) {
-                // NoViable - deshabilitar
+            } else if (excedeDisponible) {
                 btnGuardar.disabled = true;
-                btnGuardar.classList.remove('btn-primary', 'btn-success');
+                btnGuardar.classList.remove('btn-primary', 'btn-success', 'btn-secondary');
                 btnGuardar.classList.add('btn-danger');
-                btnGuardar.title = 'El cliente no tiene aptitud crediticia para esta operación';
+                btnGuardar.title = `Excede el crédito disponible por puntaje. Disponible: ${formatCurrencyInline(estadoPrevalidacion.disponible)}.`;
+            } else if (!estadoPrevalidacion.permiteGuardar) {
+                if (excepcionValida) {
+                    btnGuardar.disabled = false;
+                    btnGuardar.classList.remove('btn-secondary', 'btn-danger');
+                    btnGuardar.classList.add('btn-primary');
+                    btnGuardar.title = 'Excepción documental activa: se permitirá guardar';
+                } else {
+                    // NoViable - deshabilitar
+                    btnGuardar.disabled = true;
+                    btnGuardar.classList.remove('btn-primary', 'btn-success');
+                    btnGuardar.classList.add('btn-danger');
+                    btnGuardar.title = 'El cliente no tiene aptitud crediticia para esta operación';
+                }
             } else {
                 // Aprobable o RequiereAutorizacion - habilitar
                 btnGuardar.disabled = false;
@@ -650,6 +882,12 @@
                     ivaSelector: '#lblIVA',
                     totalSelector: '#lblTotal'
                 });
+
+                if (tipoPagoSelect?.value === TIPO_PAGO_CREDITO_PERSONAL) {
+                    estadoPrevalidacion.montoVenta = parseFloat(document.getElementById('hiddenTotal')?.value) || 0;
+                    actualizarInlineCreditoDisponible();
+                    triggerPrevalidacionAutomatica();
+                }
             })
             .catch(function () {
                 VentaCommon.resetTotalesUI({
@@ -661,6 +899,11 @@
                     ivaSelector: '#lblIVA',
                     totalSelector: '#lblTotal'
                 });
+
+                if (tipoPagoSelect?.value === TIPO_PAGO_CREDITO_PERSONAL) {
+                    estadoPrevalidacion.montoVenta = 0;
+                    actualizarInlineCreditoDisponible();
+                }
             });
     }
 

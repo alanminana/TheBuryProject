@@ -90,7 +90,8 @@ public static class RolesPermisosSeeder
                 ("Eliminar", "delete", 4),
                 ("Ver Documentos", "viewdocs", 5),
                 ("Subir Documentos", "uploaddocs", 6),
-                ("Exportar", "export", 7)
+                ("Exportar", "export", 7),
+                ("Administrar límites de crédito por puntaje", "managecreditlimits", 8)
             }),
             ("Evaluación Crédito", "evaluacioncredito", "Clientes", "bi-clipboard-check", 11, new List<(string, string, int)>
             {

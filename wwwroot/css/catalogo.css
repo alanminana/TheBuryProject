@@ -1,48 +1,104 @@
+/* =========================
+   Typography
+   ========================= */
+
 .page-header-subtitle {
     color: var(--tb-text-muted, #adb5bd);
+    font-size: 0.95rem;
 }
 
+
+/* =========================
+   Feature Icon
+   ========================= */
+
 .feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 3.5rem; /* 56px */
+    height: 3.5rem;
+
     background: var(--tb-bg-surface, #1c1f23);
     border: 1px solid var(--tb-border-soft, #343a40);
     color: var(--tb-text-main, #f8f9fa);
+
     border-radius: var(--tb-radius, 0.75rem);
-    width: 56px;
-    height: 56px;
 }
 
+
+/* =========================
+   Metric Pill
+   ========================= */
+
 .metric-pill {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    padding: 0.75rem 1rem;
+
     background: var(--tb-bg-elevated, #212529);
     border: 1px solid var(--tb-border-soft, #343a40);
     border-radius: var(--tb-radius, 0.75rem);
+
     color: var(--tb-text-main, #f8f9fa);
-    padding: 0.75rem 1rem;
 }
 
-    .metric-pill .label {
-        font-size: 0.75rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--tb-text-muted, #adb5bd);
-    }
+.metric-pill .label {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--tb-text-muted, #adb5bd);
+}
 
-    .metric-pill .value {
-        font-size: 1.25rem;
-        font-weight: 700;
-    }
+.metric-pill .value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+
+/* =========================
+   Filter Card
+   ========================= */
 
 .filter-card .card-header {
     cursor: pointer;
 }
 
-    .filter-card .card-header .chevron {
-        transition: transform 0.2s ease-in-out;
-    }
+.filter-card .card-header:focus-visible {
+    outline: 2px solid var(--tb-accent, #0d6efd);
+    outline-offset: 2px;
+}
 
-    .filter-card .card-header.collapsed .chevron {
-        transform: rotate(-90deg);
+.filter-card .chevron {
+    transition: transform 0.2s ease-in-out;
+}
+
+.filter-card .card-header[aria-expanded="false"] .chevron {
+    transform: rotate(-90deg);
+}
+
+
+/* =========================
+   Reduced Motion Support
+   ========================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .filter-card .chevron {
+        transition: none;
     }
+}
+
+
+/* =========================
+   Table Empty State
+   ========================= */
 
 .table-empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
     color: var(--tb-text-muted, #adb5bd);
 }

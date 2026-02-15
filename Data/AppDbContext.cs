@@ -43,6 +43,7 @@ namespace TheBuryProject.Data
         public DbSet<Cheque> Cheques { get; set; }
 
         public DbSet<Cliente> Clientes { get; set; }
+        public DbSet<PuntajeCreditoLimite> PuntajesCreditoLimite { get; set; }
         public DbSet<Credito> Creditos { get; set; }
         public DbSet<Cuota> Cuotas { get; set; }
         public DbSet<Garante> Garantes { get; set; }
@@ -492,6 +493,38 @@ namespace TheBuryProject.Data
                     .OnDelete(DeleteBehavior.NoAction);
 
                 // SIN: entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // PuntajeCreditoLimite
+            // =======================
+            modelBuilder.Entity<PuntajeCreditoLimite>(entity =>
+            {
+                entity.ToTable("PuntajeCreditoLimites");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Puntaje)
+                    .HasConversion<int>()
+                    .IsRequired();
+
+                entity.Property(e => e.LimiteMonto)
+                    .HasPrecision(18, 2)
+                    .HasDefaultValue(0m);
+
+                entity.Property(e => e.Activo)
+                    .HasDefaultValue(true);
+
+                entity.Property(e => e.FechaActualizacion)
+                    .HasDefaultValueSql("GETUTCDATE()");
+
+                entity.Property(e => e.UsuarioActualizacion)
+                    .HasMaxLength(100);
+
+                entity.HasIndex(e => e.Puntaje)
+                    .IsUnique();
+
+                entity.HasCheckConstraint("CK_PuntajeCreditoLimites_Puntaje", "[Puntaje] >= 1 AND [Puntaje] <= 5");
             });
 
             // =======================
@@ -1485,6 +1518,54 @@ namespace TheBuryProject.Data
                     CreatedAt = seedUtc,
                     CreatedBy = "System",
                     IsDeleted = false
+                }
+            );
+
+            modelBuilder.Entity<PuntajeCreditoLimite>().HasData(
+                new PuntajeCreditoLimite
+                {
+                    Id = 1,
+                    Puntaje = Models.Enums.NivelRiesgoCredito.Rechazado,
+                    LimiteMonto = 0m,
+                    Activo = true,
+                    FechaActualizacion = seedUtc,
+                    UsuarioActualizacion = "System"
+                },
+                new PuntajeCreditoLimite
+                {
+                    Id = 2,
+                    Puntaje = Models.Enums.NivelRiesgoCredito.RechazadoRevisar,
+                    LimiteMonto = 0m,
+                    Activo = true,
+                    FechaActualizacion = seedUtc,
+                    UsuarioActualizacion = "System"
+                },
+                new PuntajeCreditoLimite
+                {
+                    Id = 3,
+                    Puntaje = Models.Enums.NivelRiesgoCredito.AprobadoCondicional,
+                    LimiteMonto = 0m,
+                    Activo = true,
+                    FechaActualizacion = seedUtc,
+                    UsuarioActualizacion = "System"
+                },
+                new PuntajeCreditoLimite
+                {
+                    Id = 4,
+                    Puntaje = Models.Enums.NivelRiesgoCredito.AprobadoLimitado,
+                    LimiteMonto = 0m,
+                    Activo = true,
+                    FechaActualizacion = seedUtc,
+                    UsuarioActualizacion = "System"
+                },
+                new PuntajeCreditoLimite
+                {
+                    Id = 5,
+                    Puntaje = Models.Enums.NivelRiesgoCredito.AprobadoTotal,
+                    LimiteMonto = 0m,
+                    Activo = true,
+                    FechaActualizacion = seedUtc,
+                    UsuarioActualizacion = "System"
                 }
             );
         }

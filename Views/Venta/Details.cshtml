@@ -2,6 +2,12 @@
 
 @{
     ViewData["Title"] = "Detalles de Venta";
+    var soloDocumentacionFaltante = Model.ValidacionCredito?.RequisitosPendientes?.Any() == true
+        && Model.ValidacionCredito.RequisitosPendientes.All(r =>
+            r.Tipo == TheBuryProject.ViewModels.TipoRequisitoPendiente.DocumentacionFaltante);
+    var puedeAplicarExcepcionDocumental = User.TienePermiso("ventas", "authorize")
+        && Model.TipoPago == TheBuryProject.Models.Enums.TipoPago.CreditoPersonal
+        && soloDocumentacionFaltante;
 }
 
 @section Styles {
@@ -48,6 +54,24 @@
                 </div>
             }
 
+            @if (Model.TieneExcepcionDocumentalRegistrada)
+            {
+                <div class="alert alert-warning d-flex align-items-start gap-2">
+                    <i class="bi bi-shield-exclamation fs-4"></i>
+                    <div>
+                        <strong>Excepción documental aplicada</strong>
+                        <p class="mb-1">
+                            Usuario: <strong>@Model.UsuarioExcepcionDocumental</strong>
+                            @if (Model.FechaExcepcionDocumental.HasValue)
+                            {
+                                <span class="text-muted">- @Model.FechaExcepcionDocumental.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                            }
+                        </p>
+                        <p class="mb-0"><strong>Motivo:</strong> @Model.MotivoExcepcionDocumental</p>
+                    </div>
+                </div>
+            }
+
             @if (Model.TieneRequisitosPendientes)
             {
                 <div class="alert alert-warning d-flex align-items-start gap-2">
@@ -69,6 +93,31 @@
                                     </li>
                                 }
                             </ul>
+                        }
+
+                        @if (puedeAplicarExcepcionDocumental)
+                        {
+                            <div class="mt-3 pt-2 border-top border-warning-subtle">
+                                <form asp-action="Confirmar" asp-route-id="@Model.Id" asp-route-aplicarExcepcionDocumental="true" method="post"
+                                      data-confirm="¿Aplicar excepción documental y confirmar la venta? Solo use esta opción si aprobó la excepción.">
+                                    @Html.AntiForgeryToken()
+                                    <div class="mb-2" style="max-width: 560px;">
+                                        <label for="motivoExcepcionDocumentalAnalisis" class="form-label text-warning fw-semibold mb-1">
+                                            Motivo de excepción documental (obligatorio)
+                                        </label>
+                                        <textarea id="motivoExcepcionDocumentalAnalisis"
+                                                  name="motivoExcepcionDocumental"
+                                                  class="form-control"
+                                                  rows="2"
+                                                  maxlength="500"
+                                                  required
+                                                  placeholder="Describa el motivo y la validación realizada"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="bi bi-shield-exclamation me-2"></i> Confirmar por Excepción Documental
+                                    </button>
+                                </form>
+                            </div>
                         }
                     </div>
                 </div>

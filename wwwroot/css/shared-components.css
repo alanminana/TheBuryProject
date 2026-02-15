@@ -1,50 +1,107 @@
-/* Reusable layout helpers shared across client, document and credit screens */
+/* ============================================================
+   Shared reusable layout helpers (clients / documents / credits)
+   ============================================================ */
+
+:root {
+    /* Tokens locales (si ya tenés tokens globales tb-*, podés mapearlos) */
+    --shared-surface: var(--tb-bg-surface, #1f2328);
+    --shared-elevated: var(--tb-bg-elevated, #212529);
+    --shared-border: var(--tb-border-soft, #2d3338);
+    --shared-radius-lg: 0.75rem;
+    --shared-radius-md: 0.65rem;
+
+    --shadow-lg: 0 0.5rem 1.25rem rgb(0 0 0 / 0.35);
+    --shadow-md: 0 0.35rem 0.85rem rgb(0 0 0 / 0.25);
+
+    /* Timeline */
+    --timeline-line: var(--tb-border-soft, #2d3338);
+    --timeline-x: 85px;            /* se ajusta por breakpoint */
+    --timeline-top: 60px;
+    --timeline-bottom: -20px;
+
+    /* Mora */
+    --mora-orange: #fd7e14;        /* Bootstrap orange; podés tokenizar si querés */
+}
+
+/* Panels / cards */
 .shared-panel {
-    background-color: #1f2328;
-    border: 1px solid #2d3338;
-    border-radius: 0.75rem;
-    box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.35);
+    background-color: var(--shared-surface);
+    border: 1px solid var(--shared-border);
+    border-radius: var(--shared-radius-lg);
+    box-shadow: var(--shadow-lg);
 }
 
 .shared-panel-header {
-    border-bottom: 1px solid #2d3338;
+    border-bottom: 1px solid var(--shared-border);
 }
 
 .shared-stat-card {
-    background-color: #212529;
-    border: 1px solid #2d3338;
-    border-radius: 0.65rem;
-    box-shadow: 0 0.35rem 0.85rem rgba(0, 0, 0, 0.25);
+    background-color: var(--shared-elevated);
+    border: 1px solid var(--shared-border);
+    border-radius: var(--shared-radius-md);
+    box-shadow: var(--shadow-md);
 }
 
-/* Timeline blocks reused by historial de precios */
+/* ============================================================
+   Timeline (Historial de precios)
+   - Mejora: variables + soporte para RTL + responsive
+   ============================================================ */
+
 .timeline {
     position: relative;
 }
 
+/* Cada item puede contener fecha/label a la izquierda y contenido a la derecha */
 .timeline-item {
     position: relative;
 }
 
+/* Línea vertical entre items */
 .timeline-item:not(:last-child)::before {
-    content: '';
+    content: "";
     position: absolute;
-    left: 85px;
-    top: 60px;
-    bottom: -20px;
+    inset-block-start: var(--timeline-top);
+    inset-block-end: var(--timeline-bottom);
     width: 2px;
-    background: #dee2e6;
+
+    /* logical property: funciona LTR/RTL automáticamente */
+    inset-inline-start: var(--timeline-x);
+
+    background: var(--timeline-line);
+    opacity: 0.9;
 }
 
-/* Mora module highlights */
+/* Responsive: en pantallas chicas baja la columna de fecha y mueve la línea */
+@media (max-width: 575.98px) {
+    :root {
+        --timeline-x: 56px;
+        --timeline-top: 52px;
+    }
+}
+
+/* ============================================================
+   Mora module highlights (Bootstrap override – encapsulado)
+   ============================================================ */
+
+/* Mejor que .bg-orange global: limitá al módulo */
 .mora-page .bg-orange {
-    background-color: #fd7e14 !important;
+    background-color: var(--mora-orange) !important;
 }
 
+/* Resaltado de filas */
 .mora-page tr.table-primary {
     font-weight: 500;
 }
 
+/*
+  Evitar opacity en la fila completa (afecta contraste del texto).
+  Mejor: atenuar el fondo únicamente.
+*/
 .mora-page tr.table-success {
-    opacity: 0.7;
+    background-color: rgb(59 165 92 / 0.12) !important; /* usa el verde del theme si lo tenés */
+}
+
+/* Si querés atenuar texto (menos recomendado), hacelo explícito y suave */
+.mora-page tr.table-success td {
+    color: var(--tb-text-soft, #a8a8a8);
 }

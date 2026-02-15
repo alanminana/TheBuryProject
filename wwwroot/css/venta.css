@@ -1,9 +1,12 @@
-/* Estilos para vistas de Venta */
+/* ============================================================
+   Estilos para vistas de Venta (modernos + accesibles)
+   ============================================================ */
 
 .venta-section {
     background: var(--tb-bg-body);
 }
 
+/* Header */
 .venta-header {
     background: var(--tb-bg-surface);
     border: 1px solid var(--tb-border-soft);
@@ -12,25 +15,41 @@
 }
 
 .venta-header h2 {
+    margin: 0;
     font-weight: 700;
     color: var(--tb-text-main);
 }
 
+/* Cards compactas */
 .card-compact .card-body {
     padding: 1rem;
 }
 
+/* Toggle de filtros (asumiendo que es botón o link) */
 .filter-toggle {
     color: var(--tb-text-main);
+    text-decoration: none;
 }
 
 .filter-toggle:hover {
     color: var(--tb-primary);
 }
 
+/* Accesibilidad teclado */
+.filter-toggle:focus-visible {
+    outline: 2px solid var(--tb-primary);
+    outline-offset: 2px;
+    border-radius: 0.35rem;
+}
+
+/* Meta de tabla */
 .table-meta {
     color: var(--tb-text-muted);
 }
+
+/* ============================================================
+   Summary Grid
+   ============================================================ */
 
 .summary-grid {
     display: grid;
@@ -56,10 +75,16 @@
     color: var(--tb-text-main);
     font-size: 1.2rem;
     font-weight: 700;
+    line-height: 1.2;
 }
 
+/* ============================================================
+   Badges / Alerts (token-driven)
+   ============================================================ */
+
+/* Mejor que rgba hardcodeado: usa token RGB si existe */
 .badge-soft {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgb(var(--tb-primary-rgb, 88 101 242) / 0.10);
     border: 1px solid var(--tb-border-soft);
     color: var(--tb-text-main);
 }
@@ -68,19 +93,32 @@
     border: 1px solid var(--tb-border-soft);
     background: var(--tb-bg-elevated);
     color: var(--tb-text-main);
+    border-radius: var(--tb-radius-sm, 0.35rem);
+    padding: 0.75rem 1rem;
 }
+
+/* ============================================================
+   Tabla dentro de card
+   ============================================================ */
 
 .table-card .card-header {
     background-color: var(--tb-bg-elevated);
 }
 
-.table-card .table thead {
+.table-card .table thead th {
     background-color: var(--tb-bg-elevated);
 }
 
+/* Estado vacío */
 .table-empty {
     color: var(--tb-text-muted);
+    text-align: center;
+    padding: 1.25rem 0.75rem;
 }
+
+/* ============================================================
+   Totales
+   ============================================================ */
 
 .totales-destacado {
     background: var(--tb-bg-elevated);

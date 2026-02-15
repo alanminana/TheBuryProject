@@ -504,7 +504,7 @@ namespace TheBuryProject.Controllers
         // POST: Venta/Confirmar/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Confirmar(int id)
+        public async Task<IActionResult> Confirmar(int id, bool aplicarExcepcionDocumental = false, string? motivoExcepcionDocumental = null)
         {
             try
             {
@@ -596,6 +596,63 @@ namespace TheBuryProject.Controllers
                     }
 
                     // REGLA 4: Financiación configurada → confirmar y generar cuotas
+                    var validacionConfirmacion = await _validacionVentaService.ValidarConfirmacionVentaAsync(id);
+                    var puedeAplicarExcepcionDocumental = User.TienePermiso(ModuloVentas, AccionAutorizar);
+                    var excepcionDocumentalRegistrada = !string.IsNullOrWhiteSpace(venta.MotivoAutorizacion)
+                        && venta.MotivoAutorizacion.Contains("EXCEPCION_DOC|", StringComparison.Ordinal);
+                    var soloDocumentacionFaltante = validacionConfirmacion.RequisitosPendientes.Any()
+                        && validacionConfirmacion.RequisitosPendientes.All(r =>
+                            r.Tipo == TipoRequisitoPendiente.DocumentacionFaltante);
+
+                    var excepcionDocumentalAplicada = false;
+                    if (aplicarExcepcionDocumental && puedeAplicarExcepcionDocumental && soloDocumentacionFaltante)
+                    {
+                        if (string.IsNullOrWhiteSpace(motivoExcepcionDocumental))
+                        {
+                            TempData["Error"] = "Debe ingresar un motivo para aplicar la excepción documental.";
+                            return RedirectToAction(nameof(Details), new { id });
+                        }
+
+                        var usuarioAutoriza = User?.Identity?.Name ?? "desconocido";
+                        var motivoNormalizado = motivoExcepcionDocumental.Trim();
+                        var auditoriaRegistrada = await _ventaService.RegistrarExcepcionDocumentalAsync(
+                            id,
+                            usuarioAutoriza,
+                            motivoNormalizado);
+
+                        if (!auditoriaRegistrada)
+                        {
+                            TempData["Error"] = "No se pudo registrar la auditoría de excepción documental.";
+                            return RedirectToAction(nameof(Details), new { id });
+                        }
+
+                        validacionConfirmacion.NoViable = false;
+                        validacionConfirmacion.PendienteRequisitos = false;
+                        excepcionDocumentalAplicada = true;
+
+                        _logger.LogWarning(
+                            "Confirmar(POST) venta {Id}: se aplica excepción documental por usuario {Usuario}. Motivo: {Motivo}",
+                            id,
+                            usuarioAutoriza,
+                            motivoNormalizado);
+                    }
+                    else if (excepcionDocumentalRegistrada && soloDocumentacionFaltante)
+                    {
+                        validacionConfirmacion.NoViable = false;
+                        validacionConfirmacion.PendienteRequisitos = false;
+                        excepcionDocumentalAplicada = true;
+
+                        _logger.LogInformation(
+                            "Confirmar(POST) venta {Id}: se reutiliza excepción documental registrada previamente.",
+                            id);
+                    }
+
+                    if (validacionConfirmacion.NoViable || validacionConfirmacion.PendienteRequisitos)
+                    {
+                        TempData["Error"] = validacionConfirmacion.MensajeResumen;
+                        return RedirectToAction(nameof(Details), new { id });
+                    }
+
                     var resultadoCredito = await _ventaService.ConfirmarVentaCreditoAsync(id);
                     _logger.LogInformation(
                         "Confirmar(POST) venta {Id} resultado confirmacion credito {Resultado}",
@@ -603,7 +660,9 @@ namespace TheBuryProject.Controllers
                         resultadoCredito);
                     if (resultadoCredito)
                     {
-                        TempData["Success"] = "Venta confirmada. Crédito generado con cuotas.";
+                        TempData[excepcionDocumentalAplicada ? "Warning" : "Success"] = excepcionDocumentalAplicada
+                            ? "Venta confirmada por excepción documental autorizada. Crédito generado con cuotas."
+                            : "Venta confirmada. Crédito generado con cuotas.";
                     }
                     else
                     {

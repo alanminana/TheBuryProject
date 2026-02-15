@@ -13,6 +13,7 @@ using TheBuryProject.Data;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
+using TheBuryProject.Services.Exceptions;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
@@ -925,6 +926,14 @@ namespace TheBuryProject.Controllers
 
                 TempData["Success"] = $"Línea de Crédito {credito.Numero} creada exitosamente";
                 return RedirectToAction(nameof(Details), new { id = credito.Id, returnUrl = GetSafeReturnUrl(returnUrl) });
+            }
+            catch (CreditoDisponibleException ex)
+            {
+                _logger.LogWarning(ex, "Alta de crédito bloqueada por disponible insuficiente para cliente {ClienteId}", viewModel.ClienteId);
+                ModelState.AddModelError("", ex.Message);
+                ViewData["ReturnUrl"] = GetSafeReturnUrl(returnUrl);
+                await CargarViewBags(viewModel.ClienteId, viewModel.GaranteId);
+                return View(viewModel);
             }
             catch (Exception ex)
             {

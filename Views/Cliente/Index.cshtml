@@ -21,13 +21,21 @@
                 <h2 class="fw-bold mb-0">
                     <i class="bi bi-people text-info me-2"></i>Clientes
                 </h2>
-                @* Nuevo Cliente - requiere clientes.create *@
-                @if (User.TienePermiso("clientes", "create"))
-                {
-                    <a asp-action="Create" asp-route-returnUrl="@listReturnUrl" class="btn btn-success">
-                        <i class="bi bi-plus-circle"></i> Nuevo Cliente
-                    </a>
-                }
+                <div class="d-flex gap-2">
+                    @if (User.TienePermiso("clientes", "managecreditlimits"))
+                    {
+                        <a asp-action="LimitesPorPuntaje" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-primary">
+                            <i class="bi bi-sliders me-1"></i>Límites por puntaje
+                        </a>
+                    }
+                    @* Nuevo Cliente - requiere clientes.create *@
+                    @if (User.TienePermiso("clientes", "create"))
+                    {
+                        <a asp-action="Create" asp-route-returnUrl="@listReturnUrl" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Nuevo Cliente
+                        </a>
+                    }
+                </div>
             </div>
 
             <!-- Filtros -->

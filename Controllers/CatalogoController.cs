@@ -272,7 +272,7 @@ namespace TheBuryProject.Controllers
         }
 
         [HttpPost("Catalogo/RevertirCambioPrecio/{eventoId:int}")]
-        [ValidateAntiForgeryToken]        public async Task<IActionResult> RevertirCambioPrecio(int eventoId)
+        [ValidateAntiForgeryToken]        public async Task<IActionResult> RevertirCambioPrecio(int eventoId, string? returnUrl = null)
         {
             try
             {
@@ -280,6 +280,11 @@ namespace TheBuryProject.Controllers
                 if (!resultado.Exitoso)
                 {
                     TempData["Error"] = resultado.Mensaje;
+                    if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    {
+                        return LocalRedirect(returnUrl);
+                    }
+
                     return RedirectToAction(nameof(HistorialCambiosPrecio));
                 }
 
@@ -290,12 +295,22 @@ namespace TheBuryProject.Controllers
                     TempData["SuccessLinkText"] = "Ver reversion";
                 }
 
+                if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return LocalRedirect(returnUrl);
+                }
+
                 return RedirectToAction(nameof(HistorialCambiosPrecio));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al revertir cambio de precio {EventoId}", eventoId);
                 TempData["Error"] = "Error al revertir el cambio.";
+                if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return LocalRedirect(returnUrl);
+                }
+
                 return RedirectToAction(nameof(HistorialCambiosPrecio));
             }
         }

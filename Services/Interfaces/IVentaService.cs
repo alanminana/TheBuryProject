@@ -26,6 +26,7 @@ namespace TheBuryProject.Services.Interfaces
         Task<bool> SolicitarAutorizacionAsync(int id, string usuarioSolicita, string motivo);
         Task<bool> AutorizarVentaAsync(int id, string usuarioAutoriza, string motivo);
         Task<bool> RechazarVentaAsync(int id, string usuarioAutoriza, string motivo);
+        Task<bool> RegistrarExcepcionDocumentalAsync(int id, string usuarioAutoriza, string motivo);
         Task<bool> RequiereAutorizacionAsync(VentaViewModel viewModel);
 
         // Métodos para datos adicionales

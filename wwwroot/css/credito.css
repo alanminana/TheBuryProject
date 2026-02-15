@@ -1,14 +1,37 @@
+/* Icono estado vacío */
 .credit-empty-icon {
     font-size: 4rem;
+    line-height: 1;
     color: var(--tb-text-muted, #6c757d);
 }
 
+/* Progreso (base) */
 .credit-progress {
-    height: 24px;
-    background-color: var(--tb-bg-surface, #1f1f1f);
+    --credit-progress-height: 24px;
+
+    height: var(--credit-progress-height);
+    background: var(--tb-bg-surface, #1f1f1f);
+    border: 1px solid var(--tb-border-soft, #343a40);
+    border-radius: var(--tb-radius, 0.75rem);
+    overflow: hidden;
 }
 
-.credit-progress-lg {
-    height: 25px;
-    background-color: var(--tb-bg-surface, #1f1f1f);
+/* Tamaño grande */
+.credit-progress--lg {
+    --credit-progress-height: 25px;
+}
+
+/* Barra interna */
+.credit-progress__bar {
+    height: 100%;
+    width: 0; /* se setea por inline style o por clase */
+    background: var(--tb-accent, #0d6efd);
+    transition: width 0.2s ease-in-out;
+}
+
+/* Accesibilidad: respetar reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .credit-progress__bar {
+        transition: none;
+    }
 }

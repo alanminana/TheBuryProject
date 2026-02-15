@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using TheBuryProject.Models.Enums;
 
 namespace TheBuryProject.ViewModels
@@ -134,6 +135,17 @@ namespace TheBuryProject.ViewModels
         /// Resultado de validación para ventas con crédito personal
         /// </summary>
         public ValidacionVentaResult? ValidacionCredito { get; set; }
+
+        /// <summary>
+        /// Permite forzar excepción documental en create cuando el usuario tiene permiso de autorización.
+        /// </summary>
+        public bool AplicarExcepcionDocumental { get; set; }
+
+        /// <summary>
+        /// Motivo obligatorio para la excepción documental en create.
+        /// </summary>
+        [StringLength(500)]
+        public string? MotivoExcepcionDocumentalCreate { get; set; }
 
         #region Presentación
 
@@ -305,6 +317,82 @@ namespace TheBuryProject.ViewModels
         public bool FueRechazada => EstadoAutorizacion == EstadoAutorizacionVenta.Rechazada;
 
         public bool TieneRequisitosPendientes => Estado == EstadoVenta.PendienteRequisitos;
+
+        public bool TieneExcepcionDocumentalRegistrada => TryGetUltimaExcepcionDocumental(out _, out _, out _);
+
+        public DateTime? FechaExcepcionDocumental
+        {
+            get
+            {
+                return TryGetUltimaExcepcionDocumental(out var fecha, out _, out _)
+                    ? fecha
+                    : null;
+            }
+        }
+
+        public string? UsuarioExcepcionDocumental
+        {
+            get
+            {
+                return TryGetUltimaExcepcionDocumental(out _, out var usuario, out _)
+                    ? usuario
+                    : null;
+            }
+        }
+
+        public string? MotivoExcepcionDocumental
+        {
+            get
+            {
+                return TryGetUltimaExcepcionDocumental(out _, out _, out var motivo)
+                    ? motivo
+                    : null;
+            }
+        }
+
+        private bool TryGetUltimaExcepcionDocumental(out DateTime fecha, out string usuario, out string motivo)
+        {
+            fecha = default;
+            usuario = string.Empty;
+            motivo = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(MotivoAutorizacion))
+            {
+                return false;
+            }
+
+            var lineas = MotivoAutorizacion
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var linea in lineas.Reverse())
+            {
+                if (!linea.StartsWith("EXCEPCION_DOC|", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var partes = linea.Split('|', 4, StringSplitOptions.None);
+                if (partes.Length != 4)
+                {
+                    continue;
+                }
+
+                if (!DateTime.TryParse(
+                        partes[1],
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.RoundtripKind,
+                        out fecha))
+                {
+                    continue;
+                }
+
+                usuario = partes[2];
+                motivo = partes[3];
+                return true;
+            }
+
+            return false;
+        }
 
         #endregion
     }

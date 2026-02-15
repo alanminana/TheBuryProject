@@ -63,6 +63,22 @@ namespace TheBuryProject.Services
                 filas.Add(fila);
             }
 
+            var ultimosCambios = await _precioService.GetUltimoCambioPorProductosAsync(filas.Select(f => f.ProductoId));
+            foreach (var fila in filas)
+            {
+                if (!ultimosCambios.TryGetValue(fila.ProductoId, out var cambio))
+                {
+                    continue;
+                }
+
+                fila.UltimoCambioEventoId = cambio.EventoId;
+                fila.UltimoCambioFecha = cambio.Fecha;
+                fila.UltimoCambioUsuario = cambio.Usuario;
+                fila.UltimoCambioPorcentaje = cambio.ValorPorcentaje;
+                fila.UltimoCambioRevertido = cambio.Revertido;
+                fila.UltimoCambioEsReversion = cambio.EsReversion;
+            }
+
             // 6. Construir resultado
             var resultado = new ResultadoCatalogo
             {
@@ -345,7 +361,14 @@ namespace TheBuryProject.Services
                     Fecha = e.Fecha,
                     Usuario = e.Usuario,
                     ValorPorcentaje = e.ValorPorcentaje,
-                    Alcance = e.Alcance,
+                    Alcance = e.Alcance?.ToLowerInvariant() switch
+                    {
+                        "individual" => "Individual",
+                        "seleccionados" => "Seleccionados",
+                        "filtrados" => "Filtrados",
+                        "reversion" => "Reversión",
+                        _ => e.Alcance ?? "Sin alcance"
+                    },
                     CantidadProductos = e.CantidadProductos,
                     Motivo = e.Motivo,
                     Revertido = e.RevertidoEn.HasValue,

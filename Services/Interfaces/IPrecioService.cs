@@ -97,6 +97,11 @@ public interface IPrecioService
     Task<List<CambioPrecioEvento>> GetCambioPrecioEventosAsync(int take = 200);
 
     /// <summary>
+    /// Obtiene el último cambio directo por producto.
+    /// </summary>
+    Task<Dictionary<int, UltimoCambioProductoResumen>> GetUltimoCambioPorProductosAsync(IEnumerable<int> productoIds);
+
+    /// <summary>
     /// Obtiene un evento de cambio directo con detalles.
     /// </summary>
     Task<CambioPrecioEvento?> GetCambioPrecioEventoAsync(int eventoId);

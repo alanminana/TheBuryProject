@@ -191,7 +191,7 @@ namespace TheBuryProject.Tests.ValidacionVenta
         }
 
         [Fact]
-        public async Task ValidarVenta_ClienteApto_MontoExcedeCupo_RequiereAutorizacion()
+        public async Task ValidarVenta_ClienteApto_MontoExcedeCupo_NoViable()
         {
             // Arrange
             var cliente = CrearClienteTest();
@@ -202,9 +202,80 @@ namespace TheBuryProject.Tests.ValidacionVenta
 
             // Assert
             Assert.False(resultado.PuedeProceeder);
-            Assert.True(resultado.RequiereAutorizacion);
+            Assert.True(resultado.NoViable);
+            Assert.True(resultado.PendienteRequisitos);
+            Assert.Contains("Excede el crédito disponible por puntaje", resultado.MensajeResumen);
+            Assert.Contains("Disponible:", resultado.MensajeResumen);
+        }
+
+        [Fact]
+        public async Task ValidarVenta_ConDisponible5000_Monto6000_Bloquea()
+        {
+            // Arrange
+            var cliente = CrearClienteTest(id: 20);
+
+            _mockAptitudService.Setup(x => x.EvaluarAptitudSinGuardarAsync(cliente.Id))
+                .ReturnsAsync(new AptitudCrediticiaViewModel
+                {
+                    Estado = EstadoCrediticioCliente.Apto,
+                    ConfiguracionCompleta = true,
+                    Documentacion = new AptitudDocumentacionDetalle { Completa = true, Evaluada = true },
+                    Cupo = new AptitudCupoDetalle
+                    {
+                        TieneCupoAsignado = true,
+                        LimiteCredito = 8000m,
+                        CupoDisponible = 5000m,
+                        Evaluado = true
+                    },
+                    Mora = new AptitudMoraDetalle { TieneMora = false, Evaluada = true }
+                });
+
+            _mockAptitudService.Setup(x => x.GetCupoDisponibleAsync(cliente.Id))
+                .ReturnsAsync(5000m);
+
+            // Act
+            var resultado = await _service.ValidarVentaCreditoPersonalAsync(cliente.Id, 6000m);
+
+            // Assert
+            Assert.False(resultado.PuedeProceeder);
+            Assert.True(resultado.NoViable);
+            Assert.True(resultado.PendienteRequisitos);
+            Assert.Contains("Excede el crédito disponible por puntaje", resultado.MensajeResumen);
+            Assert.Contains("Disponible:", resultado.MensajeResumen);
+        }
+
+        [Fact]
+        public async Task ValidarVenta_ConDisponible5000_Monto5000_Permite()
+        {
+            // Arrange
+            var cliente = CrearClienteTest(id: 21);
+
+            _mockAptitudService.Setup(x => x.EvaluarAptitudSinGuardarAsync(cliente.Id))
+                .ReturnsAsync(new AptitudCrediticiaViewModel
+                {
+                    Estado = EstadoCrediticioCliente.Apto,
+                    ConfiguracionCompleta = true,
+                    Documentacion = new AptitudDocumentacionDetalle { Completa = true, Evaluada = true },
+                    Cupo = new AptitudCupoDetalle
+                    {
+                        TieneCupoAsignado = true,
+                        LimiteCredito = 8000m,
+                        CupoDisponible = 5000m,
+                        Evaluado = true
+                    },
+                    Mora = new AptitudMoraDetalle { TieneMora = false, Evaluada = true }
+                });
+
+            _mockAptitudService.Setup(x => x.GetCupoDisponibleAsync(cliente.Id))
+                .ReturnsAsync(5000m);
+
+            // Act
+            var resultado = await _service.ValidarVentaCreditoPersonalAsync(cliente.Id, 5000m);
+
+            // Assert
+            Assert.True(resultado.PuedeProceeder);
+            Assert.False(resultado.NoViable);
             Assert.False(resultado.PendienteRequisitos);
-            Assert.Contains(resultado.RazonesAutorizacion, r => r.Tipo == TipoRazonAutorizacion.ExcedeCupo);
         }
 
         #endregion
@@ -430,7 +501,7 @@ namespace TheBuryProject.Tests.ValidacionVenta
         }
 
         [Fact]
-        public async Task ValidarVenta_CreditoEspecifico_SaldoInsuficiente_RequiereAutorizacion()
+        public async Task ValidarVenta_CreditoEspecifico_SaldoInsuficiente_NoViable()
         {
             // Arrange
             var cliente = CrearClienteTest();
@@ -453,8 +524,10 @@ namespace TheBuryProject.Tests.ValidacionVenta
             var resultado = await _service.ValidarVentaCreditoPersonalAsync(cliente.Id, 50000m, credito.Id);
 
             // Assert
-            Assert.True(resultado.RequiereAutorizacion);
-            Assert.Contains(resultado.RazonesAutorizacion, r => r.Tipo == TipoRazonAutorizacion.ExcedeCupo);
+            Assert.True(resultado.NoViable);
+            Assert.True(resultado.PendienteRequisitos);
+            Assert.Contains("Excede el crédito disponible por puntaje", resultado.MensajeResumen);
+            Assert.Contains("Disponible:", resultado.MensajeResumen);
         }
 
         [Fact]

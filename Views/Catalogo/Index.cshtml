@@ -18,7 +18,6 @@
 
 @section Modals
 {
-    @* Offcanvas de acciones masivas (solo para roles autorizados) *@
     @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente"))
     {
         <partial name="_CatalogoAccionesMasivasOffcanvas" />
@@ -40,8 +39,6 @@
 
 @section Scripts
 {
-    <script src="~/js/catalogo-seleccion.js" asp-append-version="true"></script>
-
     @* Datos de inicialización para JS (mínimo inline) *@
     <script id="catalogo-init" type="application/json">
         @Html.Raw(Json.Serialize(new
@@ -49,6 +46,7 @@
                 esAdminPrecios = User.IsInRole("SuperAdmin") || User.IsInRole("Gerente"),
                 puedeVerHistorial = User.IsInRole("SuperAdmin") || User.IsInRole("Gerente") || User.HasClaim("Permission", "precios:view"),
                 listasPrecios = Model.ListasPrecios.Select(l => new { id = l.Id, nombre = l.Nombre }),
+                listaPrecioActualId = Model.ListaPrecioId,
                 categorias = Model.Categorias.Select(c => new { id = c.Id, nombre = c.Nombre }),
                 marcas = Model.Marcas.Select(m => new { id = m.Id, nombre = m.Nombre })
         }))
@@ -56,7 +54,7 @@
 
 @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente"))
     {
-        <script src="~/js/catalogo-acciones-masivas.js" asp-append-version="true"></script>
+        <script src="~/js/catalogo-acciones-masivas-directo.js" asp-append-version="true"></script>
     }
 
     @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente") || User.HasClaim("Permission", "precios:view"))

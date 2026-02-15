@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using TheBuryProject.Data;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
+using TheBuryProject.Services.Exceptions;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
@@ -20,19 +21,22 @@ namespace TheBuryProject.Services
         private readonly ILogger<CreditoService> _logger;
         private readonly IFinancialCalculationService _financialService;
         private readonly ICajaService _cajaService;
+        private readonly ICreditoDisponibleService _creditoDisponibleService;
 
         public CreditoService(
             AppDbContext context, 
             IMapper mapper, 
             ILogger<CreditoService> logger,
             IFinancialCalculationService financialService,
-            ICajaService cajaService)
+            ICajaService cajaService,
+            ICreditoDisponibleService creditoDisponibleService)
         {
             _context = context;
             _mapper = mapper;
             _logger = logger;
             _financialService = financialService;
             _cajaService = cajaService;
+            _creditoDisponibleService = creditoDisponibleService;
         }
 
         #region CRUD Básico
@@ -161,6 +165,8 @@ namespace TheBuryProject.Services
                     .FirstOrDefaultAsync(c => c.Id == viewModel.ClienteId && !c.IsDeleted);
                 if (cliente == null)
                     throw new Exception("Cliente no encontrado");
+
+                await ValidarMontoDentroDelDisponibleAsync(cliente.Id, viewModel.MontoSolicitado);
 
                 // Generar número de crédito
                 viewModel.Numero = await GenerarNumeroCreditoAsync();
@@ -720,10 +726,10 @@ namespace TheBuryProject.Services
                 if (credito == null)
                     return false;
 
-                // Calcular saldo pendiente (capital + intereses no pagados)
+                // Calcular saldo pendiente de capital para liberar cupo en función de amortización real.
                 credito.SaldoPendiente = credito.Cuotas
-                    .Where(c => c.Estado != EstadoCuota.Pagada && c.Estado != EstadoCuota.Cancelada)
-                    .Sum(c => c.MontoTotal - c.MontoPagado);
+                    .Where(c => c.Estado != EstadoCuota.Cancelada)
+                    .Sum(CalcularCapitalPendienteCuota);
 
                 // Verificar si todas las cuotas están pagadas
                 if (credito.Cuotas.All(c => c.Estado == EstadoCuota.Pagada || c.Estado == EstadoCuota.Cancelada))
@@ -750,6 +756,29 @@ namespace TheBuryProject.Services
 
         #region Métodos Privados
 
+        private static decimal CalcularCapitalPendienteCuota(Cuota cuota)
+        {
+            if (cuota.MontoCapital <= 0)
+            {
+                return 0m;
+            }
+
+            if (cuota.MontoTotal <= 0)
+            {
+                return cuota.Estado == EstadoCuota.Pagada ? 0m : cuota.MontoCapital;
+            }
+
+            var montoPagado = Math.Max(0m, cuota.MontoPagado);
+            var proporcionCapital = cuota.MontoCapital / cuota.MontoTotal;
+            var capitalPagadoEstimado = Math.Min(cuota.MontoCapital, montoPagado * proporcionCapital);
+            capitalPagadoEstimado = Math.Round(capitalPagadoEstimado, 2, MidpointRounding.AwayFromZero);
+
+            var capitalPendiente = cuota.MontoCapital - capitalPagadoEstimado;
+            capitalPendiente = Math.Round(capitalPendiente, 2, MidpointRounding.AwayFromZero);
+
+            return capitalPendiente > 0m ? capitalPendiente : 0m;
+        }
+
         private async Task<string> GenerarNumeroCreditoAsync()
         {
             var ultimoCredito = await _context.Creditos
@@ -758,6 +787,22 @@ namespace TheBuryProject.Services
 
             var numero = ultimoCredito != null ? ultimoCredito.Id + 1 : 1;
             return $"CRE-{DateTime.UtcNow:yyyyMM}-{numero:D6}";
+        }
+
+        private async Task ValidarMontoDentroDelDisponibleAsync(
+            int clienteId,
+            decimal montoSolicitado,
+            CancellationToken cancellationToken = default)
+        {
+            if (montoSolicitado <= 0)
+                return;
+
+            var disponible = await _creditoDisponibleService.CalcularDisponibleAsync(clienteId, cancellationToken);
+            if (montoSolicitado <= disponible.Disponible)
+                return;
+
+            throw new CreditoDisponibleException(
+                $"Excede el crédito disponible por puntaje. Disponible: {disponible.Disponible:C2}. Ajuste el monto, cambie método de pago o actualice puntaje/límites.");
         }
 
         #endregion
@@ -785,6 +830,15 @@ namespace TheBuryProject.Services
 
             if (cliente == null)
                 return (false, null, "Cliente no encontrado");
+
+            try
+            {
+                await ValidarMontoDentroDelDisponibleAsync(solicitud.ClienteId, solicitud.MontoSolicitado, cancellationToken);
+            }
+            catch (CreditoDisponibleException ex)
+            {
+                return (false, null, ex.Message);
+            }
 
             const int maxAttempts = 3;
 
@@ -861,7 +915,7 @@ namespace TheBuryProject.Services
                     credito.MontoCuota = cuota;
                     credito.CFTEA = _financialService.CalcularCFTEADesdeTasa(tasaMensualDecimal);
                     credito.TotalAPagar = Math.Round(cuota * solicitud.CantidadCuotas, 2);
-                    credito.SaldoPendiente = credito.TotalAPagar;
+                    credito.SaldoPendiente = credito.MontoAprobado;
 
                     _context.Creditos.Update(credito);
                     await _context.SaveChangesAsync(cancellationToken);

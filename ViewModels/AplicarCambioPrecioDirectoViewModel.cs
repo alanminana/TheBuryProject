@@ -14,6 +14,8 @@ namespace TheBuryProject.ViewModels
 
         public string? FiltrosJson { get; set; } // JSON si filtrados
 
+        public int? ListaPrecioId { get; set; } // lista objetivo opcional (si null usa precio base)
+
         public string? Motivo { get; set; } // opcional
     }
 }

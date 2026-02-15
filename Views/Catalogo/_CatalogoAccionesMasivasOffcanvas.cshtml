@@ -1,16 +1,20 @@
-@* Offcanvas para aplicar cambios masivos de precios en el catálogo *@
-<div class="offcanvas offcanvas-end bg-dark text-light" tabindex="-1" id="accMasivasOffcanvas" aria-labelledby="accMasivasLabel">
-    <div class="offcanvas-header border-bottom border-secondary">
-        <h5 class="offcanvas-title fw-bold" id="accMasivasLabel">
-            <i class="bi bi-sliders text-warning"></i> Acciones Masivas de Precios
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body">
+@* Modal para actualización de precios en catálogo *@
+<div class="modal fade" id="modalActualizacionPrecios" tabindex="-1" aria-labelledby="modalActualizacionPreciosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content bg-dark text-light border-warning">
+        <div class="modal-header bg-warning text-dark fw-semibold d-flex align-items-center justify-content-between border-0">
+            <h5 class="modal-title" id="modalActualizacionPreciosLabel">
+                <i class="bi bi-graph-up-arrow me-1"></i> Actualización de precios
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body p-4 p-xl-5">
         <div class="alert alert-info small">
             <i class="bi bi-info-circle me-2"></i>
-            Seleccioná productos de la tabla y aplicá cambios de precios masivos.
+            Aplicá aumentos/descuentos por porcentaje en productos seleccionados o en todos los filtrados.
         </div>
+
+        <div class="alert alert-danger d-none" id="cambioPrecioErrorGeneral" role="alert"></div>
 
         <!-- Panel de selección -->
         <div class="card bg-secondary border-0 mb-3">
@@ -22,58 +26,49 @@
             </div>
         </div>
 
-        <!-- Tipo de cambio -->
-        <div class="mb-3">
-            <label class="form-label fw-semibold">Tipo de cambio</label>
-            <select class="form-select" id="tipoCambio">
-                <option value="">Seleccioná una opción...</option>
-                <option value="porcentaje">Porcentaje (%)</option>
-                <option value="monto">Monto fijo ($)</option>
-            </select>
-        </div>
-
-        <!-- Panel de porcentaje -->
-        <div id="panelPorcentaje" class="d-none mb-3">
-            <label class="form-label fw-semibold">Aumento/Descuento (%)</label>
-            <div class="input-group">
-                <input type="number" class="form-control" id="valorPorcentaje" step="0.01" placeholder="Ej: 10 para +10%">
-                <span class="input-group-text">%</span>
+        <div class="row g-4 mt-1">
+            <div class="col-12 col-lg-6">
+                <label class="form-label fw-semibold">Alcance</label>
+                <select class="form-select" id="selectAlcanceCambio">
+                    <option value="seleccionados" selected>Seleccionados</option>
+                    <option value="filtrados">Filtrados (todos los resultados actuales)</option>
+                </select>
+                <div class="invalid-feedback d-block d-none" id="errorAlcanceCambio"></div>
+                <small class="text-secondary d-block mt-1">
+                    En modo filtrados usa los filtros activos de búsqueda, categoría, marca, activos y stock.
+                </small>
             </div>
-            <small class="text-secondary d-block mt-1">
-                Usá valores positivos para aumentar o negativos para descontar.
-            </small>
-        </div>
-
-        <!-- Panel de monto fijo -->
-        <div id="panelMonto" class="d-none mb-3">
-            <label class="form-label fw-semibold">Aumento/Descuento ($)</label>
-            <div class="input-group">
-                <span class="input-group-text">$</span>
-                <input type="number" class="form-control" id="valorMonto" step="0.01" placeholder="Ej: 100">
+            <div class="col-12 col-lg-6">
+                <label class="form-label fw-semibold">Aplicar sobre</label>
+                <select class="form-select" id="selectListaCambio"></select>
+                <small class="text-secondary d-block mt-1">Si elegís una lista, el cambio se refleja también en ese precio vigente.</small>
             </div>
-            <small class="text-secondary d-block mt-1">
-                Usá valores positivos para aumentar o negativos para descontar.
-            </small>
-        </div>
-
-        <!-- Aplicar a lista de precios -->
-        <div class="mb-3">
-            <label class="form-label fw-semibold">Aplicar a lista de precios</label>
-            <select class="form-select" id="listaPrecios">
-                <option value="">Precio base</option>
-                <!-- Se llena por JS -->
-            </select>
+            <div class="col-12 col-lg-6">
+                <label class="form-label fw-semibold">Aumento/Descuento (%)</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="inputPorcentajeCambio" step="0.01" placeholder="Ej: 10 para +10%">
+                    <span class="input-group-text">%</span>
+                </div>
+                <div class="invalid-feedback d-block d-none" id="errorPorcentajeCambio"></div>
+                <small class="text-secondary d-block mt-1">
+                    Positivo = aumento. Negativo = descuento. No se permite 0.
+                </small>
+            </div>
+            <div class="col-12 col-lg-6">
+                <label class="form-label fw-semibold">Motivo (opcional)</label>
+                <textarea class="form-control" id="inputMotivoCambio" rows="3" maxlength="500" placeholder="Ej: ajuste por inflación o actualización de costos"></textarea>
+            </div>
         </div>
 
         <!-- Botón de previsualización -->
-        <div class="d-grid">
+        <div class="d-grid d-lg-flex justify-content-lg-end mt-4">
             <button type="button" class="btn btn-primary" id="btnPrevisualizar" disabled>
                 <i class="bi bi-eye me-2"></i>Previsualizar cambios
             </button>
         </div>
 
         <!-- Resumen de previsualización -->
-        <div id="resumenPrevio" class="d-none mt-3">
+        <div id="resumenPrevio" class="d-none mt-4">
             <div class="card bg-dark border-warning">
                 <div class="card-header bg-warning text-dark fw-semibold">
                     <i class="bi bi-info-circle me-1"></i>Vista previa
@@ -81,15 +76,17 @@
                 <div class="card-body">
                     <ul class="list-unstyled mb-0 small" id="listaPrevio"></ul>
                 </div>
-                <div class="card-footer d-grid gap-2">
-                    <button type="button" class="btn btn-success" id="btnConfirmarCambios">
-                        <i class="bi bi-check-circle me-2"></i>Confirmar y aplicar
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" id="btnCancelarPrevio">
-                        Cancelar
-                    </button>
-                </div>
             </div>
         </div>
+        </div>
+        <div class="modal-footer border-secondary d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary" id="btnCancelarPrevio" data-bs-dismiss="modal">
+                Cancelar
+            </button>
+            <button type="button" class="btn btn-success" id="btnAplicarRapido" disabled>
+                <i class="bi bi-check-circle me-2"></i>Confirmar y aplicar
+            </button>
+        </div>
+    </div>
     </div>
 </div>

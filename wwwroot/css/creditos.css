@@ -1,8 +1,9 @@
 /* Créditos y configuraciones de venta */
-.validation-summary-valid.alert {
-    display: none;
-}
 
+/* OK: evitar alert vacío (esto es común en MVC) */
+.validation-summary-valid.alert { display: none; }
+
+/* Panel base */
 .panel-soft {
     background: linear-gradient(135deg, var(--tb-bg-elevated), var(--tb-bg-surface));
     border: 1px solid var(--tb-border-soft);
@@ -10,39 +11,59 @@
     border-radius: var(--tb-radius);
 }
 
+/* Header del panel: fallback primero */
 .panel-soft .card-header {
-    background: linear-gradient(120deg, color-mix(in srgb, var(--tb-primary) 18%, transparent), color-mix(in srgb, var(--tb-primary) 8%, transparent));
+    /* Fallback (sin color-mix): */
+    background: linear-gradient(
+        120deg,
+        rgba(13, 110, 253, 0.18),
+        rgba(13, 110, 253, 0.08)
+    );
+
     color: var(--tb-text-main);
     border-bottom: 1px solid var(--tb-border-soft);
 }
 
+/* Bloques info/error: fallback primero */
 .info-block {
-    background: color-mix(in srgb, var(--tb-primary) 12%, transparent);
+    background: rgba(13, 110, 253, 0.12);
     color: var(--tb-text-main);
-    border: 1px solid color-mix(in srgb, var(--tb-primary) 35%, transparent);
+    border: 1px solid rgba(13, 110, 253, 0.35);
 }
 
 .error-block {
-    background: color-mix(in srgb, var(--tb-danger) 14%, transparent);
+    background: rgba(220, 53, 69, 0.14);
     color: #f8d7da;
-    border: 1px solid color-mix(in srgb, var(--tb-danger) 45%, transparent);
+    border: 1px solid rgba(220, 53, 69, 0.45);
 }
 
-.state-yellow {
-    background-color: var(--tb-warning);
-    color: #0c0c0c;
+/* Upgrade: si hay soporte, usar tokens reales con color-mix() */
+@supports (background: color-mix(in srgb, white, black)) {
+    .panel-soft .card-header {
+        background: linear-gradient(
+            120deg,
+            color-mix(in srgb, var(--tb-primary) 18%, transparent),
+            color-mix(in srgb, var(--tb-primary) 8%, transparent)
+        );
+    }
+
+    .info-block {
+        background: color-mix(in srgb, var(--tb-primary) 12%, transparent);
+        border-color: color-mix(in srgb, var(--tb-primary) 35%, transparent);
+    }
+
+    .error-block {
+        background: color-mix(in srgb, var(--tb-danger) 14%, transparent);
+        border-color: color-mix(in srgb, var(--tb-danger) 45%, transparent);
+    }
 }
 
-.state-green {
-    background-color: var(--tb-success-soft);
-    color: #e8f7ef;
-}
+/* States: recomendación mínima de legibilidad */
+.state-yellow { background-color: var(--tb-warning); color: #0c0c0c; }
+.state-green  { background-color: var(--tb-success-soft); color: #e8f7ef; }
+.state-red    { background-color: var(--tb-danger); color: #ffeaea; }
 
-.state-red {
-    background-color: var(--tb-danger);
-    color: #ffeaea;
-}
-
+/* Summary grid */
 .summary-grid {
     background: var(--tb-bg-surface-soft);
     border: 1px solid var(--tb-border-soft);
@@ -54,9 +75,7 @@
     border-right: 1px solid var(--tb-border-soft);
 }
 
-.summary-grid .summary-item:last-child {
-    border-right: none;
-}
+.summary-grid .summary-item:last-child { border-right: none; }
 
 .summary-item small {
     color: var(--tb-text-muted);
@@ -73,8 +92,5 @@
         border-right: none;
         border-bottom: 1px solid var(--tb-border-soft);
     }
-
-    .summary-grid .summary-item:last-child {
-        border-bottom: none;
-    }
+    .summary-grid .summary-item:last-child { border-bottom: none; }
 }

@@ -5,6 +5,7 @@ using TheBuryProject.Data;
 using TheBuryProject.Helpers;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
+using TheBuryProject.Services.Exceptions;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.ViewModels;
 
@@ -18,13 +19,16 @@ namespace TheBuryProject.Services
     {
         private readonly AppDbContext _context;
         private readonly ILogger<ClienteAptitudService> _logger;
+        private readonly ICreditoDisponibleService _creditoDisponibleService;
 
         public ClienteAptitudService(
             AppDbContext context,
-            ILogger<ClienteAptitudService> logger)
+            ILogger<ClienteAptitudService> logger,
+            ICreditoDisponibleService creditoDisponibleService)
         {
             _context = context;
             _logger = logger;
+            _creditoDisponibleService = creditoDisponibleService;
         }
 
         #region Evaluación de Aptitud
@@ -123,11 +127,14 @@ namespace TheBuryProject.Services
                 if (!resultado.Cupo.TieneCupoAsignado)
                 {
                     esNoApto = true;
-                    motivos.Add("No tiene límite de crédito asignado");
+                    var motivoCupo = string.IsNullOrWhiteSpace(resultado.Cupo.Mensaje)
+                        ? "No hay límite de crédito configurado para el puntaje del cliente"
+                        : resultado.Cupo.Mensaje;
+                    motivos.Add(motivoCupo);
                     detalles.Add(new AptitudDetalleItem
                     {
                         Categoria = "Cupo",
-                        Descripcion = "Sin límite de crédito asignado",
+                        Descripcion = motivoCupo,
                         EsBloqueo = true,
                         Icono = "bi-credit-card-2-front",
                         Color = "danger"
@@ -377,22 +384,28 @@ namespace TheBuryProject.Services
                 return resultado;
             }
 
-            resultado.LimiteCredito = cliente.LimiteCredito;
-            resultado.TieneCupoAsignado = cliente.LimiteCredito.HasValue && cliente.LimiteCredito.Value > 0;
-
-            if (!resultado.TieneCupoAsignado)
+            try
             {
+                var disponible = await _creditoDisponibleService.CalcularDisponibleAsync(clienteId);
+                resultado.LimiteCredito = disponible.Limite;
+                resultado.CreditoUtilizado = disponible.SaldoVigente;
+                resultado.CupoDisponible = disponible.Disponible;
+                resultado.TieneCupoAsignado = disponible.Limite > 0;
+                resultado.PorcentajeUtilizado = disponible.Limite > 0
+                    ? (disponible.SaldoVigente / disponible.Limite) * 100
+                    : 0;
+            }
+            catch (CreditoDisponibleException ex)
+            {
+                resultado.LimiteCredito = null;
+                resultado.CreditoUtilizado = 0;
+                resultado.CupoDisponible = 0;
+                resultado.PorcentajeUtilizado = 0;
+                resultado.TieneCupoAsignado = false;
                 resultado.CupoSuficiente = false;
-                resultado.Mensaje = "Sin límite de crédito asignado";
+                resultado.Mensaje = ex.Message;
                 return resultado;
             }
-
-            // Calcular crédito utilizado (suma de créditos activos/pendientes)
-            resultado.CreditoUtilizado = await GetCreditoUtilizadoAsync(clienteId);
-            resultado.CupoDisponible = Math.Max(0, cliente.LimiteCredito!.Value - resultado.CreditoUtilizado);
-            resultado.PorcentajeUtilizado = cliente.LimiteCredito.Value > 0
-                ? (resultado.CreditoUtilizado / cliente.LimiteCredito.Value) * 100
-                : 0;
 
             // Verificar porcentaje mínimo si está configurado
             if (config.PorcentajeCupoMinimoRequerido.HasValue)
@@ -607,15 +620,19 @@ namespace TheBuryProject.Services
 
         public async Task<decimal> GetCupoDisponibleAsync(int clienteId)
         {
-            var cliente = await _context.Clientes
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == clienteId && !c.IsDeleted);
-
-            if (cliente?.LimiteCredito == null)
+            try
+            {
+                var disponible = await _creditoDisponibleService.CalcularDisponibleAsync(clienteId);
+                return disponible.Disponible;
+            }
+            catch (CreditoDisponibleException ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "No fue posible calcular cupo disponible por puntaje para cliente {ClienteId}. Se retorna 0.",
+                    clienteId);
                 return 0;
-
-            var utilizado = await GetCreditoUtilizadoAsync(clienteId);
-            return Math.Max(0, cliente.LimiteCredito.Value - utilizado);
+            }
         }
 
         public async Task<decimal> GetCreditoUtilizadoAsync(int clienteId)
@@ -626,7 +643,10 @@ namespace TheBuryProject.Services
                            !c.IsDeleted &&
                            (c.Estado == EstadoCredito.Activo ||
                             c.Estado == EstadoCredito.Aprobado ||
-                            c.Estado == EstadoCredito.Solicitado))
+                            c.Estado == EstadoCredito.Solicitado ||
+                            c.Estado == EstadoCredito.PendienteConfiguracion ||
+                            c.Estado == EstadoCredito.Configurado ||
+                            c.Estado == EstadoCredito.Generado))
                 .SumAsync(c => c.SaldoPendiente);
         }
 

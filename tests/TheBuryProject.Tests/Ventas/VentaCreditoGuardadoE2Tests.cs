@@ -1,4 +1,5 @@
 using AutoMapper;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -123,6 +124,21 @@ public class VentaCreditoGuardadoE2Tests
         };
     }
 
+    private static void AgregarPermisoAutorizar(SqliteInMemoryDb db)
+    {
+        var httpContext = db.HttpContextAccessor.HttpContext;
+        if (httpContext == null)
+        {
+            return;
+        }
+
+        var claims = httpContext.User.Claims.ToList();
+        claims.Add(new Claim("Permission", "ventas.authorize"));
+
+        httpContext.User = new ClaimsPrincipal(
+            new ClaimsIdentity(claims, "TestAuth"));
+    }
+
     #endregion
 
     #region Tests: NoViable - NO guardar
@@ -202,6 +218,90 @@ public class VentaCreditoGuardadoE2Tests
         Assert.Contains("No es posible crear la venta", ex.Message);
         
         // Verificar que NO se guardó la venta
+        var ventasEnDb = await db.Context.Ventas.CountAsync();
+        Assert.Equal(0, ventasEnDb);
+    }
+
+    [Fact]
+    public async Task CreateAsync_CreditoPersonal_NoViableSoloDocumentacion_ConPermisoYExcepcion_GuardaVenta()
+    {
+        // Arrange
+        using var db = new SqliteInMemoryDb(userName: "admin");
+        AgregarPermisoAutorizar(db);
+
+        var mockValidacionVenta = new Mock<IValidacionVentaService>();
+        var (cliente, producto) = await SetupTestDataAsync(db);
+        var viewModel = CrearVentaViewModel(cliente.Id, producto.Id);
+        viewModel.AplicarExcepcionDocumental = true;
+        viewModel.MotivoExcepcionDocumentalCreate = "Admin autoriza excepción documental para continuar la operación";
+
+        var ventaService = CreateVentaService(db, mockValidacionVenta);
+
+        mockValidacionVenta.Setup(x => x.ValidarVentaCreditoPersonalAsync(
+                cliente.Id, It.IsAny<decimal>(), It.IsAny<int?>()))
+            .ReturnsAsync(new ValidacionVentaResult
+            {
+                NoViable = true,
+                PendienteRequisitos = true,
+                EstadoAptitud = EstadoCrediticioCliente.NoApto,
+                RequisitosPendientes = new List<RequisitoPendiente>
+                {
+                    new()
+                    {
+                        Tipo = TipoRequisitoPendiente.DocumentacionFaltante,
+                        Descripcion = "Falta DNI",
+                        AccionRequerida = "Cargar documentación"
+                    }
+                }
+            });
+
+        // Act
+        var resultado = await ventaService.CreateAsync(viewModel);
+
+        // Assert
+        Assert.NotNull(resultado);
+        Assert.True(resultado.Id > 0);
+
+        var ventaEnDb = await db.Context.Ventas.FirstOrDefaultAsync(v => v.Id == resultado.Id);
+        Assert.NotNull(ventaEnDb);
+        Assert.Contains("EXCEPCION_DOC", ventaEnDb!.MotivoAutorizacion ?? string.Empty);
+        Assert.Contains("Admin autoriza excepción documental", ventaEnDb!.MotivoAutorizacion ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task CreateAsync_CreditoPersonal_NoViableSoloDocumentacion_SinPermisoAunqueFlag_LanzaExcepcion()
+    {
+        // Arrange
+        using var db = new SqliteInMemoryDb(userName: "vendedor");
+        var mockValidacionVenta = new Mock<IValidacionVentaService>();
+        var (cliente, producto) = await SetupTestDataAsync(db);
+        var viewModel = CrearVentaViewModel(cliente.Id, producto.Id);
+        viewModel.AplicarExcepcionDocumental = true;
+        viewModel.MotivoExcepcionDocumentalCreate = "Intento sin permiso";
+
+        var ventaService = CreateVentaService(db, mockValidacionVenta);
+
+        mockValidacionVenta.Setup(x => x.ValidarVentaCreditoPersonalAsync(
+                cliente.Id, It.IsAny<decimal>(), It.IsAny<int?>()))
+            .ReturnsAsync(new ValidacionVentaResult
+            {
+                NoViable = true,
+                PendienteRequisitos = true,
+                EstadoAptitud = EstadoCrediticioCliente.NoApto,
+                RequisitosPendientes = new List<RequisitoPendiente>
+                {
+                    new()
+                    {
+                        Tipo = TipoRequisitoPendiente.DocumentacionFaltante,
+                        Descripcion = "Falta ReciboSueldo",
+                        AccionRequerida = "Cargar documentación"
+                    }
+                }
+            });
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => ventaService.CreateAsync(viewModel));
+
         var ventasEnDb = await db.Context.Ventas.CountAsync();
         Assert.Equal(0, ventasEnDb);
     }

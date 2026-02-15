@@ -290,15 +290,60 @@ public class PrecioService : IPrecioService
             };
         }
 
+        int? listaPrecioIdObjetivo = null;
+        if (model.ListaPrecioId.HasValue && model.ListaPrecioId.Value > 0)
+        {
+            var lista = await _context.ListasPrecios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(l => l.Id == model.ListaPrecioId.Value && !l.IsDeleted && l.Activa);
+
+            if (lista == null)
+            {
+                return new ResultadoAplicacionPrecios
+                {
+                    Exitoso = false,
+                    Mensaje = "La lista de precios seleccionada no existe o no está activa."
+                };
+            }
+
+            listaPrecioIdObjetivo = lista.Id;
+        }
+
+        var productosIds = productos.Select(p => p.Id).ToList();
+        var preciosListaVigentes = new Dictionary<int, ProductoPrecioLista>();
+        if (listaPrecioIdObjetivo.HasValue)
+        {
+            var ahoraLista = DateTime.UtcNow;
+            var vigentes = await _context.ProductosPrecios
+                .Where(p => !p.IsDeleted
+                            && p.EsVigente
+                            && p.ListaId == listaPrecioIdObjetivo.Value
+                            && productosIds.Contains(p.ProductoId)
+                            && p.VigenciaDesde <= ahoraLista
+                            && (p.VigenciaHasta == null || p.VigenciaHasta >= ahoraLista))
+                .OrderByDescending(p => p.VigenciaDesde)
+                .ToListAsync();
+
+            preciosListaVigentes = vigentes
+                .GroupBy(p => p.ProductoId)
+                .Select(g => g.First())
+                .ToDictionary(p => p.ProductoId, p => p);
+        }
+
         var usuario = GetCurrentUser();
         var now = DateTime.UtcNow;
         var historicos = new List<PrecioHistorico>();
         var porcentaje = model.ValorPorcentaje;
-        var cambios = new List<(Producto producto, decimal anterior, decimal nuevo)>();
+        var nuevosPreciosLista = new List<ProductoPrecioLista>();
+        var cambios = new List<(Producto producto, decimal anterior, decimal nuevo, ProductoPrecioLista? precioListaAnterior)>();
 
         foreach (var producto in productos)
         {
-            var precioVentaAnterior = producto.PrecioVenta;
+            var precioListaAnterior = listaPrecioIdObjetivo.HasValue && preciosListaVigentes.TryGetValue(producto.Id, out var pl)
+                ? pl
+                : null;
+
+            var precioVentaAnterior = precioListaAnterior?.Precio ?? producto.PrecioVenta;
             var precioVentaNuevo = Math.Round(
                 precioVentaAnterior * (1 + (porcentaje / 100m)),
                 2,
@@ -316,7 +361,7 @@ public class PrecioService : IPrecioService
             if (precioVentaNuevo == precioVentaAnterior)
                 continue;
 
-            cambios.Add((producto, precioVentaAnterior, precioVentaNuevo));
+            cambios.Add((producto, precioVentaAnterior, precioVentaNuevo, precioListaAnterior));
         }
 
         if (!cambios.Any())
@@ -328,13 +373,18 @@ public class PrecioService : IPrecioService
             };
         }
 
+        var descripcionAlcance = cambios.Count == 1 ? "1 producto" : $"{cambios.Count} productos";
+        var motivoFinal = string.IsNullOrWhiteSpace(model.Motivo)
+            ? $"Actualización de precio ({descripcionAlcance})"
+            : model.Motivo.Trim();
+
         var evento = new CambioPrecioEvento
         {
             Fecha = now,
             Usuario = usuario,
-            Alcance = alcance,
+            Alcance = cambios.Count == 1 ? "individual" : alcance,
             ValorPorcentaje = porcentaje,
-            Motivo = string.IsNullOrWhiteSpace(model.Motivo) ? null : model.Motivo,
+            Motivo = motivoFinal,
             FiltrosJson = alcance == "filtrados" ? model.FiltrosJson : null,
             CantidadProductos = cambios.Count,
             CreatedAt = now,
@@ -358,6 +408,38 @@ public class PrecioService : IPrecioService
             cambio.producto.UpdatedAt = now;
             cambio.producto.UpdatedBy = usuario;
 
+            if (listaPrecioIdObjetivo.HasValue)
+            {
+                if (cambio.precioListaAnterior != null)
+                {
+                    cambio.precioListaAnterior.EsVigente = false;
+                    cambio.precioListaAnterior.VigenciaHasta = now;
+                    cambio.precioListaAnterior.UpdatedAt = now;
+                    cambio.precioListaAnterior.UpdatedBy = usuario;
+                }
+
+                var nuevoPrecioLista = new ProductoPrecioLista
+                {
+                    ProductoId = cambio.producto.Id,
+                    ListaId = listaPrecioIdObjetivo.Value,
+                    VigenciaDesde = now,
+                    Costo = cambio.producto.PrecioCompra,
+                    Precio = cambio.nuevo,
+                    MargenPorcentaje = cambio.producto.PrecioCompra > 0
+                        ? Math.Round(((cambio.nuevo - cambio.producto.PrecioCompra) / cambio.producto.PrecioCompra) * 100m, 2)
+                        : 0,
+                    MargenValor = Math.Round(cambio.nuevo - cambio.producto.PrecioCompra, 2),
+                    EsManual = true,
+                    EsVigente = true,
+                    CreadoPor = usuario,
+                    Notas = motivoFinal,
+                    CreatedAt = now,
+                    CreatedBy = usuario
+                };
+
+                nuevosPreciosLista.Add(nuevoPrecioLista);
+            }
+
             historicos.Add(new PrecioHistorico
             {
                 ProductoId = cambio.producto.Id,
@@ -365,7 +447,7 @@ public class PrecioService : IPrecioService
                 PrecioCompraNuevo = cambio.producto.PrecioCompra,
                 PrecioVentaAnterior = cambio.anterior,
                 PrecioVentaNuevo = cambio.nuevo,
-                MotivoCambio = string.IsNullOrWhiteSpace(model.Motivo) ? null : model.Motivo,
+                MotivoCambio = motivoFinal,
                 FechaCambio = now,
                 UsuarioModificacion = usuario,
                 PuedeRevertirse = true,
@@ -379,6 +461,10 @@ public class PrecioService : IPrecioService
         {
             _context.CambioPrecioEventos.Add(evento);
             _context.PreciosHistoricos.AddRange(historicos);
+            if (nuevosPreciosLista.Count > 0)
+            {
+                _context.ProductosPrecios.AddRange(nuevosPreciosLista);
+            }
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
         }
@@ -411,6 +497,41 @@ public class PrecioService : IPrecioService
             .OrderByDescending(e => e.Fecha)
             .Take(take)
             .ToListAsync();
+    }
+
+    public async Task<Dictionary<int, UltimoCambioProductoResumen>> GetUltimoCambioPorProductosAsync(IEnumerable<int> productoIds)
+    {
+        var ids = productoIds?.Distinct().ToList() ?? new List<int>();
+        if (!ids.Any())
+        {
+            return new Dictionary<int, UltimoCambioProductoResumen>();
+        }
+
+        var detalles = await _context.CambioPrecioDetalles
+            .AsNoTracking()
+            .Where(d => !d.IsDeleted
+                        && ids.Contains(d.ProductoId)
+                        && d.Evento != null
+                        && !d.Evento.IsDeleted)
+            .Include(d => d.Evento)
+            .OrderByDescending(d => d.Evento.Fecha)
+            .ToListAsync();
+
+        return detalles
+            .GroupBy(d => d.ProductoId)
+            .Select(g => g.First())
+            .ToDictionary(
+                d => d.ProductoId,
+                d => new UltimoCambioProductoResumen
+                {
+                    EventoId = d.EventoId,
+                    ProductoId = d.ProductoId,
+                    Fecha = d.Evento.Fecha,
+                    Usuario = d.Evento.Usuario,
+                    ValorPorcentaje = d.Evento.ValorPorcentaje,
+                    Revertido = d.Evento.RevertidoEn.HasValue,
+                    EsReversion = string.Equals(d.Evento.Alcance, "reversion", StringComparison.OrdinalIgnoreCase)
+                });
     }
 
     public async Task<CambioPrecioEvento?> GetCambioPrecioEventoAsync(int eventoId)

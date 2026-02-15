@@ -200,7 +200,7 @@ namespace TheBuryProject.Tests.ValidacionVenta
         }
 
         [Fact]
-        public async Task PrevalidarAsync_MontoExcedeCupo_RetornaRequiereAutorizacion()
+        public async Task PrevalidarAsync_MontoExcedeCupo_RetornaNoViable()
         {
             // Arrange
             var cliente = CrearClienteTest();
@@ -229,10 +229,10 @@ namespace TheBuryProject.Tests.ValidacionVenta
             var resultado = await _service.PrevalidarAsync(cliente.Id, montoSolicitado);
 
             // Assert
-            Assert.Equal(ResultadoPrevalidacion.RequiereAutorizacion, resultado.Resultado);
-            Assert.True(resultado.PermiteGuardar); // Permite guardar, pero requerirá autorización
+            Assert.Equal(ResultadoPrevalidacion.NoViable, resultado.Resultado);
+            Assert.False(resultado.PermiteGuardar);
             Assert.Contains(resultado.Motivos, m => 
-                m.Categoria == CategoriaMotivo.Cupo && !m.EsBloqueante);
+                m.Categoria == CategoriaMotivo.Cupo && m.EsBloqueante);
         }
 
         #endregion
@@ -563,7 +563,7 @@ namespace TheBuryProject.Tests.ValidacionVenta
             Assert.Equal(ResultadoPrevalidacion.NoViable, resultado.Resultado);
             var motivoCupo = resultado.Motivos.FirstOrDefault(m => m.Categoria == CategoriaMotivo.Cupo);
             Assert.NotNull(motivoCupo);
-            Assert.Equal("Sin límite de crédito", motivoCupo!.Titulo);
+            Assert.Equal("Sin límite de crédito por puntaje", motivoCupo!.Titulo);
             Assert.True(motivoCupo!.EsBloqueante);
         }
 
@@ -597,13 +597,13 @@ namespace TheBuryProject.Tests.ValidacionVenta
             var resultado = await _service.PrevalidarAsync(cliente.Id, montoSolicitado);
 
             // Assert
-            Assert.Equal(ResultadoPrevalidacion.RequiereAutorizacion, resultado.Resultado);
+            Assert.Equal(ResultadoPrevalidacion.NoViable, resultado.Resultado);
             var motivoCupo = resultado.Motivos.FirstOrDefault(m => m.Categoria == CategoriaMotivo.Cupo);
             Assert.NotNull(motivoCupo);
-            Assert.Equal("Cupo insuficiente", motivoCupo!.Titulo);
-            Assert.Contains("150.000", motivoCupo!.Descripcion); // Monto solicitado
-            Assert.Contains("80.000", motivoCupo!.Descripcion);  // Cupo disponible
-            Assert.False(motivoCupo!.EsBloqueante); // Requiere autorización, no bloqueante
+            Assert.Equal("Excede crédito disponible", motivoCupo!.Titulo);
+            Assert.Contains("Disponible:", motivoCupo!.Descripcion);
+            Assert.Contains("80.000", motivoCupo!.Descripcion);
+            Assert.True(motivoCupo!.EsBloqueante);
         }
 
         [Fact]

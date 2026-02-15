@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using TheBuryProject.Models.Enums;
+using TheBuryProject.Services.Models;
 
 namespace TheBuryProject.ViewModels
 {
@@ -22,7 +23,23 @@ namespace TheBuryProject.ViewModels
         /// </summary>
         public AptitudCrediticiaViewModel AptitudCrediticia { get; set; } = new();
 
+        /// <summary>
+        /// Panel de visibilidad de crédito disponible por puntaje.
+        /// </summary>
+        public ClienteCreditoDisponiblePanelViewModel CreditoDisponiblePanel { get; set; } = new();
+
         public string TabActivo { get; set; } = "informacion";
+    }
+
+    public class ClienteCreditoDisponiblePanelViewModel
+    {
+        public NivelRiesgoCredito PuntajeActual { get; set; }
+
+        public CreditoDisponibleResultado Valores { get; set; } = new();
+
+        public bool TieneErrorConfiguracion { get; set; }
+
+        public string? MensajeError { get; set; }
     }
 
     /// <summary>

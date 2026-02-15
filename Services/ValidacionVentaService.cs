@@ -222,12 +222,16 @@ namespace TheBuryProject.Services
 
             if (aptitud.Cupo != null && !aptitud.Cupo.TieneCupoAsignado)
             {
+                var descripcionCupo = string.IsNullOrWhiteSpace(aptitud.Cupo.Mensaje)
+                    ? "No hay límite de crédito configurado para el puntaje del cliente."
+                    : aptitud.Cupo.Mensaje;
+
                 evaluacion.Problemas.Add(new ProblemaCredito
                 {
                     Categoria = CategoriaMotivo.Cupo,
-                    Titulo = "Sin límite de crédito",
-                    Descripcion = "El cliente no tiene límite de crédito asignado.",
-                    AccionSugerida = "Asignar límite de crédito desde la ficha del cliente",
+                    Titulo = "Sin límite de crédito por puntaje",
+                    Descripcion = descripcionCupo,
+                    AccionSugerida = "Configurar límite por puntaje desde Clientes > Límites por Puntaje",
                     UrlAccion = $"/Cliente/Details/{evaluacion.ClienteId}",
                     EsBloqueante = true,
                     TipoRequisito = TipoRequisitoPendiente.SinLimiteCredito
@@ -278,7 +282,7 @@ namespace TheBuryProject.Services
                     case "Cupo":
                         problema.Categoria = CategoriaMotivo.Cupo;
                         problema.Titulo = "Cupo";
-                        problema.AccionSugerida = "Asignar o aumentar límite de crédito";
+                        problema.AccionSugerida = "Configurar o actualizar límites por puntaje";
                         problema.UrlAccion = $"/Cliente/Details/{evaluacion.ClienteId}";
                         problema.TipoRequisito = TipoRequisitoPendiente.SinLimiteCredito;
                         break;
@@ -411,21 +415,17 @@ namespace TheBuryProject.Services
 
                 if (monto > credito.SaldoPendiente)
                 {
-                    // Marcar como RequiereAutorizacion si aún no es NoViable
-                    if (evaluacion.Resultado != ResultadoPrevalidacion.NoViable)
-                    {
-                        evaluacion.Resultado = ResultadoPrevalidacion.RequiereAutorizacion;
-                    }
+                    evaluacion.Resultado = ResultadoPrevalidacion.NoViable;
                     evaluacion.Problemas.Add(new ProblemaCredito
                     {
                         Categoria = CategoriaMotivo.Cupo,
-                        Titulo = "Excede saldo disponible",
-                        Descripcion = "El monto excede el saldo disponible del crédito",
-                        AccionSugerida = "Supervisor debe autorizar exceso",
+                        Titulo = "Excede crédito disponible",
+                        Descripcion = $"Excede el crédito disponible por puntaje. Disponible: {credito.SaldoPendiente:C2}. Ajuste el monto, cambie método de pago o actualice puntaje/límites.",
+                        AccionSugerida = "Ajustar monto, cambiar método de pago o actualizar puntaje/límites",
                         ValorAsociado = monto,
                         ValorLimite = credito.SaldoPendiente,
-                        EsBloqueante = false,
-                        TipoRazon = TipoRazonAutorizacion.ExcedeCupo
+                        EsBloqueante = true,
+                        TipoRequisito = TipoRequisitoPendiente.ClienteNoApto
                     });
                 }
                 return;
@@ -448,17 +448,17 @@ namespace TheBuryProject.Services
                 // Si excede cupo pero hay cupo asignado, requiere autorización
                 if (tieneCupoAsignado)
                 {
-                    evaluacion.Resultado = ResultadoPrevalidacion.RequiereAutorizacion;
+                    evaluacion.Resultado = ResultadoPrevalidacion.NoViable;
                     evaluacion.Problemas.Add(new ProblemaCredito
                     {
                         Categoria = CategoriaMotivo.Cupo,
-                        Titulo = "Cupo insuficiente",
-                        Descripcion = $"El monto solicitado ({monto:C0}) excede el cupo disponible ({cupoDisponible:C0}).",
-                        AccionSugerida = "Supervisor debe autorizar exceso de cupo",
+                        Titulo = "Excede crédito disponible",
+                        Descripcion = $"Excede el crédito disponible por puntaje. Disponible: {cupoDisponible:C2}. Ajuste el monto, cambie método de pago o actualice puntaje/límites.",
+                        AccionSugerida = "Ajustar monto, cambiar método de pago o actualizar puntaje/límites",
                         ValorAsociado = monto,
                         ValorLimite = cupoDisponible,
-                        EsBloqueante = false,
-                        TipoRazon = TipoRazonAutorizacion.ExcedeCupo
+                        EsBloqueante = true,
+                        TipoRequisito = TipoRequisitoPendiente.ClienteNoApto
                     });
                 }
                 else
@@ -468,9 +468,9 @@ namespace TheBuryProject.Services
                     evaluacion.Problemas.Add(new ProblemaCredito
                     {
                         Categoria = CategoriaMotivo.Cupo,
-                        Titulo = "Sin límite de crédito",
-                        Descripcion = "El cliente no tiene límite de crédito asignado.",
-                        AccionSugerida = "Asignar límite de crédito al cliente",
+                        Titulo = "Sin límite de crédito por puntaje",
+                        Descripcion = "No hay límite de crédito configurado para el puntaje del cliente.",
+                        AccionSugerida = "Configurar límite por puntaje del cliente",
                         UrlAccion = $"/Cliente/Details/{clienteId}",
                         EsBloqueante = true,
                         TipoRequisito = TipoRequisitoPendiente.SinLimiteCredito
