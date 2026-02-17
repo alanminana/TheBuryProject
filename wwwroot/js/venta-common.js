@@ -151,17 +151,42 @@
         const infoCuotas = resolveElement(config.infoCuotas);
         const totalHidden = resolveElement(config.totalHidden);
 
+        function normalizeTipoPago(value) {
+            const v = String(value ?? '').trim();
+
+            if (v === '2' || v === 'TarjetaDebito') return 'TarjetaDebito';
+            if (v === '3' || v === 'TarjetaCredito') return 'TarjetaCredito';
+            if (v === '4' || v === 'Cheque') return 'Cheque';
+
+            return v;
+        }
+
+        function setTodayOnDateInput(inputEl) {
+            if (!inputEl) return;
+
+            if ('valueAsDate' in inputEl) {
+                inputEl.valueAsDate = new Date();
+                return;
+            }
+
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            inputEl.value = `${yyyy}-${mm}-${dd}`;
+        }
+
         function handleTipoPagoChange(tipoPago) {
+            const normalizado = normalizeTipoPago(tipoPago);
+
             toggleDisplay(tarjetaRow, false);
             toggleDisplay(chequeRow, false);
 
-            if (tipoPago === 'TarjetaDebito' || tipoPago === 'TarjetaCredito') {
+            if (normalizado === 'TarjetaDebito' || normalizado === 'TarjetaCredito') {
                 toggleDisplay(tarjetaRow, true);
-            } else if (tipoPago === 'Cheque') {
+            } else if (normalizado === 'Cheque') {
                 toggleDisplay(chequeRow, true);
-                if (chequeFechaInput) {
-                    chequeFechaInput.value = new Date().toISOString().split('T')[0];
-                }
+                setTodayOnDateInput(chequeFechaInput);
             }
         }
 
@@ -284,11 +309,278 @@
         };
     }
 
+    function showToast(message, options) {
+        const opts = options || {};
+        const level = opts.level || 'warning';
+        const delay = Number(opts.delay) > 0 ? Number(opts.delay) : 3500;
+        const strong = opts.title || 'Atención';
+
+        let container = document.getElementById('ventaToastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'ventaToastContainer';
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '1090';
+            document.body.appendChild(container);
+        }
+
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast align-items-center text-bg-${level} border-0`;
+        toastEl.setAttribute('role', 'status');
+        toastEl.setAttribute('aria-live', 'polite');
+        toastEl.setAttribute('aria-atomic', 'true');
+        toastEl.innerHTML = `
+          <div class="d-flex">
+            <div class="toast-body">
+              <strong class="me-1">${strong}:</strong>${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+          </div>
+        `;
+
+        container.appendChild(toastEl);
+
+        if (window.bootstrap && typeof window.bootstrap.Toast === 'function') {
+            const toast = new window.bootstrap.Toast(toastEl, { delay: delay, autohide: true });
+            toastEl.addEventListener('hidden.bs.toast', function () {
+                toastEl.remove();
+            }, { once: true });
+            toast.show();
+            return;
+        }
+
+        toastEl.classList.add('show');
+        setTimeout(function () {
+            toastEl.remove();
+        }, delay);
+    }
+
+    function initBuscadorProductos(config) {
+        const cfg = config || {};
+        const input = resolveElement(cfg.input);
+        const results = resolveElement(cfg.results);
+        const url = cfg.url;
+        const filtros = cfg.filtros || {};
+
+        if (!input || !results || !url) {
+            return null;
+        }
+
+        const onSelect = typeof cfg.onSelect === 'function' ? cfg.onSelect : function () { };
+        const onEnterWhenClosed = typeof cfg.onEnterWhenClosed === 'function' ? cfg.onEnterWhenClosed : function () { };
+        const minChars = cfg.minChars ?? 2;
+        const debounceMs = cfg.debounceMs ?? 250;
+        const take = String(cfg.take ?? 20);
+        const resultsId = results.id || `ventaSearchResults-${Math.random().toString(36).slice(2)}`;
+        results.id = resultsId;
+        const optionIdPrefix = `${resultsId}-option-`;
+
+        results.setAttribute('role', 'listbox');
+        input.setAttribute('aria-controls', resultsId);
+        input.setAttribute('aria-expanded', 'false');
+        input.setAttribute('aria-autocomplete', 'list');
+        input.setAttribute('aria-activedescendant', '');
+
+        let sugeridos = [];
+        let indiceActivo = -1;
+        let debounceId = null;
+        let abortCtrl = null;
+
+        function updateAriaState() {
+            const abierto = !results.classList.contains('d-none');
+            input.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+
+            if (abierto && indiceActivo >= 0 && sugeridos[indiceActivo]) {
+                input.setAttribute('aria-activedescendant', `${optionIdPrefix}${indiceActivo}`);
+            } else {
+                input.setAttribute('aria-activedescendant', '');
+            }
+        }
+
+        function ocultar() {
+            results.classList.add('d-none');
+            results.innerHTML = '';
+            indiceActivo = -1;
+            updateAriaState();
+        }
+
+        function getParams(term) {
+            const params = new URLSearchParams({ term: term, take: take });
+
+            if (filtros.categoria?.value) params.set('categoriaId', filtros.categoria.value);
+            if (filtros.marca?.value) params.set('marcaId', filtros.marca.value);
+
+            params.set('soloConStock', filtros.soloStock?.checked === false ? 'false' : 'true');
+
+            if (filtros.precioMin?.value) params.set('precioMin', filtros.precioMin.value);
+            if (filtros.precioMax?.value) params.set('precioMax', filtros.precioMax.value);
+
+            return params;
+        }
+
+        function render() {
+            if (!sugeridos.length) {
+                                results.innerHTML = '<div class="list-group-item small text-muted" role="option" aria-disabled="true">Sin resultados</div>';
+                results.classList.remove('d-none');
+                                updateAriaState();
+                return;
+            }
+
+            results.innerHTML = sugeridos.map(function (producto, index) {
+                const marcaCategoria = [producto.marca, producto.categoria].filter(Boolean).join(' / ');
+                const caracteristicas = producto.caracteristicasResumen || '';
+                const precio = Number(producto.precioVenta || 0).toFixed(2);
+                return `
+          <button type="button"
+                                    id="${optionIdPrefix}${index}"
+                                    role="option"
+                                    aria-selected="${index === indiceActivo ? 'true' : 'false'}"
+                  class="list-group-item list-group-item-action producto-suggestion ${index === indiceActivo ? 'active' : ''}"
+                  data-index="${index}">
+            <div class="d-flex justify-content-between">
+              <strong>${producto.codigo} - ${producto.nombre}</strong>
+              <span>$${precio}</span>
+            </div>
+            <small class="d-block text-muted">${marcaCategoria || 'Sin marca/categoría'} · Stock: ${producto.stockActual}</small>
+            ${caracteristicas ? `<small class="d-block text-info">${caracteristicas}</small>` : ''}
+          </button>
+        `;
+            }).join('');
+
+            results.classList.remove('d-none');
+            updateAriaState();
+        }
+
+        function buscar(term) {
+            if (abortCtrl) abortCtrl.abort();
+            abortCtrl = new AbortController();
+
+            const params = getParams(term);
+            fetch(`${url}?${params.toString()}`, { signal: abortCtrl.signal })
+                .then(function (r) { return r.ok ? r.json() : []; })
+                .then(function (data) {
+                    sugeridos = Array.isArray(data) ? data : [];
+                    indiceActivo = -1;
+                    render();
+                })
+                .catch(function (err) {
+                    if (err && err.name === 'AbortError') return;
+                    sugeridos = [];
+                    ocultar();
+                });
+        }
+
+        function mover(delta) {
+            if (!sugeridos.length) return;
+            indiceActivo += delta;
+            if (indiceActivo < 0) indiceActivo = sugeridos.length - 1;
+            if (indiceActivo >= sugeridos.length) indiceActivo = 0;
+            render();
+        }
+
+        function seleccionarPorIndice(idx) {
+            const i = parseInt(idx, 10);
+            if (!Number.isFinite(i) || !sugeridos[i]) return;
+            onSelect(sugeridos[i]);
+            ocultar();
+        }
+
+        results.addEventListener('click', function (ev) {
+            const btn = ev.target.closest('.producto-suggestion');
+            if (!btn) return;
+            seleccionarPorIndice(btn.dataset.index);
+        });
+
+        input.addEventListener('input', function () {
+            const term = input.value.trim();
+
+            if (debounceId) clearTimeout(debounceId);
+
+            if (term.length < minChars) {
+                ocultar();
+                return;
+            }
+
+            debounceId = setTimeout(function () {
+                buscar(term);
+            }, debounceMs);
+        });
+
+        input.addEventListener('keydown', function (event) {
+            const term = input.value.trim();
+            const abierto = !results.classList.contains('d-none');
+
+            if (!abierto) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    onEnterWhenClosed(term, sugeridos);
+                }
+                return;
+            }
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                mover(1);
+                return;
+            }
+            if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                mover(-1);
+                return;
+            }
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (indiceActivo >= 0 && sugeridos[indiceActivo]) {
+                    onSelect(sugeridos[indiceActivo]);
+                    ocultar();
+                    return;
+                }
+                onEnterWhenClosed(term, sugeridos);
+                return;
+            }
+            if (event.key === 'Escape') {
+                ocultar();
+            }
+        });
+
+        document.addEventListener('click', function (event) {
+            if (event.target === input || results.contains(event.target)) return;
+            ocultar();
+        });
+
+        [filtros.categoria, filtros.marca, filtros.soloStock].forEach(function (el) {
+            el?.addEventListener('change', function () {
+                const term = input.value.trim();
+                if (!term || term.length < minChars) {
+                    ocultar();
+                    return;
+                }
+                buscar(term);
+            });
+        });
+
+        [filtros.precioMin, filtros.precioMax].forEach(function (el) {
+            el?.addEventListener('input', function () {
+                const term = input.value.trim();
+                if (!term || term.length < minChars) {
+                    ocultar();
+                    return;
+                }
+                if (debounceId) clearTimeout(debounceId);
+                debounceId = setTimeout(function () { buscar(term); }, debounceMs);
+            });
+        });
+
+        return { ocultar: ocultar };
+    }
+
     window.VentaCommon = {
         createDetalleManager: createDetalleManager,
         calcularTotales: calcularTotales,
         resetTotalesUI: resetTotalesUI,
         aplicarTotalesUI: aplicarTotalesUI,
-        initTarjetaHandlers: initTarjetaHandlers
+        initTarjetaHandlers: initTarjetaHandlers,
+        initBuscadorProductos: initBuscadorProductos,
+        showToast: showToast
     };
 })();

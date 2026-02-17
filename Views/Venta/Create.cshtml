@@ -94,8 +94,8 @@
                     <div class="col-md-5">
                         <label class="form-label" for="productoSearchInput">Producto</label>
                         <div class="position-relative">
-                            <input type="text" id="productoSearchInput" class="form-control bg-body-secondary text-light border-0" placeholder="Buscar producto por código, nombre, marca, categoría, descripción o características..." autocomplete="off" />
-                            <div id="productoSearchResults" class="list-group position-absolute w-100 shadow d-none" style="z-index: 1080;"></div>
+                            <input type="text" id="productoSearchInput" class="form-control bg-body-secondary text-light border-0" placeholder="Buscar producto por código, nombre, marca, categoría, descripción o características..." autocomplete="off" aria-controls="productoSearchResults" aria-expanded="false" aria-activedescendant="" aria-autocomplete="list" />
+                            <div id="productoSearchResults" class="list-group position-absolute w-100 shadow d-none" style="z-index: 1080;" role="listbox"></div>
                         </div>
                     </div>
                     <div class="col-md-2">
@@ -107,8 +107,8 @@
                         <input type="number" id="precioInput" class="form-control bg-body-secondary text-light border-0" step="0.01" readonly />
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label" for="descuentoInput">Desc. (%)</label>
-                        <input type="number" id="descuentoInput" class="form-control bg-body-secondary text-light border-0" value="0" step="0.01" min="0" max="100" />
+                        <label class="form-label" for="descuentoInput">Desc. ($)</label>
+                        <input type="number" id="descuentoInput" class="form-control bg-body-secondary text-light border-0" value="0" step="0.01" min="0" />
                     </div>
                     <div class="col-md-1 d-flex align-items-end">
                         <button type="button" id="btnAgregarProducto" class="btn btn-success w-100">

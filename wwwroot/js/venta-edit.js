@@ -68,6 +68,14 @@
   const descuentoGeneralInput = document.getElementById('descuentoGeneral') || document.getElementById('Descuento');
 
   const totalHidden = document.getElementById('hiddenTotal') || document.getElementById('totalHidden');
+
+  function notify(message, level, title) {
+    if (window.VentaCommon && typeof window.VentaCommon.showToast === 'function') {
+      window.VentaCommon.showToast(message, { level: level || 'warning', title: title || 'Atención' });
+      return;
+    }
+    alert(message);
+  }
   const subtotalHidden = document.getElementById('hiddenSubtotal') || document.getElementById('subtotalHidden');
   const ivaHidden = document.getElementById('hiddenIVA') || document.getElementById('ivaHidden');
 
@@ -155,218 +163,15 @@
   }
 
   // -----------------------------
-  // Buscador (usa shared si existe, sino fallback local)
+  // Buscador (centralizado en VentaCommon)
   // -----------------------------
-  function initBuscadorProductosFallback(cfg) {
-    const input = cfg.input;
-    const results = cfg.results;
-    const url = cfg.url;
-    const filtros = cfg.filtros || {};
-    const onSelect = typeof cfg.onSelect === 'function' ? cfg.onSelect : function () {};
-    const onEnterWhenClosed = typeof cfg.onEnterWhenClosed === 'function' ? cfg.onEnterWhenClosed : function () {};
-
-    if (!input || !results || !url) return null;
-
-    const minChars = cfg.minChars ?? 2;
-    const debounceMs = cfg.debounceMs ?? 250;
-    const take = String(cfg.take ?? 20);
-
-    let sugeridos = [];
-    let indiceActivo = -1;
-    let debounceId = null;
-    let abortCtrl = null;
-
-    function ocultar() {
-      results.classList.add('d-none');
-      results.innerHTML = '';
-      indiceActivo = -1;
-    }
-
-    function getParams(term) {
-      const params = new URLSearchParams({ term: term, take: take });
-
-      if (filtros.categoria?.value) params.set('categoriaId', filtros.categoria.value);
-      if (filtros.marca?.value) params.set('marcaId', filtros.marca.value);
-
-      params.set('soloConStock', filtros.soloStock?.checked === false ? 'false' : 'true');
-
-      if (filtros.precioMin?.value) params.set('precioMin', filtros.precioMin.value);
-      if (filtros.precioMax?.value) params.set('precioMax', filtros.precioMax.value);
-
-      return params;
-    }
-
-    function render() {
-      if (!sugeridos.length) {
-        results.innerHTML = '<div class="list-group-item small text-muted">Sin resultados</div>';
-        results.classList.remove('d-none');
-        return;
-      }
-
-      results.innerHTML = sugeridos
-        .map(function (producto, index) {
-          const marcaCategoria = [producto.marca, producto.categoria].filter(Boolean).join(' / ');
-          const caracteristicas = producto.caracteristicasResumen || '';
-          const precio = Number(producto.precioVenta || 0).toFixed(2);
-
-          return `
-          <button type="button"
-                  class="list-group-item list-group-item-action producto-suggestion ${index === indiceActivo ? 'active' : ''}"
-                  data-index="${index}">
-            <div class="d-flex justify-content-between">
-              <strong>${producto.codigo} - ${producto.nombre}</strong>
-              <span>$${precio}</span>
-            </div>
-            <small class="d-block text-muted">${marcaCategoria || 'Sin marca/categoría'} · Stock: ${producto.stockActual}</small>
-            ${caracteristicas ? `<small class="d-block text-info">${caracteristicas}</small>` : ''}
-          </button>
-        `;
-        })
-        .join('');
-
-      results.classList.remove('d-none');
-    }
-
-    function buscar(term) {
-      if (abortCtrl) abortCtrl.abort();
-      abortCtrl = new AbortController();
-
-      const params = getParams(term);
-      fetch(`${url}?${params.toString()}`, { signal: abortCtrl.signal })
-        .then(function (r) {
-          return r.ok ? r.json() : [];
-        })
-        .then(function (data) {
-          sugeridos = Array.isArray(data) ? data : [];
-          indiceActivo = -1;
-          render();
-        })
-        .catch(function (err) {
-          if (err && err.name === 'AbortError') return;
-          sugeridos = [];
-          ocultar();
-        });
-    }
-
-    function mover(delta) {
-      if (!sugeridos.length) return;
-      indiceActivo += delta;
-      if (indiceActivo < 0) indiceActivo = sugeridos.length - 1;
-      if (indiceActivo >= sugeridos.length) indiceActivo = 0;
-      render();
-    }
-
-    function seleccionarPorIndice(idx) {
-      const i = parseInt(idx, 10);
-      if (!Number.isFinite(i) || !sugeridos[i]) return;
-      onSelect(sugeridos[i]);
-      ocultar();
-    }
-
-    results.addEventListener('click', function (ev) {
-      const btn = ev.target.closest('.producto-suggestion');
-      if (!btn) return;
-      seleccionarPorIndice(btn.dataset.index);
-    });
-
-    input.addEventListener('input', function () {
-      const term = input.value.trim();
-
-      if (debounceId) clearTimeout(debounceId);
-
-      if (term.length < minChars) {
-        ocultar();
-        return;
-      }
-
-      debounceId = setTimeout(function () {
-        buscar(term);
-      }, debounceMs);
-    });
-
-    input.addEventListener('keydown', function (event) {
-      const term = input.value.trim();
-      const abierto = !results.classList.contains('d-none');
-
-      if (!abierto) {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          onEnterWhenClosed(term, sugeridos);
-        }
-        return;
-      }
-
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        mover(1);
-        return;
-      }
-
-      if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        mover(-1);
-        return;
-      }
-
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        if (indiceActivo >= 0 && sugeridos[indiceActivo]) {
-          onSelect(sugeridos[indiceActivo]);
-          ocultar();
-          return;
-        }
-        onEnterWhenClosed(term, sugeridos);
-        return;
-      }
-
-      if (event.key === 'Escape') {
-        ocultar();
-      }
-    });
-
-    document.addEventListener('click', function (event) {
-      if (event.target === input || results.contains(event.target)) return;
-      ocultar();
-    });
-
-    // Re-búsqueda por filtros
-    [filtros.categoria, filtros.marca, filtros.soloStock].forEach(function (el) {
-      el?.addEventListener('change', function () {
-        const term = input.value.trim();
-        if (!term || term.length < minChars) {
-          ocultar();
-          return;
-        }
-        buscar(term);
-      });
-    });
-
-    [filtros.precioMin, filtros.precioMax].forEach(function (el) {
-      el?.addEventListener('input', function () {
-        const term = input.value.trim();
-        if (!term || term.length < minChars) {
-          ocultar();
-          return;
-        }
-        if (debounceId) clearTimeout(debounceId);
-        debounceId = setTimeout(function () {
-          buscar(term);
-        }, debounceMs);
-      });
-    });
-
-    return { ocultar: ocultar };
-  }
 
   function initBuscadorProductos() {
     if (!productoSearchInput || !productoSearchResults) return;
 
-    const initFn =
-      typeof VentaCommon.initBuscadorProductos === 'function'
-        ? VentaCommon.initBuscadorProductos
-        : initBuscadorProductosFallback;
+    if (typeof VentaCommon.initBuscadorProductos !== 'function') return;
 
-    initFn({
+    VentaCommon.initBuscadorProductos({
       input: productoSearchInput,
       results: productoSearchResults,
       url: buscarProductosUrl,
@@ -419,7 +224,7 @@
     if (precioInput) precioInput.value = '';
     if (descuentoInput) descuentoInput.value = 0;
 
-    // Por si el fallback dejó visible
+    // Limpia estado visual del listado de sugerencias
     if (productoSearchResults) {
       productoSearchResults.classList.add('d-none');
       productoSearchResults.innerHTML = '';
@@ -433,11 +238,11 @@
     const descuento = parseFloat(descuentoInput?.value || '0') || 0;
 
     if (!productoId || !productoSeleccionado || !Number.isFinite(cantidad) || cantidad <= 0 || !Number.isFinite(precio) || precio <= 0) {
-      alert('Complete todos los campos correctamente.');
+      notify('Complete todos los campos correctamente.', 'warning');
       return;
     }
 
-    const subtotal = cantidad * precio - descuento;
+    const subtotal = Math.max(0, (cantidad * precio) - descuento);
 
     // Mantiene compatibilidad con naming del edit (PascalCase)
     detalleManager.add({
@@ -549,15 +354,12 @@
   - Hidden inputs:
     - Se generan solo en submit (más robusto y consistente con Edit original).
   - Buscador:
-    - Usa VentaCommon.initBuscadorProductos si existe; si no, incluye fallback local con debounce + AbortController
-      para evitar race conditions al tipear rápido. (🟢 Estable: AbortController)
-      Ref: https://developer.mozilla.org/en-US/docs/Web/API/AbortController
+    - Usa implementación centralizada en VentaCommon (debounce + AbortController + navegación teclado).
   - UX:
     - Descuento general recalcula en input.
     - Al seleccionar producto, foco a cantidad.
   NOTA FUNCIONAL:
-  - En Edit se mantiene el comportamiento original: el campo descuentoInput se interpreta como “monto” por ítem
-    (subtotal = cantidad*precio - descuento). En Create se estaba usando porcentaje.
-    Si querés unificar (monto vs %), se debe definir contrato único con backend y UI.
+  - El campo descuentoInput se interpreta como “monto” por ítem en Create y Edit.
+    (subtotal = max(0, cantidad*precio - descuento)).
   ============================================================================ */
 })();

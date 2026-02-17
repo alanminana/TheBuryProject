@@ -8,23 +8,6 @@
   // -----------------------------
   // Helpers locales (sin dependencias)
   // -----------------------------
-  function setTodayOnDateInput(inputEl) {
-    if (!inputEl) return;
-
-    // 🟢 Estable: valueAsDate
-    if ('valueAsDate' in inputEl) {
-      inputEl.valueAsDate = new Date();
-      return;
-    }
-
-    // Fallback local yyyy-mm-dd
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    inputEl.value = `${yyyy}-${mm}-${dd}`;
-  }
-
   function formatCurrencyInline(value) {
     return '$' + Number(value || 0).toLocaleString('es-AR', {
       minimumFractionDigits: 2,
@@ -40,15 +23,13 @@
     return safe.includes('bi') ? safe : 'bi bi-question-circle';
   }
 
-  function normalizeTipoPagoForTarjetaHandlers(value) {
-    // Soporta ambos escenarios:
-    //  - valores string ("TarjetaDebito", "TarjetaCredito", "Cheque")
-    //  - valores numéricos típicos (2 débito, 3 crédito, 4 cheque)
-    const v = String(value ?? '');
-    if (v === '2') return 'TarjetaDebito';
-    if (v === '3') return 'TarjetaCredito';
-    if (v === '4') return 'Cheque';
-    return v;
+  function notify(message, level, title) {
+    if (window.VentaCommon && typeof window.VentaCommon.showToast === 'function') {
+      const mappedLevel = level || 'warning';
+      window.VentaCommon.showToast(message, { level: mappedLevel, title: title || 'Atención' });
+      return;
+    }
+    alert(message);
   }
 
   function syncDetallesHiddenInputs() {
@@ -70,200 +51,6 @@
         <input type="hidden" name="Detalles[${index}].Subtotal" value="${subtotal}" />
       `);
     });
-  }
-
-  // Fallback local si todavía no existe VentaCommon.initBuscadorProductos
-  function initBuscadorProductosFallback(cfg) {
-    const input = cfg.input;
-    const results = cfg.results;
-    const url = cfg.url;
-    const filtros = cfg.filtros || {};
-    const onSelect = typeof cfg.onSelect === 'function' ? cfg.onSelect : function () { };
-    const onEnterWhenClosed = typeof cfg.onEnterWhenClosed === 'function' ? cfg.onEnterWhenClosed : function () { };
-
-    if (!input || !results || !url) return null;
-
-    const minChars = cfg.minChars ?? 2;
-    const debounceMs = cfg.debounceMs ?? 250;
-    const take = String(cfg.take ?? 20);
-
-    let sugeridos = [];
-    let indiceActivo = -1;
-    let debounceId = null;
-    let abortCtrl = null;
-
-    function ocultar() {
-      results.classList.add('d-none');
-      results.innerHTML = '';
-      indiceActivo = -1;
-    }
-
-    function getParams(term) {
-      const params = new URLSearchParams({ term: term, take: take });
-
-      if (filtros.categoria?.value) params.set('categoriaId', filtros.categoria.value);
-      if (filtros.marca?.value) params.set('marcaId', filtros.marca.value);
-
-      params.set('soloConStock', filtros.soloStock?.checked === false ? 'false' : 'true');
-
-      if (filtros.precioMin?.value) params.set('precioMin', filtros.precioMin.value);
-      if (filtros.precioMax?.value) params.set('precioMax', filtros.precioMax.value);
-
-      return params;
-    }
-
-    function render() {
-      if (!sugeridos.length) {
-        results.innerHTML = '<div class="list-group-item small text-muted">Sin resultados</div>';
-        results.classList.remove('d-none');
-        return;
-      }
-
-      results.innerHTML = sugeridos.map(function (producto, index) {
-        const marcaCategoria = [producto.marca, producto.categoria].filter(Boolean).join(' / ');
-        const caracteristicas = producto.caracteristicasResumen || '';
-        const precio = Number(producto.precioVenta || 0).toFixed(2);
-        return `
-          <button type="button"
-                  class="list-group-item list-group-item-action producto-suggestion ${index === indiceActivo ? 'active' : ''}"
-                  data-index="${index}">
-            <div class="d-flex justify-content-between">
-              <strong>${producto.codigo} - ${producto.nombre}</strong>
-              <span>$${precio}</span>
-            </div>
-            <small class="d-block text-muted">${marcaCategoria || 'Sin marca/categoría'} · Stock: ${producto.stockActual}</small>
-            ${caracteristicas ? `<small class="d-block text-info">${caracteristicas}</small>` : ''}
-          </button>
-        `;
-      }).join('');
-
-      results.classList.remove('d-none');
-    }
-
-    function buscar(term) {
-      if (abortCtrl) abortCtrl.abort();
-      abortCtrl = new AbortController();
-
-      const params = getParams(term);
-      fetch(`${url}?${params.toString()}`, { signal: abortCtrl.signal })
-        .then(function (r) { return r.ok ? r.json() : []; })
-        .then(function (data) {
-          sugeridos = Array.isArray(data) ? data : [];
-          indiceActivo = -1;
-          render();
-        })
-        .catch(function (err) {
-          if (err && err.name === 'AbortError') return;
-          sugeridos = [];
-          ocultar();
-        });
-    }
-
-    function mover(delta) {
-      if (!sugeridos.length) return;
-      indiceActivo += delta;
-      if (indiceActivo < 0) indiceActivo = sugeridos.length - 1;
-      if (indiceActivo >= sugeridos.length) indiceActivo = 0;
-      render();
-    }
-
-    function seleccionarPorIndice(idx) {
-      const i = parseInt(idx, 10);
-      if (!Number.isFinite(i) || !sugeridos[i]) return;
-      onSelect(sugeridos[i]);
-      ocultar();
-    }
-
-    // Delegación de eventos para click en sugerencias
-    results.addEventListener('click', function (ev) {
-      const btn = ev.target.closest('.producto-suggestion');
-      if (!btn) return;
-      seleccionarPorIndice(btn.dataset.index);
-    });
-
-    input.addEventListener('input', function () {
-      const term = input.value.trim();
-
-      if (debounceId) clearTimeout(debounceId);
-
-      if (term.length < minChars) {
-        ocultar();
-        return;
-      }
-
-      debounceId = setTimeout(function () {
-        buscar(term);
-      }, debounceMs);
-    });
-
-    input.addEventListener('keydown', function (event) {
-      const term = input.value.trim();
-      const abierto = !results.classList.contains('d-none');
-
-      if (!abierto) {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          onEnterWhenClosed(term, sugeridos);
-        }
-        return;
-      }
-
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        mover(1);
-        return;
-      }
-      if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        mover(-1);
-        return;
-      }
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        if (indiceActivo >= 0 && sugeridos[indiceActivo]) {
-          onSelect(sugeridos[indiceActivo]);
-          ocultar();
-          return;
-        }
-        // si no hay item activo, intentar exacto
-        onEnterWhenClosed(term, sugeridos);
-        return;
-      }
-      if (event.key === 'Escape') {
-        ocultar();
-      }
-    });
-
-    document.addEventListener('click', function (event) {
-      if (event.target === input || results.contains(event.target)) return;
-      ocultar();
-    });
-
-    // Re-búsqueda por filtros
-    [filtros.categoria, filtros.marca, filtros.soloStock].forEach(function (el) {
-      el?.addEventListener('change', function () {
-        const term = input.value.trim();
-        if (!term || term.length < minChars) {
-          ocultar();
-          return;
-        }
-        buscar(term);
-      });
-    });
-
-    [filtros.precioMin, filtros.precioMax].forEach(function (el) {
-      el?.addEventListener('input', function () {
-        const term = input.value.trim();
-        if (!term || term.length < minChars) {
-          ocultar();
-          return;
-        }
-        if (debounceId) clearTimeout(debounceId);
-        debounceId = setTimeout(function () { buscar(term); }, debounceMs);
-      });
-    });
-
-    return { ocultar: ocultar };
   }
 
   // -----------------------------
@@ -369,11 +156,10 @@
   let excepcionDocumentalActiva = false;
 
   // -----------------------------
-  // Tarjetas/Cheques (reusa VentaCommon, pero controlamos tipoPago con normalización)
+  // Tarjetas/Cheques (reusa VentaCommon)
   // -----------------------------
   const tarjetaHandlers = VentaCommon.initTarjetaHandlers({
-    // Importante: NO pasamos tipoPagoSelect para evitar que el handler se enganche a valores no normalizados
-    tipoPagoSelect: null,
+    tipoPagoSelect: tipoPagoSelect,
     tarjetaRow: tarjetaRow,
     chequeRow: chequeRow,
     chequeFechaInput: '#chequeFechaEmision',
@@ -393,7 +179,7 @@
     tarjetaHandlers.bindEvents();
 
     // Estado inicial: tarjetas/cheque
-    applyTipoPagoToTarjetaHandlers(tipoPagoSelect?.value);
+    tarjetaHandlers.handleTipoPagoChange(tipoPagoSelect?.value);
 
     bindEvents();
     initBuscadorProductos();
@@ -403,17 +189,6 @@
     // Estado inicial prevalidación
     if (tipoPagoSelect?.value === TIPO_PAGO_CREDITO_PERSONAL) {
       triggerPrevalidacionAutomatica();
-    }
-  }
-
-  function applyTipoPagoToTarjetaHandlers(tipoPagoValue) {
-    const normalizado = normalizeTipoPagoForTarjetaHandlers(tipoPagoValue);
-    tarjetaHandlers.handleTipoPagoChange(normalizado);
-
-    // Corrige fecha del cheque en zona local si aplica
-    if (normalizado === 'Cheque') {
-      const chequeFecha = document.getElementById('chequeFechaEmision');
-      setTodayOnDateInput(chequeFecha);
     }
   }
 
@@ -435,7 +210,6 @@
 
     // Tipo de pago: tarjetas/cheque + prevalidación
     tipoPagoSelect?.addEventListener('change', function () {
-      applyTipoPagoToTarjetaHandlers(this.value);
       handleTipoPagoChangeForPrevalidacion(this.value);
     });
 
@@ -449,7 +223,7 @@
     form.addEventListener('submit', function (e) {
       if (detalleManager.getAll().length === 0) {
         e.preventDefault();
-        alert('Debe agregar al menos un producto a la venta');
+        notify('Debe agregar al menos un producto a la venta', 'warning');
         return;
       }
 
@@ -467,15 +241,16 @@
 
         if (!estadoPrevalidacion.verificado) {
           e.preventDefault();
-          alert('Debe verificar la aptitud crediticia del cliente antes de continuar.');
+          notify('Debe verificar la aptitud crediticia del cliente antes de continuar.', 'warning');
           return;
         }
 
         if (estadoPrevalidacion.montoVenta > estadoPrevalidacion.disponible) {
           e.preventDefault();
-          alert(
+          notify(
             `Excede el crédito disponible por puntaje. Disponible: ${formatCurrencyInline(estadoPrevalidacion.disponible)}. ` +
-            `Ajuste el monto, cambie método de pago o actualice puntaje/límites.`
+            `Ajuste el monto, cambie método de pago o actualice puntaje/límites.`,
+            'danger'
           );
           return;
         }
@@ -486,7 +261,7 @@
             // Continúa y guarda
           } else {
             e.preventDefault();
-            alert('El cliente no tiene aptitud crediticia para esta operación. Revise los motivos en el panel de verificación.');
+            notify('El cliente no tiene aptitud crediticia para esta operación. Revise los motivos en el panel de verificación.', 'danger');
             return;
           }
         }
@@ -498,17 +273,14 @@
   }
 
   // -----------------------------
-  // Buscador de productos (shared si existe, fallback local si no)
+  // Buscador de productos (centralizado en VentaCommon)
   // -----------------------------
   function initBuscadorProductos() {
     if (!productoSearchInput || !productoSearchResults) return;
 
-    const initFn =
-      typeof VentaCommon.initBuscadorProductos === 'function'
-        ? VentaCommon.initBuscadorProductos
-        : initBuscadorProductosFallback;
+    if (typeof VentaCommon.initBuscadorProductos !== 'function') return;
 
-    initFn({
+    VentaCommon.initBuscadorProductos({
       input: productoSearchInput,
       results: productoSearchResults,
       url: buscarProductosUrl,
@@ -633,12 +405,12 @@
 
   function toggleExcepcionDocumental() {
     if (!puedeExcepcionDocumental) {
-      alert('No tiene permisos para aplicar excepción documental.');
+      notify('No tiene permisos para aplicar excepción documental.', 'danger');
       return;
     }
 
     if (!estadoPrevalidacion.verificado) {
-      alert('Primero debe verificar la aptitud crediticia.');
+      notify('Primero debe verificar la aptitud crediticia.', 'warning');
       return;
     }
 
@@ -649,19 +421,19 @@
     }
 
     if (!esNoViableSoloDocumentacion()) {
-      alert('La excepción documental solo aplica cuando el bloqueo es exclusivamente por documentación faltante.');
+      notify('La excepción documental solo aplica cuando el bloqueo es exclusivamente por documentación faltante.', 'warning');
       return;
     }
 
     const excedeDisponible = estadoPrevalidacion.montoVenta > estadoPrevalidacion.disponible;
     if (excedeDisponible) {
-      alert('No se puede aplicar excepción documental si el monto excede el crédito disponible por puntaje.');
+      notify('No se puede aplicar excepción documental si el monto excede el crédito disponible por puntaje.', 'danger');
       return;
     }
 
     const motivo = (motivoExcepcionDocumentalInput?.value || '').trim();
     if (!motivo) {
-      alert('Debe ingresar el motivo de excepción documental.');
+      notify('Debe ingresar el motivo de excepción documental.', 'warning');
       return;
     }
 
@@ -763,7 +535,7 @@
 
     if (!clienteId || monto <= 0) {
       if (!silencioso) {
-        alert('Seleccione un cliente y agregue productos antes de verificar.');
+        notify('Seleccione un cliente y agregue productos antes de verificar.', 'warning');
       }
       actualizarInlineCreditoDisponible();
       return;
@@ -789,7 +561,7 @@
       if (prevalidacionCargando) prevalidacionCargando.classList.add('d-none');
       if (prevalidacionPendiente) prevalidacionPendiente.classList.remove('d-none');
       if (!silencioso) {
-        alert('Error al verificar aptitud crediticia: ' + (error?.message || 'Error'));
+        notify('Error al verificar aptitud crediticia: ' + (error?.message || 'Error'), 'danger');
       }
     }
   }
@@ -976,37 +748,35 @@
     if (!precioInput || !cantidadInput || !descuentoInput) return;
 
     if (!productoSeleccionado) {
-      alert('Seleccione un producto');
+      notify('Seleccione un producto', 'warning');
       return;
     }
 
     const productoId = productoSeleccionado.id;
     const cantidad = parseInt(cantidadInput.value, 10);
     const precio = parseFloat(precioInput.value);
-    const descuentoPct = parseFloat(descuentoInput.value) || 0;
+    const descuentoMonto = parseFloat(descuentoInput.value) || 0;
 
     if (!cantidad || cantidad < 1) {
-      alert('La cantidad debe ser mayor a cero');
+      notify('La cantidad debe ser mayor a cero', 'warning');
       return;
     }
 
     if (!precio || precio <= 0) {
-      alert('Precio inválido');
+      notify('Precio inválido', 'warning');
       return;
     }
 
     const disponible = stockDisponible[productoId];
     if (Number.isFinite(disponible) && disponible < cantidad) {
-      alert(`Stock insuficiente. Disponible: ${disponible}`);
+      notify(`Stock insuficiente. Disponible: ${disponible}`, 'warning');
       return;
     }
 
     const codigo = productoSeleccionado.codigo;
     const nombre = productoSeleccionado.nombre;
 
-    // Nota: en Create el descuento se interpreta como porcentaje
-    const descuentoMonto = (precio * cantidad * descuentoPct) / 100;
-    const subtotal = (precio * cantidad) - descuentoMonto;
+    const subtotal = Math.max(0, (precio * cantidad) - descuentoMonto);
 
     detalleManager.add({
       productoId: productoId,
@@ -1129,7 +899,7 @@
     if (precioInput) precioInput.value = '';
     if (descuentoInput) descuentoInput.value = 0;
 
-    // Ocultar sugerencias si el fallback está activo y dejó algo visible
+    // Limpia estado visual del listado de sugerencias
     if (productoSearchResults) {
       productoSearchResults.classList.add('d-none');
       productoSearchResults.innerHTML = '';
