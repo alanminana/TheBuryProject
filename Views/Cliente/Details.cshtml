@@ -20,6 +20,9 @@
     
     // Semáforo de aptitud crediticia
     var aptitud = Model.AptitudCrediticia;
+    var disponibleActualTexto = Model.CreditoDisponiblePanel.TieneErrorConfiguracion
+        ? "N/D"
+        : Model.CreditoDisponiblePanel.Valores.Disponible.ToString("C0");
 }
 
 <section class="container-fluid py-4 text-light" @(abrirVerificarTodos ? "data-abrir-verificar-todos=\"1\"" : "")>
@@ -28,17 +31,17 @@
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h2 class="fw-bold mb-1">
-                <i class="bi bi-person-circle text-info me-2"></i>@Model.Cliente.NombreCompleto
+                <i class="bi bi-person-circle text-info me-2" aria-hidden="true"></i>@Model.Cliente.NombreCompleto
                 <!-- Semáforo de Aptitud Crediticia -->
                 <span class="badge bg-@aptitud.ColorSemaforo ms-2" title="@aptitud.Motivo">
-                    <i class="bi @aptitud.Icono me-1"></i>@aptitud.TextoEstado
+                    <i class="bi @aptitud.Icono me-1" aria-hidden="true"></i>@aptitud.TextoEstado
                 </span>
             </h2>
             <div class="d-flex gap-3 text-secondary">
-                <span><i class="bi bi-card-text me-1"></i>@Model.Cliente.TipoDocumento: @Model.Cliente.NumeroDocumento</span>
+                <span><i class="bi bi-card-text me-1" aria-hidden="true"></i>@Model.Cliente.TipoDocumento: @Model.Cliente.NumeroDocumento</span>
                 @if (!string.IsNullOrEmpty(Model.Cliente.Telefono))
                 {
-                    <span><i class="bi bi-telephone me-1"></i>@Model.Cliente.Telefono</span>
+                    <span><i class="bi bi-telephone me-1" aria-hidden="true"></i>@Model.Cliente.Telefono</span>
                 }
                 <span class="badge @(Model.Cliente.Activo ? "bg-success" : "bg-secondary")">
                     @(Model.Cliente.Activo ? "Activo" : "Inactivo")
@@ -49,14 +52,14 @@
             @if (User.TienePermiso("clientes", "managecreditlimits"))
             {
                 <a asp-action="LimitesPorPuntaje" asp-route-returnUrl="@returnUrl" class="btn btn-outline-primary">
-                    <i class="bi bi-sliders me-1"></i>Límites por puntaje
+                    <i class="bi bi-sliders me-1" aria-hidden="true"></i>Límites por puntaje
                 </a>
             }
             <a asp-action="Edit" asp-route-id="@Model.Cliente.Id" asp-route-returnUrl="@returnUrl" class="btn btn-outline-warning">
-                <i class="bi bi-pencil me-1"></i>Editar
+                <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
             </a>
             <a href="@backUrl" class="btn btn-outline-light">
-                <i class="bi bi-arrow-left me-1"></i>Volver
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
             </a>
         </div>
     </div>
@@ -65,8 +68,8 @@
     @if (!aptitud.ConfiguracionCompleta)
     {
         <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-gear-fill me-2"></i><strong>Configuración incompleta:</strong> @aptitud.AdvertenciaConfiguracion
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi bi-gear-fill me-2" aria-hidden="true"></i><strong>Configuración incompleta:</strong> @aptitud.AdvertenciaConfiguracion
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
@@ -74,15 +77,15 @@
     @if (TempData["Success"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
@@ -90,12 +93,12 @@
     <div class="card bg-dark border-0 shadow-sm mb-4">
         <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
-                <i class="bi bi-wallet2 me-2"></i>Estado de crédito del cliente
+                    <i class="bi bi-wallet2 me-2" aria-hidden="true"></i>Estado de crédito del cliente
             </h5>
             @if (User.TienePermiso("clientes", "managecreditlimits"))
             {
                 <a asp-action="LimitesPorPuntaje" asp-route-returnUrl="@returnUrl" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-sliders me-1"></i>Editar límites
+                    <i class="bi bi-sliders me-1" aria-hidden="true"></i>Editar límites
                 </a>
             }
         </div>
@@ -240,9 +243,9 @@
         <div class="col-md-3">
             <div class="card bg-dark border-0 h-100">
                 <div class="card-body text-center py-3">
-                    <small class="text-secondary d-block mb-1">Crédito Disponible</small>
-                    <h2 class="fw-bold text-success mb-0">@Model.EvaluacionCredito.MontoMaximoDisponible.ToString("C0")</h2>
-                    <small class="text-secondary">máximo</small>
+                    <small class="text-secondary d-block mb-1">Cupo Disponible</small>
+                    <h2 class="fw-bold text-success mb-0">@disponibleActualTexto</h2>
+                    <small class="text-secondary">actual</small>
                 </div>
             </div>
         </div>
@@ -283,32 +286,32 @@
             @if (aptitud.Estado == TheBuryProject.Models.Enums.EstadoCrediticioCliente.Apto)
             {
                 <a asp-controller="Venta" asp-action="Create" asp-route-clienteId="@Model.Cliente.Id" class="btn btn-success btn-lg px-4">
-                    <i class="bi bi-cart-plus me-2"></i>Nueva Venta a Crédito
+                    <i class="bi bi-cart-plus me-2" aria-hidden="true"></i>Nueva Venta a Crédito
                 </a>
                 <span class="ms-3 text-success">
-                    <i class="bi bi-check-circle me-1"></i>Cliente apto para crédito - Cupo disponible: @aptitud.Cupo.CupoDisponible.ToString("C0")
+                    <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Cliente apto para crédito - Cupo disponible: @aptitud.Cupo.CupoDisponible.ToString("C0")
                 </span>
             }
             else if (aptitud.Estado == TheBuryProject.Models.Enums.EstadoCrediticioCliente.RequiereAutorizacion)
             {
                 <div class="d-flex align-items-center gap-3">
                     <a asp-controller="Venta" asp-action="Create" asp-route-clienteId="@Model.Cliente.Id" class="btn btn-warning btn-lg px-4">
-                        <i class="bi bi-shield-exclamation me-2"></i>Nueva Venta (Requiere Autorización)
+                        <i class="bi bi-shield-exclamation me-2" aria-hidden="true"></i>Nueva Venta (Requiere Autorización)
                     </a>
                     <span class="text-warning small">
-                        <i class="bi bi-info-circle me-1"></i>@aptitud.Motivo
+                        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>@aptitud.Motivo
                     </span>
                 </div>
             }
             else if (aptitud.Estado == TheBuryProject.Models.Enums.EstadoCrediticioCliente.NoApto)
             {
                 <div class="alert alert-danger border-0 d-inline-flex align-items-center mb-0 py-2 px-3">
-                    <i class="bi bi-x-circle me-2"></i>
+                    <i class="bi bi-x-circle me-2" aria-hidden="true"></i>
                     <span><strong>No Apto para Crédito:</strong> @aptitud.Motivo</span>
                     @if (!aptitud.Cupo.TieneCupoAsignado && (User.IsInRole(Roles.SuperAdmin) || User.IsInRole(Roles.Gerente)))
                     {
                         <button type="button" class="btn btn-outline-light btn-sm ms-3" data-bs-toggle="modal" data-bs-target="#asignarLimiteCreditoModal">
-                            <i class="bi bi-wallet2 me-1"></i>Asignar Cupo
+                            <i class="bi bi-wallet2 me-1" aria-hidden="true"></i>Asignar Cupo
                         </button>
                     }
                 </div>
@@ -316,7 +319,7 @@
             else
             {
                 <div class="alert alert-secondary border-0 d-inline-flex align-items-center mb-0 py-2 px-3">
-                    <i class="bi bi-question-circle me-2"></i>
+                    <i class="bi bi-question-circle me-2" aria-hidden="true"></i>
                     <span>Cliente sin evaluar. @(aptitud.AdvertenciaConfiguracion ?? "Complete los datos para evaluación.")</span>
                 </div>
             }
@@ -420,7 +423,7 @@
                         @if (aptitud.Cupo.CreditoUtilizado > 0)
                         {
                             <div class="alert alert-info py-2 mb-0">
-                                <i class="bi bi-info-circle me-1"></i>
+                                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                                 <small>Crédito utilizado actualmente: @aptitud.Cupo.CreditoUtilizado.ToString("C0")</small>
                             </div>
                         }
@@ -428,7 +431,7 @@
                     <div class="modal-footer border-secondary">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i>Guardar
+                            <i class="bi bi-check-lg me-1" aria-hidden="true"></i>Guardar
                         </button>
                     </div>
                 </form>

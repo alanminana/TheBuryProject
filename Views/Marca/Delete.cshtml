@@ -10,20 +10,20 @@
         <div class="col-lg-8">
             <div class="mb-4">
                 <a href="@backUrl" class="text-decoration-none text-light">
-                    <i class="bi bi-arrow-left me-2"></i>Volver al listado
+                    <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver al listado
                 </a>
             </div>
 
             <div class="card bg-dark border-danger shadow-sm">
                 <div class="card-header bg-danger text-white py-3">
                     <h4 class="mb-0 fw-bold">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Eliminar Marca
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Eliminar Marca
                     </h4>
                 </div>
 
                 <div class="card-body text-light p-4">
                     <div class="alert alert-warning border-0 d-flex align-items-start shadow-sm" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill fs-3 me-3 flex-shrink-0"></i>
+                        <i class="bi bi-exclamation-triangle-fill fs-3 me-3 flex-shrink-0" aria-hidden="true"></i>
                         <div>
                             <h5 class="alert-heading fw-bold mb-2">¿Confirmás eliminar esta marca?</h5>
                             <p class="mb-0 small">Esta acción no se puede deshacer. La marca quedará deshabilitada para nuevos productos.</p>
@@ -45,7 +45,7 @@
                                     @if (!string.IsNullOrEmpty(Model.PaisOrigen))
                                     {
                                         <span class="badge bg-info text-dark fs-6 px-3 py-2">
-                                            <i class="bi bi-flag"></i> @Model.PaisOrigen
+                                            <i class="bi bi-flag" aria-hidden="true"></i> @Model.PaisOrigen
                                         </span>
                                     }
                                     else
@@ -76,13 +76,13 @@
                                     @if (!string.IsNullOrEmpty(Model.ParentNombre))
                                     {
                                         <span class="badge bg-secondary text-light fs-6 px-3 py-2">
-                                            <i class="bi bi-diagram-3 me-1"></i>@Model.ParentNombre
+                                            <i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>@Model.ParentNombre
                                         </span>
                                     }
                                     else
                                     {
                                         <span class="badge bg-primary text-light fs-6 px-3 py-2">
-                                            <i class="bi bi-star-fill me-1"></i>Marca Principal
+                                            <i class="bi bi-star-fill me-1" aria-hidden="true"></i>Marca Principal
                                         </span>
                                     }
                                 </div>
@@ -99,10 +99,10 @@
 
                         <div class="d-flex justify-content-end gap-2">
                             <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
-                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                                <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-danger btn-lg px-4" data-confirm="¿Eliminar la marca '@Model.Nombre'? Esta acción la deshabilita para nuevos productos." data-confirm-title="Confirmar eliminación">
-                                <i class="bi bi-trash me-2"></i>Eliminar Marca
+                                <i class="bi bi-trash me-2" aria-hidden="true"></i>Eliminar Marca
                             </button>
                         </div>
                     </form>

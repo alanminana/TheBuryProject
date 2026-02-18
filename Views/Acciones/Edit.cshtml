@@ -6,20 +6,20 @@
     var backUrl = returnUrl ?? Url.Action("Details", "Acciones", new { id = Model.Id, returnUrl })!;
 }
 
-<div class="container-fluid px-0">
+<section class="container-fluid px-0 py-3 text-light">
 
     <!-- Header de página -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
             <div class="text-muted text-uppercase small mb-1">Acciones</div>
             <h1 class="h4 mb-0 d-flex align-items-center gap-2">
-                <i class="bi bi-pencil"></i>
+                <i class="bi bi-pencil" aria-hidden="true"></i>
                 <span>Editar acción</span>
             </h1>
         </div>
 
         <a href="@backUrl" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
             Volver al listado
         </a>
     </div>
@@ -33,9 +33,15 @@
 
                     <form asp-action="Edit" method="post" novalidate>
                         <input type="hidden" asp-for="Id" />
-                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        @if (!string.IsNullOrWhiteSpace(returnUrl))
+                        {
+                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        }
 
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+                        }
 
                         <!-- Módulo -->
                         <div class="mb-3">
@@ -43,7 +49,7 @@
                             <select asp-for="ModuloId" class="form-select" asp-items="ViewBag.Modulos">
                                 <option value="">Seleccione un módulo...</option>
                             </select>
-                            <span asp-validation-for="ModuloId" class="text-danger small"></span>
+                            <span asp-validation-for="ModuloId" class="text-danger small" id="ModuloIdError"></span>
                         </div>
 
                         <!-- Nombre / Clave -->
@@ -51,13 +57,18 @@
                             <div class="col-md-6 mb-3">
                                 <label asp-for="Nombre" class="form-label"></label>
                                 <input asp-for="Nombre" class="form-control" />
-                                <span asp-validation-for="Nombre" class="text-danger small"></span>
+                                <span asp-validation-for="Nombre" class="text-danger small" id="NombreError"></span>
                             </div>
+
                             <div class="col-md-6 mb-3">
                                 <label asp-for="Clave" class="form-label"></label>
-                                <input asp-for="Clave" class="form-control" />
-                                <span asp-validation-for="Clave" class="text-danger small d-block"></span>
-                                <div class="form-text">
+                                <input asp-for="Clave"
+                                       class="form-control"
+                                       aria-describedby="ClaveHelp ClaveError" />
+
+                                <span asp-validation-for="Clave" class="text-danger small d-block" id="ClaveError"></span>
+
+                                <div class="form-text" id="ClaveHelp">
                                     Solo letras minúsculas, números y guiones.
                                 </div>
                             </div>
@@ -67,18 +78,18 @@
                         <div class="mb-3">
                             <label asp-for="Descripcion" class="form-label"></label>
                             <textarea asp-for="Descripcion" class="form-control" rows="3"></textarea>
-                            <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                            <span asp-validation-for="Descripcion" class="text-danger small" id="DescripcionError"></span>
                         </div>
 
                         <!-- Activo -->
-                        <div class="mb-3 form-check">
-                            <input asp-for="Activo" class="form-check-input" />
+                        <div class="mb-3 form-check form-switch">
+                            <input asp-for="Activo" class="form-check-input" type="checkbox" />
                             <label asp-for="Activo" class="form-check-label"></label>
                         </div>
 
                         <!-- Advertencia -->
                         <div class="alert alert-warning d-flex align-items-start gap-2">
-                            <i class="bi bi-exclamation-triangle mt-1"></i>
+                            <i class="bi bi-exclamation-triangle mt-1" aria-hidden="true"></i>
                             <div>
                                 <strong>Advertencia.</strong>
                                 <div class="small">
@@ -90,10 +101,10 @@
                         <!-- Botones -->
                         <div class="d-flex justify-content-end gap-2 mt-3">
                             <a href="@backUrl" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-lg me-1"></i>Cancelar
+                                <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-1"></i>Guardar cambios
+                                <i class="bi bi-save me-1" aria-hidden="true"></i>Guardar cambios
                             </button>
                         </div>
                     </form>
@@ -103,7 +114,7 @@
 
         </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
     @{

@@ -13,43 +13,47 @@
     <!-- Header de página -->
     <div class="row align-items-start justify-content-between mb-4 page-toolbar-print g-3">
         <div class="col">
-            <div class="text-muted text-uppercase small mb-1">Cajas</div>
+            <div class="text-body-secondary text-uppercase small mb-1">Cajas</div>
             <h1 class="h4 mb-1 d-flex align-items-center gap-2">
-                <i class="bi bi-file-text"></i>
+                <i class="bi bi-file-text" aria-hidden="true"></i>
                 <span>Comprobante de cierre de caja</span>
             </h1>
-            <p class="text-muted small mb-0">
+            <p class="text-body-secondary small mb-0">
                 Resumen del cierre, arqueo físico y diferencias registradas para la caja seleccionada.
             </p>
         </div>
 
         <div class="col-auto d-flex flex-wrap gap-2">
             <button type="button" class="btn btn-primary btn-sm" id="imprimirCierre">
-                <i class="bi bi-printer me-1"></i>Imprimir
+                <i class="bi bi-printer me-1" aria-hidden="true"></i>Imprimir
             </button>
             @{
                 var returnUrl = ViewBag.ReturnUrl as string;
             }
-            @if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl.Contains("/Caja/DetallesApertura", StringComparison.OrdinalIgnoreCase))
+            @if (!string.IsNullOrWhiteSpace(returnUrl)
+                 && Url.IsLocalUrl(returnUrl)
+                 && returnUrl.Contains("/Caja/DetallesApertura", StringComparison.OrdinalIgnoreCase))
             {
                 <a href="@returnUrl" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-left me-1"></i>Volver a la apertura
+                    <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver a la apertura
                 </a>
             }
-            @if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) && returnUrl.Contains("/Caja/Historial", StringComparison.OrdinalIgnoreCase))
+            @if (!string.IsNullOrWhiteSpace(returnUrl)
+                 && Url.IsLocalUrl(returnUrl)
+                 && returnUrl.Contains("/Caja/Historial", StringComparison.OrdinalIgnoreCase))
             {
                 <a href="@returnUrl" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-clock-history me-1"></i>Ver historial
+                    <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Ver historial
                 </a>
             }
             else
             {
                 <a asp-action="Historial" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-clock-history me-1"></i>Ver historial
+                    <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Ver historial
                 </a>
             }
             <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-arrow-left me-1"></i>Volver al listado
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver al listado
             </a>
         </div>
     </div>
@@ -60,9 +64,13 @@
             <!-- Encabezado del comprobante -->
             <div class="text-center mb-4">
                 <h2 class="h4 mb-1">COMPROBANTE DE CIERRE DE CAJA</h2>
-                <p class="text-muted small mb-0">
+                <p class="text-body-secondary small mb-0">
                     Fecha de cierre:
-                    <strong>@Model.FechaCierre.ToString("dd/MM/yyyy HH:mm")</strong>
+                    <strong>
+                        <time datetime="@Model.FechaCierre.ToString("O")">
+                            @Model.FechaCierre.ToString("dd/MM/yyyy HH:mm")
+                        </time>
+                    </strong>
                 </p>
             </div>
 
@@ -71,12 +79,12 @@
                 <div class="col-md-6">
                     <div class="card bg-dark border-0 h-100 shadow-sm">
                         <div class="card-body">
-                            <h2 class="h6 text-uppercase text-muted mb-3">Información de la caja</h2>
+                            <h2 class="h6 text-uppercase text-body-secondary mb-3">Información de la caja</h2>
                             <div class="table-responsive">
                                 <table class="table table-dark table-hover align-middle mb-0">
                                     <tbody class="small">
                                         <tr>
-                                            <td class="text-muted w-25">Caja</td>
+                                            <td class="text-body-secondary w-25">Caja</td>
                                             <td>
                                                 <strong>
                                                     @Model.AperturaCaja.Caja.Nombre (@Model.AperturaCaja.Caja.Codigo)
@@ -84,11 +92,11 @@
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-muted">Sucursal</td>
+                                            <td class="text-body-secondary">Sucursal</td>
                                             <td>@(Model.AperturaCaja.Caja.Sucursal ?? "-")</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-muted">Ubicación</td>
+                                            <td class="text-body-secondary">Ubicación</td>
                                             <td>@(Model.AperturaCaja.Caja.Ubicacion ?? "-")</td>
                                         </tr>
                                     </tbody>
@@ -101,28 +109,32 @@
                 <div class="col-md-6">
                     <div class="card bg-dark border-0 h-100 shadow-sm">
                         <div class="card-body">
-                            <h2 class="h6 text-uppercase text-muted mb-3">Información del turno</h2>
+                            <h2 class="h6 text-uppercase text-body-secondary mb-3">Información del turno</h2>
                             <div class="table-responsive">
                                 <table class="table table-dark table-hover align-middle mb-0">
                                     <tbody class="small">
                                         <tr>
-                                            <td class="text-muted w-35">Apertura</td>
+                                            <td class="text-body-secondary w-35">Apertura</td>
                                             <td>
-                                                @Model.AperturaCaja.FechaApertura.ToString("dd/MM/yyyy HH:mm")
+                                                <time datetime="@Model.AperturaCaja.FechaApertura.ToString("O")">
+                                                    @Model.AperturaCaja.FechaApertura.ToString("dd/MM/yyyy HH:mm")
+                                                </time>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-muted">Cierre</td>
+                                            <td class="text-body-secondary">Cierre</td>
                                             <td>
-                                                @Model.FechaCierre.ToString("dd/MM/yyyy HH:mm")
+                                                <time datetime="@Model.FechaCierre.ToString("O")">
+                                                    @Model.FechaCierre.ToString("dd/MM/yyyy HH:mm")
+                                                </time>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-muted">Usuario apertura</td>
+                                            <td class="text-body-secondary">Usuario apertura</td>
                                             <td>@Model.AperturaCaja.UsuarioApertura</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-muted">Usuario cierre</td>
+                                            <td class="text-body-secondary">Usuario cierre</td>
                                             <td>@Model.UsuarioCierre</td>
                                         </tr>
                                     </tbody>
@@ -137,12 +149,12 @@
 
             <!-- Datos del sistema -->
             <div class="mb-3">
-                <h2 class="h6 text-uppercase text-muted mb-3">Datos del sistema</h2>
+                <h2 class="h6 text-uppercase text-body-secondary mb-3">Datos del sistema</h2>
                 <div class="row g-3">
                     <div class="col-6 col-md-3">
                         <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
-                                <small class="text-muted text-uppercase d-block mb-1">Monto inicial</small>
+                                <small class="text-body-secondary text-uppercase d-block mb-1">Monto inicial</small>
                                 <h5 class="mb-0 text-primary">
                                     @Model.MontoInicialSistema.ToString("C")
                                 </h5>
@@ -152,7 +164,7 @@
                     <div class="col-6 col-md-3">
                         <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
-                                <small class="text-muted text-uppercase d-block mb-1">Total ingresos</small>
+                                <small class="text-body-secondary text-uppercase d-block mb-1">Total ingresos</small>
                                 <h5 class="mb-0 text-success">
                                     @Model.TotalIngresosSistema.ToString("C")
                                 </h5>
@@ -162,7 +174,7 @@
                     <div class="col-6 col-md-3">
                         <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
-                                <small class="text-muted text-uppercase d-block mb-1">Total egresos</small>
+                                <small class="text-body-secondary text-uppercase d-block mb-1">Total egresos</small>
                                 <h5 class="mb-0 text-danger">
                                     @Model.TotalEgresosSistema.ToString("C")
                                 </h5>
@@ -172,7 +184,7 @@
                     <div class="col-6 col-md-3">
                         <div class="card border-0 bg-info bg-opacity-25 h-100 shadow-sm">
                             <div class="card-body text-center py-3">
-                                <small class="text-muted text-uppercase d-block mb-1">Monto esperado</small>
+                                <small class="text-body-secondary text-uppercase d-block mb-1">Monto esperado</small>
                                 <h5 class="mb-0 text-info">
                                     @Model.MontoEsperadoSistema.ToString("C")
                                 </h5>
@@ -184,12 +196,12 @@
 
             <!-- Arqueo físico -->
             <div class="mt-4 mb-3">
-                <h2 class="h6 text-uppercase text-muted mb-3">Arqueo físico</h2>
+                <h2 class="h6 text-uppercase text-body-secondary mb-3">Arqueo físico</h2>
                 <div class="row g-3">
                     <div class="col-6 col-md-3">
                         <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
-                                <small class="text-muted text-uppercase d-block mb-1">Efectivo</small>
+                                <small class="text-body-secondary text-uppercase d-block mb-1">Efectivo</small>
                                 <h5 class="mb-0">
                                     @Model.EfectivoContado.ToString("C")
                                 </h5>
@@ -199,7 +211,7 @@
                     <div class="col-6 col-md-3">
                         <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
-                                <small class="text-muted text-uppercase d-block mb-1">Cheques</small>
+                                <small class="text-body-secondary text-uppercase d-block mb-1">Cheques</small>
                                 <h5 class="mb-0">
                                     @Model.ChequesContados.ToString("C")
                                 </h5>
@@ -209,7 +221,7 @@
                     <div class="col-6 col-md-3">
                         <div class="card border-0 bg-dark h-100 shadow-sm">
                             <div class="card-body text-center py-3">
-                                <small class="text-muted text-uppercase d-block mb-1">Vales / otros</small>
+                                <small class="text-body-secondary text-uppercase d-block mb-1">Vales / otros</small>
                                 <h5 class="mb-0">
                                     @Model.ValesContados.ToString("C")
                                 </h5>
@@ -219,7 +231,7 @@
                     <div class="col-6 col-md-3">
                         <div class="card border-0 bg-primary bg-opacity-25 h-100 shadow-sm">
                             <div class="card-body text-center py-3">
-                                <small class="text-muted text-uppercase d-block mb-1">Total real</small>
+                                <small class="text-body-secondary text-uppercase d-block mb-1">Total real</small>
                                 <h5 class="mb-0 text-primary">
                                     @Model.MontoTotalReal.ToString("C")
                                 </h5>
@@ -241,7 +253,7 @@
                 }
                 <div class="card bg-dark border-0 shadow-sm @diffCardClass">
                     <div class="card-body text-center">
-                        <h2 class="h6 text-uppercase text-muted mb-2">Diferencia</h2>
+                        <h2 class="h6 text-uppercase text-body-secondary mb-2">Diferencia</h2>
 
                         @if (Model.TieneDiferencia)
                         {
@@ -251,20 +263,20 @@
                             @if (Model.Diferencia > 0)
                             {
                                 <p class="text-success mb-0 small">
-                                    <i class="bi bi-arrow-up-circle me-1"></i>Sobrante
+                                    <i class="bi bi-arrow-up-circle me-1" aria-hidden="true"></i>Sobrante
                                 </p>
                             }
                             else
                             {
                                 <p class="text-danger mb-0 small">
-                                    <i class="bi bi-arrow-down-circle me-1"></i>Faltante
+                                    <i class="bi bi-arrow-down-circle me-1" aria-hidden="true"></i>Faltante
                                 </p>
                             }
                         }
                         else
                         {
                             <h2 class="text-success mb-1">
-                                <i class="bi bi-check-circle me-1"></i>$0,00
+                                <i class="bi bi-check-circle me-1" aria-hidden="true"></i>$0,00
                             </h2>
                             <p class="text-success mb-0 small">Cierre exacto</p>
                         }
@@ -275,9 +287,9 @@
             <!-- Justificación de diferencia -->
             @if (Model.TieneDiferencia && !string.IsNullOrWhiteSpace(Model.JustificacionDiferencia))
             {
-                <div class="alert alert-warning mb-4">
+                <div class="alert alert-warning mb-4" role="alert">
                     <h2 class="h6 mb-2 d-flex align-items-center gap-2">
-                        <i class="bi bi-exclamation-triangle"></i>
+                        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                         <span>Justificación de diferencia</span>
                     </h2>
                     <p class="mb-0 small">@Model.JustificacionDiferencia</p>
@@ -288,7 +300,7 @@
             @if (!string.IsNullOrWhiteSpace(Model.DetalleArqueo))
             {
                 <div class="mb-4">
-                    <h2 class="h6 text-uppercase text-muted mb-2">Detalle de billetes y monedas</h2>
+                    <h2 class="h6 text-uppercase text-body-secondary mb-2">Detalle de billetes y monedas</h2>
                     <div class="card bg-dark border-0 shadow-sm">
                         <div class="card-body">
                             <pre class="mb-0 small">@Model.DetalleArqueo</pre>
@@ -301,7 +313,7 @@
             @if (!string.IsNullOrWhiteSpace(Model.ObservacionesCierre))
             {
                 <div class="mb-4">
-                    <h2 class="h6 text-uppercase text-muted mb-2">Observaciones del cierre</h2>
+                    <h2 class="h6 text-uppercase text-body-secondary mb-2">Observaciones del cierre</h2>
                     <div class="card bg-dark border-0 shadow-sm">
                         <div class="card-body">
                             <p class="mb-0 small">@Model.ObservacionesCierre</p>
@@ -312,7 +324,7 @@
 
             <!-- Resumen de movimientos -->
             <div class="mb-4">
-                <h2 class="h6 text-uppercase text-muted mb-2">Resumen de movimientos</h2>
+                <h2 class="h6 text-uppercase text-body-secondary mb-2">Resumen de movimientos</h2>
                 <div class="card bg-dark border-0 shadow-sm">
                     <div class="card-body small">
                         <p class="mb-1">
@@ -336,14 +348,14 @@
                 <div class="col-md-6 text-center mb-4 mb-md-0">
                     <hr />
                     <p class="mb-0 small"><strong>Firma usuario apertura</strong></p>
-                    <small class="text-muted">@Model.AperturaCaja.UsuarioApertura</small>
+                    <small class="text-body-secondary">@Model.AperturaCaja.UsuarioApertura</small>
                 </div>
                 <div class="col-md-6 text-center">
                     <hr />
                     <p class="mb-0 small"><strong>Firma usuario cierre</strong></p>
-                    <small class="text-muted">@Model.UsuarioCierre</small>
+                    <small class="text-body-secondary">@Model.UsuarioCierre</small>
                 </div>
-                </div>
+            </div>
 
         </div>
     </div>

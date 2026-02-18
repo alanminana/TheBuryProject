@@ -11,12 +11,15 @@
         <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Crear Nuevo Módulo</h4>
+                    <h4 class="mb-0"><i class="bi bi-plus-circle me-2" aria-hidden="true"></i>Crear Nuevo Módulo</h4>
                 </div>
                 <div class="card-body">
                     <form asp-action="Create" method="post">
                         <input type="hidden" name="returnUrl" value="@returnUrl" />
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        }
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -63,10 +66,10 @@
 
                         <div class="d-flex justify-content-between mt-4">
                             <a href="@backUrl" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-1"></i>Crear Módulo
+                                <i class="bi bi-save me-1" aria-hidden="true"></i>Crear Módulo
                             </button>
                         </div>
                     </form>

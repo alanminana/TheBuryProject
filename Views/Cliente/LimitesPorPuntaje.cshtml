@@ -26,7 +26,7 @@
             @if (!ViewData.ModelState.IsValid)
             {
                 <div class="alert alert-danger border-0 shadow-sm">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
                     Revise los datos ingresados antes de guardar.
                 </div>
             }
@@ -34,7 +34,7 @@
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-secondary text-light">
                     <h5 class="mb-0">
-                        <i class="bi bi-table me-2"></i>Configuración de límites
+                        <i class="bi bi-table me-2" aria-hidden="true"></i>Configuración de límites
                     </h5>
                 </div>
                 <div class="card-body">
@@ -45,7 +45,7 @@
                     @if (!puedeAdministrarLimites)
                     {
                         <div class="alert alert-info border-0 shadow-sm">
-                            <i class="bi bi-eye me-2"></i>
+                            <i class="bi bi-eye me-2" aria-hidden="true"></i>
                             Modo solo lectura: no cuenta con permiso para administrar límites de crédito por puntaje.
                         </div>
                     }
@@ -59,10 +59,10 @@
                             <table class="table table-dark table-hover align-middle mb-3">
                                 <thead class="table-secondary text-dark">
                                     <tr>
-                                        <th style="width: 35%;">Puntaje</th>
-                                        <th style="width: 30%;">Límite</th>
-                                        <th style="width: 15%;" class="text-center">Activo</th>
-                                        <th style="width: 20%;">Última actualización</th>
+                                        <th scope="col" style="width: 35%;">Puntaje</th>
+                                        <th scope="col" style="width: 30%;">Límite</th>
+                                        <th scope="col" style="width: 15%;" class="text-center">Activo</th>
+                                        <th scope="col" style="width: 20%;">Última actualización</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -113,12 +113,12 @@
 
                         <div class="d-flex justify-content-end gap-2">
                             <a href="@backUrl" class="btn btn-outline-light">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             @if (puedeAdministrarLimites)
                             {
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-save me-1"></i>Guardar
+                                    <i class="bi bi-save me-1" aria-hidden="true"></i>Guardar
                                 </button>
                             }
                         </div>

@@ -10,14 +10,14 @@
         <div class="col-lg-8">
             <div class="mb-4">
                 <a href="@backUrl" class="text-decoration-none text-light">
-                    <i class="bi bi-arrow-left me-2"></i>Volver al listado
+                    <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver al listado
                 </a>
             </div>
 
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-warning text-dark py-3">
                     <h4 class="mb-0 fw-bold">
-                        <i class="bi bi-pencil-square me-2"></i>Editar Marca
+                        <i class="bi bi-pencil-square me-2" aria-hidden="true"></i>Editar Marca
                     </h4>
                 </div>
 
@@ -33,7 +33,7 @@
                         @if (!ViewData.ModelState.IsValid)
                         {
                             <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center" role="alert">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
                                 <div>Corregí los errores antes de continuar</div>
                             </div>
                         }
@@ -88,10 +88,10 @@
 
                         <div class="d-flex justify-content-end gap-2">
                             <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
-                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                                <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-warning btn-lg px-4 text-dark fw-semibold">
-                                <i class="bi bi-check-circle me-2"></i>Actualizar Marca
+                                <i class="bi bi-check-circle me-2" aria-hidden="true"></i>Actualizar Marca
                             </button>
                         </div>
                     </form>

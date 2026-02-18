@@ -7,6 +7,7 @@ using TheBuryProject.Helpers;
 using TheBuryProject.Models.Constants;
 using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
+using TheBuryProject.Services.Exceptions;
 using TheBuryProject.Services.Interfaces;
 using TheBuryProject.Services.Validators;
 using TheBuryProject.ViewModels;
@@ -30,6 +31,7 @@ namespace TheBuryProject.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IValidacionVentaService _validacionVentaService;
         private readonly ICajaService _cajaService;
+        private readonly ICreditoDisponibleService _creditoDisponibleService;
 
         public VentaService(
             AppDbContext context,
@@ -44,7 +46,8 @@ namespace TheBuryProject.Services
             IPrecioService precioService,
             IHttpContextAccessor httpContextAccessor,
             IValidacionVentaService validacionVentaService,
-            ICajaService cajaService)
+            ICajaService cajaService,
+            ICreditoDisponibleService? creditoDisponibleService = null)
         {
             _context = context;
             _mapper = mapper;
@@ -59,6 +62,7 @@ namespace TheBuryProject.Services
             _httpContextAccessor = httpContextAccessor;
             _validacionVentaService = validacionVentaService;
             _cajaService = cajaService;
+            _creditoDisponibleService = creditoDisponibleService ?? new CreditoDisponibleService(_context);
         }
 
         #region Consultas
@@ -174,6 +178,8 @@ namespace TheBuryProject.Services
 
                 CalcularTotales(venta);
 
+                await CapturarSnapshotLimiteCreditoAsync(venta);
+
                 // Validación unificada para crédito personal
                 ValidacionVentaResult? validacion = null;
                 if (viewModel.TipoPago == TipoPago.CreditoPersonal)
@@ -278,6 +284,75 @@ namespace TheBuryProject.Services
 
             throw new InvalidOperationException(
                 "No se pudo generar un número de venta único tras varios reintentos. Intente nuevamente.");
+        }
+
+        private async Task CapturarSnapshotLimiteCreditoAsync(Venta venta)
+        {
+            if (venta.TipoPago != TipoPago.CreditoPersonal)
+            {
+                return;
+            }
+
+            var cliente = await _context.Clientes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == venta.ClienteId && !c.IsDeleted);
+
+            if (cliente == null)
+            {
+                return;
+            }
+
+            venta.PuntajeAlMomento = cliente.PuntajeRiesgo;
+
+            var config = await _context.ClientesCreditoConfiguraciones
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.ClienteId == cliente.Id);
+
+            PuntajeCreditoLimite? preset = null;
+
+            if (config?.CreditoPresetId.HasValue == true)
+            {
+                preset = await _context.PuntajesCreditoLimite
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == config.CreditoPresetId.Value && p.Activo);
+            }
+
+            preset ??= await _context.PuntajesCreditoLimite
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Puntaje == cliente.NivelRiesgo && p.Activo);
+
+            var limiteBase = preset?.LimiteMonto ?? 0m;
+            var limiteOverride = config?.LimiteOverride ?? cliente.LimiteCredito;
+            var excepcionDelta = ObtenerExcepcionDeltaVigente(config, DateTime.UtcNow);
+
+            var limiteEfectivo = CreditoDisponibleService
+                .CalcularLimiteEfectivo(limiteBase, limiteOverride, excepcionDelta)
+                .Limite;
+
+            venta.PresetIdAlMomento = preset?.Id;
+            venta.OverrideAlMomento = limiteOverride;
+            venta.ExcepcionAlMomento = excepcionDelta > 0m ? excepcionDelta : null;
+            venta.LimiteAplicado = limiteEfectivo > 0m ? limiteEfectivo : null;
+        }
+
+        private static decimal ObtenerExcepcionDeltaVigente(ClienteCreditoConfiguracion? config, DateTime fechaUtc)
+        {
+            if (config?.ExcepcionDelta is null || config.ExcepcionDelta.Value <= 0)
+            {
+                return 0m;
+            }
+
+            if (config.ExcepcionDesde.HasValue && config.ExcepcionDesde.Value > fechaUtc)
+            {
+                return 0m;
+            }
+
+            if (config.ExcepcionHasta.HasValue && config.ExcepcionHasta.Value < fechaUtc)
+            {
+                return 0m;
+            }
+
+            return config.ExcepcionDelta.Value;
         }
 
         private static bool EsErrorNumeroVentaDuplicado(DbUpdateException ex)
@@ -550,6 +625,8 @@ namespace TheBuryProject.Services
                 // Para crédito personal, re-validar requisitos antes de confirmar
                 if (venta.TipoPago == TipoPago.CreditoPersonal)
                 {
+                    await AsegurarSnapshotLimiteCreditoAsync(venta);
+
                     var validacion = await _validacionVentaService.ValidarConfirmacionVentaAsync(id);
                     
                     if (validacion.PendienteRequisitos)
@@ -571,6 +648,8 @@ namespace TheBuryProject.Services
                         throw new InvalidOperationException(
                             $"La venta requiere autorización. {validacion.MensajeResumen}");
                     }
+
+                    await ValidarCupoDisponibleEnConfirmacionAsync(venta, venta.Total);
                 }
                 else
                 {
@@ -674,6 +753,11 @@ namespace TheBuryProject.Services
                     credito?.Estado);
                 if (credito == null)
                     throw new InvalidOperationException("Crédito no encontrado.");
+
+                await AsegurarSnapshotLimiteCreditoAsync(venta);
+
+                var montoOperacion = credito.MontoAprobado > 0m ? credito.MontoAprobado : venta.Total;
+                await ValidarCupoDisponibleEnConfirmacionAsync(venta, montoOperacion);
 
                 // Permitir confirmar si el crédito está Configurado O si la venta tiene el flag
                 if (credito.Estado != EstadoCredito.Configurado && !venta.FechaConfiguracionCredito.HasValue)
@@ -1762,6 +1846,8 @@ namespace TheBuryProject.Services
                         $"Saldo de crédito insuficiente. Disponible: ${credito.SaldoPendiente:N2}, Requerido: ${montoAFinanciar:N2}");
                 }
 
+                await ValidarCupoDisponibleEnConfirmacionAsync(venta, montoAFinanciar);
+
                 // E4: Asignar CreditoId a la venta (ahora sí, post-autorización)
                 venta.CreditoId = creditoId;
 
@@ -1794,6 +1880,58 @@ namespace TheBuryProject.Services
             {
                 _logger.LogError(ex, "Error al deserializar datos de crédito JSON para venta {VentaId}", venta.Id);
                 throw new InvalidOperationException("Error al procesar los datos del plan de crédito");
+            }
+        }
+
+        private async Task AsegurarSnapshotLimiteCreditoAsync(Venta venta)
+        {
+            if (venta.TipoPago != TipoPago.CreditoPersonal)
+            {
+                return;
+            }
+
+            if (venta.LimiteAplicado.HasValue)
+            {
+                return;
+            }
+
+            await CapturarSnapshotLimiteCreditoAsync(venta);
+        }
+
+        private async Task ValidarCupoDisponibleEnConfirmacionAsync(Venta venta, decimal montoOperacion)
+        {
+            if (venta.TipoPago != TipoPago.CreditoPersonal || montoOperacion <= 0m)
+            {
+                return;
+            }
+
+            try
+            {
+                var disponible = await _creditoDisponibleService.CalcularDisponibleAsync(venta.ClienteId);
+
+                if (disponible.Limite <= 0m)
+                {
+                    _logger.LogDebug(
+                        "Validación de cupo omitida en venta {VentaId}: límite efectivo no configurado (<= 0).",
+                        venta.Id);
+                    return;
+                }
+
+                if (montoOperacion > disponible.Disponible)
+                {
+                    throw new InvalidOperationException(
+                        $"Cupo de crédito insuficiente para confirmar la venta. " +
+                        $"Disponible actual: ${disponible.Disponible:N2}, requerido: ${montoOperacion:N2}. " +
+                        $"Fórmula aplicada: Disponible = LímiteEfectivo - SaldoPendienteVigente (saldo de créditos vigentes; no suma cuotas futuras por separado ni mora adicional)."
+                    );
+                }
+            }
+            catch (CreditoDisponibleException ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "No se pudo calcular cupo disponible para validar venta {VentaId}. Se mantiene validación legacy por saldo de crédito asociado.",
+                    venta.Id);
             }
         }
 

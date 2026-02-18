@@ -6,24 +6,27 @@
     var backUrl = returnUrl ?? Url.Action("Index", "Autorizacion")!;
 }
 
-<div class="container-fluid px-0">
+<section class="container-fluid px-0 py-3 text-light">
 
-    <!-- Header de página -->
-    <div class="d-flex align-items-center justify-content-between mb-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-4">
         <div>
             <div class="text-muted text-uppercase small mb-1">Autorizaciones</div>
-            <h1 class="h4 mb-1">Crear umbral de autorización</h1>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-plus-circle" aria-hidden="true"></i>
+                <span>Crear umbral de autorización</span>
+            </h1>
             <p class="text-muted small mb-0">
                 Define los límites máximos que requieren autorización según rol y tipo de umbral.
             </p>
         </div>
 
         <a href="@backUrl" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver al listado
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver al listado
         </a>
     </div>
 
-    <div class="row">
+    <div class="row g-3">
         <div class="col-12 col-lg-8 col-xl-6">
 
             <div class="card card-animate">
@@ -31,10 +34,15 @@
 
                     <form asp-action="CrearUmbral" method="post" novalidate>
                         @Html.AntiForgeryToken()
+                        @if (!string.IsNullOrWhiteSpace(returnUrl))
+                        {
+                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        }
 
-                        <input type="hidden" name="returnUrl" value="@returnUrl" />
-
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+                        }
 
                         <!-- Rol -->
                         <div class="mb-3">
@@ -71,10 +79,12 @@
                                        type="number"
                                        step="0.01"
                                        min="0"
+                                       inputmode="decimal"
+                                       aria-describedby="valorMaximoHelp"
                                        required />
                             </div>
                             <span asp-validation-for="ValorMaximo" class="text-danger small d-block"></span>
-                            <div class="form-text">
+                            <div class="form-text" id="valorMaximoHelp">
                                 Para descuentos, ingrese el porcentaje (ej: 15 para 15%).<br />
                                 Para montos, ingrese el valor en pesos.
                             </div>
@@ -91,18 +101,18 @@
                         </div>
 
                         <!-- Activo -->
-                        <div class="mb-3 form-check">
-                            <input asp-for="Activo" class="form-check-input" />
+                        <div class="mb-3 form-check form-switch">
+                            <input asp-for="Activo" class="form-check-input" type="checkbox" />
                             <label asp-for="Activo" class="form-check-label"></label>
                         </div>
 
                         <!-- Botones -->
                         <div class="d-flex justify-content-end gap-2 mt-3">
                             <a href="@backUrl" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-lg me-1"></i>Cancelar
+                                <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-1"></i>Guardar umbral
+                                <i class="bi bi-save me-1" aria-hidden="true"></i>Guardar umbral
                             </button>
                         </div>
                     </form>
@@ -112,10 +122,18 @@
 
         </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }
+
+@* 
+MEJORAS (solo HTML):
+- Se agregó role="alert" al summary de validación.
+- Se agregó inputmode/aria-describedby para mejor UX y accesibilidad.
+- Se mantuvo exactamente el mismo post/acción/model binding (sin cambios de backend).
+- Líneas: pueden aumentar por atributos ARIA; no puedo confirmar el número exacto sin comparar contra tu archivo en el repo.
+*@

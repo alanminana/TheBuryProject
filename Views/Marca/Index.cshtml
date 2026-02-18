@@ -11,16 +11,16 @@
     <div class="row align-items-center mb-4">
         <div class="col">
             <h1 class="h3 mb-1 fw-bold">
-                <i class="bi bi-award text-info"></i> Gestión de Marcas
+                <i class="bi bi-award text-info" aria-hidden="true"></i> Gestión de Marcas
             </h1>
             <p class="text-secondary mb-0">Administrá las marcas de productos registradas</p>
         </div>
         <div class="col-auto d-flex gap-2">
             <a href="@backToCatalogoUrl" class="btn btn-outline-light fw-semibold shadow-sm">
-                <i class="bi bi-arrow-left me-2"></i>Volver al Catálogo
+                <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver al Catálogo
             </a>
             <a asp-action="Create" class="btn btn-info text-dark fw-semibold btn-lg shadow-sm">
-                <i class="bi bi-plus-circle me-2"></i>Nueva Marca
+                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>Nueva Marca
             </a>
         </div>
     </div>
@@ -28,16 +28,16 @@
     @if (TempData["Success"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
@@ -49,10 +49,10 @@
                 data-bs-target="#filtrosCollapse"
                 aria-expanded="@(filtrosActivos.ToString().ToLower())">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-funnel"></i>
+                <i class="bi bi-funnel" aria-hidden="true"></i>
                 <span class="fw-semibold">Búsqueda y filtros</span>
             </div>
-            <i class="bi bi-chevron-down chevron"></i>
+            <i class="bi bi-chevron-down chevron" aria-hidden="true"></i>
         </button>
 
         <div class="collapse @(filtrosActivos ? "show" : "")" id="filtrosCollapse">
@@ -61,7 +61,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">
-                                <i class="bi bi-search me-1"></i>Buscar por texto
+                                <i class="bi bi-search me-1" aria-hidden="true"></i>Buscar por texto
                             </label>
                             <input type="text" class="form-control bg-body-secondary text-light border-0"
                                    name="searchTerm"
@@ -78,13 +78,13 @@
                                        value="true"
                                        @(Model.SoloActivos ? "checked" : "") />
                                 <label class="form-check-label" for="soloActivos">
-                                    <i class="bi bi-check-circle text-success me-1"></i>Solo marcas activas
+                                    <i class="bi bi-check-circle text-success me-1" aria-hidden="true"></i>Solo marcas activas
                                 </label>
                             </div>
                         </div>
 
                         <div class="col-md-2">
-                            <label class="form-label fw-semibold"><i class="bi bi-sort-down me-1"></i>Ordenar</label>
+                            <label class="form-label fw-semibold"><i class="bi bi-sort-down me-1" aria-hidden="true"></i>Ordenar</label>
                             <select class="form-select bg-body-secondary text-light border-0" name="orderBy">
                                 <option value="nombre" selected="@((Model.OrderBy == "nombre" || string.IsNullOrEmpty(Model.OrderBy)) ? "selected" : null)">Nombre</option>
                                 <option value="descripcion" selected="@(Model.OrderBy == "descripcion" ? "selected" : null)">Descripción</option>
@@ -102,10 +102,10 @@
                         <div class="col-12">
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-info text-dark fw-semibold">
-                                    <i class="bi bi-search me-2"></i>Buscar
+                                    <i class="bi bi-search me-2" aria-hidden="true"></i>Buscar
                                 </button>
                                 <a asp-action="Index" class="btn btn-outline-light">
-                                    <i class="bi bi-x-circle me-2"></i>Limpiar
+                                    <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Limpiar
                                 </a>
                             </div>
                         </div>
@@ -118,7 +118,7 @@
     @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos)
     {
         <div class="alert alert-info d-flex align-items-center mb-3 shadow-sm">
-            <i class="bi bi-info-circle me-2"></i>
+            <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
             <span>Se encontraron <strong>@Model.TotalResultados</strong> marcas coincidentes</span>
         </div>
     }
@@ -129,13 +129,13 @@
             <table class="table table-dark table-hover align-middle mb-0">
                 <thead class="bg-secondary text-light">
                     <tr>
-                        <th class="px-4">Código</th>
-                        <th>Nombre</th>
-                        <th>Descripción</th>
-                        <th>Marca Padre</th>
-                        <th>País de Origen</th>
-                        <th class="text-center">Estado</th>
-                        <th class="text-center px-4">Acciones</th>
+                        <th scope="col" class="px-4">Código</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Descripción</th>
+                        <th scope="col">Marca Padre</th>
+                        <th scope="col">País de Origen</th>
+                        <th scope="col" class="text-center">Estado</th>
+                        <th scope="col" class="text-center px-4">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -153,7 +153,7 @@
                                     @if (!string.IsNullOrEmpty(marca.ParentNombre))
                                     {
                                         <span class="badge bg-secondary">
-                                            <i class="bi bi-diagram-3"></i> @marca.ParentNombre
+                                            <i class="bi bi-diagram-3" aria-hidden="true"></i> @marca.ParentNombre
                                         </span>
                                     }
                                     else
@@ -166,13 +166,13 @@
                                     @if (marca.Activo)
                                     {
                                         <span class="badge bg-success">
-                                            <i class="bi bi-check-circle"></i> Activo
+                                            <i class="bi bi-check-circle" aria-hidden="true"></i> Activo
                                         </span>
                                     }
                                     else
                                     {
                                         <span class="badge bg-secondary">
-                                            <i class="bi bi-x-circle"></i> Inactivo
+                                            <i class="bi bi-x-circle" aria-hidden="true"></i> Inactivo
                                         </span>
                                     }
                                 </td>
@@ -181,17 +181,20 @@
                                         <a asp-action="Details" asp-route-id="@marca.Id"
                                                          asp-route-returnUrl="@listReturnUrl"
                                            class="btn btn-outline-info" title="Detalles">
-                                            <i class="bi bi-eye"></i>
+                                            <i class="bi bi-eye" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Detalles</span>
                                         </a>
                                         <a asp-action="Edit" asp-route-id="@marca.Id"
                                                          asp-route-returnUrl="@listReturnUrl"
                                            class="btn btn-outline-warning" title="Editar">
-                                            <i class="bi bi-pencil"></i>
+                                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Editar</span>
                                         </a>
                                         <a asp-action="Delete" asp-route-id="@marca.Id"
                                                          asp-route-returnUrl="@listReturnUrl"
                                            class="btn btn-outline-danger" title="Eliminar">
-                                            <i class="bi bi-trash"></i>
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Eliminar</span>
                                         </a>
                                     </div>
                                 </td>
@@ -202,7 +205,7 @@
                     {
                         <tr>
                             <td colspan="7" class="text-center py-5">
-                                <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-3" aria-hidden="true"></i>
                                 <p class="text-muted mb-2">No se encontraron marcas</p>
                                 <a asp-action="Create" class="btn btn-info text-dark fw-semibold">Crear Marca</a>
                             </td>

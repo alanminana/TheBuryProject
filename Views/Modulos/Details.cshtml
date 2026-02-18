@@ -23,7 +23,7 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center">
                 <h2>
-                    <i class="@(Model.Icono ?? "bi-grid") me-2"></i>@Model.Nombre
+                    <i class="@(Model.Icono ?? "bi-grid") me-2" aria-hidden="true"></i>@Model.Nombre
                     @if (Model.Activo)
                     {
                         <span class="badge bg-success">Activo</span>
@@ -35,10 +35,10 @@
                 </h2>
                 <div>
                     <a asp-action="Edit" asp-route-id="@Model.Id" asp-route-returnUrl="@pageReturnUrl" class="btn btn-warning">
-                        <i class="bi bi-pencil me-1"></i>Editar
+                        <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
                     </a>
                     <a href="@backUrl" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left me-1"></i>Volver
+                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
                     </a>
                 </div>
             </div>
@@ -49,7 +49,7 @@
         <div class="col-md-4">
             <div class="card mb-3">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información</h5>
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2" aria-hidden="true"></i>Información</h5>
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
@@ -79,7 +79,7 @@
             <div class="card">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-lightning me-2"></i>
+                        <i class="bi bi-lightning me-2" aria-hidden="true"></i>
                         Acciones Disponibles (@Model.Acciones.Count)
                     </h5>
                 </div>
@@ -90,10 +90,10 @@
                             <table class="table table-sm table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Acción</th>
-                                        <th>Clave</th>
-                                        <th>Descripción</th>
-                                        <th class="text-center">Estado</th>
+                                        <th scope="col">Acción</th>
+                                        <th scope="col">Clave</th>
+                                        <th scope="col">Descripción</th>
+                                        <th scope="col" class="text-center">Estado</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -122,10 +122,10 @@
                     else
                     {
                         <div class="text-center py-4 text-muted">
-                            <i class="bi bi-lightning fs-1"></i>
+                            <i class="bi bi-lightning fs-1" aria-hidden="true"></i>
                             <p class="mt-2">No hay acciones configuradas para este módulo</p>
                             <a asp-controller="Acciones" asp-action="Create" asp-route-returnUrl="@pageReturnUrl" class="btn btn-sm btn-primary">
-                                <i class="bi bi-plus-circle me-1"></i>Crear Acción
+                                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Crear Acción
                             </a>
                         </div>
                     }

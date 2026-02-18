@@ -14,7 +14,7 @@
         </div>
         <div class="d-flex gap-2">
             <a asp-action="Create" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nuevo ajuste
+                <i class="bi bi-plus-circle" aria-hidden="true"></i> Nuevo ajuste
             </a>
         </div>
     </div>
@@ -23,7 +23,7 @@
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
@@ -31,14 +31,14 @@
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
     <div class="card mb-4">
         <div class="card-header d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-funnel text-primary"></i>
+                <i class="bi bi-funnel text-primary" aria-hidden="true"></i>
                 <span class="fw-semibold">Filtros</span>
             </div>
             <small class="text-muted">@Model?.TotalResultados resultado@(Model?.TotalResultados == 1 ? string.Empty : "s")</small>
@@ -84,10 +84,10 @@
                 </div>
                 <div class="col-12 d-flex gap-2 mt-2">
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-search"></i> Buscar
+                        <i class="bi bi-search" aria-hidden="true"></i> Buscar
                     </button>
                     <a asp-action="Index" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+                        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Limpiar
                     </a>
                 </div>
             </form>
@@ -97,17 +97,17 @@
     <div class="card">
         <div class="card-header d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-clock-history text-primary"></i>
+                <i class="bi bi-clock-history text-primary" aria-hidden="true"></i>
                 <span class="fw-semibold">Historial de movimientos</span>
             </div>
-            <small class="text-muted">Actualizado al @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</small>
+            <small class="text-muted">Actualizado al <time datetime="@DateTime.Now.ToString("s")">@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</time></small>
         </div>
 
         <div class="card-body p-0">
             @if (!movimientos.Any())
             {
                 <div class="p-4 text-center text-muted">
-                    <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                    <i class="bi bi-inbox display-6 d-block mb-2" aria-hidden="true"></i>
                     <div>No hay movimientos que coincidan con los filtros seleccionados.</div>
                 </div>
             }
@@ -117,15 +117,15 @@
                     <table class="table table-hover mb-0 align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>Fecha</th>
-                                <th>Producto</th>
-                                <th class="text-center">Tipo</th>
-                                <th class="text-end">Cantidad</th>
-                                <th class="text-end">Stock anterior</th>
-                                <th class="text-end">Stock nuevo</th>
-                                <th>Referencia</th>
-                                <th>Motivo</th>
-                                <th>Registrado por</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Producto</th>
+                                <th scope="col" class="text-center">Tipo</th>
+                                <th scope="col" class="text-end">Cantidad</th>
+                                <th scope="col" class="text-end">Stock anterior</th>
+                                <th scope="col" class="text-end">Stock nuevo</th>
+                                <th scope="col">Referencia</th>
+                                <th scope="col">Motivo</th>
+                                <th scope="col">Registrado por</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -133,8 +133,8 @@
                             {
                                 <tr>
                                     <td>
-                                        <div class="fw-semibold">@movimiento.Fecha.ToString("dd/MM/yyyy")</div>
-                                        <small class="text-muted">@movimiento.Fecha.ToString("HH:mm")</small>
+                                        <div class="fw-semibold"><time datetime="@movimiento.Fecha.ToString("yyyy-MM-dd")">@movimiento.Fecha.ToString("dd/MM/yyyy")</time></div>
+                                        <small class="text-muted"><time datetime="@movimiento.Fecha.ToString("s")">@movimiento.Fecha.ToString("HH:mm")</time></small>
                                     </td>
                                     <td>
                                         <div class="fw-semibold">@movimiento.ProductoNombre</div>
@@ -152,7 +152,7 @@
                                     <td>@(string.IsNullOrWhiteSpace(movimiento.Motivo) ? "-" : movimiento.Motivo)</td>
                                     <td>
                                         <div class="fw-semibold">@movimiento.CreatedBy</div>
-                                        <small class="text-muted">Registrado el @movimiento.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                        <small class="text-muted">Registrado el <time datetime="@movimiento.CreatedAt.ToString("s")">@movimiento.CreatedAt.ToString("dd/MM/yyyy HH:mm")</time></small>
                                     </td>
                                 </tr>
                             }

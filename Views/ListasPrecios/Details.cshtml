@@ -9,13 +9,13 @@
         <div class="col-md-10">
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4><i class="bi bi-eye"></i> Detalles de Lista de Precios</h4>
+                    <h4><i class="bi bi-eye" aria-hidden="true"></i> Detalles de Lista de Precios</h4>
                     <div>
                         <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning btn-sm">
-                            <i class="bi bi-pencil"></i> Editar
+                            <i class="bi bi-pencil" aria-hidden="true"></i> Editar
                         </a>
                         <a asp-action="Index" class="btn btn-secondary btn-sm">
-                            <i class="bi bi-arrow-left"></i> Volver
+                            <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
                         </a>
                     </div>
                 </div>
@@ -23,7 +23,7 @@
                     <div class="row">
                         <!-- Información Básica -->
                         <div class="col-md-6">
-                            <h5 class="mb-3"><i class="bi bi-info-circle"></i> Información Básica</h5>
+                            <h5 class="mb-3"><i class="bi bi-info-circle" aria-hidden="true"></i> Información Básica</h5>
 
                             <dl class="row">
                                 <dt class="col-sm-4">Código:</dt>
@@ -32,7 +32,7 @@
                                     @if (Model.EsPredeterminada)
                                     {
                                         <span class="badge bg-warning text-dark ms-1">
-                                            <i class="bi bi-star-fill"></i> Predeterminada
+                                            <i class="bi bi-star-fill" aria-hidden="true"></i> Predeterminada
                                         </span>
                                     }
                                 </dd>
@@ -67,7 +67,7 @@
 
                         <!-- Configuración de Precios -->
                         <div class="col-md-6">
-                            <h5 class="mb-3"><i class="bi bi-calculator"></i> Configuración de Precios</h5>
+                            <h5 class="mb-3"><i class="bi bi-calculator" aria-hidden="true"></i> Configuración de Precios</h5>
 
                             <dl class="row">
                                 <dt class="col-sm-5">Margen de Ganancia:</dt>
@@ -131,7 +131,7 @@
                     {
                         <hr class="my-3">
                         <div>
-                            <h6><i class="bi bi-sticky"></i> Notas:</h6>
+                            <h6><i class="bi bi-sticky" aria-hidden="true"></i> Notas:</h6>
                             <p class="text-muted">@Model.Notas</p>
                         </div>
                     }
@@ -140,7 +140,7 @@
                     {
                         <hr class="my-3">
                         <div>
-                            <h6><i class="bi bi-code-square"></i> Reglas Personalizadas (JSON):</h6>
+                            <h6><i class="bi bi-code-square" aria-hidden="true"></i> Reglas Personalizadas (JSON):</h6>
                             <pre class="bg-dark text-light p-3 rounded"><code>@Model.ReglasJson</code></pre>
                         </div>
                     }

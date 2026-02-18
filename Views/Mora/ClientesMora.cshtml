@@ -11,10 +11,10 @@
 
 <div class="container-fluid mora-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-people-fill me-2"></i>Clientes en Mora</h2>
+        <h2><i class="bi bi-people-fill me-2" aria-hidden="true"></i>Clientes en Mora</h2>
         <div>
             <a asp-action="Index" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-2"></i>Dashboard
+                <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Dashboard
             </a>
         </div>
     </div>
@@ -74,7 +74,7 @@
     <!-- Filtros -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-light">
-            <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtros</h6>
+            <h6 class="mb-0"><i class="bi bi-funnel me-2" aria-hidden="true"></i>Filtros</h6>
         </div>
         <div class="card-body">
             <form asp-action="ClientesMora" method="get" id="filtrosForm">
@@ -112,7 +112,8 @@
                         <div class="input-group input-group-sm">
                             <input type="text" name="busqueda" class="form-control" placeholder="Nombre o documento..." value="@Model.Filtros.Busqueda">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-search"></i>
+                                <i class="bi bi-search" aria-hidden="true"></i>
+                                <span class="visually-hidden">Buscar</span>
                             </button>
                         </div>
                     </div>
@@ -127,7 +128,8 @@
                     </div>
                     <div class="col-md-1 d-flex align-items-end">
                         <a asp-action="ClientesMora" class="btn btn-outline-secondary btn-sm w-100">
-                            <i class="bi bi-x-lg"></i>
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                            <span class="visually-hidden">Limpiar filtros</span>
                         </a>
                     </div>
                 </div>
@@ -159,7 +161,7 @@
     <!-- Tabla de Clientes -->
     <div class="card shadow-sm">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-list me-2"></i>@Model.TotalClientes Clientes en Mora</h5>
+            <h5 class="mb-0"><i class="bi bi-list me-2" aria-hidden="true"></i>@Model.TotalClientes Clientes en Mora</h5>
             <span>Monto Total: $@Model.MontoTotalVencido.ToString("N2") + Mora: $@Model.MontoTotalMora.ToString("N2")</span>
         </div>
         <div class="card-body p-0">
@@ -176,14 +178,14 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th>Prioridad</th>
-                                <th>Cliente</th>
-                                <th>Días Atraso</th>
-                                <th>Monto Vencido</th>
-                                <th>Mora</th>
-                                <th>Estado</th>
-                                <th>Último Contacto</th>
-                                <th>Acciones</th>
+                                <th scope="col">Prioridad</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Días Atraso</th>
+                                <th scope="col">Monto Vencido</th>
+                                <th scope="col">Mora</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col">Último Contacto</th>
+                                <th scope="col">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -217,13 +219,13 @@
                                         @if (cliente.TienePromesaActiva)
                                         {
                                             <span class="badge bg-info ms-1" title="Promesa para @cliente.FechaPromesa?.ToString("dd/MM")">
-                                                <i class="bi bi-calendar-check"></i>
+                                                <i class="bi bi-calendar-check" aria-hidden="true"></i>
                                             </span>
                                         }
                                         @if (cliente.TieneAcuerdoActivo)
                                         {
                                             <span class="badge bg-primary ms-1" title="Acuerdo activo">
-                                                <i class="bi bi-file-earmark-text"></i>
+                                                <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
                                             </span>
                                         }
                                     </td>
@@ -259,10 +261,12 @@
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a asp-action="FichaCliente" asp-route-id="@cliente.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-primary" title="Ver Ficha">
-                                                <i class="bi bi-person-lines-fill"></i>
+                                                <i class="bi bi-person-lines-fill" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Ver ficha</span>
                                             </a>
                                             <a asp-action="RegistrarContacto" asp-route-clienteId="@cliente.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-success" title="Registrar Contacto">
-                                                <i class="bi bi-telephone"></i>
+                                                <i class="bi bi-telephone" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Registrar contacto</span>
                                             </a>
                                         </div>
                                     </td>

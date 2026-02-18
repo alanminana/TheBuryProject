@@ -22,16 +22,16 @@
     <div class="row mb-3">
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="bi bi-shield me-2"></i>@Model.Nombre</h2>
+                <h2><i class="bi bi-shield me-2" aria-hidden="true"></i>@Model.Nombre</h2>
                 <div>
                     <a asp-action="AsignarPermisos" asp-route-id="@Model.Id" asp-route-returnUrl="@pageReturnUrl" class="btn btn-warning">
-                        <i class="bi bi-key me-1"></i>Asignar Permisos
+                        <i class="bi bi-key me-1" aria-hidden="true"></i>Asignar Permisos
                     </a>
                     <a asp-action="Edit" asp-route-id="@Model.Id" asp-route-returnUrl="@pageReturnUrl" class="btn btn-primary">
-                        <i class="bi bi-pencil me-1"></i>Editar
+                        <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
                     </a>
                     <a href="@backUrl" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left me-1"></i>Volver
+                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
                     </a>
                 </div>
             </div>
@@ -43,7 +43,7 @@
         <div class="col-md-8">
             <div class="card mb-3">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-key me-2"></i>Permisos Asignados (@Model.Permisos.Count)</h5>
+                    <h5 class="mb-0"><i class="bi bi-key me-2" aria-hidden="true"></i>Permisos Asignados (@Model.Permisos.Count)</h5>
                 </div>
                 <div class="card-body">
                     @if (Model.Permisos.Any())
@@ -52,9 +52,9 @@
                             <table class="table table-sm table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Módulo</th>
-                                        <th>Acción</th>
-                                        <th>Claim</th>
+                                        <th scope="col">Módulo</th>
+                                        <th scope="col">Acción</th>
+                                        <th scope="col">Claim</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -73,10 +73,10 @@
                     else
                     {
                         <div class="text-center py-4 text-muted">
-                            <i class="bi bi-key fs-1"></i>
+                            <i class="bi bi-key fs-1" aria-hidden="true"></i>
                             <p class="mt-2">No hay permisos asignados a este rol</p>
                             <a asp-action="AsignarPermisos" asp-route-id="@Model.Id" asp-route-returnUrl="@pageReturnUrl" class="btn btn-sm btn-warning">
-                                <i class="bi bi-plus-circle me-1"></i>Asignar Permisos
+                                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Asignar Permisos
                             </a>
                         </div>
                     }
@@ -88,7 +88,7 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Usuarios (@Model.Usuarios.Count)</h5>
+                    <h5 class="mb-0"><i class="bi bi-people me-2" aria-hidden="true"></i>Usuarios (@Model.Usuarios.Count)</h5>
                 </div>
                 <div class="card-body">
                     @if (Model.Usuarios.Any())
@@ -98,12 +98,12 @@
                             {
                                 <li class="list-group-item d-flex justify-content-between align-items-center p-2">
                                     <div>
-                                        <i class="bi bi-person-circle me-1"></i>
+                                        <i class="bi bi-person-circle me-1" aria-hidden="true"></i>
                                         <small>@usuario.Email</small>
                                     </div>
                                     @if (usuario.EmailConfirmed)
                                     {
-                                        <i class="bi bi-check-circle text-success" title="Email confirmado"></i>
+                                        <i class="bi bi-check-circle text-success" title="Email confirmado" aria-hidden="true"></i>
                                     }
                                 </li>
                             }
@@ -117,7 +117,7 @@
                     else
                     {
                         <div class="text-center py-3 text-muted">
-                            <i class="bi bi-people fs-2"></i>
+                            <i class="bi bi-people fs-2" aria-hidden="true"></i>
                             <p class="mt-2 mb-0"><small>No hay usuarios con este rol</small></p>
                         </div>
                     }

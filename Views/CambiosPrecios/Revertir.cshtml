@@ -25,16 +25,16 @@
                 <div class="card-header bg-danger text-white">
                     <div class="d-flex align-items-center justify-content-between">
                         <h2 class="h6 mb-0 d-flex align-items-center gap-2">
-                            <i class="bi bi-arrow-counterclockwise"></i>
+                            <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
                             <span>Confirmar reversión</span>
                         </h2>
                     </div>
                 </div>
 
                 <div class="card-body">
-                    <div class="alert alert-danger small">
+                    <div class="alert alert-danger small" role="alert">
                         <div class="fw-semibold d-flex align-items-center gap-2 mb-1">
-                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
                             <span>¿Está seguro que desea revertir este cambio de precios?</span>
                         </div>
                         <p class="mb-0">
@@ -57,13 +57,31 @@
                         <dd class="col-sm-8">
                             <div>@Model.AplicadoPor</div>
                             <small class="text-muted">
-                                @Model.FechaAplicacion?.ToString("dd/MM/yyyy HH:mm")
+                                @if (Model.FechaAplicacion.HasValue)
+                                {
+                                    <time datetime="@Model.FechaAplicacion.Value.ToString("O")">
+                                        @Model.FechaAplicacion.Value.ToString("dd/MM/yyyy HH:mm")
+                                    </time>
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
                             </small>
                         </dd>
 
                         <dt class="col-sm-4 text-muted">Vigencia:</dt>
                         <dd class="col-sm-8">
-                            @Model.FechaVigencia?.ToString("dd/MM/yyyy HH:mm")
+                            @if (Model.FechaVigencia.HasValue)
+                            {
+                                <time datetime="@Model.FechaVigencia.Value.ToString("O")">
+                                    @Model.FechaVigencia.Value.ToString("dd/MM/yyyy HH:mm")
+                                </time>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
                         </dd>
                     </dl>
 
@@ -89,9 +107,9 @@
                             </small>
                         </div>
 
-                        <div class="alert alert-warning small">
+                        <div class="alert alert-warning small" role="alert">
                             <div class="fw-semibold mb-1 d-flex align-items-center gap-2">
-                                <i class="bi bi-info-circle"></i>
+                                <i class="bi bi-info-circle" aria-hidden="true"></i>
                                 <span>Información sobre la reversión</span>
                             </div>
                             <ul class="mb-0 ps-3">
@@ -106,13 +124,13 @@
                             <a asp-action="Preview"
                                asp-route-id="@Model.BatchId"
                                class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancelar
                             </a>
 
                             <button type="submit"
                                     class="btn btn-danger btn-sm"
                                     data-confirm="¿Está ABSOLUTAMENTE SEGURO de revertir este cambio?\n\nEsta acción restaurará los precios anteriores para @Model.CantidadProductos productos.">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Revertir cambio ahora
+                                <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Revertir cambio ahora
                             </button>
                         </div>
                     </form>

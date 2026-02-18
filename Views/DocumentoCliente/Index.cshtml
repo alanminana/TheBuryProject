@@ -18,7 +18,7 @@
     @if (!string.IsNullOrWhiteSpace(originReturnUrl))
     {
         <a href="@originReturnUrl" class="btn btn-outline-light me-2">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
         </a>
     }
     <button type="button"
@@ -27,7 +27,7 @@
             data-bs-target="#uploadDocumentoModal"
             data-return-to-venta-id="@Model.ReturnToVentaId"
             data-cliente-id="@Model.ClienteId">
-        <i class="bi bi-upload me-2"></i>Subir Documento
+        <i class="bi bi-upload me-2" aria-hidden="true"></i>Subir Documento
     </button>
 }
 
@@ -38,8 +38,8 @@
             <button class="btn btn-link text-decoration-none text-light w-100 text-start p-0"
                     type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtros de Búsqueda</h6>
-                    <i class="bi bi-chevron-down"></i>
+                    <h6 class="mb-0"><i class="bi bi-funnel me-2" aria-hidden="true"></i>Filtros de Búsqueda</h6>
+                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
                 </div>
             </button>
         </div>
@@ -100,13 +100,13 @@
                             <label class="form-label text-light fw-semibold">&nbsp;</label>
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-info text-dark fw-semibold w-100">
-                                    <i class="bi bi-search me-2"></i>Buscar
+                                    <i class="bi bi-search me-2" aria-hidden="true"></i>Buscar
                                 </button>
                                 <a asp-action="Index"
                                    asp-route-returnToVentaId="@Model.ReturnToVentaId"
                                    asp-route-returnUrl="@originReturnUrl"
                                    class="btn btn-outline-light">
-                                    <i class="bi bi-x-circle"></i>
+                                    <i class="bi bi-x-circle" aria-hidden="true"></i>
                                 </a>
                             </div>
                         </div>
@@ -121,16 +121,16 @@
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
 }
 
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
 }
 
@@ -138,7 +138,7 @@
 {
     <div class="alert alert-warning d-flex justify-content-between align-items-center mb-3">
         <div>
-            <i class="bi bi-exclamation-triangle me-2"></i>
+            <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
             Falta documentación obligatoria para continuar con el crédito de la venta @Model.ReturnToVentaId.
             @if (ViewBag.DocumentacionPendiente is DocumentacionClienteEstadoViewModel estadoDocs && !estadoDocs.Completa)
             {
@@ -162,7 +162,7 @@
 @if (Model.TotalResultados > 0)
 {
     <div class="alert alert-info border-0 shadow-sm mb-3">
-        <i class="bi bi-info-circle me-2"></i>
+        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
         Se encontraron <strong>@Model.TotalResultados</strong> documento(s).
     </div>
 }
@@ -174,14 +174,14 @@
             <table class="table table-hover table-dark align-middle mb-0">
                 <thead class="bg-secondary text-light">
                     <tr>
-                        <th class="px-4">Cliente</th>
-                        <th>Tipo de Documento</th>
-                        <th>Archivo</th>
-                        <th>Tamaño</th>
-                        <th class="text-center">Estado</th>
-                        <th>Fecha Subida</th>
-                        <th>Vencimiento</th>
-                        <th class="text-center px-4">Acciones</th>
+                        <th scope="col" class="px-4">Cliente</th>
+                        <th scope="col">Tipo de Documento</th>
+                        <th scope="col">Archivo</th>
+                        <th scope="col">Tamaño</th>
+                        <th scope="col" class="text-center">Estado</th>
+                        <th scope="col">Fecha Subida</th>
+                        <th scope="col">Vencimiento</th>
+                        <th scope="col" class="text-center px-4">Acciones</th>
                     </tr>
                 </thead>
 
@@ -197,18 +197,18 @@
                                     </a>
                                 </td>
                                 <td><span class="badge bg-secondary">@doc.TipoDocumentoNombre</span></td>
-                                <td><i class="bi bi-file-earmark me-1"></i>@doc.NombreArchivo</td>
+                                <td><i class="bi bi-file-earmark me-1" aria-hidden="true"></i>@doc.NombreArchivo</td>
                                 <td class="text-secondary">@doc.TamanoFormateado</td>
                                 <td class="text-center">
                                     <span class="badge bg-@doc.EstadoColor">
-                                        <i class="bi @doc.EstadoIcono"></i> @doc.EstadoNombre
+                                        <i class="bi @doc.EstadoIcono" aria-hidden="true"></i> @doc.EstadoNombre
                                     </span>
                                 </td>
-                                <td class="text-secondary">@doc.FechaSubida.ToString("dd/MM/yyyy")</td>
+                                <td class="text-secondary"><time datetime="@doc.FechaSubida.ToString("yyyy-MM-dd")">@doc.FechaSubida.ToString("dd/MM/yyyy")</time></td>
                                 <td class="text-secondary">
                                     @if (doc.FechaVencimiento.HasValue)
                                     {
-                                        <span>@doc.FechaVencimiento.Value.ToString("dd/MM/yyyy")</span>
+                                        <span><time datetime="@doc.FechaVencimiento.Value.ToString("yyyy-MM-dd")">@doc.FechaVencimiento.Value.ToString("dd/MM/yyyy")</time></span>
                                     }
                                     else
                                     {
@@ -217,11 +217,13 @@
                                 </td>
                                 <td class="text-center px-4">
                                     <div class="btn-group btn-group-sm">
-                                        <a asp-action="Details" asp-route-id="@doc.Id" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-info">
-                                            <i class="bi bi-eye"></i>
+                                        <a asp-action="Details" asp-route-id="@doc.Id" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-info" aria-label="Ver detalle de documento @doc.TipoDocumentoNombre">
+                                            <i class="bi bi-eye" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Ver detalle</span>
                                         </a>
-                                        <a asp-action="Descargar" asp-route-id="@doc.Id" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-success">
-                                            <i class="bi bi-download"></i>
+                                        <a asp-action="Descargar" asp-route-id="@doc.Id" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-success" aria-label="Descargar documento @doc.TipoDocumentoNombre">
+                                            <i class="bi bi-download" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Descargar documento</span>
                                         </a>
                                         <button type="button"
                                                 class="btn btn-warning text-dark"
@@ -231,14 +233,16 @@
                                                 data-replace-id="@doc.Id"
                                                 data-replace-name="@doc.NombreArchivo"
                                                 data-return-to-venta-id="@Model.ReturnToVentaId">
-                                            <i class="bi bi-arrow-repeat"></i>
+                                            <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Reemplazar documento</span>
                                         </button>
                                         <form asp-action="Delete" asp-route-id="@doc.Id" method="post"
                                               data-confirm="¿Está seguro de eliminar este documento?">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="returnUrl" value="@listReturnUrl" />
-                                            <button type="submit" class="btn btn-outline-danger">
-                                                <i class="bi bi-trash"></i>
+                                            <button type="submit" class="btn btn-outline-danger" aria-label="Eliminar documento @doc.TipoDocumentoNombre">
+                                                <i class="bi bi-trash" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Eliminar documento</span>
                                             </button>
                                         </form>
                                     </div>
@@ -250,7 +254,7 @@
                     {
                         <tr>
                             <td colspan="8" class="text-center py-5">
-                                <i class="bi bi-inbox display-5 text-secondary d-block mb-3"></i>
+                                <i class="bi bi-inbox display-5 text-secondary d-block mb-3" aria-hidden="true"></i>
                                 <p class="text-secondary mb-2">No hay documentos disponibles</p>
                                 @if (Model.ReturnToVentaId.HasValue)
                                 {
@@ -346,7 +350,7 @@
                        asp-route-soloVencidos="@Model.SoloVencidos"
                        asp-route-returnToVentaId="@Model.ReturnToVentaId"
                        asp-route-returnUrl="@originReturnUrl">
-                        <i class="bi bi-chevron-left"></i> Anterior
+                        <i class="bi bi-chevron-left" aria-hidden="true"></i> Anterior
                     </a>
                 </li>
                 @for (int i = 1; i <= Model.TotalPages; i++)
@@ -377,7 +381,7 @@
                        asp-route-soloVencidos="@Model.SoloVencidos"
                        asp-route-returnToVentaId="@Model.ReturnToVentaId"
                        asp-route-returnUrl="@originReturnUrl">
-                        Siguiente <i class="bi bi-chevron-right"></i>
+                        Siguiente <i class="bi bi-chevron-right" aria-hidden="true"></i>
                     </a>
                 </li>
             </ul>
@@ -391,17 +395,17 @@
         <div class="modal-content bg-dark text-light border-secondary">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title" id="uploadDocumentoModalLabel">
-                    <i class="bi bi-upload me-2"></i>Subir o reemplazar documento
+                    <i class="bi bi-upload me-2" aria-hidden="true"></i>Subir o reemplazar documento
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info border-0 shadow-sm">
-                    <i class="bi bi-info-circle me-2"></i>
+                    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
                     <strong>Formatos permitidos:</strong> PDF, JPG, PNG, DOC, DOCX (máximo 5 MB)
                 </div>
                 <div class="alert alert-warning border-0 shadow-sm d-none" data-reemplazo-alert>
-                    <i class="bi bi-arrow-repeat me-2"></i>
+                    <i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>
                     <span data-reemplazo-text></span>
                 </div>
                 <form id="uploadDocumentoForm"
@@ -420,7 +424,7 @@
                     <div class="d-flex justify-content-end gap-2 mt-4">
                         <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-info text-dark fw-semibold">
-                            <i class="bi bi-upload me-2"></i>Subir Documento
+                            <i class="bi bi-upload me-2" aria-hidden="true"></i>Subir Documento
                         </button>
                     </div>
                 </form>

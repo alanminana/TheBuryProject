@@ -11,16 +11,16 @@
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-file-earmark-plus me-2"></i>Crear Acuerdo de Pago</h2>
+                <h2><i class="bi bi-file-earmark-plus me-2" aria-hidden="true"></i>Crear Acuerdo de Pago</h2>
                 <a href="@backUrl" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-2"></i>Cancelar
+                    <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Cancelar
                 </a>
             </div>
 
             <!-- Datos del Cliente -->
             <div class="card shadow-sm mb-4 border-primary">
                 <div class="card-header bg-primary text-white">
-                    <h6 class="mb-0"><i class="bi bi-person me-2"></i>Cliente</h6>
+                    <h6 class="mb-0"><i class="bi bi-person me-2" aria-hidden="true"></i>Cliente</h6>
                 </div>
                 <div class="card-body">
                     <h5 class="mb-3">@Model.NombreCliente</h5>
@@ -44,7 +44,7 @@
             <!-- Formulario -->
             <div class="card shadow-sm">
                 <div class="card-header bg-success text-white">
-                    <h6 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Detalles del Acuerdo</h6>
+                    <h6 class="mb-0"><i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Detalles del Acuerdo</h6>
                 </div>
                 <div class="card-body">
                     <form asp-action="CrearAcuerdo" method="post" id="formAcuerdo">
@@ -103,7 +103,7 @@
                         <!-- Resumen del Acuerdo -->
                         <div class="card bg-light mb-3">
                             <div class="card-body">
-                                <h6 class="card-title"><i class="bi bi-calculator me-2"></i>Resumen del Acuerdo</h6>
+                                <h6 class="card-title"><i class="bi bi-calculator me-2" aria-hidden="true"></i>Resumen del Acuerdo</h6>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="d-flex justify-content-between">
@@ -132,7 +132,7 @@
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a href="@backUrl" class="btn btn-secondary">Cancelar</a>
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-check-lg me-2"></i>Crear Acuerdo
+                                <i class="bi bi-check-lg me-2" aria-hidden="true"></i>Crear Acuerdo
                             </button>
                         </div>
                     </form>

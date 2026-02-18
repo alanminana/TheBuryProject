@@ -26,9 +26,9 @@
     <div class="row mb-3">
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="bi bi-key me-2"></i>Asignar Permisos: @Model.RoleName</h2>
+                <h2><i class="bi bi-key me-2" aria-hidden="true"></i>Asignar Permisos: @Model.RoleName</h2>
                 <a href="@backUrl" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left me-1"></i>Volver
+                    <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
                 </a>
             </div>
         </div>
@@ -36,8 +36,8 @@
 
     <div class="row">
         <div class="col-md-12">
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
+            <div class="alert alert-info" role="alert">
+                <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
                 <strong>Instrucciones:</strong> Selecciona o deselecciona los permisos para este rol. Los cambios se guardan automáticamente.
             </div>
         </div>
@@ -53,7 +53,7 @@
             <div class="row mb-4">
                 <div class="col-md-12">
                     <h4 class="border-bottom pb-2">
-                        <i class="bi bi-folder me-2"></i>@categoria.Key
+                        <i class="bi bi-folder me-2" aria-hidden="true"></i>@categoria.Key
                     </h4>
                 </div>
             </div>
@@ -66,7 +66,7 @@
                             <div class="card-header bg-light">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h6 class="mb-0">
-                                        <i class="@modulo.Icono me-1"></i>
+                                        <i class="@modulo.Icono me-1" aria-hidden="true"></i>
                                         @modulo.ModuloNombre
                                     </h6>
                                     <small class="text-muted">@modulo.ModuloClave</small>
@@ -107,8 +107,8 @@
     {
         <div class="row">
             <div class="col-md-12">
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
                     No hay módulos disponibles en el sistema.
                 </div>
             </div>

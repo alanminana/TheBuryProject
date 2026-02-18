@@ -13,16 +13,16 @@
     <div class="row align-items-center mb-4">
         <div class="col">
             <h1 class="h3 fw-bold">
-                <i class="bi bi-tag text-primary"></i> Gestión de Categorías
+                <i class="bi bi-tag text-primary" aria-hidden="true"></i> Gestión de Categorías
             </h1>
             <p class="page-header-subtitle mb-0">Administrá las categorías de productos del sistema</p>
         </div>
         <div class="col-auto d-flex gap-2">
             <a href="@backToCatalogoUrl" class="btn btn-outline-light fw-semibold shadow-sm">
-                <i class="bi bi-arrow-left me-2"></i>Volver al Catálogo
+                <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver al Catálogo
             </a>
             <a asp-action="Create" class="btn btn-primary btn-lg shadow-sm">
-                <i class="bi bi-plus-circle me-2"></i>Nueva Categoría
+                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>Nueva Categoría
             </a>
         </div>
     </div>
@@ -30,16 +30,16 @@
     @if (TempData["Success"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
@@ -50,10 +50,10 @@
                 data-bs-target="#filtrosCollapse"
                 aria-expanded="@(filtrosActivos.ToString().ToLower())">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-funnel"></i>
+                <i class="bi bi-funnel" aria-hidden="true"></i>
                 <span class="fw-semibold">Búsqueda y filtros</span>
             </div>
-            <i class="bi bi-chevron-down chevron"></i>
+            <i class="bi bi-chevron-down chevron" aria-hidden="true"></i>
         </button>
 
         <div class="collapse @(filtrosActivos ? "show" : "")" id="filtrosCollapse">
@@ -64,7 +64,7 @@
 
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">
-                                <i class="bi bi-search me-1"></i>Búsqueda por texto
+                                <i class="bi bi-search me-1" aria-hidden="true"></i>Búsqueda por texto
                             </label>
                             <input asp-for="SearchTerm"
                                    class="form-control bg-body-secondary text-light border-0"
@@ -79,14 +79,14 @@
                                        type="checkbox"
                                        id="soloActivos" />
                                 <label class="form-check-label" for="soloActivos">
-                                    <i class="bi bi-check-circle text-success me-1"></i>Solo categorías activas
+                                    <i class="bi bi-check-circle text-success me-1" aria-hidden="true"></i>Solo categorías activas
                                 </label>
                             </div>
                         </div>
 
                         <div class="col-md-2">
                             <label class="form-label fw-semibold">
-                                <i class="bi bi-sort-down me-1"></i>Ordenar por
+                                <i class="bi bi-sort-down me-1" aria-hidden="true"></i>Ordenar por
                             </label>
                             <select asp-for="OrderBy"
                                     class="form-select bg-body-secondary text-light border-0">
@@ -108,10 +108,10 @@
                         <div class="col-12">
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-search me-2"></i>Buscar
+                                    <i class="bi bi-search me-2" aria-hidden="true"></i>Buscar
                                 </button>
                                 <a asp-action="Index" class="btn btn-outline-light">
-                                    <i class="bi bi-x-circle me-2"></i>Limpiar Filtros
+                                    <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Limpiar Filtros
                                 </a>
                             </div>
                         </div>
@@ -126,7 +126,7 @@
     @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos)
     {
         <div class="alert alert-info d-flex align-items-center mb-3 text-dark">
-            <i class="bi bi-info-circle me-2"></i>
+            <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
             Se encontraron <strong>@Model.TotalResultados</strong> categorías que coinciden con los filtros.
         </div>
     }
@@ -134,7 +134,7 @@
     <div class="card bg-dark border-0 shadow-sm">
         <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-table"></i>
+                <i class="bi bi-table" aria-hidden="true"></i>
                 <span class="fw-semibold">Listado de categorías</span>
             </div>
             <span class="badge bg-light text-dark">Total: @Model.TotalResultados</span>
@@ -146,13 +146,13 @@
 
                     <thead class="table-secondary text-dark">
                         <tr>
-                            <th class="px-4 py-3">Código</th>
-                            <th>Nombre</th>
-                            <th>Descripción</th>
-                            <th>Categoría Padre</th>
-                            <th class="text-center">Control Serie</th>
-                            <th class="text-center">Estado</th>
-                            <th class="text-center px-4">Acciones</th>
+                            <th scope="col" class="px-4 py-3">Código</th>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Descripción</th>
+                            <th scope="col">Categoría Padre</th>
+                            <th scope="col" class="text-center">Control Serie</th>
+                            <th scope="col" class="text-center">Estado</th>
+                            <th scope="col" class="text-center px-4">Acciones</th>
                         </tr>
                     </thead>
 
@@ -172,13 +172,13 @@
                                         @if (!string.IsNullOrEmpty(categoria.ParentNombre))
                                         {
                                             <span class="badge bg-secondary">
-                                                <i class="bi bi-diagram-3"></i> @categoria.ParentNombre
+                                                <i class="bi bi-diagram-3" aria-hidden="true"></i> @categoria.ParentNombre
                                             </span>
                                         }
                                         else
                                         {
                                             <span class="badge bg-primary">
-                                                <i class="bi bi-star-fill"></i> Raíz
+                                                <i class="bi bi-star-fill" aria-hidden="true"></i> Raíz
                                             </span>
                                         }
                                     </td>
@@ -187,13 +187,13 @@
                                         @if (categoria.ControlSerieDefault)
                                         {
                                             <span class="badge bg-success">
-                                                <i class="bi bi-check-circle"></i> Sí
+                                                <i class="bi bi-check-circle" aria-hidden="true"></i> Sí
                                             </span>
                                         }
                                         else
                                         {
                                             <span class="badge bg-secondary">
-                                                <i class="bi bi-x-circle"></i> No
+                                                <i class="bi bi-x-circle" aria-hidden="true"></i> No
                                             </span>
                                         }
                                     </td>
@@ -202,13 +202,13 @@
                                         @if (categoria.Activo)
                                         {
                                             <span class="badge bg-success">
-                                                <i class="bi bi-check-circle"></i> Activo
+                                                <i class="bi bi-check-circle" aria-hidden="true"></i> Activo
                                             </span>
                                         }
                                         else
                                         {
                                             <span class="badge bg-secondary">
-                                                <i class="bi bi-x-circle"></i> Inactivo
+                                                <i class="bi bi-x-circle" aria-hidden="true"></i> Inactivo
                                             </span>
                                         }
                                     </td>
@@ -217,18 +217,21 @@
                                         <div class="btn-group btn-group-sm">
                                             <a asp-action="Details" asp-route-id="@categoria.Id"
                                                               asp-route-returnUrl="@listReturnUrl"
-                                               class="btn btn-outline-info" data-bs-toggle="tooltip" title="Ver detalles">
-                                                <i class="bi bi-eye"></i>
+                                                   class="btn btn-outline-info" data-bs-toggle="tooltip" title="Ver detalles" aria-label="Ver detalles">
+                                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Ver detalles</span>
                                             </a>
                                             <a asp-action="Edit" asp-route-id="@categoria.Id"
                                                               asp-route-returnUrl="@listReturnUrl"
-                                               class="btn btn-outline-warning" data-bs-toggle="tooltip" title="Editar">
-                                                <i class="bi bi-pencil"></i>
+                                                   class="btn btn-outline-warning" data-bs-toggle="tooltip" title="Editar" aria-label="Editar categoría">
+                                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Editar categoría</span>
                                             </a>
                                             <a asp-action="Delete" asp-route-id="@categoria.Id"
                                                               asp-route-returnUrl="@listReturnUrl"
-                                               class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar">
-                                                <i class="bi bi-trash"></i>
+                                                   class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar" aria-label="Eliminar categoría">
+                                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Eliminar categoría</span>
                                             </a>
                                         </div>
                                     </td>
@@ -239,7 +242,7 @@
                         {
                             <tr>
                                 <td colspan="7" class="text-center py-5 table-empty-state">
-                                    <i class="bi bi-inbox display-1 d-block mb-3"></i>
+                                    <i class="bi bi-inbox display-1 d-block mb-3" aria-hidden="true"></i>
 
                                     @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.SoloActivos)
                                     {

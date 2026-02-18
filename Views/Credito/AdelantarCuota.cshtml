@@ -8,15 +8,15 @@
 <section class="container-fluid py-4 text-light">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold mb-0">
-            <i class="bi bi-lightning-charge text-warning me-2"></i>Adelantar Cuota
+            <i class="bi bi-lightning-charge text-warning me-2" aria-hidden="true"></i>Adelantar Cuota
         </h2>
         <a href="@backUrl" class="btn btn-outline-light">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
         </a>
     </div>
 
     <div class="alert alert-info bg-opacity-25 border-info text-light shadow-sm mb-4">
-        <i class="bi bi-info-circle me-2"></i>
+        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
         <strong>Adelanto de cuota:</strong> Al adelantar, se paga la <strong>última cuota pendiente</strong> del crédito,
         reduciendo así el plazo total del mismo. Esto no afecta las cuotas anteriores que siguen su vencimiento normal.
     </div>
@@ -33,7 +33,7 @@
                 <div class="card bg-dark border-0 shadow-sm">
                     <div class="card-header bg-warning text-dark">
                         <h5 class="fw-semibold mb-0">
-                            <i class="bi bi-calendar-check me-2"></i>Cuota a Adelantar
+                            <i class="bi bi-calendar-check me-2" aria-hidden="true"></i>Cuota a Adelantar
                         </h5>
                     </div>
                     <div class="card-body">
@@ -57,7 +57,7 @@
                             <dd class="col-sm-7 fw-bold text-success">@Model.MontoCuota.ToString("C2")</dd>
 
                             <dt class="col-sm-5">Vencimiento Original</dt>
-                            <dd class="col-sm-7">@Model.FechaVencimiento.ToString("dd/MM/yyyy")</dd>
+                            <dd class="col-sm-7"><time datetime="@Model.FechaVencimiento.ToString("yyyy-MM-dd")">@Model.FechaVencimiento.ToString("dd/MM/yyyy")</time></dd>
 
                             <dt class="col-sm-5">Estado</dt>
                             <dd class="col-sm-7">
@@ -75,12 +75,12 @@
                 <div class="card bg-dark border-0 shadow-sm">
                     <div class="card-header bg-success text-light">
                         <h5 class="fw-semibold mb-0">
-                            <i class="bi bi-wallet2 me-2"></i>Datos del Adelanto
+                            <i class="bi bi-wallet2 me-2" aria-hidden="true"></i>Datos del Adelanto
                         </h5>
                     </div>
 
                     <div class="card-body">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger @(ViewData.ModelState.IsValid ? "d-none" : string.Empty)" role="alert"></div>
 
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -125,10 +125,10 @@
                     <div class="card-footer bg-dark border-top border-secondary">
                         <div class="d-flex justify-content-end gap-2">
                             <a href="@backUrl" class="btn btn-outline-light">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-warning text-dark">
-                                <i class="bi bi-lightning-charge me-1"></i>Confirmar Adelanto
+                                <i class="bi bi-lightning-charge me-1" aria-hidden="true"></i>Confirmar Adelanto
                             </button>
                         </div>
                     </div>

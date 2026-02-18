@@ -4,27 +4,17 @@
 *@
 @model TheBuryProject.Models.Enums.EstadoBatch
 
-@switch (Model)
-{
-    case TheBuryProject.Models.Enums.EstadoBatch.Simulado:
-        <span class="badge bg-info">Simulado</span>
-        break;
-    case TheBuryProject.Models.Enums.EstadoBatch.Aprobado:
-        <span class="badge bg-primary">Aprobado</span>
-        break;
-    case TheBuryProject.Models.Enums.EstadoBatch.Aplicado:
-        <span class="badge bg-success">Aplicado</span>
-        break;
-    case TheBuryProject.Models.Enums.EstadoBatch.Revertido:
-        <span class="badge bg-warning text-dark">Revertido</span>
-        break;
-    case TheBuryProject.Models.Enums.EstadoBatch.Rechazado:
-        <span class="badge bg-danger">Rechazado</span>
-        break;
-    case TheBuryProject.Models.Enums.EstadoBatch.Cancelado:
-        <span class="badge bg-secondary">Cancelado</span>
-        break;
-    default:
-        <span class="badge bg-dark">@Model</span>
-        break;
+@{
+    var (texto, clases) = Model switch
+    {
+        TheBuryProject.Models.Enums.EstadoBatch.Simulado  => ("Simulado",  "bg-info"),
+        TheBuryProject.Models.Enums.EstadoBatch.Aprobado  => ("Aprobado",  "bg-primary"),
+        TheBuryProject.Models.Enums.EstadoBatch.Aplicado  => ("Aplicado",  "bg-success"),
+        TheBuryProject.Models.Enums.EstadoBatch.Revertido => ("Revertido", "bg-warning text-dark"),
+        TheBuryProject.Models.Enums.EstadoBatch.Rechazado => ("Rechazado", "bg-danger"),
+        TheBuryProject.Models.Enums.EstadoBatch.Cancelado => ("Cancelado", "bg-secondary"),
+        _ => (Model.ToString(), "bg-dark")
+    };
 }
+
+<span class="badge @clases">@texto</span>

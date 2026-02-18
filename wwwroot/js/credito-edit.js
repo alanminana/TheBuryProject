@@ -12,10 +12,14 @@
 
         const toggleGarante = () => {
             if (requiereCheckbox.checked) {
-                garanteField.style.display = '';
+                garanteField.classList.remove('d-none');
+                requiereCheckbox.setAttribute('aria-expanded', 'true');
+                garanteSelect.setAttribute('required', 'required');
             } else {
-                garanteField.style.display = 'none';
+                garanteField.classList.add('d-none');
+                requiereCheckbox.setAttribute('aria-expanded', 'false');
                 garanteSelect.value = '';
+                garanteSelect.removeAttribute('required');
             }
         };
 

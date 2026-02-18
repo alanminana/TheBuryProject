@@ -7,22 +7,22 @@
     <div class="col-lg-8 mx-auto">
         <!-- Encabezado -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0"><i class="bi bi-check-circle text-success me-2"></i> Autorizar Venta</h2>
+            <h2 class="mb-0"><i class="bi bi-check-circle text-success me-2" aria-hidden="true"></i> Autorizar Venta</h2>
             <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
             </a>
         </div>
 
         <!-- Alerta -->
-        <div class="alert alert-warning border-0">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div class="alert alert-warning border-0" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
             <strong>Atención:</strong> Está por autorizar una venta que excede el límite de crédito del cliente.
         </div>
 
         <!-- Datos de la venta -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
-                <h5 class="mb-0 text-success"><i class="bi bi-receipt me-2"></i> Datos de la Venta</h5>
+                <h5 class="mb-0 text-success"><i class="bi bi-receipt me-2" aria-hidden="true"></i> Datos de la Venta</h5>
             </div>
             <div class="card-body">
                 <dl class="row mb-0">
@@ -33,7 +33,7 @@
                     <dd class="col-sm-8">@Model.ClienteNombre (@Model.ClienteDocumento)</dd>
 
                     <dt class="col-sm-4 text-muted">Fecha:</dt>
-                    <dd class="col-sm-8">@Model.FechaVenta.ToString("dd/MM/yyyy")</dd>
+                    <dd class="col-sm-8"><time datetime="@Model.FechaVenta.ToString("yyyy-MM-dd")">@Model.FechaVenta.ToString("dd/MM/yyyy")</time></dd>
 
                     <dt class="col-sm-4 text-muted">Tipo de Pago:</dt>
                     <dd class="col-sm-8">@Model.TipoPago</dd>
@@ -54,7 +54,7 @@
                 {
                     <p class="text-muted small mt-2 mb-0">
                         Solicitada por: <strong>@Model.UsuarioSolicita</strong><br />
-                        Fecha: @Model.FechaSolicitudAutorizacion.Value.ToString("dd/MM/yyyy HH:mm")
+                        Fecha: <time datetime="@Model.FechaSolicitudAutorizacion.Value.ToString("s")">@Model.FechaSolicitudAutorizacion.Value.ToString("dd/MM/yyyy HH:mm")</time>
                     </p>
                 }
             </div>
@@ -63,17 +63,17 @@
         <!-- Productos -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
-                <h5 class="mb-0 text-info"><i class="bi bi-box-seam me-2"></i> Productos</h5>
+                <h5 class="mb-0 text-info"><i class="bi bi-box-seam me-2" aria-hidden="true"></i> Productos</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th>Producto</th>
-                                <th class="text-center">Cantidad</th>
-                                <th class="text-end">Precio</th>
-                                <th class="text-end">Subtotal</th>
+                                <th scope="col">Producto</th>
+                                <th scope="col" class="text-center">Cantidad</th>
+                                <th scope="col" class="text-end">Precio</th>
+                                <th scope="col" class="text-end">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -97,7 +97,7 @@
             @Html.AntiForgeryToken()
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
-                    <h5 class="mb-0 text-success"><i class="bi bi-chat-left-text me-2"></i> Observaciones</h5>
+                    <h5 class="mb-0 text-success"><i class="bi bi-chat-left-text me-2" aria-hidden="true"></i> Observaciones</h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -111,10 +111,10 @@
 
             <div class="d-flex justify-content-end gap-2">
                 <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-circle"></i> Cancelar
+                    <i class="bi bi-x-circle" aria-hidden="true"></i> Cancelar
                 </a>
                 <button type="submit" class="btn btn-success px-4">
-                    <i class="bi bi-check-lg"></i> Autorizar Venta
+                    <i class="bi bi-check-lg" aria-hidden="true"></i> Autorizar Venta
                 </button>
             </div>
         </form>

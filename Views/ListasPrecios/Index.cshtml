@@ -7,31 +7,31 @@
 
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-tags"></i> Listas de Precios</h2>
+        <h2><i class="bi bi-tags" aria-hidden="true"></i> Listas de Precios</h2>
         <a asp-action="Create" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nueva Lista
+            <i class="bi bi-plus-circle" aria-hidden="true"></i> Nueva Lista
         </a>
     </div>
 
     @if (TempData["Success"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle"></i> @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi bi-check-circle" aria-hidden="true"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle"></i> @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-list"></i> Listado de Listas de Precios</span>
+            <span><i class="bi bi-list" aria-hidden="true"></i> Listado de Listas de Precios</span>
             <form asp-action="Index" method="get" class="m-0">
                 <div class="form-check form-switch">
                     <input type="hidden" name="incluirInactivas" value="false" />
@@ -49,14 +49,14 @@
                     <table class="table table-hover table-striped align-middle">
                         <thead class="table-dark">
                             <tr>
-                                <th>Código</th>
-                                <th>Nombre</th>
-                                <th>Tipo</th>
-                                <th class="text-center">Margen %</th>
-                                <th class="text-center">Recargo %</th>
-                                <th class="text-center">Cuotas</th>
-                                <th class="text-center">Estado</th>
-                                <th class="text-center">Acciones</th>
+                                <th scope="col">Código</th>
+                                <th scope="col">Nombre</th>
+                                <th scope="col">Tipo</th>
+                                <th scope="col" class="text-center">Margen %</th>
+                                <th scope="col" class="text-center">Recargo %</th>
+                                <th scope="col" class="text-center">Cuotas</th>
+                                <th scope="col" class="text-center">Estado</th>
+                                <th scope="col" class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -68,7 +68,7 @@
                                         @if (lista.EsPredeterminada)
                                         {
                                             <span class="badge bg-warning text-dark ms-1" title="Lista Predeterminada">
-                                                <i class="bi bi-star-fill"></i>
+                                                <i class="bi bi-star-fill" aria-hidden="true"></i>
                                             </span>
                                         }
                                     </td>
@@ -119,18 +119,21 @@
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a asp-action="Details" asp-route-id="@lista.Id"
-                                               class="btn btn-outline-info" title="Ver Detalles">
-                                                <i class="bi bi-eye"></i>
+                                               class="btn btn-outline-info" title="Ver Detalles" aria-label="Ver detalles de @lista.Nombre">
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Ver detalles</span>
                                             </a>
                                             <a asp-action="Edit" asp-route-id="@lista.Id"
-                                               class="btn btn-outline-warning" title="Editar">
-                                                <i class="bi bi-pencil"></i>
+                                               class="btn btn-outline-warning" title="Editar" aria-label="Editar @lista.Nombre">
+                                                <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Editar</span>
                                             </a>
                                             @if (!lista.EsPredeterminada)
                                             {
                                                 <a asp-action="Delete" asp-route-id="@lista.Id"
-                                                   class="btn btn-outline-danger" title="Eliminar">
-                                                    <i class="bi bi-trash"></i>
+                                                   class="btn btn-outline-danger" title="Eliminar" aria-label="Eliminar @lista.Nombre">
+                                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Eliminar</span>
                                                 </a>
                                             }
                                         </div>
@@ -144,7 +147,7 @@
             else
             {
                 <div class="alert alert-info text-center">
-                    <i class="bi bi-info-circle"></i> No hay listas de precios registradas.
+                    <i class="bi bi-info-circle" aria-hidden="true"></i> No hay listas de precios registradas.
                 </div>
             }
         </div>

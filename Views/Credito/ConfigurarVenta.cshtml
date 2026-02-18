@@ -19,7 +19,7 @@
 
 @section PageActions {
     <a href="@backUrl" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Volver
+        <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
     </a>
 }
 
@@ -31,8 +31,8 @@
 
     <div class="card bg-dark border-0 shadow-sm">
         <div class="card-body p-4">
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center gap-2">
-                <i class="bi bi-exclamation-triangle-fill"></i>
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center gap-2 @(ViewData.ModelState.IsValid ? "d-none" : string.Empty)" role="alert">
+                <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
                 <div class="flex-fill">Revisa los datos ingresados antes de continuar.</div>
             </div>
 
@@ -74,7 +74,7 @@
                                         <p class="mb-1 fw-semibold">Monto financiado</p>
                                         <h5 class="mb-0" id="montoFinanciadoLabel">$@Model.MontoFinanciado.ToString("N2")</h5>
                                     </div>
-                                    <i class="bi bi-calculator fs-4"></i>
+                                    <i class="bi bi-calculator fs-4" aria-hidden="true"></i>
                                 </div>
                                 <input type="hidden" asp-for="MontoFinanciado" id="MontoFinanciado" />
                             </div>
@@ -91,7 +91,7 @@
                             <!-- TAREA 9: Método de Cálculo -->
                             <div class="mb-4">
                                 <label asp-for="MetodoCalculo" class="form-label d-flex align-items-center gap-2">
-                                    <i class="bi bi-calculator"></i> Método de cálculo
+                                    <i class="bi bi-calculator" aria-hidden="true"></i> Método de cálculo
                                     <span class="badge bg-danger" style="font-size: 0.65rem;">Obligatorio</span>
                                 </label>
                                 <select asp-for="MetodoCalculo" class="form-select bg-body-secondary text-light border-0" id="metodoCalculoSelect" required>
@@ -117,7 +117,7 @@
                                 </div>
                                 <!-- PUNTO 2: Aviso visible cuando no hay método seleccionado -->
                                 <div class="alert alert-warning d-flex align-items-center gap-2 mt-3" id="avisoMetodoRequerido" role="alert">
-                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
                                     <div>
                                         <strong>⚠️ Método de cálculo requerido:</strong> Debe seleccionar un método para habilitar el formulario y poder guardar.
                                     </div>
@@ -127,7 +127,7 @@
                             <!-- TAREA 9: Selector de Perfil (visible solo si MetodoCalculo = UsarPerfil) -->
                             <div class="mb-4" id="perfilSelectorDiv" style="display: none;">
                                 <label asp-for="PerfilCreditoSeleccionadoId" class="form-label d-flex align-items-center gap-2">
-                                    <i class="bi bi-list-stars"></i> Perfil de Crédito
+                                    <i class="bi bi-list-stars" aria-hidden="true"></i> Perfil de Crédito
                                 </label>
                                 <select asp-for="PerfilCreditoSeleccionadoId" class="form-select bg-body-secondary text-light border-0" id="perfilCreditoSelect">
                                     <option value="">Seleccionar perfil...</option>
@@ -248,7 +248,7 @@
                                 </ul>
                             </div>
                             <div class="p-3 mt-3 rounded error-block d-none" id="errorCalculadora">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Ingresa anticipo y cuotas para ver los cálculos. La fecha ayuda a definir el primer vencimiento.
+                                <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Ingresa anticipo y cuotas para ver los cálculos. La fecha ayuda a definir el primer vencimiento.
                             </div>
                         </div>
                     </div>
@@ -257,10 +257,10 @@
 
             <div class="d-flex justify-content-end gap-2 mt-4">
                 <a href="@backUrl" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-circle"></i> Cancelar
+                    <i class="bi bi-x-circle" aria-hidden="true"></i> Cancelar
                 </a>
                 <button type="submit" class="btn btn-primary" id="btnGuardarCredito" disabled>
-                    <i class="bi bi-check-circle"></i> Confirmar Crédito
+                    <i class="bi bi-check-circle" aria-hidden="true"></i> Confirmar Crédito
                 </button>
             </div>
         </div>

@@ -12,16 +12,16 @@
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-telephone-plus me-2"></i>Registrar Contacto</h2>
+                <h2><i class="bi bi-telephone-plus me-2" aria-hidden="true"></i>Registrar Contacto</h2>
                 <a href="@backUrl" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-2"></i>Cancelar
+                    <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Cancelar
                 </a>
             </div>
 
             <!-- Datos del Cliente -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-secondary text-white">
-                    <h6 class="mb-0"><i class="bi bi-person me-2"></i>Cliente</h6>
+                    <h6 class="mb-0"><i class="bi bi-person me-2" aria-hidden="true"></i>Cliente</h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -40,7 +40,7 @@
             <!-- Formulario -->
             <div class="card shadow-sm">
                 <div class="card-header bg-success text-white">
-                    <h6 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Detalles del Contacto</h6>
+                    <h6 class="mb-0"><i class="bi bi-chat-dots me-2" aria-hidden="true"></i>Detalles del Contacto</h6>
                 </div>
                 <div class="card-body">
                     <form asp-action="RegistrarContacto" method="post">
@@ -92,9 +92,9 @@
                         </div>
 
                         <!-- Sección de Promesa de Pago (visible solo si resultado es PromesaPago) -->
-                        <div id="seccionPromesa" style="display: none;">
+                        <div id="seccionPromesa" class="d-none" aria-hidden="true">
                             <hr>
-                            <h6 class="text-info"><i class="bi bi-calendar-check me-2"></i>Promesa de Pago</h6>
+                            <h6 class="text-info"><i class="bi bi-calendar-check me-2" aria-hidden="true"></i>Promesa de Pago</h6>
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label asp-for="FechaPromesaPago" class="form-label">Fecha Prometida</label>
@@ -113,7 +113,7 @@
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a href="@backUrl" class="btn btn-secondary">Cancelar</a>
                             <button type="submit" class="btn btn-success">
-                                <i class="bi bi-check-lg me-2"></i>Registrar Contacto
+                                <i class="bi bi-check-lg me-2" aria-hidden="true"></i>Registrar Contacto
                             </button>
                         </div>
                     </form>
@@ -129,9 +129,11 @@
             var seccionPromesa = document.getElementById('seccionPromesa');
             // ResultadoContacto.PromesaPago = 4
             if (this.value === '4') {
-                seccionPromesa.style.display = 'block';
+                seccionPromesa.classList.remove('d-none');
+                seccionPromesa.setAttribute('aria-hidden', 'false');
             } else {
-                seccionPromesa.style.display = 'none';
+                seccionPromesa.classList.add('d-none');
+                seccionPromesa.setAttribute('aria-hidden', 'true');
             }
         });
         

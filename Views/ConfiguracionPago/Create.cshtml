@@ -12,12 +12,12 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="fw-bold mb-1">
-                        <i class="bi bi-plus-circle text-success me-2"></i>@ViewData["Title"]
+                        <i class="bi bi-plus-circle text-success me-2" aria-hidden="true"></i>@ViewData["Title"]
                     </h2>
                     <p class="text-secondary mb-0">Definí cómo se comporta este medio de pago (descuentos y recargos).</p>
                 </div>
                 <a asp-action="Index" class="btn btn-outline-light">
-                    <i class="bi bi-arrow-left"></i> Volver
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
                 </a>
             </div>
 
@@ -25,7 +25,7 @@
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-success text-light py-3">
                     <h4 class="mb-0 fw-semibold">
-                        <i class="bi bi-credit-card-2-back me-2"></i>Configuración de Pago
+                        <i class="bi bi-credit-card-2-back me-2" aria-hidden="true"></i>Configuración de Pago
                     </h4>
                 </div>
 
@@ -38,15 +38,15 @@
                           data-porcentaje-recargo-id="@Html.IdFor(m => m.PorcentajeRecargo)"
                           data-tasa-credito-id="@Html.IdFor(m => m.TasaInteresMensualCreditoPersonal)"
                           data-credito-personal-value="@((int)TipoPago.CreditoPersonal)">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                                <div asp-validation-summary="ModelOnly" class="alert alert-danger d-flex align-items-center @(ViewData.ModelState.IsValid ? "d-none" : string.Empty)" role="alert">
+                                                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
                             <div>Revisá los campos marcados en rojo antes de continuar.</div>
                         </div>
 
                         <!-- Datos generales -->
                         <fieldset class="mb-4">
                             <legend class="h6 fw-semibold text-info border-bottom border-info pb-2 mb-3">
-                                <i class="bi bi-gear me-2"></i>Datos generales
+                                <i class="bi bi-gear me-2" aria-hidden="true"></i>Datos generales
                             </legend>
 
                             <div class="row g-3">
@@ -126,10 +126,12 @@
                                     <div class="card bg-secondary bg-opacity-10 border-secondary">
                                         <div class="card-body">
                                             <div class="form-check form-switch">
-                                                <input asp-for="PermiteDescuento"
+                                                      <input asp-for="PermiteDescuento"
                                                        class="form-check-input"
                                                        type="checkbox"
-                                                       id="permiteDescuentoCheck" />
+                                                          id="permiteDescuentoCheck"
+                                                          aria-controls="descuentoMaxDiv"
+                                                          aria-expanded="@(Model.PermiteDescuento ? "true" : "false")" />
                                                 <label asp-for="PermiteDescuento" class="form-check-label fw-semibold"></label>
                                             </div>
                                             <div class="form-text text-secondary mt-2">
@@ -169,10 +171,12 @@
                                     <div class="card bg-secondary bg-opacity-10 border-secondary">
                                         <div class="card-body">
                                             <div class="form-check form-switch">
-                                                <input asp-for="TieneRecargo"
+                                                      <input asp-for="TieneRecargo"
                                                        class="form-check-input"
                                                        type="checkbox"
-                                                       id="tieneRecargoCheck" />
+                                                          id="tieneRecargoCheck"
+                                                          aria-controls="recargoDiv"
+                                                          aria-expanded="@(Model.TieneRecargo ? "true" : "false")" />
                                                 <label asp-for="TieneRecargo" class="form-check-label fw-semibold"></label>
                                             </div>
                                             <div class="form-text text-secondary mt-2">
@@ -202,10 +206,10 @@
                         <!-- Botones -->
                         <div class="d-flex justify-content-end gap-3 mt-4">
                             <a asp-action="Index" class="btn btn-outline-light px-4">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary px-4">
-                                <i class="bi bi-save me-1"></i>Guardar Configuración
+                                <i class="bi bi-save me-1" aria-hidden="true"></i>Guardar Configuración
                             </button>
                         </div>
                     </form>

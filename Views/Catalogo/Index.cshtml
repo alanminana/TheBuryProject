@@ -3,11 +3,19 @@
 @{
     ViewData["Title"] = "Catálogo";
     var returnUrl = Context.Request.Path + Context.Request.QueryString;
+
+    // UNA sola verdad para permisos (UI + modals + scripts)
+    var puedeEditarPrecios =
+        User.IsInRole("SuperAdmin") || User.IsInRole("Gerente") ||
+        User.HasClaim("Permission", "precios:apply");
+
+    var puedeVerHistorial =
+        User.IsInRole("SuperAdmin") || User.IsInRole("Gerente") ||
+        User.HasClaim("Permission", "precios:view");
 }
 
 <section class="container-fluid py-4">
 
-    <!-- (tu HTML tal cual) -->
     <partial name="_Alerts" />
     <partial name="_CatalogoFiltros" model="Model" />
     <partial name="_CatalogoTablaProductos" model="Model" />
@@ -18,46 +26,46 @@
 
 @section Modals
 {
-    @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente"))
+    @* Modal/acciones masivas (Actualizar precios) *@
+    @if (puedeEditarPrecios)
     {
         <partial name="_CatalogoAccionesMasivasOffcanvas" />
-    }
-
-    @* Modal confirmar aplicar (afuera del main.page-animate) *@
-    @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente") || User.HasClaim("Permission", "precios:simulate"))
-    {
         <partial name="_CatalogoModalConfirmarAplicar" />
     }
 
-    @* Offcanvas historial + Modal revertir (afuera del main.page-animate) *@
-    @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente") || User.HasClaim("Permission", "precios:view"))
+    @* Offcanvas historial: puede verlo quien tenga permiso de view *@
+    @if (puedeVerHistorial)
     {
         <partial name="_CatalogoHistorialPreciosOffcanvas" />
+    }
+
+    @* Modal de revertir: SOLO quien puede editar/revertir (no solo ver) *@
+    @if (puedeEditarPrecios)
+    {
         <partial name="_CatalogoModalRevertirPrecio" />
     }
 }
 
 @section Scripts
 {
-    @* Datos de inicialización para JS (mínimo inline) *@
     <script id="catalogo-init" type="application/json">
         @Html.Raw(Json.Serialize(new
         {
-                esAdminPrecios = User.IsInRole("SuperAdmin") || User.IsInRole("Gerente"),
-                puedeVerHistorial = User.IsInRole("SuperAdmin") || User.IsInRole("Gerente") || User.HasClaim("Permission", "precios:view"),
-                listasPrecios = Model.ListasPrecios.Select(l => new { id = l.Id, nombre = l.Nombre }),
-                listaPrecioActualId = Model.ListaPrecioId,
-                categorias = Model.Categorias.Select(c => new { id = c.Id, nombre = c.Nombre }),
-                marcas = Model.Marcas.Select(m => new { id = m.Id, nombre = m.Nombre })
+            esAdminPrecios = puedeEditarPrecios,
+            puedeVerHistorial = puedeVerHistorial,
+            listasPrecios = Model.ListasPrecios.Select(l => new { id = l.Id, nombre = l.Nombre }),
+            listaPrecioActualId = Model.ListaPrecioId,
+            categorias = Model.Categorias.Select(c => new { id = c.Id, nombre = c.Nombre }),
+            marcas = Model.Marcas.Select(m => new { id = m.Id, nombre = m.Nombre })
         }))
-</script>
+    </script>
 
-@if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente"))
+    @if (puedeEditarPrecios)
     {
         <script src="~/js/catalogo-acciones-masivas-directo.js" asp-append-version="true"></script>
     }
 
-    @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente") || User.HasClaim("Permission", "precios:view"))
+    @if (puedeVerHistorial)
     {
         <script src="~/js/catalogo-historial-precios.js" asp-append-version="true"></script>
     }

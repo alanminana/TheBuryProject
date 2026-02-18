@@ -241,7 +241,7 @@ namespace TheBuryProject.Controllers
         [HttpGet]
         public async Task<IActionResult> TestLogin(string email, string password)
         {
-            var diagnostico = new Dictionary<string, object>();
+            var diagnostico = new Dictionary<string, object?>();
 
             try
             {
@@ -387,7 +387,7 @@ namespace TheBuryProject.Controllers
             }
 
             var roles = await _userManager.GetRolesAsync(user);
-            var permisosInfo = new Dictionary<string, object>();
+            var permisosInfo = new Dictionary<string, object?>();
 
             foreach (var roleName in roles)
             {
@@ -456,7 +456,13 @@ namespace TheBuryProject.Controllers
         [HttpGet]
         public IActionResult AuditoriaPermisos()
         {
-            var controladores = new Dictionary<string, object>
+            static bool TieneEstadoCorrecto(object? valor)
+            {
+                var estado = valor?.GetType().GetProperty("Estado")?.GetValue(valor)?.ToString();
+                return estado?.Contains("✅", StringComparison.Ordinal) == true;
+            }
+
+            var controladores = new Dictionary<string, object?>
             {
                 ["AccionesController"] = new { Modulo = "acciones", Accion = "view", Estado = "✅" },
                 ["AlertaStockController"] = new { Modulo = "stock", Accion = "viewalerts", Estado = "✅" },
@@ -493,7 +499,7 @@ namespace TheBuryProject.Controllers
             {
                 FechaAuditoria = DateTime.Now,
                 TotalControladores = controladores.Count,
-                ConPermisoRequerido = controladores.Count(c => ((dynamic)c.Value).Estado.Contains("✅")),
+                ConPermisoRequerido = controladores.Count(c => TieneEstadoCorrecto(c.Value)),
                 RolesHardcodeados = 0,
                 Controladores = controladores,
                 Resumen = new

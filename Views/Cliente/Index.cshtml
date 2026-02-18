@@ -19,20 +19,20 @@
             <!-- Encabezado -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="fw-bold mb-0">
-                    <i class="bi bi-people text-info me-2"></i>Clientes
+                    <i class="bi bi-people text-info me-2" aria-hidden="true"></i>Clientes
                 </h2>
                 <div class="d-flex gap-2">
                     @if (User.TienePermiso("clientes", "managecreditlimits"))
                     {
                         <a asp-action="LimitesPorPuntaje" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-primary">
-                            <i class="bi bi-sliders me-1"></i>Límites por puntaje
+                            <i class="bi bi-sliders me-1" aria-hidden="true"></i>Límites por puntaje
                         </a>
                     }
                     @* Nuevo Cliente - requiere clientes.create *@
                     @if (User.TienePermiso("clientes", "create"))
                     {
                         <a asp-action="Create" asp-route-returnUrl="@listReturnUrl" class="btn btn-success">
-                            <i class="bi bi-plus-circle"></i> Nuevo Cliente
+                            <i class="bi bi-plus-circle" aria-hidden="true"></i> Nuevo Cliente
                         </a>
                     }
                 </div>
@@ -42,10 +42,10 @@
             <div class="card bg-dark border-0 shadow-sm mb-4">
                 <div class="card-header bg-body-secondary text-light border-0 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-semibold">
-                        <i class="bi bi-funnel me-2"></i>Filtros de Búsqueda
+                        <i class="bi bi-funnel me-2" aria-hidden="true"></i>Filtros de Búsqueda
                     </h5>
                     <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCliente">
-                        <i class="bi bi-chevron-down"></i>
+                        <i class="bi bi-chevron-down" aria-hidden="true"></i>
                     </button>
                 </div>
 
@@ -88,10 +88,10 @@
 
                             <div class="col-md-2 d-flex gap-2">
                                 <button type="submit" class="btn btn-primary flex-fill">
-                                    <i class="bi bi-search"></i> Buscar
+                                    <i class="bi bi-search" aria-hidden="true"></i> Buscar
                                 </button>
                                 <a asp-action="Index" class="btn btn-outline-light flex-fill">
-                                    <i class="bi bi-x-circle"></i> Limpiar
+                                    <i class="bi bi-x-circle" aria-hidden="true"></i> Limpiar
                                 </a>
                             </div>
                         </form>
@@ -102,17 +102,17 @@
             <!-- Mensajes -->
             @if (TempData["Success"] != null)
             {
-                <div class="alert alert-success alert-dismissible fade show shadow-sm">
-                    <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                    <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                 </div>
             }
 
             @if (TempData["Error"] != null)
             {
-                <div class="alert alert-danger alert-dismissible fade show shadow-sm">
-                    <i class="bi bi-x-circle-fill me-2"></i>@TempData["Error"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                    <i class="bi bi-x-circle-fill me-2" aria-hidden="true"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                 </div>
             }
 
@@ -120,7 +120,7 @@
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-list me-2"></i>Resultados (@Model.TotalResultados)
+                        <i class="bi bi-list me-2" aria-hidden="true"></i>Resultados (@Model.TotalResultados)
                     </h5>
                 </div>
 
@@ -131,14 +131,14 @@
                             <table class="table table-dark table-hover align-middle mb-0">
                                 <thead class="table-secondary text-dark">
                                     <tr>
-                                        <th>Documento</th>
-                                        <th>Cliente</th>
-                                        <th>Contacto</th>
-                                        <th>Domicilio</th>
-                                        <th class="text-center">Puntaje</th>
-                                        <th class="text-center">Créditos</th>
-                                        <th class="text-center">Estado</th>
-                                        <th class="text-center">Acciones</th>
+                                        <th scope="col">Documento</th>
+                                        <th scope="col">Cliente</th>
+                                        <th scope="col">Contacto</th>
+                                        <th scope="col">Domicilio</th>
+                                        <th scope="col" class="text-center">Puntaje</th>
+                                        <th scope="col" class="text-center">Créditos</th>
+                                        <th scope="col" class="text-center">Estado</th>
+                                        <th scope="col" class="text-center">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -170,11 +170,11 @@
                                                 }
                                             </td>
                                             <td>
-                                                <i class="bi bi-telephone"></i> @cliente.Telefono<br />
+                                                <i class="bi bi-telephone" aria-hidden="true"></i> @cliente.Telefono<br />
                                                 @if (!string.IsNullOrEmpty(cliente.Email))
                                                 {
                                                     <small>
-                                                        <i class="bi bi-envelope"></i> @cliente.Email
+                                                        <i class="bi bi-envelope" aria-hidden="true"></i> @cliente.Email
                                                     </small>
                                                 }
                                             </td>
@@ -210,18 +210,21 @@
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     <a asp-action="Details" asp-route-id="@cliente.Id"
                                                            asp-route-returnUrl="@listReturnUrl"
-                                                       class="btn btn-outline-info" title="Ver detalles">
-                                                        <i class="bi bi-eye"></i>
+                                                       class="btn btn-outline-info" title="Ver detalles" aria-label="Ver detalles del cliente">
+                                                        <i class="bi bi-eye" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Ver detalles</span>
                                                     </a>
                                                     <a asp-action="Edit" asp-route-id="@cliente.Id"
                                                            asp-route-returnUrl="@listReturnUrl"
-                                                       class="btn btn-outline-warning" title="Editar">
-                                                        <i class="bi bi-pencil"></i>
+                                                       class="btn btn-outline-warning" title="Editar" aria-label="Editar cliente">
+                                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Editar</span>
                                                     </a>
                                                     <a asp-action="Delete" asp-route-id="@cliente.Id"
                                                            asp-route-returnUrl="@listReturnUrl"
-                                                       class="btn btn-outline-danger" title="Eliminar">
-                                                        <i class="bi bi-trash"></i>
+                                                       class="btn btn-outline-danger" title="Eliminar" aria-label="Eliminar cliente">
+                                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Eliminar</span>
                                                     </a>
                                                 </div>
                                             </td>
@@ -234,10 +237,10 @@
                     else
                     {
                         <div class="py-5 text-center text-muted">
-                            <i class="bi bi-inbox fs-1"></i>
+                            <i class="bi bi-inbox fs-1" aria-hidden="true"></i>
                             <p class="mt-2">No se encontraron clientes</p>
                             <a asp-action="Create" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Crear Primer Cliente
+                                <i class="bi bi-plus-circle" aria-hidden="true"></i> Crear Primer Cliente
                             </a>
                         </div>
                     }

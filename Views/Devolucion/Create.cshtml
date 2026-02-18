@@ -8,7 +8,7 @@
 <div class="container-fluid">
     <div class="row mb-3">
         <div class="col">
-            <h2><i class="bi bi-arrow-return-left me-2"></i>Crear Devolución</h2>
+            <h2><i class="bi bi-arrow-return-left me-2" aria-hidden="true"></i>Crear Devolución</h2>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a asp-action="Index">Devoluciones</a></li>
@@ -20,8 +20,8 @@
 
     @if (Model.PuedeDevolver == false)
     {
-        <div class="alert alert-danger">
-            <i class="bi bi-exclamation-triangle me-2"></i>
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
             <strong>No se puede procesar esta devolución.</strong>
             La venta ha excedido el plazo permitido para devoluciones (@Model.DiasDesdeVenta días transcurridos).
         </div>
@@ -32,11 +32,11 @@
     {
         <div class="card mb-3">
             <div class="card-header bg-info text-white">
-                <h5 class="mb-0"><i class="bi bi-search me-2"></i>Buscar Venta</h5>
+                <h5 class="mb-0"><i class="bi bi-search me-2" aria-hidden="true"></i>Buscar Venta</h5>
             </div>
             <div class="card-body">
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
                     Seleccione la venta para la cual desea crear la devolución. Solo se mostrarán ventas confirmadas, facturadas o entregadas.
                 </div>
                 <div class="row">
@@ -55,7 +55,7 @@
                     </div>
                     <div class="col-md-6 d-flex align-items-end">
                         <button type="button" class="btn btn-primary" id="btnCargarVenta" data-create-url="@Url.Action("Create", "Devolucion")">
-                            <i class="bi bi-arrow-right-circle me-1"></i>Cargar Venta
+                            <i class="bi bi-arrow-right-circle me-1" aria-hidden="true"></i>Cargar Venta
                         </button>
                     </div>
                 </div>
@@ -66,13 +66,17 @@
     <form asp-action="Create" method="post">
         <input type="hidden" asp-for="VentaId" />
         <input type="hidden" asp-for="ClienteId" />
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        }
 
         <!-- Información de la Venta -->
         @if (Model.NumeroVenta != null)
         {
             <div class="card mb-3">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Información de la Venta</h5>
+                    <h5 class="mb-0"><i class="bi bi-receipt me-2" aria-hidden="true"></i>Información de la Venta</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -95,7 +99,7 @@
         else
         {
             <div class="alert alert-warning">
-                <i class="bi bi-exclamation-triangle me-2"></i>
+                <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
                 <strong>Debe seleccionar una venta</strong> para poder crear una devolución.
             </div>
         }
@@ -103,7 +107,7 @@
         <!-- Datos de la Devolución -->
         <div class="card mb-3">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Datos de la Devolución</h5>
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2" aria-hidden="true"></i>Datos de la Devolución</h5>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -133,7 +137,7 @@
         <!-- Productos a Devolver -->
         <div class="card mb-3">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>Productos a Devolver</h5>
+                <h5 class="mb-0"><i class="bi bi-box-seam me-2" aria-hidden="true"></i>Productos a Devolver</h5>
             </div>
             <div class="card-body">
                 @if (Model.Productos.Any())
@@ -142,13 +146,13 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Producto</th>
-                                    <th>Cantidad Comprada</th>
-                                    <th>Cantidad a Devolver</th>
-                                    <th>Precio Unitario</th>
-                                    <th>Estado</th>
-                                    <th>Accesorios</th>
-                                    <th>Subtotal</th>
+                                    <th scope="col">Producto</th>
+                                    <th scope="col">Cantidad Comprada</th>
+                                    <th scope="col">Cantidad a Devolver</th>
+                                    <th scope="col">Precio Unitario</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col">Accesorios</th>
+                                    <th scope="col">Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -196,8 +200,8 @@
                 }
                 else
                 {
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
                         Seleccione una venta primero para ver los productos disponibles para devolución.
                     </div>
                 }
@@ -209,10 +213,10 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <a asp-action="Index" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left me-1"></i>Cancelar
+                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancelar
                     </a>
                     <button type="submit" class="btn btn-primary" id="btnGuardar" disabled>
-                        <i class="bi bi-save me-1"></i>Crear Devolución
+                        <i class="bi bi-save me-1" aria-hidden="true"></i>Crear Devolución
                     </button>
                 </div>
             </div>

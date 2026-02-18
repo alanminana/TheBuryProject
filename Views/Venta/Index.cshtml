@@ -19,7 +19,7 @@
         <div class="col-12">
             <div class="venta-header d-flex flex-wrap justify-content-between align-items-center gap-3">
                 <div>
-                    <h2 class="mb-1"><i class="bi bi-cart-check me-2 text-primary"></i> Ventas y Cotizaciones</h2>
+                    <h2 class="mb-1"><i class="bi bi-cart-check me-2 text-primary" aria-hidden="true"></i> Ventas y Cotizaciones</h2>
                     <p class="mb-0 text-muted">Filtrá, consultá y accedé rápidamente a las acciones principales.</p>
                 </div>
                 <div class="btn-group">
@@ -27,7 +27,7 @@
                     @if (User.TienePermiso("configuraciones", "view"))
                     {
                         <button type="button" class="btn btn-outline-warning" id="btnConfigPago">
-                            <i class="bi bi-gear"></i> Configurar recargos / descuentos
+                            <i class="bi bi-gear" aria-hidden="true"></i> Configurar recargos / descuentos
                         </button>
                     }
 
@@ -35,7 +35,7 @@
                     @if (User.TienePermiso("ventas", "create"))
                     {
                         <a asp-action="Cotizar" class="btn btn-outline-info">
-                            <i class="bi bi-file-earmark-text"></i> Cotizar
+                            <i class="bi bi-file-earmark-text" aria-hidden="true"></i> Cotizar
                         </a>
                     }
 
@@ -45,13 +45,13 @@
                         @if ((ViewBag.PuedeCrearVenta as bool?) == true)
                         {
                             <a asp-action="Create" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Nueva Venta
+                                <i class="bi bi-plus-circle" aria-hidden="true"></i> Nueva Venta
                             </a>
                         }
                         else
                         {
                             <button type="button" class="btn btn-primary" disabled title="Debe abrir una caja para registrar una venta.">
-                                <i class="bi bi-plus-circle"></i> Nueva Venta
+                                <i class="bi bi-plus-circle" aria-hidden="true"></i> Nueva Venta
                             </button>
                         }
                     }
@@ -62,9 +62,9 @@
         <div class="col-12">
             <div class="card bg-dark border-0 shadow-sm mb-2">
                 <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-funnel me-2"></i> Filtros</h5>
-                    <button class="btn btn-sm btn-outline-light filter-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse">
-                        <i class="bi bi-sliders"></i>
+                    <h5 class="mb-0"><i class="bi bi-funnel me-2" aria-hidden="true"></i> Filtros</h5>
+                    <button class="btn btn-sm btn-outline-light filter-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse" aria-label="Mostrar u ocultar filtros">
+                        <i class="bi bi-sliders" aria-hidden="true"></i>
                     </button>
         </div>
 
@@ -109,10 +109,10 @@
                     </div>
                     <div class="col-md-3 d-flex gap-2">
                         <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-search"></i> Buscar
+                            <i class="bi bi-search" aria-hidden="true"></i> Buscar
                         </button>
                         <a asp-action="Index" class="btn btn-outline-secondary w-100">
-                            <i class="bi bi-x-circle"></i> Limpiar
+                            <i class="bi bi-x-circle" aria-hidden="true"></i> Limpiar
                         </a>
                     </div>
                 </form>
@@ -125,22 +125,22 @@
             @if (TempData["Success"] != null)
             {
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="bi bi-check-circle"></i> @TempData["Success"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <i class="bi bi-check-circle" aria-hidden="true"></i> @TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                 </div>
             }
             @if (TempData["Warning"] != null)
             {
                 <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-triangle"></i> @TempData["Warning"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i> @TempData["Warning"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                 </div>
             }
             @if (TempData["Error"] != null)
             {
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-x-circle"></i> @TempData["Error"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <i class="bi bi-x-circle" aria-hidden="true"></i> @TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                 </div>
             }
         </div>
@@ -148,22 +148,22 @@
         <div class="col-12">
             <div class="card bg-dark border-0 shadow-sm table-card">
                 <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-list-check me-2"></i> Listado</h5>
-                    <span class="badge badge-soft"><i class="bi bi-collection"></i> @Model.Count registros</span>
+                    <h5 class="mb-0"><i class="bi bi-list-check me-2" aria-hidden="true"></i> Listado</h5>
+                    <span class="badge badge-soft"><i class="bi bi-collection" aria-hidden="true"></i> @Model.Count registros</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-dark table-hover align-middle mb-0">
                             <thead class="table-secondary text-dark">
                                 <tr>
-                                    <th>Número</th>
-                                    <th>Fecha</th>
-                                    <th>Cliente</th>
-                                    <th>Estado</th>
-                                    <th>Autorización</th>
-                                    <th>Tipo Pago</th>
-                                    <th class="text-end">Total</th>
-                                    <th class="text-center">Acciones</th>
+                                    <th scope="col">Número</th>
+                                    <th scope="col">Fecha</th>
+                                    <th scope="col">Cliente</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col">Autorización</th>
+                                    <th scope="col">Tipo Pago</th>
+                                    <th scope="col" class="text-end">Total</th>
+                                    <th scope="col" class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -173,7 +173,7 @@
                                     {
                                         <tr>
                                             <td class="fw-semibold">@venta.Numero</td>
-                                            <td>@venta.FechaVenta.ToString("dd/MM/yyyy")</td>
+                                            <td><time datetime="@venta.FechaVenta.ToString("yyyy-MM-dd")">@venta.FechaVenta.ToString("dd/MM/yyyy")</time></td>
                                             <td>
                                                 <div>@venta.ClienteNombre</div>
                                                 <small class="text-muted">@venta.ClienteDocumento</small>
@@ -185,7 +185,7 @@
                                                 <span class="@venta.EstadoAutorizacionBadgeClass">
                                                     @if (!string.IsNullOrEmpty(venta.EstadoAutorizacionIconClass))
                                                     {
-                                                        <i class="@venta.EstadoAutorizacionIconClass"></i>
+                                                        <i class="@venta.EstadoAutorizacionIconClass" aria-hidden="true"></i>
                                                     }
                                                     @venta.EstadoAutorizacionDisplay
                                                 </span>
@@ -197,30 +197,34 @@
                                                     @* Ver Detalles - requiere ventas.view *@
                                                     @if (User.TienePermiso("ventas", "view"))
                                                     {
-                                                        <a asp-action="Details" asp-route-id="@venta.Id" class="btn btn-outline-light" title="Ver Detalles">
-                                                            <i class="bi bi-eye"></i>
+                                                        <a asp-action="Details" asp-route-id="@venta.Id" class="btn btn-outline-light" title="Ver Detalles" aria-label="Ver detalles de @venta.Numero">
+                                                            <i class="bi bi-eye" aria-hidden="true"></i>
+                                                            <span class="visually-hidden">Ver detalles</span>
                                                         </a>
                                                     }
 
                                                     @* Autorizar/Rechazar - requiere ventas.authorize + lógica de negocio *@
                                                     @if (venta.PuedeAutorizar && User.TienePermiso("ventas", "authorize"))
                                                     {
-                                                        <a asp-action="Autorizar" asp-route-id="@venta.Id" class="btn btn-outline-success" title="Autorizar">
-                                                            <i class="bi bi-check-lg"></i>
+                                                        <a asp-action="Autorizar" asp-route-id="@venta.Id" class="btn btn-outline-success" title="Autorizar" aria-label="Autorizar @venta.Numero">
+                                                            <i class="bi bi-check-lg" aria-hidden="true"></i>
+                                                            <span class="visually-hidden">Autorizar</span>
                                                         </a>
                                                     }
                                                     @if (venta.PuedeAutorizar && User.TienePermiso("ventas", "reject"))
                                                     {
-                                                        <a asp-action="Rechazar" asp-route-id="@venta.Id" class="btn btn-outline-danger" title="Rechazar">
-                                                            <i class="bi bi-x-lg"></i>
+                                                        <a asp-action="Rechazar" asp-route-id="@venta.Id" class="btn btn-outline-danger" title="Rechazar" aria-label="Rechazar @venta.Numero">
+                                                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                                                            <span class="visually-hidden">Rechazar</span>
                                                         </a>
                                                     }
 
                                                     @* Editar - requiere ventas.update + lógica de negocio *@
                                                     @if (venta.PuedeEditar && User.TienePermiso("ventas", "update"))
                                                     {
-                                                        <a asp-action="Edit" asp-route-id="@venta.Id" class="btn btn-outline-warning" title="Editar">
-                                                            <i class="bi bi-pencil"></i>
+                                                        <a asp-action="Edit" asp-route-id="@venta.Id" class="btn btn-outline-warning" title="Editar" aria-label="Editar @venta.Numero">
+                                                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                            <span class="visually-hidden">Editar</span>
                                                         </a>
                                                     }
                                                 </div>
@@ -232,7 +236,7 @@
                                 {
                                     <tr>
                                         <td colspan="8" class="text-center table-empty py-5">
-                                            <i class="bi bi-inbox display-6"></i>
+                                            <i class="bi bi-inbox display-6" aria-hidden="true"></i>
                                             <p class="mt-2 mb-0">No se encontraron registros</p>
                                         </td>
                                     </tr>
@@ -253,9 +257,9 @@
             <div class="modal-content bg-dark text-light">
                 <div class="modal-header bg-secondary border-0">
                     <h5 class="modal-title" id="modalConfigPagoLabel">
-                        <i class="bi bi-gear me-2"></i>Configurar Recargos / Descuentos por Tipo de Pago
+                        <i class="bi bi-gear me-2" aria-hidden="true"></i>Configurar Recargos / Descuentos por Tipo de Pago
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <div id="configPagoContent">
@@ -269,10 +273,10 @@
                 </div>
                 <div class="modal-footer bg-secondary border-0">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle"></i> Cancelar
+                        <i class="bi bi-x-circle" aria-hidden="true"></i> Cancelar
                     </button>
                     <button type="button" class="btn btn-primary" id="btnGuardarConfig">
-                        <i class="bi bi-save"></i> Guardar Configuración
+                        <i class="bi bi-save" aria-hidden="true"></i> Guardar Configuración
                     </button>
                 </div>
             </div>

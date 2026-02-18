@@ -11,7 +11,7 @@
         </div>
         <div class="col-auto">
             <a asp-action="Index" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
             </a>
         </div>
     </div>
@@ -20,7 +20,7 @@
     <div class="card mb-4">
         <div class="card-header bg-success text-white">
             <h5 class="mb-0">
-                <i class="bi bi-funnel"></i> Filtros
+                <i class="bi bi-funnel" aria-hidden="true"></i> Filtros
             </h5>
         </div>
         <div class="card-body">
@@ -53,7 +53,7 @@
                     <div class="col-md-2 mb-3">
                         <label class="form-label">&nbsp;</label>
                         <button type="submit" class="btn btn-success w-100">
-                            <i class="bi bi-search"></i> Filtrar
+                            <i class="bi bi-search" aria-hidden="true"></i> Filtrar
                         </button>
                     </div>
                 </div>
@@ -106,7 +106,7 @@
         <div class="col-md-12 text-end">
             <a asp-action="ExportarMargenesExcel" asp-route-categoriaId="@ViewBag.CategoriaId" asp-route-marcaId="@ViewBag.MarcaId"
                class="btn btn-success">
-                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Exportar a Excel
             </a>
         </div>
     </div>
@@ -115,7 +115,7 @@
     <div class="card">
         <div class="card-header">
             <h5 class="mb-0">
-                <i class="bi bi-table"></i> Detalle por Producto
+                <i class="bi bi-table" aria-hidden="true"></i> Detalle por Producto
             </h5>
         </div>
         <div class="card-body p-0">
@@ -123,19 +123,19 @@
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>Código</th>
-                            <th>Producto</th>
-                            <th>Categoría</th>
-                            <th>Marca</th>
-                            <th class="text-end">Precio Compra</th>
-                            <th class="text-end">Precio Venta</th>
-                            <th class="text-end">Ganancia</th>
-                            <th class="text-end">Margen %</th>
-                            <th class="text-center">Clasificación</th>
-                            <th class="text-end">Stock</th>
-                            <th class="text-end">Ganancia Potencial</th>
-                            <th class="text-end">Ventas 30d</th>
-                            <th class="text-end">Rotación %</th>
+                            <th scope="col">Código</th>
+                            <th scope="col">Producto</th>
+                            <th scope="col">Categoría</th>
+                            <th scope="col">Marca</th>
+                            <th scope="col" class="text-end">Precio Compra</th>
+                            <th scope="col" class="text-end">Precio Venta</th>
+                            <th scope="col" class="text-end">Ganancia</th>
+                            <th scope="col" class="text-end">Margen %</th>
+                            <th scope="col" class="text-center">Clasificación</th>
+                            <th scope="col" class="text-end">Stock</th>
+                            <th scope="col" class="text-end">Ganancia Potencial</th>
+                            <th scope="col" class="text-end">Ventas 30d</th>
+                            <th scope="col" class="text-end">Rotación %</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -176,7 +176,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="table-secondary">
-                            <th colspan="6" class="text-end">TOTALES:</th>
+                            <th scope="row" colspan="6" class="text-end">TOTALES:</th>
                             <th class="text-end text-success">$@Model.Productos.Sum(p => p.Ganancia).ToString("N2")</th>
                             <th class="text-end">@Model.MargenPromedioGeneral.ToString("N1")%</th>
                             <th></th>
@@ -194,7 +194,7 @@
     <!-- Leyenda -->
     <div class="card mt-3">
         <div class="card-body">
-            <h6><i class="bi bi-info-circle"></i> Leyenda:</h6>
+            <h6><i class="bi bi-info-circle" aria-hidden="true"></i> Leyenda:</h6>
             <div class="row">
                 <div class="col-md-6">
                     <strong>Clasificación de Margen:</strong>
@@ -215,7 +215,7 @@
                     </ul>
                     <p class="text-muted mt-2 mb-0">
                         <small>
-                            <i class="bi bi-lightbulb"></i> La rotación indica qué porcentaje del stock se vendió en los últimos 30 días.
+                            <i class="bi bi-lightbulb" aria-hidden="true"></i> La rotación indica qué porcentaje del stock se vendió en los últimos 30 días.
                             Una rotación alta indica un producto de alta demanda.
                         </small>
                     </p>

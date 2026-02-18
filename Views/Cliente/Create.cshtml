@@ -13,7 +13,7 @@
 
 @section PageActions {
     <a href="@backUrl" class="btn btn-outline-light">
-        <i class="bi bi-arrow-left"></i> Volver
+        <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
     </a>
 }
 
@@ -22,19 +22,22 @@
         <div class="card bg-dark border-0 shadow-sm">
             <div class="card-header bg-secondary">
                 <h5 class="mb-0 text-light">
-                    <i class="bi bi-person-plus me-2"></i>Datos del Nuevo Cliente
+                    <i class="bi bi-person-plus me-2" aria-hidden="true"></i>Datos del Nuevo Cliente
                 </h5>
             </div>
             <div class="card-body p-4">
                 <form asp-action="Create" method="post" class="needs-validation" novalidate>
                     @Html.AntiForgeryToken()
 
-                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    @if (!string.IsNullOrWhiteSpace(returnUrl))
+                    {
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    }
 
                     <div asp-validation-summary="ModelOnly"
                          class="alert alert-danger @(ViewData.ModelState.ErrorCount == 0 ? "d-none" : "")"
                          role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
                         Por favor, corregí los errores antes de continuar.
                     </div>
 
@@ -44,10 +47,10 @@
 
                     <div class="d-flex justify-content-end gap-2 mt-3">
                         <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
-                            <i class="bi bi-x-circle me-2"></i>Cancelar
+                            <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Cancelar
                         </a>
                         <button type="submit" class="btn btn-success btn-lg px-4">
-                            <i class="bi bi-check-circle me-2"></i>Crear Cliente
+                            <i class="bi bi-check-circle me-2" aria-hidden="true"></i>Crear Cliente
                         </button>
                     </div>
                 </form>

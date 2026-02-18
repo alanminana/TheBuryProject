@@ -17,19 +17,19 @@
 
 <div class="container-fluid mora-page" data-refresh-ms="300000">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-speedometer2 me-2"></i>Dashboard de Mora</h2>
+        <h2><i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Dashboard de Mora</h2>
         <div>
             <a asp-action="ClientesMora" class="btn btn-warning">
-                <i class="bi bi-people-fill me-2"></i>Bandeja de Clientes
+                <i class="bi bi-people-fill me-2" aria-hidden="true"></i>Bandeja de Clientes
             </a>
             <a asp-action="Configuracion" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-primary">
-                <i class="bi bi-gear me-2"></i>Configuración
+                <i class="bi bi-gear me-2" aria-hidden="true"></i>Configuración
             </a>
             <a asp-action="ConfiguracionExpandida" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-secondary">
-                <i class="bi bi-sliders me-2"></i>Avanzado
+                <i class="bi bi-sliders me-2" aria-hidden="true"></i>Avanzado
             </a>
             <a asp-action="Alertas" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-info">
-                <i class="bi bi-bell me-2"></i>Ver Todas las Alertas
+                <i class="bi bi-bell me-2" aria-hidden="true"></i>Ver Todas las Alertas
             </a>
         </div>
     </div>
@@ -99,7 +99,7 @@
             <div class="col-md-8">
                 <div class="card shadow-sm">
                     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i>Distribución por Prioridad</h6>
+                        <h6 class="mb-0"><i class="bi bi-bar-chart-fill me-2" aria-hidden="true"></i>Distribución por Prioridad</h6>
                         <a asp-action="ClientesMora" class="btn btn-sm btn-light">Ver todos</a>
                     </div>
                     <div class="card-body">
@@ -143,7 +143,7 @@
             <div class="col-md-4">
                 <div class="card shadow-sm h-100">
                     <div class="card-header bg-success text-white">
-                        <h6 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Gestiones Hoy</h6>
+                        <h6 class="mb-0"><i class="bi bi-calendar-check me-2" aria-hidden="true"></i>Gestiones Hoy</h6>
                     </div>
                     <div class="card-body d-flex flex-column justify-content-center">
                         <div class="row text-center">
@@ -177,7 +177,7 @@
                             <h6 class="card-title mb-0">Alertas Activas</h6>
                             <h2 class="mb-0">@alertasActivas.Count</h2>
                         </div>
-                        <i class="bi bi-bell-fill fs-1 opacity-50"></i>
+                        <i class="bi bi-bell-fill fs-1 opacity-50" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
@@ -191,7 +191,7 @@
                             <h6 class="card-title mb-0">Alertas Críticas</h6>
                             <h2 class="mb-0">@alertasCriticas</h2>
                         </div>
-                        <i class="bi bi-exclamation-triangle-fill fs-1 opacity-50"></i>
+                        <i class="bi bi-exclamation-triangle-fill fs-1 opacity-50" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
@@ -205,7 +205,7 @@
                             <h6 class="card-title mb-0">No Leídas</h6>
                             <h2 class="mb-0">@alertasNoLeidas</h2>
                         </div>
-                        <i class="bi bi-envelope-fill fs-1 opacity-50"></i>
+                        <i class="bi bi-envelope-fill fs-1 opacity-50" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
@@ -219,7 +219,7 @@
                             <h6 class="card-title mb-0">Estado del Job</h6>
                             <h3 class="mb-0">@(Model.Configuracion.JobActivo ? "Activo" : "Inactivo")</h3>
                         </div>
-                        <i class="bi bi-@(Model.Configuracion.JobActivo ? "play-circle-fill" : "pause-circle-fill") fs-1 opacity-50"></i>
+                        <i class="bi bi-@(Model.Configuracion.JobActivo ? "play-circle-fill" : "pause-circle-fill") fs-1 opacity-50" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
@@ -231,7 +231,7 @@
         <div class="col-md-8">
             <div class="card shadow-sm">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Configuración Actual</h5>
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2" aria-hidden="true"></i>Configuración Actual</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -265,7 +265,7 @@
         <div class="col-md-4">
             <div class="card shadow-sm border-primary">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Ejecución Manual</h5>
+                    <h5 class="mb-0"><i class="bi bi-lightning-charge me-2" aria-hidden="true"></i>Ejecución Manual</h5>
                 </div>
                 <div class="card-body text-center">
                     <p class="mb-3">Ejecutar el proceso de cálculo de mora inmediatamente</p>
@@ -273,7 +273,7 @@
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="returnUrl" value="@listReturnUrl" />
                         <button type="submit" class="btn btn-primary btn-lg w-100" data-confirm="¿Ejecutar ahora el proceso de mora? Esto procesará todas las cuotas vencidas.">
-                            <i class="bi bi-play-fill me-2"></i>Ejecutar Ahora
+                            <i class="bi bi-play-fill me-2" aria-hidden="true"></i>Ejecutar Ahora
                         </button>
                     </form>
                     <small class="text-muted mt-2 d-block">
@@ -287,14 +287,14 @@
     <!-- Alertas Activas Recientes -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Alertas Activas Recientes</h5>
+            <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>Alertas Activas Recientes</h5>
             <a asp-action="Alertas" asp-route-returnUrl="@listReturnUrl" class="btn btn-sm btn-dark">Ver Todas</a>
         </div>
         <div class="card-body p-0">
             @if (!alertasActivas.Any())
             {
                 <div class="text-center py-5">
-                    <i class="bi bi-check-circle fs-1 text-success"></i>
+                    <i class="bi bi-check-circle fs-1 text-success" aria-hidden="true"></i>
                     <p class="text-muted mt-3">No hay alertas activas</p>
                 </div>
             }
@@ -304,12 +304,12 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th>Tipo</th>
-                                <th>Cliente</th>
-                                <th>Título</th>
-                                <th>Prioridad</th>
-                                <th>Fecha</th>
-                                <th>Acciones</th>
+                                <th scope="col">Tipo</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Título</th>
+                                <th scope="col">Prioridad</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -351,7 +351,8 @@
                                                     <input type="hidden" name="rowVersion" value="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")" />
                                                     <input type="hidden" name="returnUrl" value="@listReturnUrl" />
                                                     <button type="submit" class="btn btn-outline-primary" title="Marcar como leída">
-                                                        <i class="bi bi-eye"></i>
+                                                        <i class="bi bi-eye" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Marcar como leída</span>
                                                     </button>
                                                 </form>
                                             }
@@ -362,12 +363,14 @@
                                                     <input type="hidden" name="rowVersion" value="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")" />
                                                     <input type="hidden" name="returnUrl" value="@listReturnUrl" />
                                                     <button type="submit" class="btn btn-outline-success" title="Resolver" data-confirm="¿Resolver esta alerta?">
-                                                        <i class="bi bi-check-lg"></i>
+                                                        <i class="bi bi-check-lg" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Resolver</span>
                                                     </button>
                                                 </form>
                                             }
                                             <a asp-controller="Credito" asp-action="Details" asp-route-id="@alerta.CreditoId" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-info" title="Ver Crédito">
-                                                <i class="bi bi-info-circle"></i>
+                                                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Ver crédito</span>
                                             </a>
                                         </div>
                                     </td>
@@ -383,13 +386,13 @@
     <!-- Historial de Ejecuciones -->
     <div class="card shadow-sm">
         <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Historial de Ejecuciones</h5>
+            <h5 class="mb-0"><i class="bi bi-clock-history me-2" aria-hidden="true"></i>Historial de Ejecuciones</h5>
         </div>
         <div class="card-body p-0">
             @if (!historialEjecuciones.Any())
             {
                 <div class="text-center py-5">
-                    <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d;"></i>
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d;" aria-hidden="true"></i>
                     <p class="text-muted mt-3">No hay ejecuciones registradas</p>
                 </div>
             }
@@ -399,14 +402,14 @@
                     <table class="table table-striped mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th>Fecha</th>
-                                <th>Estado</th>
-                                <th>Cuotas Procesadas</th>
-                                <th>Cuotas con Mora</th>
-                                <th>Alertas Generadas</th>
-                                <th>Total Mora</th>
-                                <th>Recargos</th>
-                                <th>Duración</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col">Cuotas Procesadas</th>
+                                <th scope="col">Cuotas con Mora</th>
+                                <th scope="col">Alertas Generadas</th>
+                                <th scope="col">Total Mora</th>
+                                <th scope="col">Recargos</th>
+                                <th scope="col">Duración</th>
                             </tr>
                         </thead>
                         <tbody>

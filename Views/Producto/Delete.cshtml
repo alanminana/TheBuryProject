@@ -25,14 +25,14 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-danger text-white">
                     <h5 class="mb-0 d-flex align-items-center gap-2">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
                         <span>Eliminar producto</span>
                     </h5>
                 </div>
 
                 <div class="card-body p-4">
                     <div class="alert alert-warning border-0 d-flex align-items-start gap-3" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill fs-3 flex-shrink-0"></i>
+                        <i class="bi bi-exclamation-triangle-fill fs-3 flex-shrink-0" aria-hidden="true"></i>
                         <div>
                             <h5 class="fw-bold mb-2">¿Estás seguro que querés eliminar este producto?</h5>
                             <p class="mb-1">Esta acción no se puede deshacer. El producto se deshabilitará y no podrá usarse en nuevas operaciones.</p>
@@ -54,7 +54,7 @@
                                     <small class="text-muted d-block">Estado</small>
                                     @if (Model.Activo)
                                     {
-                                        <span class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-check-lg"></i> Activo</span>
+                                        <span class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-check-lg" aria-hidden="true"></i> Activo</span>
                                     }
                                     else
                                     {
@@ -69,11 +69,11 @@
 
                                 <div class="col-md-6">
                                     <small class="text-muted d-block">Categoría</small>
-                                    <p class="mb-0"><i class="bi bi-diagram-3 text-primary me-1"></i>@Model.CategoriaNombre</p>
+                                    <p class="mb-0"><i class="bi bi-diagram-3 text-primary me-1" aria-hidden="true"></i>@Model.CategoriaNombre</p>
                                 </div>
                                 <div class="col-md-6">
                                     <small class="text-muted d-block">Marca</small>
-                                    <p class="mb-0"><i class="bi bi-tag text-primary me-1"></i>@Model.MarcaNombre</p>
+                                    <p class="mb-0"><i class="bi bi-tag text-primary me-1" aria-hidden="true"></i>@Model.MarcaNombre</p>
                                 </div>
 
                                 <div class="col-md-6">
@@ -98,15 +98,15 @@
                                     <p class="fw-bold mb-0">
                                         @if (Model.EstadoStock == "Sin Stock")
                                         {
-                                            <span class="text-danger"><i class="bi bi-exclamation-circle"></i> Sin Stock</span>
+                                            <span class="text-danger"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Sin Stock</span>
                                         }
                                         else if (Model.EstadoStock == "Stock Bajo")
                                         {
-                                            <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> Stock Bajo</span>
+                                            <span class="text-warning"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Stock Bajo</span>
                                         }
                                         else
                                         {
-                                            <span class="text-success"><i class="bi bi-check-circle"></i> Stock OK</span>
+                                            <span class="text-success"><i class="bi bi-check-circle" aria-hidden="true"></i> Stock OK</span>
                                         }
                                     </p>
                                 </div>
@@ -131,10 +131,10 @@
 
                         <div class="d-flex gap-2 justify-content-between">
                             <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash me-1"></i>Eliminar definitivamente
+                                <i class="bi bi-trash me-1" aria-hidden="true"></i>Eliminar definitivamente
                             </button>
                         </div>
                     </form>

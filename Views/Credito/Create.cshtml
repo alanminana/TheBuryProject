@@ -15,26 +15,26 @@
 
 @section PageActions {
     <a href="@backUrl" class="btn btn-outline-light">
-        <i class="bi bi-arrow-left me-2"></i>Volver
+        <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver
     </a>
 }
 
 <section class="container-fluid py-4 text-light">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold mb-0">
-            <i class="bi bi-credit-card text-success me-2"></i>Nueva Línea de Crédito
+            <i class="bi bi-credit-card text-success me-2" aria-hidden="true"></i>Nueva Línea de Crédito
         </h2>
     </div>
 
-    <div class="alert alert-info bg-opacity-25 border-info text-light shadow-sm">
-        <i class="bi bi-info-circle me-2"></i>
+    <div class="alert alert-info bg-opacity-25 border-info text-light shadow-sm" role="alert">
+        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
         <strong>Línea de Crédito:</strong> Asigna un monto disponible al cliente. Las cuotas se generan automáticamente al usar este crédito en compras.
     </div>
 
     <div class="card bg-dark border-0 shadow-sm shared-panel">
         <div class="card-header bg-success text-dark py-3 shared-panel-header">
             <h5 class="fw-bold mb-0">
-                <i class="bi bi-wallet2 me-2"></i>Datos de la Línea de Crédito
+                <i class="bi bi-wallet2 me-2" aria-hidden="true"></i>Datos de la Línea de Crédito
             </h5>
         </div>
 
@@ -47,9 +47,9 @@
                 <input type="hidden" name="returnUrl" value="@returnUrl" />
 
                 <div asp-validation-summary="ModelOnly"
-                     class="alert alert-danger d-flex align-items-center"
+                     class="alert alert-danger d-flex align-items-center @(ViewData.ModelState.IsValid ? "d-none" : string.Empty)"
                      role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
                     <div>Por favor, corregí los errores antes de continuar</div>
                 </div>
 
@@ -78,7 +78,7 @@
 
                     <div class="col-md-6 d-flex align-items-center mt-3">
                         <div class="form-check form-switch">
-                            <input asp-for="RequiereGarante" class="form-check-input" type="checkbox" id="chkRequiereGarante" />
+                            <input asp-for="RequiereGarante" class="form-check-input" type="checkbox" id="chkRequiereGarante" aria-controls="garanteSection" aria-expanded="@(Model.RequiereGarante ? "true" : "false")" />
                             <label asp-for="RequiereGarante" class="form-check-label">Requiere Garante</label>
                         </div>
                     </div>
@@ -99,11 +99,11 @@
                     <div class="card bg-dark border-info shadow-sm mb-3">
                         <div class="card-header bg-info text-dark">
                             <h5 class="mb-0">
-                                <i class="bi bi-speedometer2 me-2"></i>
+                                <i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>
                                 Evaluación Automática
                             </h5>
                         </div>
-                        <div class="card-body text-light" id="resultadoEvaluacion">
+                        <div class="card-body text-light" id="resultadoEvaluacion" aria-live="polite" aria-busy="false">
                             <div class="text-center py-4">
                                 <div class="spinner-border text-info" role="status">
                                     <span class="visually-hidden">Evaluando...</span>
@@ -116,10 +116,10 @@
 
                 <div class="d-flex justify-content-end gap-2 mt-4">
                     <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
-                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                        <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Cancelar
                     </a>
                     <button type="submit" class="btn btn-success btn-lg px-4 text-dark fw-semibold">
-                        <i class="bi bi-save me-2"></i>Crear Línea de Crédito
+                        <i class="bi bi-save me-2" aria-hidden="true"></i>Crear Línea de Crédito
                     </button>
                 </div>
 
@@ -130,7 +130,7 @@
         <template id="tpl-credito-evaluacion">
             <div class="alert border-0 mb-3" data-resultado-alert>
                 <h5 class="alert-heading">
-                    <i class="bi me-2" data-resultado-icon></i>
+                    <i class="bi me-2" data-resultado-icon aria-hidden="true"></i>
                     <span data-resultado-titulo></span>
                 </h5>
                 <p class="mb-0" data-resultado-motivo></p>
@@ -184,7 +184,7 @@
 
         <template id="tpl-credito-error">
             <div class="alert alert-danger">
-                <i class="bi bi-exclamation-triangle me-2"></i>
+                <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
                 <span data-resultado-error>Error al evaluar</span>
             </div>
         </template>

@@ -7,7 +7,7 @@
     <div class="row mb-4">
         <div class="col">
             <h1 class="h3 fw-bold text-light mb-0">
-                <i class="bi bi-plus-circle text-info me-2"></i>Nuevo Proveedor
+                <i class="bi bi-plus-circle text-info me-2" aria-hidden="true"></i>Nuevo Proveedor
             </h1>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
@@ -24,11 +24,14 @@
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-body p-4">
                     <form asp-action="Create" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" aria-label="Errores de validación"></div>
+                        }
 
                         <!-- Datos Fiscales -->
                         <h5 class="text-info border-bottom pb-2 mb-3">
-                            <i class="bi bi-file-text me-2"></i>Datos Fiscales
+                            <i class="bi bi-file-text me-2" aria-hidden="true"></i>Datos Fiscales
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-4">
@@ -51,7 +54,7 @@
 
                         <!-- Datos de Contacto -->
                         <h5 class="text-info border-bottom pb-2 mb-3">
-                            <i class="bi bi-telephone me-2"></i>Datos de Contacto
+                            <i class="bi bi-telephone me-2" aria-hidden="true"></i>Datos de Contacto
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
@@ -73,7 +76,7 @@
 
                         <!-- Asociaciones -->
                         <h5 class="text-info border-bottom pb-2 mb-3">
-                            <i class="bi bi-diagram-3 me-2"></i>Cobertura de Catálogo
+                            <i class="bi bi-diagram-3 me-2" aria-hidden="true"></i>Cobertura de Catálogo
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-4">
@@ -96,7 +99,7 @@
 
                         <!-- Dirección -->
                         <h5 class="text-info border-bottom pb-2 mb-3">
-                            <i class="bi bi-geo-alt me-2"></i>Dirección
+                            <i class="bi bi-geo-alt me-2" aria-hidden="true"></i>Dirección
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-12">
@@ -123,7 +126,7 @@
 
                         <!-- Información Adicional -->
                         <h5 class="text-info border-bottom pb-2 mb-3">
-                            <i class="bi bi-chat-text me-2"></i>Información Adicional
+                            <i class="bi bi-chat-text me-2" aria-hidden="true"></i>Información Adicional
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-12">
@@ -142,10 +145,10 @@
                         <!-- Botones -->
                         <div class="d-flex gap-2 justify-content-end">
                             <a asp-action="Index" class="btn btn-outline-light">
-                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                                <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-info text-dark fw-semibold">
-                                <i class="bi bi-save me-2"></i>Guardar
+                                <i class="bi bi-save me-2" aria-hidden="true"></i>Guardar
                             </button>
                         </div>
                     </form>
@@ -158,7 +161,7 @@
             <div class="card bg-body-secondary border-0 shadow-sm">
                 <div class="card-body">
                     <h6 class="fw-bold text-info mb-3">
-                        <i class="bi bi-info-circle me-2"></i>Guía de Carga
+                        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>Guía de Carga
                     </h6>
                     <p class="small text-light mb-2"><strong>CUIT:</strong> Ingresá 11 dígitos sin guiones.</p>
                     <p class="small text-light mb-2"><strong>Razón Social:</strong> Nombre legal según AFIP.</p>

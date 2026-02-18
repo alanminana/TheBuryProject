@@ -13,7 +13,7 @@
     @if (!string.IsNullOrWhiteSpace(returnUrl))
     {
         <a href="@backUrl" class="btn btn-outline-light me-2">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
         </a>
     }
     else if (Model.ReturnToVentaId.HasValue)
@@ -22,26 +22,26 @@
            asp-route-returnToVentaId="@Model.ReturnToVentaId"
            asp-route-clienteId="@Model.ClienteId"
            class="btn btn-outline-light me-2">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
         </a>
     }
     else
     {
         <a href="@backUrl" class="btn btn-outline-light me-2">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
         </a>
     }
 }
 
-<div class="alert alert-info border-0 shadow-sm">
-    <i class="bi bi-info-circle me-2"></i>
+<div class="alert alert-info border-0 shadow-sm" role="status">
+    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
     <strong>Formatos permitidos:</strong> PDF, JPG, PNG, DOC, DOCX (máximo 5 MB)
 </div>
 
 @if (Model.ReemplazarExistente && !string.IsNullOrWhiteSpace(Model.DocumentoAReemplazarNombre))
 {
-    <div class="alert alert-warning border-0 shadow-sm">
-        <i class="bi bi-arrow-repeat me-2"></i>Se reemplazará el archivo <strong>@Model.DocumentoAReemplazarNombre</strong>.
+    <div class="alert alert-warning border-0 shadow-sm" role="alert">
+        <i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>Se reemplazará el archivo <strong>@Model.DocumentoAReemplazarNombre</strong>.
     </div>
 }
 
@@ -61,7 +61,7 @@
 
             <div class="d-flex gap-2 mt-4">
                 <button type="submit" class="btn btn-info text-dark fw-semibold">
-                    <i class="bi bi-upload me-2"></i>Subir Documento
+                    <i class="bi bi-upload me-2" aria-hidden="true"></i>Subir Documento
                 </button>
                 <a href="@backUrl" class="btn btn-outline-light">Cancelar</a>
             </div>

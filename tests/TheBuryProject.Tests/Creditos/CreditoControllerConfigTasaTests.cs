@@ -27,6 +27,7 @@ public class CreditoControllerConfigTasaTests
         var mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), loggerFactory).CreateMapper();
         var clienteLookup = new Mock<IClienteLookupService>();
         var productoService = new Mock<IProductoService>();
+        var creditoDisponibleService = new Mock<ICreditoDisponibleService>();
 
         configuracionPagoService
             .Setup(s => s.ObtenerTasaInteresMensualCreditoPersonalAsync())
@@ -51,7 +52,8 @@ public class CreditoControllerConfigTasaTests
             mapper,
             NullLogger<CreditoController>.Instance,
             clienteLookup.Object,
-            productoService.Object);
+            productoService.Object,
+            creditoDisponibleService.Object);
 
         var result = await controller.SimularPlanVenta(1000m, 0m, 10, 0m, null, null);
         var json = Assert.IsType<JsonResult>(result);
@@ -73,6 +75,7 @@ public class CreditoControllerConfigTasaTests
         var mapper = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), loggerFactory).CreateMapper();
         var clienteLookup = new Mock<IClienteLookupService>();
         var productoService = new Mock<IProductoService>();
+        var creditoDisponibleService = new Mock<ICreditoDisponibleService>();
 
         configuracionPagoService
             .Setup(s => s.ObtenerTasaInteresMensualCreditoPersonalAsync())
@@ -104,7 +107,8 @@ public class CreditoControllerConfigTasaTests
             mapper,
             NullLogger<CreditoController>.Instance,
             clienteLookup.Object,
-            productoService.Object);
+            productoService.Object,
+            creditoDisponibleService.Object);
 
         var viewModel = new ConfiguracionCreditoVentaViewModel
         {

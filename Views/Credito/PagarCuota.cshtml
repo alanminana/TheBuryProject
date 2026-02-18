@@ -8,10 +8,10 @@
 <section class="container-fluid py-4 text-light">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold mb-0">
-            <i class="bi bi-cash-coin text-success me-2"></i>Registrar Pago de Cuota
+            <i class="bi bi-cash-coin text-success me-2" aria-hidden="true"></i>Registrar Pago de Cuota
         </h2>
         <a href="@backUrl" class="btn btn-outline-light">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
         </a>
     </div>
 
@@ -25,7 +25,7 @@
                 <div class="card bg-dark border-0 shadow-sm">
                     <div class="card-header bg-info text-light">
                         <h5 class="fw-semibold mb-0">
-                            <i class="bi bi-info-circle me-2"></i>Información de la Cuota
+                            <i class="bi bi-info-circle me-2" aria-hidden="true"></i>Información de la Cuota
                         </h5>
                     </div>
                     <div class="card-body">
@@ -57,7 +57,7 @@
                             <dd class="col-sm-7 fw-bold text-success">@Model.TotalAPagar.ToString("C2")</dd>
 
                             <dt class="col-sm-5">Vencimiento</dt>
-                            <dd class="col-sm-7">@Model.FechaVencimiento.ToString("dd/MM/yyyy")</dd>
+                            <dd class="col-sm-7"><time datetime="@Model.FechaVencimiento.ToString("yyyy-MM-dd")">@Model.FechaVencimiento.ToString("dd/MM/yyyy")</time></dd>
 
                             @if (Model.EstaVencida)
                             {
@@ -78,12 +78,12 @@
                 <div class="card bg-dark border-0 shadow-sm">
                     <div class="card-header bg-success text-light">
                         <h5 class="fw-semibold mb-0">
-                            <i class="bi bi-wallet2 me-2"></i>Datos del Pago
+                            <i class="bi bi-wallet2 me-2" aria-hidden="true"></i>Datos del Pago
                         </h5>
                     </div>
 
                     <div class="card-body">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger @(ViewData.ModelState.IsValid ? "d-none" : string.Empty)" role="alert"></div>
 
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -139,10 +139,10 @@
 
                     <div class="card-footer bg-dark border-0 d-flex justify-content-end gap-2 py-3">
                         <button type="submit" class="btn btn-success btn-lg px-4">
-                            <i class="bi bi-check-circle me-1"></i>Registrar Pago
+                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Registrar Pago
                         </button>
                         <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
-                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                            <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancelar
                         </a>
                     </div>
                 </div>

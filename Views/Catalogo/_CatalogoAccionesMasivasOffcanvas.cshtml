@@ -1,92 +1,102 @@
-@* Modal para actualización de precios en catálogo *@
+@* Modal para actualización de precios en catálogo (NO es offcanvas) *@
 <div class="modal fade" id="modalActualizacionPrecios" tabindex="-1" aria-labelledby="modalActualizacionPreciosLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content bg-dark text-light border-warning">
-        <div class="modal-header bg-warning text-dark fw-semibold d-flex align-items-center justify-content-between border-0">
-            <h5 class="modal-title" id="modalActualizacionPreciosLabel">
-                <i class="bi bi-graph-up-arrow me-1"></i> Actualización de precios
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body p-4 p-xl-5">
-        <div class="alert alert-info small">
-            <i class="bi bi-info-circle me-2"></i>
-            Aplicá aumentos/descuentos por porcentaje en productos seleccionados o en todos los filtrados.
-        </div>
-
-        <div class="alert alert-danger d-none" id="cambioPrecioErrorGeneral" role="alert"></div>
-
-        <!-- Panel de selección -->
-        <div class="card bg-secondary border-0 mb-3">
-            <div class="card-body">
-                <p class="small text-light mb-2">
-                    <i class="bi bi-check2-square me-1"></i>Productos seleccionados
-                </p>
-                <h4 class="text-warning mb-0" id="countSeleccionados">0</h4>
+            <div class="modal-header bg-warning text-dark fw-semibold d-flex align-items-center justify-content-between border-0">
+                <h5 class="modal-title" id="modalActualizacionPreciosLabel">
+                    <i class="bi bi-graph-up-arrow me-1" aria-hidden="true"></i> Actualización de precios
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-        </div>
 
-        <div class="row g-4 mt-1">
-            <div class="col-12 col-lg-6">
-                <label class="form-label fw-semibold">Alcance</label>
-                <select class="form-select" id="selectAlcanceCambio">
-                    <option value="seleccionados" selected>Seleccionados</option>
-                    <option value="filtrados">Filtrados (todos los resultados actuales)</option>
-                </select>
-                <div class="invalid-feedback d-block d-none" id="errorAlcanceCambio"></div>
-                <small class="text-secondary d-block mt-1">
-                    En modo filtrados usa los filtros activos de búsqueda, categoría, marca, activos y stock.
-                </small>
-            </div>
-            <div class="col-12 col-lg-6">
-                <label class="form-label fw-semibold">Aplicar sobre</label>
-                <select class="form-select" id="selectListaCambio"></select>
-                <small class="text-secondary d-block mt-1">Si elegís una lista, el cambio se refleja también en ese precio vigente.</small>
-            </div>
-            <div class="col-12 col-lg-6">
-                <label class="form-label fw-semibold">Aumento/Descuento (%)</label>
-                <div class="input-group">
-                    <input type="number" class="form-control" id="inputPorcentajeCambio" step="0.01" placeholder="Ej: 10 para +10%">
-                    <span class="input-group-text">%</span>
+            <div class="modal-body p-4 p-xl-5">
+                <div class="alert alert-info small" role="alert">
+                    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+                    Aplicá aumentos/descuentos por porcentaje en productos seleccionados o en todos los filtrados.
                 </div>
-                <div class="invalid-feedback d-block d-none" id="errorPorcentajeCambio"></div>
-                <small class="text-secondary d-block mt-1">
-                    Positivo = aumento. Negativo = descuento. No se permite 0.
-                </small>
-            </div>
-            <div class="col-12 col-lg-6">
-                <label class="form-label fw-semibold">Motivo (opcional)</label>
-                <textarea class="form-control" id="inputMotivoCambio" rows="3" maxlength="500" placeholder="Ej: ajuste por inflación o actualización de costos"></textarea>
-            </div>
-        </div>
 
-        <!-- Botón de previsualización -->
-        <div class="d-grid d-lg-flex justify-content-lg-end mt-4">
-            <button type="button" class="btn btn-primary" id="btnPrevisualizar" disabled>
-                <i class="bi bi-eye me-2"></i>Previsualizar cambios
-            </button>
-        </div>
+                <div class="alert alert-danger d-none" id="cambioPrecioErrorGeneral" role="alert"></div>
 
-        <!-- Resumen de previsualización -->
-        <div id="resumenPrevio" class="d-none mt-4">
-            <div class="card bg-dark border-warning">
-                <div class="card-header bg-warning text-dark fw-semibold">
-                    <i class="bi bi-info-circle me-1"></i>Vista previa
+                <!-- Panel de selección -->
+                <div class="card bg-secondary border-0 mb-3">
+                    <div class="card-body">
+                        <p class="small text-light mb-2">
+                            <i class="bi bi-check2-square me-1" aria-hidden="true"></i>Productos seleccionados
+                        </p>
+                        <h4 class="text-warning mb-0" id="countSeleccionados">0</h4>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <ul class="list-unstyled mb-0 small" id="listaPrevio"></ul>
+
+                <div class="row g-4 mt-1">
+                    <div class="col-12 col-lg-6">
+                        <label class="form-label fw-semibold">Alcance</label>
+                        <select class="form-select" id="selectAlcanceCambio">
+                            <option value="seleccionados" selected>Seleccionados</option>
+                            <option value="filtrados">Filtrados (todos los resultados actuales)</option>
+                        </select>
+                        <div class="invalid-feedback d-block d-none" id="errorAlcanceCambio"></div>
+                        <small class="text-secondary d-block mt-1">
+                            En modo filtrados usa los filtros activos de búsqueda, categoría, marca, activos y stock.
+                        </small>
+                    </div>
+
+                    <div class="col-12 col-lg-6">
+                        <label class="form-label fw-semibold">Aplicar sobre</label>
+                        <select class="form-select" id="selectListaCambio"></select>
+                        <small class="text-secondary d-block mt-1">Si elegís una lista, el cambio se refleja también en ese precio vigente.</small>
+                    </div>
+
+                    <div class="col-12 col-lg-6">
+                        <label class="form-label fw-semibold">Aumento/Descuento (%)</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="inputPorcentajeCambio" step="0.01" placeholder="Ej: 10 para +10%">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="invalid-feedback d-block d-none" id="errorPorcentajeCambio"></div>
+                        <small class="text-secondary d-block mt-1">
+                            Positivo = aumento. Negativo = descuento. No se permite 0.
+                        </small>
+                    </div>
+
+                    <div class="col-12 col-lg-6">
+                        <label class="form-label fw-semibold">Motivo (opcional)</label>
+                        <textarea class="form-control" id="inputMotivoCambio" rows="3" maxlength="500" placeholder="Ej: ajuste por inflación o actualización de costos"></textarea>
+                    </div>
+                </div>
+
+                <!-- Botón de previsualización -->
+                <div class="d-grid d-lg-flex justify-content-lg-end mt-4">
+                    <button type="button" class="btn btn-primary" id="btnPrevisualizar" disabled>
+                        <i class="bi bi-eye me-2" aria-hidden="true"></i>Previsualizar cambios
+                    </button>
+                </div>
+
+                <!-- Resumen de previsualización -->
+                <div id="resumenPrevio" class="d-none mt-4">
+                    <div class="card bg-dark border-warning">
+                        <div class="card-header bg-warning text-dark fw-semibold">
+                            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Vista previa
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0 small" id="listaPrevio"></ul>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <div class="modal-footer border-secondary d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" id="btnCancelarPrevio" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+
+                <button type="button"
+                        class="btn btn-success"
+                        id="btnAplicarRapido"
+                        disabled
+                        data-confirm="¿Confirmar y aplicar el cambio de precios? Esta acción quedará registrada en el historial.">
+                    <i class="bi bi-check-circle me-2" aria-hidden="true"></i>Confirmar y aplicar
+                </button>
+            </div>
         </div>
-        </div>
-        <div class="modal-footer border-secondary d-flex justify-content-between">
-            <button type="button" class="btn btn-outline-secondary" id="btnCancelarPrevio" data-bs-dismiss="modal">
-                Cancelar
-            </button>
-            <button type="button" class="btn btn-success" id="btnAplicarRapido" disabled>
-                <i class="bi bi-check-circle me-2"></i>Confirmar y aplicar
-            </button>
-        </div>
-    </div>
     </div>
 </div>

@@ -14,18 +14,18 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
                 <div>
-                    <h2 class="mb-1"><i class="bi bi-pencil me-2 text-primary"></i> @ViewData["Title"]</h2>
+                    <h2 class="mb-1"><i class="bi bi-pencil me-2 text-primary" aria-hidden="true"></i> @ViewData["Title"]</h2>
                     <p class="mb-0 text-muted">@ViewData["PageSubtitle"]</p>
                 </div>
                 <a asp-action="Index" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
                 </a>
             </div>
         </div>
 
         <div class="col-12">
             <div class="alert alert-info alert-inline mb-0 d-flex align-items-center gap-2">
-                <i class="bi bi-info-circle fs-5"></i>
+                <i class="bi bi-info-circle fs-5" aria-hidden="true"></i>
                 <div>
                     <strong class="d-block">Edicion de venta</strong>
                     <small class="text-muted">Revisa productos, forma de pago y totales antes de guardar cambios.</small>
@@ -43,14 +43,17 @@
                   data-prevalidar-credito-url="@Url.Action("PrevalidarCredito", "Venta")"
                   data-descuento-es-porcentaje="false">
                 @Html.AntiForgeryToken()
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" aria-label="Errores de validación"></div>
+                }
                 <input type="hidden" asp-for="Id" />
                 <input type="hidden" asp-for="RowVersion" />
                 <input type="hidden" asp-for="Numero" />
 
                 <div class="card bg-dark border-0 shadow-sm mb-3" id="financiamientoRow">
                     <div class="card-header bg-secondary text-light d-flex align-items-center justify-content-between">
-                        <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i> Productos</h5>
+                        <h5 class="mb-0"><i class="bi bi-box-seam me-2" aria-hidden="true"></i> Productos</h5>
                         <span class="badge badge-soft">Stock visible en cada seleccion</span>
                     </div>
                     <div class="card-body">
@@ -105,7 +108,8 @@
                             </div>
                             <div class="col-md-1 d-flex align-items-end">
                                 <button type="button" id="btnAgregarProducto" class="btn btn-success w-100">
-                                    <i class="bi bi-plus"></i>
+                                    <i class="bi bi-plus" aria-hidden="true"></i>
+                                    <span class="visually-hidden">Agregar producto</span>
                                 </button>
                             </div>
                         </div>
@@ -114,13 +118,13 @@
                             <table class="table table-dark table-hover align-middle" id="tablaProductos">
                                 <thead class="table-secondary text-dark">
                                     <tr>
-                                        <th>Codigo</th>
-                                        <th>Producto</th>
-                                        <th class="text-center">Cantidad</th>
-                                        <th class="text-end">Precio unit.</th>
-                                        <th class="text-end">Descuento</th>
-                                        <th class="text-end">Subtotal</th>
-                                        <th class="text-center">Accion</th>
+                                        <th scope="col">Codigo</th>
+                                        <th scope="col">Producto</th>
+                                        <th scope="col" class="text-center">Cantidad</th>
+                                        <th scope="col" class="text-end">Precio unit.</th>
+                                        <th scope="col" class="text-end">Descuento</th>
+                                        <th scope="col" class="text-end">Subtotal</th>
+                                        <th scope="col" class="text-center">Accion</th>
                                     </tr>
                                 </thead>
                                 <tbody id="productosBody">
@@ -134,8 +138,9 @@
                                             <td class="text-end">$@detalle.Descuento.ToString("F2")</td>
                                             <td class="text-end">$@detalle.Subtotal.ToString("F2")</td>
                                             <td class="text-center">
-                                                <button type="button" class="btn btn-sm btn-danger btn-eliminar-producto" data-index="@detalle.Id">
-                                                    <i class="bi bi-trash"></i>
+                                                <button type="button" class="btn btn-sm btn-danger btn-eliminar-producto" data-index="@detalle.Id" aria-label="Eliminar producto @detalle.ProductoNombre">
+                                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Eliminar producto</span>
                                                 </button>
                                             </td>
                                         </tr>
@@ -246,10 +251,10 @@
 
                 <div class="d-flex justify-content-end gap-2 mb-4">
                     <a asp-action="Index" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Cancelar
+                        <i class="bi bi-x-circle" aria-hidden="true"></i> Cancelar
                     </a>
                     <button type="submit" class="btn btn-warning">
-                        <i class="bi bi-save"></i> Actualizar Venta
+                        <i class="bi bi-save" aria-hidden="true"></i> Actualizar Venta
                     </button>
                 </div>
             </form>

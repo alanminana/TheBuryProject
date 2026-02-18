@@ -3,11 +3,11 @@
     var mostrarEvaluacion = ViewData["MostrarEvaluacion"] as bool? ?? false;
 }
 
-<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger @(ViewData.ModelState.IsValid ? "d-none" : string.Empty)" role="alert"></div>
 
 <div class="row g-4">
     <div class="col-md-6">
-        <h5 class="fw-bold text-secondary border-bottom pb-2 mb-3">
+        <h5 class="fw-bold text-body-secondary border-bottom pb-2 mb-3">
             Datos del Cliente
         </h5>
 
@@ -20,11 +20,11 @@
         </div>
 
         <div class="form-check form-switch mb-3">
-            <input asp-for="RequiereGarante" class="form-check-input" type="checkbox" id="chkRequiereGarante" />
+            <input asp-for="RequiereGarante" class="form-check-input" type="checkbox" id="chkRequiereGarante" aria-controls="garanteField" aria-expanded="@(Model.RequiereGarante ? "true" : "false")" />
             <label class="form-check-label" for="chkRequiereGarante">Requiere Garante</label>
         </div>
 
-        <div id="garanteField" class="mb-3" style="display:@(Model.RequiereGarante ? "block" : "none")">
+        <div id="garanteField" class="mb-3 @(Model.RequiereGarante ? "" : "d-none")">
             <label asp-for="GaranteId" class="form-label">Garante</label>
             <select asp-for="GaranteId" class="form-select bg-body-secondary text-light border-0" asp-items="ViewBag.Garantes">
                 <option value="">Seleccione un garante...</option>
@@ -34,7 +34,7 @@
     </div>
 
     <div class="col-md-6">
-        <h5 class="fw-bold text-secondary border-bottom pb-2 mb-3">
+        <h5 class="fw-bold text-body-secondary border-bottom pb-2 mb-3">
             Configuración del Crédito
         </h5>
 
@@ -42,19 +42,19 @@
             <label asp-for="MontoSolicitado" class="form-label">Límite del Crédito *</label>
             <div class="input-group">
                 <span class="input-group-text bg-secondary text-light border-0">$</span>
-                <input asp-for="MontoSolicitado" class="form-control bg-body-secondary text-light border-0" type="number" step="0.01" min="0" required />
+                <input asp-for="MontoSolicitado" class="form-control bg-body-secondary text-light border-0" type="number" step="0.01" min="0" required inputmode="decimal" />
             </div>
-            <small class="form-text text-muted">Monto total disponible para compras</small>
+            <small class="form-text text-body-secondary">Monto total disponible para compras</small>
             <span asp-validation-for="MontoSolicitado" class="text-danger small"></span>
         </div>
 
         <div class="mb-3">
             <label asp-for="TasaInteres" class="form-label">Tasa de Interés Mensual *</label>
             <div class="input-group">
-                <input asp-for="TasaInteres" class="form-control bg-body-secondary text-light border-0" type="number" step="0.01" min="0" max="100" required />
+                <input asp-for="TasaInteres" class="form-control bg-body-secondary text-light border-0" type="number" step="0.01" min="0" max="100" required inputmode="decimal" />
                 <span class="input-group-text bg-secondary text-light border-0">%</span>
             </div>
-            <small class="form-text text-muted">
+            <small class="form-text text-body-secondary">
                 Ejemplo 5,00 = 5 % mensual. Se aplica a todas las compras con cuotas.
             </small>
             <span asp-validation-for="TasaInteres" class="text-danger small"></span>
@@ -71,30 +71,29 @@
 
 @if (mostrarEvaluacion)
 {
-    <div id="panelEvaluacion" class="mt-4" style="display: none;">
+    <div id="panelEvaluacion" class="mt-4 d-none">
         <div class="card border-info shadow-sm mb-3">
             <div class="card-header bg-info text-dark">
                 <h5 class="mb-0">
-                    <i class="bi bi-speedometer2 me-2"></i>
+                    <i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>
                     Evaluación Automática
                 </h5>
             </div>
             <div class="card-body" id="resultadoEvaluacion">
                 <div class="text-center py-4">
-                    <div class="spinner-border text-info" role="status">
-                        <span class="visually-hidden">Evaluando...</span>
-                    </div>
-                    <p class="text-muted mt-2">Evaluando solicitud...</p>
+                    <div class="spinner-border text-info" role="status" aria-label="Evaluando"></div>
+                    <p class="text-body-secondary mt-2 mb-0">Evaluando solicitud...</p>
                 </div>
             </div>
         </div>
     </div>
 }
+
 <div class="d-none">
     <template id="tpl-credito-evaluacion">
         <div class="alert border-0 mb-3" data-resultado-alert>
             <h5 class="alert-heading">
-                <i class="bi me-2" data-resultado-icon></i>
+                <i class="bi me-2" data-resultado-icon aria-hidden="true"></i>
                 <span data-resultado-titulo></span>
             </h5>
             <p class="mb-0" data-resultado-motivo></p>
@@ -102,7 +101,7 @@
 
         <div class="row mb-3">
             <div class="col-12">
-                <h6 class="text-muted mb-2">Puntaje: <span data-resultado-puntaje></span> / 100</h6>
+                <h6 class="text-body-secondary mb-2">Puntaje: <span data-resultado-puntaje></span> / 100</h6>
                 <div class="progress credit-progress-lg">
                     <div class="progress-bar" role="progressbar" data-resultado-progress></div>
                 </div>
@@ -113,7 +112,7 @@
             <div class="col-md-4">
                 <div class="card bg-dark border-0 shadow-sm">
                     <div class="card-body">
-                        <small class="text-secondary d-block">Ingresos estimados</small>
+                        <small class="text-body-secondary d-block">Ingresos estimados</small>
                         <h5 class="text-light mb-0" data-resultado-ingresos>N/D</h5>
                     </div>
                 </div>
@@ -121,7 +120,7 @@
             <div class="col-md-4">
                 <div class="card bg-dark border-0 shadow-sm">
                     <div class="card-body">
-                        <small class="text-secondary d-block">Relación cuota/ingreso</small>
+                        <small class="text-body-secondary d-block">Relación cuota/ingreso</small>
                         <h5 class="text-light mb-0" data-resultado-relacion>N/D</h5>
                     </div>
                 </div>
@@ -129,7 +128,7 @@
             <div class="col-md-4">
                 <div class="card bg-dark border-0 shadow-sm">
                     <div class="card-body">
-                        <small class="text-secondary d-block">Documentación</small>
+                        <small class="text-body-secondary d-block">Documentación</small>
                         <h5 class="text-light mb-0" data-resultado-documentacion>N/D</h5>
                     </div>
                 </div>
@@ -139,16 +138,14 @@
 
     <template id="tpl-credito-loading">
         <div class="text-center py-4">
-            <div class="spinner-border text-info" role="status">
-                <span class="visually-hidden">Evaluando...</span>
-            </div>
-            <p class="text-muted mt-2">Evaluando solicitud...</p>
+            <div class="spinner-border text-info" role="status" aria-label="Evaluando"></div>
+            <p class="text-body-secondary mt-2 mb-0">Evaluando solicitud...</p>
         </div>
     </template>
 
     <template id="tpl-credito-error">
         <div class="alert alert-danger">
-            <i class="bi bi-exclamation-triangle me-2"></i>
+            <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
             <span data-resultado-error>Error al evaluar</span>
         </div>
     </template>

@@ -19,7 +19,7 @@
                 <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
                 <div class="modal-header border-secondary">
                     <h5 class="modal-title text-light" id="verificarDocumentoModalLabel">
-                        <i class="bi bi-check-circle text-success me-2"></i>Verificar Documento
+                        <i class="bi bi-check-circle text-success me-2" aria-hidden="true"></i>Verificar Documento
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
@@ -27,7 +27,7 @@
                     <p class="text-light">¿Confirma que el documento es correcto?</p>
                     <div class="alert alert-secondary">
                         <strong id="verificarDocTipo"></strong><br />
-                        <small id="verificarDocNombre" class="text-muted"></small>
+                        <small id="verificarDocNombre" class="text-body-secondary"></small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-light">Observaciones (opcional)</label>
@@ -37,7 +37,7 @@
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle me-2"></i>Verificar
+                        <i class="bi bi-check-circle me-2" aria-hidden="true"></i>Verificar
                     </button>
                 </div>
             </form>
@@ -55,14 +55,14 @@
                 <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
                 <div class="modal-header border-secondary">
                     <h5 class="modal-title text-light" id="rechazarDocumentoModalLabel">
-                        <i class="bi bi-x-circle text-danger me-2"></i>Rechazar Documento
+                        <i class="bi bi-x-circle text-danger me-2" aria-hidden="true"></i>Rechazar Documento
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-secondary">
                         <strong id="rechazarDocTipo"></strong><br />
-                        <small id="rechazarDocNombre" class="text-muted"></small>
+                        <small id="rechazarDocNombre" class="text-body-secondary"></small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-light">Motivo del rechazo *</label>
@@ -72,7 +72,7 @@
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-x-circle me-2"></i>Rechazar
+                        <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Rechazar
                     </button>
                 </div>
             </form>
@@ -90,7 +90,7 @@
                 <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
                 <div class="modal-header border-secondary">
                     <h5 class="modal-title text-light" id="verificarTodosModalLabel">
-                        <i class="bi bi-check-all text-success me-2"></i>Verificar Todos los Documentos
+                        <i class="bi bi-check-all text-success me-2" aria-hidden="true"></i>Verificar Todos los Documentos
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
@@ -100,7 +100,7 @@
                         @foreach (var doc in Model.Documentos.Where(d => d.Estado == EstadoDocumento.Pendiente))
                         {
                             <li class="list-group-item bg-dark text-light border-secondary">
-                                <i class="bi bi-file-earmark text-info me-2"></i>
+                                <i class="bi bi-file-earmark text-info me-2" aria-hidden="true"></i>
                                 <strong>@doc.TipoDocumentoNombre</strong> - @doc.NombreArchivo
                             </li>
                         }
@@ -113,7 +113,7 @@
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-all me-2"></i>Verificar Todos
+                        <i class="bi bi-check-all me-2" aria-hidden="true"></i>Verificar Todos
                     </button>
                 </div>
             </form>
@@ -130,14 +130,14 @@
                 <input type="hidden" name="ClienteId" value="@Model.Cliente.Id" />
                 <input type="hidden" name="ReturnToDetails" value="true" />
                 <input type="hidden" name="returnUrl" value="@returnToClienteDocumentosUrl" />
-                
+
                 <div class="modal-header border-secondary">
                     <h5 class="modal-title" id="subirDocumentoModalLabel">
-                        <i class="bi bi-upload me-2"></i>Subir Documento
+                        <i class="bi bi-upload me-2" aria-hidden="true"></i>Subir Documento
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                
+
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Tipo de Documento *</label>
@@ -149,30 +149,30 @@
                             }
                         </select>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label">Archivo *</label>
                         <input type="file" name="Archivo" class="form-control bg-body-secondary text-light border-0"
                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required />
-                        <small class="text-secondary">PDF, JPG, PNG, DOC, DOCX (Max 5MB)</small>
+                        <small class="text-body-secondary">PDF, JPG, PNG, DOC, DOCX (Max 5MB)</small>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label">Vencimiento</label>
                         <input type="date" name="FechaVencimiento" class="form-control bg-body-secondary text-light border-0" />
                     </div>
-                    
+
                     <div class="mb-0">
                         <label class="form-label">Observaciones</label>
                         <textarea name="Observaciones" class="form-control bg-body-secondary text-light border-0"
                                   rows="2" placeholder="Opcional"></textarea>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-info">
-                        <i class="bi bi-upload me-2"></i>Subir
+                        <i class="bi bi-upload me-2" aria-hidden="true"></i>Subir
                     </button>
                 </div>
             </form>

@@ -27,12 +27,18 @@
 
             if (requiereGarante.checked) {
                 garanteSection.classList.remove('d-none');
+                requiereGarante.setAttribute('aria-expanded', 'true');
+                if (garanteSelect) {
+                    garanteSelect.setAttribute('required', 'required');
+                }
                 return;
             }
 
             garanteSection.classList.add('d-none');
+            requiereGarante.setAttribute('aria-expanded', 'false');
             if (garanteSelect) {
                 garanteSelect.value = '';
+                garanteSelect.removeAttribute('required');
             }
         };
 
@@ -69,8 +75,9 @@
             if (motivo) motivo.textContent = evalData.motivo;
             if (puntaje) puntaje.textContent = evalData.puntajeFinal.toFixed(0);
             if (progress) {
-                progress.style.width = `${evalData.puntajeFinal}%`;
-                progress.textContent = `${evalData.puntajeFinal.toFixed(0)}%`;
+                const progressValue = Math.max(0, Math.min(100, Number(evalData.puntajeFinal) || 0));
+                progress.style.width = `${progressValue}%`;
+                progress.textContent = `${progressValue.toFixed(0)}%`;
                 progress.classList.add(`bg-${colorClass}`);
             }
 
@@ -84,6 +91,8 @@
                 documentacion.textContent = evalData.documentacionCompleta ? 'Completa' : 'Incompleta';
             }
 
+            resultadoEvaluacion.setAttribute('aria-live', 'polite');
+            resultadoEvaluacion.setAttribute('aria-busy', 'false');
             resultadoEvaluacion.replaceChildren(fragment);
         };
 
@@ -91,6 +100,8 @@
             if (!resultadoEvaluacion) return;
             const fragment = renderTemplate(templates.loading);
             if (!fragment) return;
+            resultadoEvaluacion.setAttribute('aria-live', 'polite');
+            resultadoEvaluacion.setAttribute('aria-busy', 'true');
             resultadoEvaluacion.replaceChildren(fragment);
         };
 
@@ -102,6 +113,8 @@
             if (textEl) {
                 textEl.textContent = message;
             }
+            resultadoEvaluacion.setAttribute('aria-live', 'assertive');
+            resultadoEvaluacion.setAttribute('aria-busy', 'false');
             resultadoEvaluacion.replaceChildren(fragment);
         };
 

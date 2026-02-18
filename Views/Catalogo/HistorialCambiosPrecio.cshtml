@@ -8,12 +8,12 @@
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
             <h1 class="h4 mb-1">
-                <i class="bi bi-clock-history text-info me-2"></i>Historial de Cambios de Precio
+                <i class="bi bi-clock-history text-info me-2" aria-hidden="true"></i>Historial de Cambios de Precio
             </h1>
             <p class="text-secondary small mb-0">Cambios directos aplicados en el catalogo.</p>
         </div>
         <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Volver al catalogo
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver al catalogo
         </a>
     </div>
 
@@ -25,13 +25,13 @@
                 <table class="table table-dark table-hover mb-0">
                     <thead class="table-secondary">
                         <tr>
-                            <th>Fecha/Hora</th>
-                            <th>Usuario</th>
-                            <th class="text-end">Cambio (%)</th>
-                            <th>Alcance</th>
-                            <th class="text-center">Cantidad</th>
-                            <th>Motivo</th>
-                            <th class="text-center">Acciones</th>
+                            <th scope="col">Fecha/Hora</th>
+                            <th scope="col">Usuario</th>
+                            <th scope="col" class="text-end">Cambio (%)</th>
+                            <th scope="col">Alcance</th>
+                            <th scope="col" class="text-center">Cantidad</th>
+                            <th scope="col">Motivo</th>
+                            <th scope="col" class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -44,7 +44,11 @@
                                     ? $"+{item.ValorPorcentaje:0.##}%"
                                     : $"{item.ValorPorcentaje:0.##}%";
                                 <tr>
-                                    <td>@item.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <time datetime="@item.Fecha.ToString("O")">
+                                            @item.Fecha.ToString("dd/MM/yyyy HH:mm")
+                                        </time>
+                                    </td>
                                     <td>@item.Usuario</td>
                                     <td class="text-end @cambioClass fw-semibold">@cambioTexto</td>
                                     <td>@item.Alcance</td>
@@ -54,8 +58,10 @@
                                         <div class="btn-group btn-group-sm">
                                             <a class="btn btn-outline-info"
                                                asp-action="DetalleCambioPrecio"
-                                               asp-route-id="@item.Id">
-                                                <i class="bi bi-eye"></i>
+                                               asp-route-id="@item.Id"
+                                               aria-label="Ver detalle del cambio">
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Ver detalle</span>
                                             </a>
                                             @if (item.Revertido)
                                             {
@@ -70,11 +76,13 @@
                                                 <form asp-action="RevertirCambioPrecio"
                                                       asp-route-eventoId="@item.Id"
                                                       method="post"
-                                                      class="d-inline"
-                                                      onsubmit="return confirm('Confirmar reversion del cambio?');">
+                                                      class="d-inline">
                                                     @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-outline-danger">
-                                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                                    <button type="submit"
+                                                            class="btn btn-outline-danger"
+                                                            data-confirm="¿Confirmar reversión del cambio?">
+                                                        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Revertir cambio</span>
                                                     </button>
                                                 </form>
                                             }

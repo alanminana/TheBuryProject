@@ -22,13 +22,16 @@
         <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header bg-warning text-dark">
-                    <h4 class="mb-0"><i class="bi bi-pencil me-2"></i>Editar Rol</h4>
+                    <h4 class="mb-0"><i class="bi bi-pencil me-2" aria-hidden="true"></i>Editar Rol</h4>
                 </div>
                 <div class="card-body">
                     <form asp-action="Edit" method="post">
                         <input type="hidden" asp-for="Id" />
                         <input type="hidden" name="returnUrl" value="@returnUrl" />
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        }
 
                         <div class="mb-3">
                             <label asp-for="Nombre" class="form-label"></label>
@@ -36,17 +39,17 @@
                             <span asp-validation-for="Nombre" class="text-danger"></span>
                         </div>
 
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
                             <strong>Advertencia:</strong> Cambiar el nombre del rol puede afectar la autorización de usuarios que lo tienen asignado.
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
                             <a href="@backUrl" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-warning">
-                                <i class="bi bi-save me-1"></i>Guardar Cambios
+                                <i class="bi bi-save me-1" aria-hidden="true"></i>Guardar Cambios
                             </button>
                         </div>
                     </form>

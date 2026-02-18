@@ -1,7 +1,11 @@
 @model TheBuryProject.ViewModels.CatalogoUnificadoViewModel
+@using System.Globalization
 
 @{
-    var puedeEditarPrecios = User.IsInRole("SuperAdmin") || User.IsInRole("Gerente");
+    var puedeEditarPrecios =
+        User.IsInRole("SuperAdmin") || User.IsInRole("Gerente") ||
+        User.HasClaim("Permission", "precios:apply");
+
     var returnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 
@@ -12,7 +16,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <i class="bi bi-box-seam fs-1 text-info"></i>
+                        <i class="bi bi-box-seam fs-1 text-info" aria-hidden="true"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
                         <p class="text-secondary mb-0 small">Total Productos</p>
@@ -28,7 +32,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <i class="bi bi-check-circle fs-1 text-success"></i>
+                        <i class="bi bi-check-circle fs-1 text-success" aria-hidden="true"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
                         <p class="text-secondary mb-0 small">Productos Activos</p>
@@ -44,7 +48,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+                        <i class="bi bi-exclamation-triangle fs-1 text-warning" aria-hidden="true"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
                         <p class="text-secondary mb-0 small">Stock Bajo</p>
@@ -60,7 +64,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <i class="bi bi-cash-stack fs-1 text-primary"></i>
+                        <i class="bi bi-cash-stack fs-1 text-primary" aria-hidden="true"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
                         <p class="text-secondary mb-0 small">Lista de Precios</p>
@@ -76,7 +80,7 @@
 <div class="card bg-dark border-0 shadow-sm">
     <div class="card-header bg-secondary text-light d-flex justify-content-between align-items-center">
         <span class="fw-semibold">
-            <i class="bi bi-table"></i> Productos del Catálogo
+            <i class="bi bi-table" aria-hidden="true"></i> Productos del Catálogo
             @if (Model.TotalResultados > 0)
             {
                 <span class="badge bg-info text-dark ms-2">@Model.TotalResultados</span>
@@ -84,8 +88,12 @@
         </span>
         @if (puedeEditarPrecios)
         {
-            <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#modalActualizacionPrecios" aria-controls="modalActualizacionPrecios">
-                <i class="bi bi-graph-up-arrow me-1"></i>Actualizar precios
+            <button type="button"
+                    class="btn btn-sm btn-outline-light"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalActualizacionPrecios"
+                    aria-controls="modalActualizacionPrecios">
+                <i class="bi bi-graph-up-arrow me-1" aria-hidden="true"></i>Actualizar precios
             </button>
         }
     </div>
@@ -96,7 +104,7 @@
                 <i class="bi bi-inbox fs-1 text-secondary d-block mb-3"></i>
                 <p class="text-secondary mb-0">No se encontraron productos con los filtros aplicados</p>
                 <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-primary mt-3">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Limpiar filtros
+                    <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Limpiar filtros
                 </a>
             </div>
         }
@@ -108,19 +116,19 @@
                         <tr>
                             @if (puedeEditarPrecios)
                             {
-                                <th style="width: 50px;" class="text-center">
+                                <th scope="col" style="width: 50px;" class="text-center">
                                     <input type="checkbox" class="form-check-input" id="checkMaster">
                                 </th>
                             }
-                            <th style="width: 100px;">Código</th>
-                            <th>Nombre</th>
-                            <th style="width: 150px;">Categoría</th>
-                            <th style="width: 150px;">Marca</th>
-                            <th class="text-end" style="width: 120px;">Precio Actual</th>
-                            <th style="width: 220px;">Último cambio</th>
-                            <th class="text-end" style="width: 100px;">Stock</th>
-                            <th class="text-center" style="width: 100px;">Estado</th>
-                            <th class="text-center" style="width: 120px;">Acciones</th>
+                            <th scope="col" style="width: 100px;">Código</th>
+                            <th scope="col">Nombre</th>
+                            <th scope="col" style="width: 150px;">Categoría</th>
+                            <th scope="col" style="width: 150px;">Marca</th>
+                            <th scope="col" class="text-end" style="width: 120px;">Precio Actual</th>
+                            <th scope="col" style="width: 220px;">Último cambio</th>
+                            <th scope="col" class="text-end" style="width: 100px;">Stock</th>
+                            <th scope="col" class="text-center" style="width: 100px;">Estado</th>
+                            <th scope="col" class="text-center" style="width: 120px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -129,11 +137,11 @@
                             <tr data-producto-id="@producto.ProductoId"
                                 data-producto-codigo="@producto.Codigo"
                                 data-producto-nombre="@producto.Nombre"
-                                data-producto-precio="@producto.PrecioActual">
+                                data-producto-precio="@producto.PrecioActual.ToString(CultureInfo.InvariantCulture)">
                                 @if (puedeEditarPrecios)
                                 {
                                     <td class="text-center">
-                                        <input type="checkbox" class="form-check-input check-producto" 
+                                        <input type="checkbox" class="form-check-input check-producto"
                                                value="@producto.ProductoId">
                                     </td>
                                 }
@@ -154,7 +162,7 @@
                                     @if (!string.IsNullOrEmpty(producto.CategoriaNombre))
                                     {
                                         <span class="badge bg-primary">
-                                            <i class="bi bi-tag me-1"></i>@producto.CategoriaNombre
+                                            <i class="bi bi-tag me-1" aria-hidden="true"></i>@producto.CategoriaNombre
                                         </span>
                                     }
                                     else
@@ -166,7 +174,7 @@
                                     @if (!string.IsNullOrEmpty(producto.MarcaNombre))
                                     {
                                         <span class="badge bg-info text-dark">
-                                            <i class="bi bi-award me-1"></i>@producto.MarcaNombre
+                                            <i class="bi bi-award me-1" aria-hidden="true"></i>@producto.MarcaNombre
                                         </span>
                                     }
                                     else
@@ -193,7 +201,14 @@
                                         <div class="small">
                                             <div class="@cambioClass fw-semibold">@cambioSigno@((producto.UltimoCambioPorcentaje ?? 0).ToString("0.##"))%</div>
                                             <div class="text-secondary">@producto.UltimoCambioUsuario</div>
-                                            <div class="text-secondary">@producto.UltimoCambioFecha?.ToLocalTime().ToString("dd/MM HH:mm")</div>
+                                            <div class="text-secondary">
+                                                @if (producto.UltimoCambioFecha.HasValue)
+                                                {
+                                                    <time datetime="@producto.UltimoCambioFecha.Value.ToString("O")">
+                                                        @producto.UltimoCambioFecha.Value.ToLocalTime().ToString("dd/MM HH:mm")
+                                                    </time>
+                                                }
+                                            </div>
                                         </div>
                                         @if (puedeEditarPrecios && producto.UltimoCambioPuedeRevertir)
                                         {
@@ -202,11 +217,12 @@
                                                   asp-route-eventoId="@producto.UltimoCambioEventoId"
                                                   asp-route-returnUrl="@returnUrl"
                                                   method="post"
-                                                  class="mt-1"
-                                                  onsubmit="return confirm('¿Revertir el último cambio de precio de este producto?');">
+                                                  class="mt-1">
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">
-                                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Revertir
+                                                <button type="submit"
+                                                        class="btn btn-sm btn-outline-danger py-0 px-2"
+                                                        data-confirm="¿Revertir el último cambio de precio de este producto?">
+                                                    <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Revertir
                                                 </button>
                                             </form>
                                         }
@@ -224,7 +240,7 @@
                                     @if (producto.StockCritico)
                                     {
                                         <span class="badge bg-warning text-dark">
-                                            <i class="bi bi-exclamation-triangle me-1"></i>@producto.StockActual
+                                            <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>@producto.StockActual
                                         </span>
                                     }
                                     else
@@ -238,25 +254,27 @@
                                     @if (producto.Activo)
                                     {
                                         <span class="badge bg-success">
-                                            <i class="bi bi-check-circle me-1"></i>Activo
+                                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Activo
                                         </span>
                                     }
                                     else
                                     {
                                         <span class="badge bg-secondary">
-                                            <i class="bi bi-x-circle me-1"></i>Inactivo
+                                            <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Inactivo
                                         </span>
                                     }
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a asp-controller="Producto" asp-action="Details" asp-route-id="@producto.ProductoId" 
-                                           class="btn btn-outline-info" title="Ver Detalle">
-                                            <i class="bi bi-eye"></i>
+                                        <a asp-controller="Producto" asp-action="Details" asp-route-id="@producto.ProductoId"
+                                           class="btn btn-outline-info" title="Ver Detalle" aria-label="Ver detalle del producto">
+                                            <i class="bi bi-eye" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Ver detalle</span>
                                         </a>
-                                        <a asp-controller="Producto" asp-action="Edit" asp-route-id="@producto.ProductoId" 
-                                           class="btn btn-outline-warning" title="Editar">
-                                            <i class="bi bi-pencil"></i>
+                                        <a asp-controller="Producto" asp-action="Edit" asp-route-id="@producto.ProductoId"
+                                           class="btn btn-outline-warning" title="Editar" aria-label="Editar producto">
+                                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Editar</span>
                                         </a>
                                         @if (puedeEditarPrecios)
                                         {
@@ -266,8 +284,10 @@
                                                    asp-action="DetalleCambioPrecio"
                                                    asp-route-id="@producto.UltimoCambioEventoId"
                                                    class="btn btn-outline-primary"
-                                                   title="Ver Historial de Precios">
-                                                    <i class="bi bi-clock-history"></i>
+                                                   title="Ver Historial de Precios"
+                                                   aria-label="Ver historial de precios">
+                                                    <i class="bi bi-clock-history" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Ver historial</span>
                                                 </a>
                                             }
                                             else
@@ -275,8 +295,10 @@
                                                 <a asp-controller="Catalogo"
                                                    asp-action="HistorialCambiosPrecio"
                                                    class="btn btn-outline-primary"
-                                                   title="Ver Historial de Precios">
-                                                    <i class="bi bi-clock-history"></i>
+                                                   title="Ver Historial de Precios"
+                                                   aria-label="Ver historial de precios">
+                                                    <i class="bi bi-clock-history" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Ver historial</span>
                                                 </a>
                                             }
                                         }

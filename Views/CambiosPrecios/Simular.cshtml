@@ -33,7 +33,10 @@
                     <form asp-action="Simular" method="post">
                         @Html.AntiForgeryToken()
 
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger small" role="alert"></div>
+                        }
 
                         <div class="row">
                             <!-- Configuración del cambio -->
@@ -182,7 +185,7 @@
 
                         <div class="alert alert-warning small">
                             <div class="fw-semibold mb-1 d-flex align-items-center gap-2">
-                                <i class="bi bi-exclamation-triangle"></i>
+                                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                                 <span>Importante</span>
                             </div>
                             <p class="mb-0">
@@ -193,10 +196,10 @@
 
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="bi bi-calculator me-1"></i>Simular cambios
+                                <i class="bi bi-calculator me-1" aria-hidden="true"></i>Simular cambios
                             </button>
                         </div>
                     </form>

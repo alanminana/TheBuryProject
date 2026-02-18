@@ -8,7 +8,7 @@
 <div class="container-fluid">
     <div class="row mb-3">
         <div class="col">
-            <h2><i class="bi bi-shield-check me-2"></i>Gestión de Garantías</h2>
+            <h2><i class="bi bi-shield-check me-2" aria-hidden="true"></i>Gestión de Garantías</h2>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a asp-action="Index">Devoluciones</a></li>
@@ -28,7 +28,7 @@
                             <h6 class="card-title">Garantías Vigentes</h6>
                             <h2 class="mb-0">@Model.TotalVigentes</h2>
                         </div>
-                        <i class="bi bi-shield-check fs-1"></i>
+                        <i class="bi bi-shield-check fs-1" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
@@ -41,7 +41,7 @@
                             <h6 class="card-title">Próximas a Vencer</h6>
                             <h2 class="mb-0">@Model.TotalProximasVencer</h2>
                         </div>
-                        <i class="bi bi-exclamation-triangle fs-1"></i>
+                        <i class="bi bi-exclamation-triangle fs-1" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
@@ -54,7 +54,7 @@
                             <h6 class="card-title">Vencidas</h6>
                             <h2 class="mb-0">@Model.Vencidas.Count</h2>
                         </div>
-                        <i class="bi bi-x-circle fs-1"></i>
+                        <i class="bi bi-x-circle fs-1" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
@@ -67,7 +67,7 @@
                             <h6 class="card-title">En Uso</h6>
                             <h2 class="mb-0">@Model.EnUso.Count</h2>
                         </div>
-                        <i class="bi bi-wrench fs-1"></i>
+                        <i class="bi bi-wrench fs-1" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
@@ -78,22 +78,22 @@
     <ul class="nav nav-tabs" id="garantiasTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="vigentes-tab" data-bs-toggle="tab" data-bs-target="#vigentes" type="button">
-                <i class="bi bi-shield-check me-1"></i>Vigentes (@Model.Vigentes.Count)
+                <i class="bi bi-shield-check me-1" aria-hidden="true"></i>Vigentes (@Model.Vigentes.Count)
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="proximas-tab" data-bs-toggle="tab" data-bs-target="#proximas" type="button">
-                <i class="bi bi-exclamation-triangle me-1"></i>Próximas a Vencer (@Model.ProximasVencer.Count)
+                <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Próximas a Vencer (@Model.ProximasVencer.Count)
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="vencidas-tab" data-bs-toggle="tab" data-bs-target="#vencidas" type="button">
-                <i class="bi bi-x-circle me-1"></i>Vencidas (@Model.Vencidas.Count)
+                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Vencidas (@Model.Vencidas.Count)
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="enuso-tab" data-bs-toggle="tab" data-bs-target="#enuso" type="button">
-                <i class="bi bi-wrench me-1"></i>En Uso (@Model.EnUso.Count)
+                <i class="bi bi-wrench me-1" aria-hidden="true"></i>En Uso (@Model.EnUso.Count)
             </button>
         </li>
     </ul>
@@ -107,15 +107,15 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>N° Garantía</th>
-                                <th>Producto</th>
-                                <th>Cliente</th>
-                                <th>Fecha Inicio</th>
-                                <th>Fecha Vencimiento</th>
-                                <th>Meses</th>
-                                <th>Días Restantes</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
+                                <th scope="col">N° Garantía</th>
+                                <th scope="col">Producto</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Fecha Inicio</th>
+                                <th scope="col">Fecha Vencimiento</th>
+                                <th scope="col">Meses</th>
+                                <th scope="col">Días Restantes</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -140,7 +140,8 @@
                                     </td>
                                     <td>
                                         <button class="btn btn-sm btn-info" title="Ver Detalles">
-                                            <i class="bi bi-eye"></i>
+                                            <i class="bi bi-eye" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Ver detalles</span>
                                         </button>
                                     </td>
                                 </tr>
@@ -152,7 +153,7 @@
             else
             {
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>No hay garantías vigentes.
+                    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>No hay garantías vigentes.
                 </div>
             }
         </div>
@@ -162,20 +163,20 @@
             @if (Model.ProximasVencer.Any())
             {
                 <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
                     <strong>Atención:</strong> Las siguientes garantías vencerán en los próximos 30 días.
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>N° Garantía</th>
-                                <th>Producto</th>
-                                <th>Cliente</th>
-                                <th>Fecha Vencimiento</th>
-                                <th>Días Restantes</th>
-                                <th>Contacto</th>
-                                <th>Acciones</th>
+                                <th scope="col">N° Garantía</th>
+                                <th scope="col">Producto</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Fecha Vencimiento</th>
+                                <th scope="col">Días Restantes</th>
+                                <th scope="col">Contacto</th>
+                                <th scope="col">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -195,10 +196,12 @@
                                     </td>
                                     <td>
                                         <button class="btn btn-sm btn-primary" title="Contactar Cliente">
-                                            <i class="bi bi-envelope"></i>
+                                            <i class="bi bi-envelope" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Contactar cliente</span>
                                         </button>
                                         <button class="btn btn-sm btn-success" title="Extender Garantía">
-                                            <i class="bi bi-plus-circle"></i>
+                                            <i class="bi bi-plus-circle" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Extender garantía</span>
                                         </button>
                                     </td>
                                 </tr>
@@ -210,7 +213,7 @@
             else
             {
                 <div class="alert alert-success">
-                    <i class="bi bi-check-circle me-2"></i>No hay garantías próximas a vencer.
+                    <i class="bi bi-check-circle me-2" aria-hidden="true"></i>No hay garantías próximas a vencer.
                 </div>
             }
         </div>
@@ -223,12 +226,12 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>N° Garantía</th>
-                                <th>Producto</th>
-                                <th>Cliente</th>
-                                <th>Fecha Vencimiento</th>
-                                <th>Días Vencida</th>
-                                <th>Estado</th>
+                                <th scope="col">N° Garantía</th>
+                                <th scope="col">Producto</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Fecha Vencimiento</th>
+                                <th scope="col">Días Vencida</th>
+                                <th scope="col">Estado</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -253,7 +256,7 @@
             else
             {
                 <div class="alert alert-success">
-                    <i class="bi bi-check-circle me-2"></i>No hay garantías vencidas.
+                    <i class="bi bi-check-circle me-2" aria-hidden="true"></i>No hay garantías vencidas.
                 </div>
             }
         </div>
@@ -263,20 +266,20 @@
             @if (Model.EnUso.Any())
             {
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
+                    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
                     Estas garantías están siendo utilizadas actualmente (producto en reparación/servicio).
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>N° Garantía</th>
-                                <th>Producto</th>
-                                <th>Cliente</th>
-                                <th>Fecha Uso</th>
-                                <th>Días en Servicio</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
+                                <th scope="col">N° Garantía</th>
+                                <th scope="col">Producto</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Fecha Uso</th>
+                                <th scope="col">Días en Servicio</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -293,7 +296,8 @@
                                     </td>
                                     <td>
                                         <button class="btn btn-sm btn-success" title="Finalizar Servicio">
-                                            <i class="bi bi-check-circle"></i>
+                                            <i class="bi bi-check-circle" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Finalizar servicio</span>
                                         </button>
                                     </td>
                                 </tr>
@@ -305,7 +309,7 @@
             else
             {
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>No hay garantías en uso actualmente.
+                    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>No hay garantías en uso actualmente.
                 </div>
             }
         </div>

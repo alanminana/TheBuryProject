@@ -25,14 +25,17 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0 d-flex align-items-center gap-2">
-                        <i class="bi bi-plus-circle"></i>
+                        <i class="bi bi-plus-circle" aria-hidden="true"></i>
                         <span>Datos del producto</span>
                     </h5>
                 </div>
 
                 <div class="card-body p-4">
                     <form asp-action="Create" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" aria-label="Errores de validación"></div>
+                        }
 
                         <div class="row g-4">
                             @* Sección: Información Básica *@
@@ -93,7 +96,7 @@
                             
                             <div class="col-12">
                                 <div class="alert alert-info d-flex align-items-center py-2 mb-3">
-                                    <i class="bi bi-info-circle me-2"></i>
+                                    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
                                     <small>Los precios de venta deben <strong>incluir IVA (21%)</strong>. El sistema desglosa el IVA automáticamente en las facturas.</small>
                                 </div>
                             </div>
@@ -126,7 +129,7 @@
                                 </select>
                                 <span asp-validation-for="PorcentajeIVA" class="text-danger small"></span>
                                 <small class="text-muted">
-                                    <i class="bi bi-info-circle me-1"></i>El IVA se suma al precio de venta
+                                    <i class="bi bi-info-circle me-1" aria-hidden="true"></i>El IVA se suma al precio de venta
                                 </small>
                             </div>
 
@@ -136,7 +139,7 @@
                                         <div class="d-flex justify-content-between align-items-center mb-3">
                                             <h6 class="mb-0">Características</h6>
                                             <button type="button" id="btnAgregarCaracteristica" class="btn btn-outline-primary btn-sm">
-                                                <i class="bi bi-plus-circle me-1"></i>Agregar característica
+                                                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Agregar característica
                                             </button>
                                         </div>
 
@@ -146,7 +149,7 @@
                                                     <tr>
                                                         <th style="width: 40%;">Nombre</th>
                                                         <th style="width: 50%;">Valor</th>
-                                                        <th style="width: 10%;" class="text-center">Acción</th>
+                                                        <th scope="col" style="width: 10%;" class="text-center">Acción</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="caracteristicasBody">
@@ -164,7 +167,8 @@
                                                                 </td>
                                                                 <td class="text-center">
                                                                     <button type="button" class="btn btn-outline-danger btn-sm btn-eliminar-caracteristica">
-                                                                        <i class="bi bi-trash"></i>
+                                                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                                                        <span class="visually-hidden">Eliminar característica</span>
                                                                     </button>
                                                                 </td>
                                                             </tr>
@@ -207,7 +211,7 @@
                                             <label class="form-check-label" for="switchActivo">Producto Activo</label>
                                         </div>
                                         <small class="text-muted">
-                                            <i class="bi bi-info-circle me-1"></i>Solo productos activos están disponibles para venta
+                                            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Solo productos activos están disponibles para venta
                                         </small>
                                     </div>
                                 </div>
@@ -218,10 +222,10 @@
 
                         <div class="d-flex justify-content-between">
                             <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i>Guardar Producto
+                                <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Guardar Producto
                             </button>
                         </div>
                     </form>
@@ -254,7 +258,8 @@
                     </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-outline-danger btn-sm btn-eliminar-caracteristica">
-                            <i class="bi bi-trash"></i>
+                            <i class="bi bi-trash" aria-hidden="true"></i>
+                            <span class="visually-hidden">Eliminar característica</span>
                         </button>
                     </td>
                 `;

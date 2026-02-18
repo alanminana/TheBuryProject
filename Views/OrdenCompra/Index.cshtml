@@ -9,23 +9,23 @@
         <div class="col-lg-11">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="text-light fw-bold">
-                    <i class="bi bi-cart-check me-2 text-info"></i>Órdenes de Compra
+                    <i class="bi bi-cart-check me-2 text-info" aria-hidden="true"></i>Órdenes de Compra
                 </h2>
                 <a asp-action="Create" class="btn btn-primary fw-semibold">
-                    <i class="bi bi-plus-circle me-1"></i>Nueva Orden
+                    <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Nueva Orden
                 </a>
             </div>
 
             @if (TempData["Success"] != null)
             {
                 <div class="alert alert-success d-flex align-items-center" role="alert">
-                    <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+                    <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>@TempData["Success"]
                 </div>
             }
             @if (TempData["Error"] != null)
             {
                 <div class="alert alert-danger d-flex align-items-center" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+                    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>@TempData["Error"]
                 </div>
             }
 
@@ -33,8 +33,8 @@
             <div class="card bg-dark border-0 shadow-sm mb-4">
                 <div class="card-header bg-secondary border-0">
                     <a class="text-decoration-none text-light d-block" data-bs-toggle="collapse" href="#filtrosCollapse" role="button" aria-expanded="false">
-                        <i class="bi bi-funnel me-2"></i>Filtros de Búsqueda
-                        <i class="bi bi-chevron-down float-end"></i>
+                        <i class="bi bi-funnel me-2" aria-hidden="true"></i>Filtros de Búsqueda
+                        <i class="bi bi-chevron-down float-end" aria-hidden="true"></i>
                     </a>
                 </div>
                 <div class="collapse" id="filtrosCollapse">
@@ -91,10 +91,10 @@
                                 </div>
                                 <div class="col-md-7 mb-3 d-flex gap-2">
                                     <button type="submit" class="btn btn-primary fw-semibold">
-                                        <i class="bi bi-search me-1"></i>Buscar
+                                        <i class="bi bi-search me-1" aria-hidden="true"></i>Buscar
                                     </button>
                                     <a asp-action="Index" class="btn btn-outline-light">
-                                        <i class="bi bi-x-circle me-1"></i>Limpiar
+                                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Limpiar
                                     </a>
                                 </div>
                             </div>
@@ -138,25 +138,37 @@
                                         <tr>
                                             <td><strong>@o.Numero</strong></td>
                                             <td>@o.ProveedorNombre</td>
-                                            <td>@o.FechaEmision:dd/MM/yyyy</td>
-                                            <td>@(o.FechaEntregaEstimada?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                            <td><time datetime="@o.FechaEmision.ToString("yyyy-MM-dd")">@o.FechaEmision.ToString("dd/MM/yyyy")</time></td>
+                                            <td>
+                                                @if (o.FechaEntregaEstimada.HasValue)
+                                                {
+                                                    <time datetime="@o.FechaEntregaEstimada.Value.ToString("yyyy-MM-dd")">@o.FechaEntregaEstimada.Value.ToString("dd/MM/yyyy")</time>
+                                                }
+                                                else
+                                                {
+                                                    <span>-</span>
+                                                }
+                                            </td>
                                             <td><span class="badge @badge fs-6 px-3 py-2">@o.Estado</span></td>
                                             <td class="text-end fw-semibold">$@o.Total:N2</td>
                                             <td class="text-center"><span class="badge bg-info text-dark">@o.Detalles.Count</span></td>
                                             <td class="text-center">
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <a asp-action="Details" asp-route-id="@o.Id" class="btn btn-outline-info" title="Ver">
-                                                        <i class="bi bi-eye"></i>
+                                                    <a asp-action="Details" asp-route-id="@o.Id" class="btn btn-outline-info" title="Ver" aria-label="Ver orden @o.Numero">
+                                                        <i class="bi bi-eye" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Ver</span>
                                                     </a>
                                                     @if (o.Estado != TheBuryProject.Models.Enums.EstadoOrdenCompra.Recibida &&
                                                                                                 o.Estado != TheBuryProject.Models.Enums.EstadoOrdenCompra.Cancelada)
                                                     {
-                                                        <a asp-action="Edit" asp-route-id="@o.Id" class="btn btn-outline-warning" title="Editar">
-                                                            <i class="bi bi-pencil"></i>
+                                                        <a asp-action="Edit" asp-route-id="@o.Id" class="btn btn-outline-warning" title="Editar" aria-label="Editar orden @o.Numero">
+                                                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                            <span class="visually-hidden">Editar</span>
                                                         </a>
                                                     }
-                                                    <a asp-action="Delete" asp-route-id="@o.Id" class="btn btn-outline-danger" title="Eliminar">
-                                                        <i class="bi bi-trash"></i>
+                                                    <a asp-action="Delete" asp-route-id="@o.Id" class="btn btn-outline-danger" title="Eliminar" aria-label="Eliminar orden @o.Numero">
+                                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Eliminar</span>
                                                     </a>
                                                 </div>
                                             </td>
@@ -166,14 +178,14 @@
                             </table>
                         </div>
                         <p class="text-muted mt-3">
-                            <i class="bi bi-info-circle"></i>
+                            <i class="bi bi-info-circle" aria-hidden="true"></i>
                             Mostrando <strong>@Model.Count()</strong> orden(es) de compra
                         </p>
                     }
                     else
                     {
                         <div class="alert alert-info border-0">
-                            <i class="bi bi-info-circle me-2"></i>No se encontraron órdenes de compra con los filtros aplicados.
+                            <i class="bi bi-info-circle me-2" aria-hidden="true"></i>No se encontraron órdenes de compra con los filtros aplicados.
                         </div>
                     }
                 </div>

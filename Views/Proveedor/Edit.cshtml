@@ -8,7 +8,7 @@
     <div class="row mb-4">
         <div class="col">
             <h1 class="h3 fw-bold text-light mb-0">
-                <i class="bi bi-pencil-square text-warning me-2"></i> Editar Proveedor
+                <i class="bi bi-pencil-square text-warning me-2" aria-hidden="true"></i> Editar Proveedor
             </h1>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
@@ -27,11 +27,14 @@
                     <form asp-action="Edit" method="post">
                         <input type="hidden" asp-for="Id" />
                         <input type="hidden" asp-for="RowVersion" />
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" aria-label="Errores de validación"></div>
+                        }
 
                         <!-- Datos Fiscales -->
                         <h5 class="text-info mb-3 border-bottom pb-2">
-                            <i class="bi bi-file-text me-2"></i>Datos Fiscales
+                            <i class="bi bi-file-text me-2" aria-hidden="true"></i>Datos Fiscales
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-4">
@@ -54,7 +57,7 @@
 
                         <!-- Datos de Contacto -->
                         <h5 class="text-info mb-3 border-bottom pb-2">
-                            <i class="bi bi-telephone me-2"></i>Datos de Contacto
+                            <i class="bi bi-telephone me-2" aria-hidden="true"></i>Datos de Contacto
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
@@ -76,7 +79,7 @@
 
                         <!-- Cobertura -->
                         <h5 class="text-info mb-3 border-bottom pb-2">
-                            <i class="bi bi-diagram-3 me-2"></i>Cobertura de Catálogo
+                            <i class="bi bi-diagram-3 me-2" aria-hidden="true"></i>Cobertura de Catálogo
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-4">
@@ -99,7 +102,7 @@
 
                         <!-- Dirección -->
                         <h5 class="text-info mb-3 border-bottom pb-2">
-                            <i class="bi bi-geo-alt me-2"></i>Dirección
+                            <i class="bi bi-geo-alt me-2" aria-hidden="true"></i>Dirección
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-12">
@@ -126,7 +129,7 @@
 
                         <!-- Información adicional -->
                         <h5 class="text-info mb-3 border-bottom pb-2">
-                            <i class="bi bi-chat-text me-2"></i>Información Adicional
+                            <i class="bi bi-chat-text me-2" aria-hidden="true"></i>Información Adicional
                         </h5>
                         <div class="row g-3 mb-4">
                             <div class="col-md-12">
@@ -145,10 +148,10 @@
                         <!-- Botones -->
                         <div class="d-flex justify-content-end gap-2 mt-3">
                             <a asp-action="Index" class="btn btn-outline-light">
-                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                                <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-warning text-dark fw-semibold">
-                                <i class="bi bi-save me-2"></i>Actualizar
+                                <i class="bi bi-save me-2" aria-hidden="true"></i>Actualizar
                             </button>
                         </div>
                     </form>
@@ -161,7 +164,7 @@
             <div class="card bg-body-secondary border-0 shadow-sm">
                 <div class="card-body">
                     <h6 class="fw-bold mb-3 text-info">
-                        <i class="bi bi-clock-history me-2"></i>Información del Registro
+                        <i class="bi bi-clock-history me-2" aria-hidden="true"></i>Información del Registro
                     </h6>
                     <p class="small mb-0 text-light">
                         Editando proveedor <strong>@Model.RazonSocial</strong>

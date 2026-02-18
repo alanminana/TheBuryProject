@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Detalle de Cambio de Precio";
+
     var cambioClass = Model.ValorPorcentaje >= 0 ? "text-success" : "text-danger";
     var cambioTexto = Model.ValorPorcentaje >= 0
         ? $"+{Model.ValorPorcentaje:0.##}%"
@@ -9,49 +10,58 @@
 }
 
 <section class="container-fluid py-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div>
-            <h1 class="h4 mb-1">
-                <i class="bi bi-eye text-info me-2"></i>Detalle de Cambio de Precio
-            </h1>
-            <p class="text-secondary small mb-0">Evento #@Model.EventoId</p>
-        </div>
-        <div class="d-flex gap-2">
-            <a asp-action="HistorialCambiosPrecio" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Volver
-            </a>
-        </div>
-    </div>
 
+    @* Header unificado *@
+    <partial name="_PageHeader" model='new PageHeaderModel {
+        Breadcrumb = "Gestión de precios · Catálogo",
+        Title = "Detalle de Cambio de Precio",
+        Icon = "eye",
+        Subtitle = $"Evento #{Model.EventoId}",
+        BackAction = "HistorialCambiosPrecio",
+        BackController = "Catalogo",
+        BackText = "Volver"
+    }' />
+
+    @* Alertas unificadas *@
     <partial name="_Alerts" />
 
-    <div class="card bg-dark border-0 shadow-sm mb-4">
+    <div class="card card-animate bg-dark border-0 shadow-sm mb-4">
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-3">
                     <small class="text-muted">Fecha/Hora</small>
-                    <div class="fw-semibold">@Model.Fecha.ToString("dd/MM/yyyy HH:mm")</div>
+                    <div class="fw-semibold">
+                        <time datetime="@Model.Fecha.ToString("O")">
+                            @Model.Fecha.ToString("dd/MM/yyyy HH:mm")
+                        </time>
+                    </div>
                 </div>
+
                 <div class="col-md-3">
                     <small class="text-muted">Usuario</small>
                     <div class="fw-semibold">@Model.Usuario</div>
                 </div>
+
                 <div class="col-md-3">
                     <small class="text-muted">Cambio</small>
                     <div class="fw-semibold @cambioClass">@cambioTexto</div>
                 </div>
+
                 <div class="col-md-3">
                     <small class="text-muted">Alcance</small>
                     <div class="fw-semibold">@Model.Alcance</div>
                 </div>
+
                 <div class="col-md-3">
                     <small class="text-muted">Cantidad</small>
                     <div class="fw-semibold">@Model.CantidadProductos</div>
                 </div>
+
                 <div class="col-md-6">
                     <small class="text-muted">Motivo</small>
                     <div class="fw-semibold">@((string.IsNullOrWhiteSpace(Model.Motivo)) ? "-" : Model.Motivo)</div>
                 </div>
+
                 <div class="col-md-3">
                     <small class="text-muted">Estado</small>
                     <div class="fw-semibold">
@@ -65,6 +75,7 @@
                         }
                     </div>
                 </div>
+
                 @if (Model.Revertido)
                 {
                     <div class="col-md-6">
@@ -73,26 +84,35 @@
                     </div>
                     <div class="col-md-6">
                         <small class="text-muted">Revertido en</small>
-                        <div class="fw-semibold">@Model.RevertidoEn?.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="fw-semibold">
+                            @if (Model.RevertidoEn.HasValue)
+                            {
+                                <time datetime="@Model.RevertidoEn.Value.ToString("O")">
+                                    @Model.RevertidoEn.Value.ToString("dd/MM/yyyy HH:mm")
+                                </time>
+                            }
+                        </div>
                     </div>
                 }
             </div>
         </div>
     </div>
 
-    <div class="card bg-dark border-0 shadow-sm">
-        <div class="card-header bg-secondary text-light">
-            Productos afectados
+    <div class="card card-animate bg-dark border-0 shadow-sm">
+        <div class="card-header bg-secondary text-light d-flex align-items-center justify-content-between">
+            <span class="fw-semibold">Productos afectados</span>
+            <span class="badge bg-dark-subtle text-light">@Model.Detalles.Count</span>
         </div>
+
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-dark table-hover mb-0">
                     <thead class="table-secondary">
                         <tr>
-                            <th>Codigo</th>
-                            <th>Nombre</th>
-                            <th class="text-end">Precio anterior</th>
-                            <th class="text-end">Precio nuevo</th>
+                            <th scope="col">Código</th>
+                            <th scope="col">Nombre</th>
+                            <th scope="col" class="text-end">Precio anterior</th>
+                            <th scope="col" class="text-end">Precio nuevo</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,7 +124,7 @@
                                     <td><span class="badge bg-info text-dark">@detalle.Codigo</span></td>
                                     <td>@detalle.Nombre</td>
                                     <td class="text-end">@detalle.PrecioAnterior.ToString("C2")</td>
-                                    <td class="text-end">@detalle.PrecioNuevo.ToString("C2")</td>
+                                    <td class="text-end fw-semibold">@detalle.PrecioNuevo.ToString("C2")</td>
                                 </tr>
                             }
                         }
@@ -121,4 +141,5 @@
             </div>
         </div>
     </div>
+
 </section>

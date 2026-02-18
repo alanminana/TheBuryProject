@@ -11,17 +11,17 @@
         </div>
         <div class="col-auto">
             <a asp-action="Create" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Nueva Devolución
+                <i class="bi bi-plus-circle" aria-hidden="true"></i> Nueva Devolución
             </a>
             <div class="btn-group ms-2">
                 <a asp-action="Garantias" class="btn btn-outline-info">
-                    <i class="bi bi-shield-check"></i> Garantías
+                    <i class="bi bi-shield-check" aria-hidden="true"></i> Garantías
                 </a>
                 <a asp-action="RMAs" class="btn btn-outline-warning">
-                    <i class="bi bi-truck"></i> RMAs
+                    <i class="bi bi-truck" aria-hidden="true"></i> RMAs
                 </a>
                 <a asp-action="Estadisticas" class="btn btn-outline-secondary">
-                    <i class="bi bi-graph-up"></i> Estadísticas
+                    <i class="bi bi-graph-up" aria-hidden="true"></i> Estadísticas
                 </a>
             </div>
         </div>
@@ -29,17 +29,17 @@
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
             @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
             @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
@@ -126,7 +126,7 @@
             @if (!Model.Pendientes.Any())
             {
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> No hay devoluciones pendientes
+                    <i class="bi bi-info-circle" aria-hidden="true"></i> No hay devoluciones pendientes
                 </div>
             }
             else
@@ -140,7 +140,7 @@
             @if (!Model.EnRevision.Any())
             {
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> No hay devoluciones en revisión
+                    <i class="bi bi-info-circle" aria-hidden="true"></i> No hay devoluciones en revisión
                 </div>
             }
             else
@@ -154,7 +154,7 @@
             @if (!Model.Aprobadas.Any())
             {
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> No hay devoluciones aprobadas
+                    <i class="bi bi-info-circle" aria-hidden="true"></i> No hay devoluciones aprobadas
                 </div>
             }
             else
@@ -168,7 +168,7 @@
             @if (!Model.Completadas.Any())
             {
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> No hay devoluciones completadas
+                    <i class="bi bi-info-circle" aria-hidden="true"></i> No hay devoluciones completadas
                 </div>
             }
             else

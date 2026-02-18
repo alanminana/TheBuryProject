@@ -11,10 +11,10 @@
         <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header bg-warning text-dark">
-                    <h4 class="mb-0"><i class="bi bi-shield me-2"></i>Asignar Roles a Usuario</h4>
+                    <h4 class="mb-0"><i class="bi bi-shield me-2" aria-hidden="true"></i>Asignar Roles a Usuario</h4>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info">
+                    <div class="alert alert-info" role="alert">
                         <strong>Usuario:</strong> @Model.UserName (@Model.Email)
                     </div>
 
@@ -43,10 +43,10 @@
 
                         <div class="d-flex justify-content-between mt-4">
                             <a href="@backUrl" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-warning">
-                                <i class="bi bi-save me-1"></i>Guardar Roles
+                                <i class="bi bi-save me-1" aria-hidden="true"></i>Guardar Roles
                             </button>
                         </div>
                     </form>

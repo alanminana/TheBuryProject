@@ -24,10 +24,10 @@
             <div class="card card-animate border-0">
                 <div class="card-body">
 
-                    <div class="alert alert-success mb-3">
+                    <div class="alert alert-success mb-3" role="alert">
                         <div class="d-flex">
                             <div class="me-2">
-                                <i class="bi bi-check-circle-fill"></i>
+                                <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
                             </div>
                             <div class="small">
                                 <div class="fw-semibold">Cambio aprobado</div>
@@ -51,7 +51,11 @@
                             @if (Model.FechaAprobacion.HasValue)
                             {
                                 <div class="text-muted">
-                                    <small>@Model.FechaAprobacion.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                    <small>
+                                        <time datetime="@Model.FechaAprobacion.Value.ToString("O")">
+                                            @Model.FechaAprobacion.Value.ToString("dd/MM/yyyy HH:mm")
+                                        </time>
+                                    </small>
                                 </div>
                             }
                         </dd>
@@ -75,10 +79,10 @@
                             <span asp-validation-for="FechaVigencia" class="text-danger small"></span>
                         </div>
 
-                        <div class="alert alert-warning small mb-3">
+                        <div class="alert alert-warning small mb-3" role="alert">
                             <div class="d-flex">
                                 <div class="me-2">
-                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                                 </div>
                                 <div>
                                     <strong>Importante antes de aplicar:</strong>
@@ -96,13 +100,13 @@
                             <a asp-action="Preview"
                                asp-route-id="@Model.BatchId"
                                class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancelar
                             </a>
 
                             <button type="submit"
                                     class="btn btn-success"
                                     data-confirm="¿Está ABSOLUTAMENTE SEGURO de aplicar este cambio de precios?\n\nEsta acción modificará @Model.CantidadProductos precios en la base de datos.">
-                                <i class="bi bi-check-circle me-1"></i>Aplicar cambio ahora
+                                <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Aplicar cambio ahora
                             </button>
                         </div>
                     </form>

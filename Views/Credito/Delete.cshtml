@@ -8,21 +8,21 @@
 <section class="container-fluid py-4 text-light">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-danger mb-0">
-            <i class="bi bi-trash3-fill me-2"></i>Eliminar Crédito
+            <i class="bi bi-trash3-fill me-2" aria-hidden="true"></i>Eliminar Crédito
         </h2>
         <a href="@backUrl" class="btn btn-outline-light">
-            <i class="bi bi-arrow-left me-2"></i>Volver
+            <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver
         </a>
     </div>
 
-    <div class="alert alert-danger bg-opacity-25 border-danger text-light shadow-sm">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <div class="alert alert-danger bg-opacity-25 border-danger text-light shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
         <strong>¡Atención!</strong> Esta acción es irreversible. El crédito será marcado como eliminado y no podrá restaurarse.
     </div>
 
     <div class="card bg-dark border-0 shadow-lg">
         <div class="card-header bg-danger text-light py-3">
-            <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2"></i>Información del Crédito</h5>
+            <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2" aria-hidden="true"></i>Información del Crédito</h5>
         </div>
 
         <div class="card-body p-4">
@@ -45,7 +45,7 @@
                 </dd>
 
                 <dt class="col-sm-3 text-secondary">Fecha de Solicitud</dt>
-                <dd class="col-sm-9">@Model.FechaSolicitud.ToString("dd/MM/yyyy")</dd>
+                <dd class="col-sm-9"><time datetime="@Model.FechaSolicitud.ToString("yyyy-MM-dd")">@Model.FechaSolicitud.ToString("dd/MM/yyyy")</time></dd>
             </dl>
         </div>
 
@@ -54,11 +54,11 @@
                 <input type="hidden" asp-for="Id" />
                 <input type="hidden" name="returnUrl" value="@returnUrl" />
                 <button type="submit" class="btn btn-danger btn-lg px-4 fw-semibold" data-confirm="¿Eliminar este crédito? Esta acción es irreversible.">
-                    <i class="bi bi-trash3-fill me-2"></i>Confirmar Eliminación
+                    <i class="bi bi-trash3-fill me-2" aria-hidden="true"></i>Confirmar Eliminación
                 </button>
             </form>
             <a href="@backUrl" class="btn btn-outline-light btn-lg px-4">
-                <i class="bi bi-x-circle me-2"></i>Cancelar
+                <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Cancelar
             </a>
         </div>
     </div>

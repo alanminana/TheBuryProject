@@ -1,42 +1,63 @@
 @model TheBuryProject.ViewModels.CatalogoUnificadoViewModel
 
 @{
-    var filtrosActivos = !string.IsNullOrEmpty(Model.SearchTerm) 
-        || Model.CategoriaId.HasValue 
-        || Model.MarcaId.HasValue 
-        || Model.StockBajo 
-        || Model.SoloActivos 
+    var filtrosActivos =
+        !string.IsNullOrEmpty(Model.SearchTerm)
+        || Model.CategoriaId.HasValue
+        || Model.MarcaId.HasValue
+        || Model.StockBajo
+        || Model.SoloActivos
         || Model.ListaPrecioId.HasValue;
+
+    // Mantengo tu lógica por roles (no asumo claims existentes en Catálogo).
+    var puedeVerCambiosPrecios = User.IsInRole("SuperAdmin") || User.IsInRole("Gerente");
+
+    // Preservar retorno al volver desde ABMs (mejora UX).
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
 }
 
-<div class="row align-items-center mb-4">
-    <div class="col">
-        <h1 class="h3 fw-bold text-light mb-0">
-            <i class="bi bi-collection text-info"></i> Catálogo de Productos
+<div class="row align-items-center mb-4 g-2">
+    <div class="col-12 col-lg">
+        <div class="text-muted text-uppercase small mb-1">Productos · Catálogo</div>
+        <h1 class="h4 mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-collection text-info" aria-hidden="true"></i>
+            <span>Catálogo de Productos</span>
+            @if (filtrosActivos)
+            {
+                <span class="badge bg-info text-dark ms-1">Filtros activos</span>
+            }
         </h1>
-        <p class="text-secondary mb-0">Visualizá y gestioná el catálogo completo con precios por lista</p>
+        <p class="text-secondary mb-0 small">Visualizá y gestioná el catálogo completo con precios por lista</p>
     </div>
-    <div class="col-auto d-flex flex-wrap gap-2">
-        <!-- Botón Nuevo Producto -->
-        <a asp-controller="Producto" asp-action="Create" class="btn btn-success fw-semibold shadow-sm">
-            <i class="bi bi-plus-circle me-2"></i>Nuevo Producto
+
+    <div class="col-12 col-lg-auto d-flex flex-wrap gap-2 justify-content-lg-end">
+        <a asp-controller="Producto"
+           asp-action="Create"
+           asp-route-returnUrl="@returnUrl"
+           class="btn btn-success btn-sm fw-semibold shadow-sm">
+            <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>Nuevo Producto
         </a>
 
-        <!-- Botón Gestión de Categorías -->
-        <a asp-controller="Categoria" asp-action="Index" class="btn btn-primary fw-semibold shadow-sm">
-            <i class="bi bi-tag me-2"></i>Categorías
+        <a asp-controller="Categoria"
+           asp-action="Index"
+           asp-route-returnUrl="@returnUrl"
+           class="btn btn-primary btn-sm fw-semibold shadow-sm">
+            <i class="bi bi-tag me-2" aria-hidden="true"></i>Categorías
         </a>
 
-        <!-- Botón Gestión de Marcas -->
-        <a asp-controller="Marca" asp-action="Index" class="btn btn-info text-dark fw-semibold shadow-sm">
-            <i class="bi bi-award me-2"></i>Marcas
+        <a asp-controller="Marca"
+           asp-action="Index"
+           asp-route-returnUrl="@returnUrl"
+           class="btn btn-info btn-sm text-dark fw-semibold shadow-sm">
+            <i class="bi bi-award me-2" aria-hidden="true"></i>Marcas
         </a>
 
-        <!-- Botón Cambios de Precios (solo para administradores) -->
-        @if (User.IsInRole("SuperAdmin") || User.IsInRole("Gerente"))
+        @if (puedeVerCambiosPrecios)
         {
-            <a asp-controller="CambiosPrecios" asp-action="Index" class="btn btn-outline-warning fw-semibold shadow-sm">
-                <i class="bi bi-shuffle me-2"></i>Cambios de Precios
+            <a asp-controller="CambiosPrecios"
+               asp-action="Index"
+               class="btn btn-outline-warning btn-sm fw-semibold shadow-sm">
+                <i class="bi bi-shuffle me-2" aria-hidden="true"></i>Cambios de Precios
             </a>
         }
     </div>
@@ -48,35 +69,42 @@
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#filtrosCollapse"
+            aria-controls="filtrosCollapse"
             aria-expanded="@(filtrosActivos.ToString().ToLower())">
-        <span class="fw-semibold">
-            <i class="bi bi-funnel"></i> Filtros de búsqueda
-            @if (filtrosActivos)
-            {
-                <span class="badge bg-info text-dark ms-2">Activos</span>
-            }
+        <span class="fw-semibold d-inline-flex align-items-center gap-2">
+            <i class="bi bi-funnel" aria-hidden="true"></i>
+            <span>Filtros de búsqueda</span>
         </span>
-        <i class="bi bi-chevron-down"></i>
+        <i class="bi bi-chevron-down" aria-hidden="true"></i>
     </button>
 
     <div id="filtrosCollapse" class="collapse @(filtrosActivos ? "show" : string.Empty)">
         <div class="card-body">
-            <form method="get" asp-controller="Catalogo" asp-action="Index" id="formFiltros" class="row g-3">
+            <form method="get"
+                  asp-controller="Catalogo"
+                  asp-action="Index"
+                  id="formFiltros"
+                  class="row g-3 align-items-end">
+
                 <!-- Búsqueda general -->
-                <div class="col-md-4">
-                    <label for="searchTerm" class="form-label text-light">
-                        <i class="bi bi-search"></i> Búsqueda
+                <div class="col-12 col-md-4">
+                    <label for="searchTerm" class="form-label text-light small mb-1">
+                        <i class="bi bi-search" aria-hidden="true"></i> Búsqueda
                     </label>
-                    <input type="text" class="form-control" id="searchTerm" name="searchTerm" 
-                           value="@Model.SearchTerm" placeholder="Código o nombre...">
+                    <input type="search"
+                           class="form-control form-control-sm"
+                           id="searchTerm"
+                           name="searchTerm"
+                           value="@Model.SearchTerm"
+                           placeholder="Código o nombre..." />
                 </div>
 
                 <!-- Categoría -->
-                <div class="col-md-3">
-                    <label for="categoriaId" class="form-label text-light">
-                        <i class="bi bi-tag"></i> Categoría
+                <div class="col-12 col-md-3">
+                    <label for="categoriaId" class="form-label text-light small mb-1">
+                        <i class="bi bi-tag" aria-hidden="true"></i> Categoría
                     </label>
-                    <select class="form-select" id="categoriaId" name="categoriaId">
+                    <select class="form-select form-select-sm" id="categoriaId" name="categoriaId">
                         <option value="">Todas</option>
                         @foreach (var cat in Model.Categorias)
                         {
@@ -88,11 +116,11 @@
                 </div>
 
                 <!-- Marca -->
-                <div class="col-md-3">
-                    <label for="marcaId" class="form-label text-light">
-                        <i class="bi bi-award"></i> Marca
+                <div class="col-12 col-md-3">
+                    <label for="marcaId" class="form-label text-light small mb-1">
+                        <i class="bi bi-award" aria-hidden="true"></i> Marca
                     </label>
-                    <select class="form-select" id="marcaId" name="marcaId">
+                    <select class="form-select form-select-sm" id="marcaId" name="marcaId">
                         <option value="">Todas</option>
                         @foreach (var marca in Model.Marcas)
                         {
@@ -104,11 +132,11 @@
                 </div>
 
                 <!-- Lista de Precios -->
-                <div class="col-md-2">
-                    <label for="listaPrecioId" class="form-label text-light">
-                        <i class="bi bi-cash-stack"></i> Lista de Precios
+                <div class="col-12 col-md-2">
+                    <label for="listaPrecioId" class="form-label text-light small mb-1">
+                        <i class="bi bi-cash-stack" aria-hidden="true"></i> Lista de Precios
                     </label>
-                    <select class="form-select" id="listaPrecioId" name="listaPrecioId">
+                    <select class="form-select form-select-sm" id="listaPrecioId" name="listaPrecioId">
                         <option value="">Todas</option>
                         @foreach (var lista in Model.ListasPrecios)
                         {
@@ -120,30 +148,42 @@
                 </div>
 
                 <!-- Checkboxes -->
-                <div class="col-md-6">
-                    <label class="form-label text-light d-block">Opciones</label>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="stockBajo" name="stockBajo" 
-                               value="true" checked="@Model.StockBajo">
-                        <label class="form-check-label text-light" for="stockBajo">
-                            <i class="bi bi-exclamation-triangle text-warning"></i> Solo stock bajo
-                        </label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="soloActivos" name="soloActivos" 
-                               value="true" checked="@Model.SoloActivos">
-                        <label class="form-check-label text-light" for="soloActivos">
-                            <i class="bi bi-check-circle text-success"></i> Solo activos
-                        </label>
+                <div class="col-12 col-md-6">
+                    <label class="form-label text-light small mb-1 d-block">Opciones</label>
+
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="stockBajo"
+                                   name="stockBajo"
+                                   value="true"
+                                   checked="@Model.StockBajo" />
+                            <label class="form-check-label text-light" for="stockBajo">
+                                <i class="bi bi-exclamation-triangle text-warning" aria-hidden="true"></i> Solo stock bajo
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="soloActivos"
+                                   name="soloActivos"
+                                   value="true"
+                                   checked="@Model.SoloActivos" />
+                            <label class="form-check-label text-light" for="soloActivos">
+                                <i class="bi bi-check-circle text-success" aria-hidden="true"></i> Solo activos
+                            </label>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Ordenamiento -->
-                <div class="col-md-3">
-                    <label for="orderBy" class="form-label text-light">
-                        <i class="bi bi-sort-down"></i> Ordenar por
+                <div class="col-12 col-md-3">
+                    <label for="orderBy" class="form-label text-light small mb-1">
+                        <i class="bi bi-sort-down" aria-hidden="true"></i> Ordenar por
                     </label>
-                    <select class="form-select" id="orderBy" name="orderBy">
+                    <select class="form-select form-select-sm" id="orderBy" name="orderBy">
                         <option value="">Sin orden específico</option>
                         <option value="codigo" selected="@(Model.OrderBy == "codigo")">Código</option>
                         <option value="nombre" selected="@(Model.OrderBy == "nombre")">Nombre</option>
@@ -154,11 +194,11 @@
                     </select>
                 </div>
 
-                <div class="col-md-3">
-                    <label for="orderDirection" class="form-label text-light">
-                        <i class="bi bi-arrow-down-up"></i> Dirección
+                <div class="col-12 col-md-3">
+                    <label for="orderDirection" class="form-label text-light small mb-1">
+                        <i class="bi bi-arrow-down-up" aria-hidden="true"></i> Dirección
                     </label>
-                    <select class="form-select" id="orderDirection" name="orderDirection">
+                    <select class="form-select form-select-sm" id="orderDirection" name="orderDirection">
                         <option value="asc" selected="@(Model.OrderDirection == "asc")">Ascendente</option>
                         <option value="desc" selected="@(Model.OrderDirection == "desc")">Descendente</option>
                     </select>
@@ -166,11 +206,14 @@
 
                 <!-- Botones -->
                 <div class="col-12 d-flex gap-2 justify-content-end">
-                    <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle me-1"></i>Limpiar
+                    <a asp-controller="Catalogo"
+                       asp-action="Index"
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Limpiar
                     </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-funnel-fill me-1"></i>Aplicar filtros
+
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-funnel-fill me-1" aria-hidden="true"></i>Aplicar filtros
                     </button>
                 </div>
             </form>

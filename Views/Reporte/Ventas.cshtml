@@ -12,7 +12,7 @@
         </div>
         <div class="col-auto">
             <a asp-action="Index" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
             </a>
         </div>
     </div>
@@ -21,7 +21,7 @@
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">
-                <i class="bi bi-funnel"></i> Filtros
+                <i class="bi bi-funnel" aria-hidden="true"></i> Filtros
             </h5>
         </div>
         <div class="card-body">
@@ -117,10 +117,10 @@
                 <div class="row">
                     <div class="col-md-12">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search"></i> Generar Reporte
+                            <i class="bi bi-search" aria-hidden="true"></i> Generar Reporte
                         </button>
                         <a href="@Url.Action("Ventas")" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Limpiar Filtros
+                            <i class="bi bi-x-circle" aria-hidden="true"></i> Limpiar Filtros
                         </a>
                     </div>
                 </div>
@@ -174,10 +174,10 @@
         <div class="row mb-3">
             <div class="col-md-12 text-end">
                 <a href="@Url.Action("ExportarVentasExcel", filtro)" class="btn btn-success">
-                    <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                    <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Exportar a Excel
                 </a>
                 <a href="@Url.Action("ExportarVentasPdf", filtro)" class="btn btn-danger">
-                    <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF
+                    <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> Exportar a PDF
                 </a>
             </div>
         </div>
@@ -185,22 +185,22 @@
         <!-- Tabs con información adicional -->
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ventas" type="button">
+                <button class="nav-link active" id="ventas-tab" data-bs-toggle="tab" data-bs-target="#ventas" type="button" role="tab" aria-controls="ventas" aria-selected="true">
                     Ventas Detalladas
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#productos" type="button">
+                <button class="nav-link" id="productos-tab" data-bs-toggle="tab" data-bs-target="#productos" type="button" role="tab" aria-controls="productos" aria-selected="false">
                     Productos Más Vendidos
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#clientes" type="button">
+                <button class="nav-link" id="clientes-tab" data-bs-toggle="tab" data-bs-target="#clientes" type="button" role="tab" aria-controls="clientes" aria-selected="false">
                     Clientes Top
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tipoPago" type="button">
+                <button class="nav-link" id="tipoPago-tab" data-bs-toggle="tab" data-bs-target="#tipoPago" type="button" role="tab" aria-controls="tipoPago" aria-selected="false">
                     Por Tipo de Pago
                 </button>
             </li>
@@ -208,21 +208,21 @@
 
         <div class="tab-content border border-top-0 p-3 bg-white">
             <!-- Ventas Detalladas -->
-            <div class="tab-pane fade show active" id="ventas">
+            <div class="tab-pane fade show active" id="ventas" role="tabpanel" aria-labelledby="ventas-tab">
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Nº Venta</th>
-                                <th>Fecha</th>
-                                <th>Cliente</th>
-                                <th>Vendedor</th>
-                                <th>Tipo Pago</th>
-                                <th class="text-end">Subtotal</th>
-                                <th class="text-end">Descuento</th>
-                                <th class="text-end">Total</th>
-                                <th class="text-end">Ganancia</th>
-                                <th class="text-end">Margen %</th>
+                                <th scope="col">Nº Venta</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Vendedor</th>
+                                <th scope="col">Tipo Pago</th>
+                                <th scope="col" class="text-end">Subtotal</th>
+                                <th scope="col" class="text-end">Descuento</th>
+                                <th scope="col" class="text-end">Total</th>
+                                <th scope="col" class="text-end">Ganancia</th>
+                                <th scope="col" class="text-end">Margen %</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -252,7 +252,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="table-secondary">
-                                <th colspan="5" class="text-end">TOTALES:</th>
+                                <th scope="row" colspan="5" class="text-end">TOTALES:</th>
                                 <th class="text-end">$@Model.Ventas.Sum(v => v.Subtotal).ToString("N2")</th>
                                 <th class="text-end">$@Model.Ventas.Sum(v => v.Descuento).ToString("N2")</th>
                                 <th class="text-end">$@Model.TotalVentas.ToString("N2")</th>
@@ -265,17 +265,17 @@
             </div>
 
             <!-- Productos Más Vendidos -->
-            <div class="tab-pane fade" id="productos">
+            <div class="tab-pane fade" id="productos" role="tabpanel" aria-labelledby="productos-tab">
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Código</th>
-                            <th>Producto</th>
-                            <th>Categoría</th>
-                            <th class="text-end">Cantidad</th>
-                            <th class="text-end">Monto Total</th>
-                            <th class="text-end">Ganancia</th>
-                            <th class="text-end">Margen %</th>
+                            <th scope="col">Código</th>
+                            <th scope="col">Producto</th>
+                            <th scope="col">Categoría</th>
+                            <th scope="col" class="text-end">Cantidad</th>
+                            <th scope="col" class="text-end">Monto Total</th>
+                            <th scope="col" class="text-end">Ganancia</th>
+                            <th scope="col" class="text-end">Margen %</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -300,16 +300,16 @@
             </div>
 
             <!-- Clientes Top -->
-            <div class="tab-pane fade" id="clientes">
+            <div class="tab-pane fade" id="clientes" role="tabpanel" aria-labelledby="clientes-tab">
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Cliente</th>
-                            <th>Documento</th>
-                            <th class="text-end">Compras</th>
-                            <th class="text-end">Monto Total</th>
-                            <th class="text-end">Ticket Promedio</th>
-                            <th>Última Compra</th>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Documento</th>
+                            <th scope="col" class="text-end">Compras</th>
+                            <th scope="col" class="text-end">Monto Total</th>
+                            <th scope="col" class="text-end">Ticket Promedio</th>
+                            <th scope="col">Última Compra</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -333,7 +333,7 @@
             </div>
 
             <!-- Por Tipo de Pago -->
-            <div class="tab-pane fade" id="tipoPago">
+            <div class="tab-pane fade" id="tipoPago" role="tabpanel" aria-labelledby="tipoPago-tab">
                 <div class="row">
                     @foreach (var tipoPago in Model.VentasPorTipoPago)
                     {
@@ -358,8 +358,8 @@
     }
     else
     {
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i>
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
             Selecciona los filtros y haz clic en "Generar Reporte" para ver los resultados.
         </div>
     }

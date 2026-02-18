@@ -468,9 +468,7 @@ namespace TheBuryProject.Controllers
             detalleViewModel.Documentos = await _documentoService.GetByClienteIdAsync(cliente.Id);
 
             var creditos = await _creditoService.GetByClienteIdAsync(cliente.Id);
-            detalleViewModel.CreditosActivos = creditos
-                .Where(c => c.Estado == EstadoCredito.Activo)
-                .ToList();
+            detalleViewModel.CreditosActivos = creditos;
 
             detalleViewModel.EvaluacionCredito = await EvaluarCapacidadCrediticia(cliente.Id, detalleViewModel);
 

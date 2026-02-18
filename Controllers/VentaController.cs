@@ -597,7 +597,8 @@ namespace TheBuryProject.Controllers
 
                     // REGLA 4: Financiación configurada → confirmar y generar cuotas
                     var validacionConfirmacion = await _validacionVentaService.ValidarConfirmacionVentaAsync(id);
-                    var puedeAplicarExcepcionDocumental = User.TienePermiso(ModuloVentas, AccionAutorizar);
+                    var usuarioActual = User ?? new ClaimsPrincipal(new ClaimsIdentity());
+                    var puedeAplicarExcepcionDocumental = usuarioActual.TienePermiso(ModuloVentas, AccionAutorizar);
                     var excepcionDocumentalRegistrada = !string.IsNullOrWhiteSpace(venta.MotivoAutorizacion)
                         && venta.MotivoAutorizacion.Contains("EXCEPCION_DOC|", StringComparison.Ordinal);
                     var soloDocumentacionFaltante = validacionConfirmacion.RequisitosPendientes.Any()

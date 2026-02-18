@@ -25,16 +25,16 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 d-flex align-items-center gap-2">
-                        <i class="bi bi-eye"></i>
+                        <i class="bi bi-eye" aria-hidden="true"></i>
                         <span>@Model.Nombre</span>
                     </h5>
                     @if (Model.Activo)
                     {
-                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Activo</span>
+                        <span class="badge bg-success"><i class="bi bi-check-circle" aria-hidden="true"></i> Activo</span>
                     }
                     else
                     {
-                        <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Inactivo</span>
+                        <span class="badge bg-secondary"><i class="bi bi-x-circle" aria-hidden="true"></i> Inactivo</span>
                     }
                 </div>
 
@@ -58,11 +58,11 @@
 
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-semibold">Categoría</label>
-                            <p><i class="bi bi-diagram-3 text-primary me-1"></i>@Model.CategoriaNombre</p>
+                            <p><i class="bi bi-diagram-3 text-primary me-1" aria-hidden="true"></i>@Model.CategoriaNombre</p>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-semibold">Marca</label>
-                            <p><i class="bi bi-tag text-primary me-1"></i>@Model.MarcaNombre</p>
+                            <p><i class="bi bi-tag text-primary me-1" aria-hidden="true"></i>@Model.MarcaNombre</p>
                         </div>
 
                         <div class="col-12">
@@ -73,8 +73,8 @@
                                     <table class="table table-sm table-striped mb-0">
                                         <thead>
                                             <tr>
-                                                <th>Característica</th>
-                                                <th>Valor</th>
+                                                <th scope="col">Característica</th>
+                                                <th scope="col">Valor</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -119,7 +119,7 @@
                         {
                             <div class="col-12">
                                 <div class="alert alert-success border-0">
-                                    <i class="bi bi-graph-up-arrow me-2"></i>
+                                    <i class="bi bi-graph-up-arrow me-2" aria-hidden="true"></i>
                                     <strong>Margen:</strong> @Model.MargenGanancia.Value.ToString("F2")%
                                 </div>
                             </div>
@@ -130,11 +130,11 @@
                             <div class="d-flex flex-wrap gap-2">
                                 <a asp-controller="CambiosPrecios" asp-action="Historial" asp-route-productoId="@Model.Id" 
                                    class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-clock-history me-1"></i>Ver historial de precios
+                                    <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Ver historial de precios
                                 </a>
                                 <a asp-controller="CambiosPrecios" asp-action="Simular" asp-route-productoIdsText="@Model.Id" 
                                    class="btn btn-outline-success btn-sm">
-                                    <i class="bi bi-calculator me-1"></i>Crear simulación con este producto
+                                    <i class="bi bi-calculator me-1" aria-hidden="true"></i>Crear simulación con este producto
                                 </a>
                             </div>
                         </div>
@@ -169,15 +169,15 @@
                                     <p class="fw-bold fs-5 mb-0">
                                         @if (Model.EstadoStock == "Sin Stock")
                                         {
-                                            <span class="text-danger"><i class="bi bi-exclamation-circle"></i> Sin Stock</span>
+                                            <span class="text-danger"><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Sin Stock</span>
                                         }
                                         else if (Model.EstadoStock == "Stock Bajo")
                                         {
-                                            <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> Bajo</span>
+                                            <span class="text-warning"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Bajo</span>
                                         }
                                         else
                                         {
-                                            <span class="text-success"><i class="bi bi-check-circle"></i> OK</span>
+                                            <span class="text-success"><i class="bi bi-check-circle" aria-hidden="true"></i> OK</span>
                                         }
                                     </p>
                                 </div>
@@ -187,29 +187,29 @@
                         @* Sección: Auditoría *@
                         <div class="col-12 mt-4">
                             <h6 class="border-bottom pb-2 mb-3 text-muted">
-                                <i class="bi bi-clock-history me-2"></i>Auditoría
+                                <i class="bi bi-clock-history me-2" aria-hidden="true"></i>Auditoría
                             </h6>
                         </div>
                         <div class="col-md-6">
                             <p>
-                                <i class="bi bi-calendar-plus text-primary me-1"></i>
-                                Creado: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                <i class="bi bi-calendar-plus text-primary me-1" aria-hidden="true"></i>
+                                Creado: <time datetime="@Model.CreatedAt.ToString("s")">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</time>
                             </p>
                             @if (!string.IsNullOrEmpty(Model.CreatedBy))
                             {
-                                <p class="small text-muted"><i class="bi bi-person me-1"></i>@Model.CreatedBy</p>
+                                <p class="small text-muted"><i class="bi bi-person me-1" aria-hidden="true"></i>@Model.CreatedBy</p>
                             }
                         </div>
                         <div class="col-md-6">
                             @if (Model.UpdatedAt.HasValue)
                             {
                                 <p>
-                                    <i class="bi bi-calendar-check text-success me-1"></i>
-                                    Modificado: @Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                    <i class="bi bi-calendar-check text-success me-1" aria-hidden="true"></i>
+                                    Modificado: <time datetime="@Model.UpdatedAt.Value.ToString("s")">@Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")</time>
                                 </p>
                                 @if (!string.IsNullOrEmpty(Model.UpdatedBy))
                                 {
-                                    <p class="small text-muted"><i class="bi bi-person me-1"></i>@Model.UpdatedBy</p>
+                                    <p class="small text-muted"><i class="bi bi-person me-1" aria-hidden="true"></i>@Model.UpdatedBy</p>
                                 }
                             }
                             else
@@ -223,14 +223,14 @@
                     
                     <div class="d-flex justify-content-between align-items-center">
                         <a asp-controller="MovimientoStock" asp-action="Kardex" asp-route-id="@Model.Id" class="btn btn-outline-info">
-                            <i class="bi bi-graph-up me-1"></i>Ver Kardex
+                            <i class="bi bi-graph-up me-1" aria-hidden="true"></i>Ver Kardex
                         </a>
                         <div class="d-flex gap-2">
                             <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
-                                <i class="bi bi-pencil me-1"></i>Editar
+                                <i class="bi bi-pencil me-1" aria-hidden="true"></i>Editar
                             </a>
                             <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
-                                <i class="bi bi-trash me-1"></i>Eliminar
+                                <i class="bi bi-trash me-1" aria-hidden="true"></i>Eliminar
                             </a>
                         </div>
                     </div>

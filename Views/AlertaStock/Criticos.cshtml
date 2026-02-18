@@ -4,13 +4,14 @@
     ViewData["Title"] = "Productos Críticos";
 }
 
-<div class="container-fluid px-0">
+<section class="container-fluid px-0 py-3 text-light">
 
     <!-- Header de página -->
     <div class="d-flex align-items-start justify-content-between mb-4">
         <div>
             <div class="text-muted text-uppercase small mb-1">Alertas</div>
             <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-octagon" aria-hidden="true"></i>
                 <span>Productos en estado crítico</span>
             </h1>
             <p class="text-muted small mb-0">
@@ -20,13 +21,13 @@
 
         <div class="d-flex flex-wrap gap-2">
             <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-arrow-left me-1"></i>Volver a alertas
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver a alertas
             </a>
 
             <form asp-action="GenerarAlertas" method="post" class="d-inline-block">
                 @Html.AntiForgeryToken()
                 <button type="submit" class="btn btn-primary btn-sm">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                    <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Actualizar
                 </button>
             </form>
         </div>
@@ -35,9 +36,9 @@
     @if (Model == null || !Model.Any())
     {
         <div class="card card-animate border-0">
-            <div class="card-body text-center py-5">
+            <div class="card-body text-center py-5" role="status" aria-live="polite">
                 <div class="mb-3">
-                    <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                    <i class="bi bi-check-circle-fill text-success fs-1" aria-hidden="true"></i>
                 </div>
                 <h2 class="h5 mb-2">No hay productos en estado crítico</h2>
                 <p class="text-muted mb-0">
@@ -48,11 +49,11 @@
     }
     else
     {
-        <div class="alert alert-danger alert-dismissible fade show mb-3">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
             <strong>Atención:</strong>
             Hay <strong>@Model.Count</strong> producto(s) en estado crítico que requieren reposición urgente.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
 
         <!-- Tarjetas de productos críticos -->
@@ -76,12 +77,12 @@
                                 <strong class="d-flex align-items-center gap-1">
                                     @if (producto.StockActual <= 0)
                                     {
-                                        <i class="bi bi-exclamation-octagon-fill"></i>
+                                        <i class="bi bi-exclamation-octagon-fill" aria-hidden="true"></i>
                                         <span>Agotado</span>
                                     }
                                     else
                                     {
-                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
                                         <span>Crítico</span>
                                     }
                                 </strong>
@@ -92,14 +93,14 @@
                         </div>
 
                         <div class="card-body">
-                            <h5 class="card-title mb-1">
+                            <h2 class="h5 card-title mb-1">
                                 <span class="badge bg-secondary">@producto.Codigo</span>
-                            </h5>
-                            <h6 class="card-subtitle mb-2">@producto.Nombre</h6>
+                            </h2>
+                            <p class="h6 card-subtitle mb-2">@producto.Nombre</p>
 
                             <p class="text-muted mb-3">
                                 <small>
-                                    <i class="bi bi-tag"></i> @producto.CategoriaNombre
+                                    <i class="bi bi-tag" aria-hidden="true"></i> @producto.CategoriaNombre
                                     @if (!string.IsNullOrEmpty(producto.MarcaNombre))
                                     {
                                         <span> · @producto.MarcaNombre</span>
@@ -107,7 +108,7 @@
                                 </small>
                             </p>
 
-                            <hr />
+                            <hr class="my-3" />
 
                             <div class="row text-center mb-3">
                                 <div class="col-4">
@@ -132,9 +133,9 @@
 
                             @if (producto.CantidadSugeridaReposicion > 0)
                             {
-                                <div class="alert alert-info mb-3">
+                                <div class="alert alert-info mb-3" role="note">
                                     <div class="d-flex gap-2 align-items-start">
-                                        <i class="bi bi-lightbulb mt-1"></i>
+                                        <i class="bi bi-lightbulb mt-1" aria-hidden="true"></i>
                                         <div>
                                             <strong>Reposición sugerida</strong>
                                             <h4 class="mb-0 mt-2">
@@ -150,12 +151,12 @@
 
                             <div class="mb-3">
                                 <small class="text-muted d-block">
-                                    <i class="bi bi-cash-coin"></i>
+                                    <i class="bi bi-cash-coin" aria-hidden="true"></i>
                                     <strong>Precio compra:</strong>
                                     $@producto.PrecioCompra.ToString("N2")
                                 </small>
                                 <small class="text-muted d-block">
-                                    <i class="bi bi-tag"></i>
+                                    <i class="bi bi-tag" aria-hidden="true"></i>
                                     <strong>Precio venta:</strong>
                                     $@producto.PrecioVenta.ToString("N2")
                                 </small>
@@ -166,11 +167,14 @@
                                 var alertaClase = producto.DiasDesdeUltimaVenta > 30 ? "warning" : "secondary";
                                 var textoClase = producto.DiasDesdeUltimaVenta > 30 ? "text-danger" : "";
 
-                                <div class="alert alert-@alertaClase mb-3">
+                                <div class="alert alert-@alertaClase mb-3" role="note">
                                     <small>
-                                        <i class="bi bi-clock-history"></i>
+                                        <i class="bi bi-clock-history" aria-hidden="true"></i>
                                         <strong>Última venta:</strong>
-                                        @producto.UltimaVenta.Value.ToString("dd/MM/yyyy")<br />
+                                        <time datetime="@producto.UltimaVenta.Value.ToString("yyyy-MM-ddTHH:mm:ss")">
+                                            @producto.UltimaVenta.Value.ToString("dd/MM/yyyy")
+                                        </time>
+                                        <br />
                                         <span class="@textoClase">
                                             Hace @producto.DiasDesdeUltimaVenta día(s)
                                         </span>
@@ -180,26 +184,26 @@
 
                             @if (producto.AlertasPendientes > 0)
                             {
-                                <div class="alert alert-danger mb-0">
-                                    <i class="bi bi-bell-fill me-1"></i>
+                                <div class="alert alert-danger mb-0" role="alert">
+                                    <i class="bi bi-bell-fill me-1" aria-hidden="true"></i>
                                     <strong>@producto.AlertasPendientes</strong> alerta(s) pendiente(s)
                                 </div>
                             }
                         </div>
 
                         <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3">
-                            <div class="btn-group w-100" role="group">
+                            <div class="btn-group w-100" role="group" aria-label="Acciones del producto">
                                 <a asp-controller="Producto" asp-action="Details" asp-route-id="@producto.Id"
                                    class="btn btn-sm btn-outline-info">
-                                    <i class="bi bi-eye"></i> Ver
+                                    <i class="bi bi-eye" aria-hidden="true"></i> Ver
                                 </a>
                                 <a asp-controller="Producto" asp-action="Edit" asp-route-id="@producto.Id"
                                    class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-pencil"></i> Editar stock
+                                    <i class="bi bi-pencil" aria-hidden="true"></i> Editar stock
                                 </a>
                                 <a asp-action="PorProducto" asp-route-id="@producto.Id"
                                    class="btn btn-sm btn-outline-warning">
-                                    <i class="bi bi-list-ul"></i> Alertas
+                                    <i class="bi bi-list-ul" aria-hidden="true"></i> Alertas
                                 </a>
                             </div>
                         </div>
@@ -243,4 +247,13 @@
             </div>
         </div>
     }
-</div>
+</section>
+
+@* 
+MEJORAS (solo HTML/markup):
+- Botón de cierre de alert con aria-label y role="alert" (Bootstrap recomienda close button con nombre accesible). 
+- Íconos marcados aria-hidden="true" para no “ensuciar” lectores de pantalla.
+- Fechas envueltas en <time datetime="..."> para valor machine-readable.
+- role/aria-live en estado “sin críticos”.
+- Agrupación de acciones con aria-label.
+*@

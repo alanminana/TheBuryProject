@@ -12,17 +12,17 @@
 <section class="container-fluid py-4 text-light">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h2 class="fw-bold mb-0">
-            <i class="bi bi-credit-card text-primary me-2"></i>@ViewData["Title"]
+            <i class="bi bi-credit-card text-primary me-2" aria-hidden="true"></i>@ViewData["Title"]
         </h2>
         <div class="d-flex gap-2">
             <a asp-action="CuotasVencidas" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-warning fw-semibold shadow-sm">
-                <i class="bi bi-exclamation-circle me-2"></i>Ver moras
+                <i class="bi bi-exclamation-circle me-2" aria-hidden="true"></i>Ver moras
             </a>
             <a asp-action="Simular" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-info fw-semibold shadow-sm">
-                <i class="bi bi-calculator me-2"></i>Simular Crédito
+                <i class="bi bi-calculator me-2" aria-hidden="true"></i>Simular Crédito
             </a>
             <a asp-action="Create" asp-route-returnUrl="@listReturnUrl" class="btn btn-success btn-lg shadow-sm">
-                <i class="bi bi-plus-circle me-2"></i>Nuevo Crédito
+                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>Nuevo Crédito
             </a>
         </div>
     </div>
@@ -39,9 +39,9 @@
             : tipo == "Error" ? "x-circle-fill"
             : "exclamation-triangle-fill";
 
-            <div class="alert alert-@color alert-dismissible fade show shadow-sm">
-                <i class="bi bi-@icon me-2"></i>@TempData[tipo]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div class="alert alert-@color alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-@icon me-2" aria-hidden="true"></i>@TempData[tipo]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
             </div>
         }
     }
@@ -49,10 +49,10 @@
     <div class="card bg-dark border-0 shadow-sm mb-4">
         <div class="card-header bg-body-secondary text-light border-0 d-flex justify-content-between align-items-center">
             <h6 class="mb-0 fw-semibold">
-                <i class="bi bi-funnel me-2"></i>Filtros de búsqueda
+                <i class="bi bi-funnel me-2" aria-hidden="true"></i>Filtros de búsqueda
             </h6>
-            <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCredito">
-                <i class="bi bi-chevron-down"></i>
+            <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCredito" aria-controls="filtrosCredito" aria-expanded="false" aria-label="Mostrar u ocultar filtros de búsqueda">
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
             </button>
         </div>
 
@@ -97,7 +97,8 @@
 
                         <div class="col-md-1 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-search"></i>
+                                <i class="bi bi-search" aria-hidden="true"></i>
+                                <span class="visually-hidden">Buscar</span>
                             </button>
                         </div>
                     </div>
@@ -116,14 +117,14 @@
                     <table class="table table-dark table-hover align-middle mb-0">
                         <thead class="table-secondary text-dark">
                             <tr>
-                                <th>Número</th>
-                                <th>Cliente</th>
-                                <th>Estado</th>
-                                <th class="text-end">Monto Aprobado</th>
-                                <th class="text-end">Saldo Pendiente</th>
-                                <th>Cuotas</th>
-                                <th>Fecha Aprobación</th>
-                                <th class="text-center">Acciones</th>
+                                <th scope="col">Número</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col" class="text-end">Monto Aprobado</th>
+                                <th scope="col" class="text-end">Saldo Pendiente</th>
+                                <th scope="col">Cuotas</th>
+                                <th scope="col">Fecha Aprobación</th>
+                                <th scope="col" class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -162,20 +163,27 @@
                                         </span>
                                     </td>
                                     <td>@credito.CantidadCuotas</td>
-                                    <td>@credito.FechaAprobacion?.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        @if (credito.FechaAprobacion.HasValue)
+                                        {
+                                            <time datetime="@credito.FechaAprobacion.Value.ToString("yyyy-MM-dd")">@credito.FechaAprobacion.Value.ToString("dd/MM/yyyy")</time>
+                                        }
+                                    </td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a asp-action="Details" asp-route-id="@credito.Id"
                                                asp-route-returnUrl="@listReturnUrl"
-                                               class="btn btn-outline-info" title="Ver detalles">
-                                                <i class="bi bi-eye"></i>
+                                               class="btn btn-outline-info" title="Ver detalles" aria-label="Ver detalles del crédito @credito.Numero">
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Ver detalles</span>
                                             </a>
                                             @if (credito.Estado == TheBuryProject.Models.Enums.EstadoCredito.Solicitado)
                                             {
                                                 <a asp-action="Edit" asp-route-id="@credito.Id"
                                                    asp-route-returnUrl="@listReturnUrl"
-                                                   class="btn btn-outline-warning text-dark" title="Editar">
-                                                    <i class="bi bi-pencil"></i>
+                                                   class="btn btn-outline-warning text-dark" title="Editar" aria-label="Editar crédito @credito.Numero">
+                                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Editar</span>
                                                 </a>
                                             }
                                         </div>
@@ -194,7 +202,7 @@
             else
             {
                 <div class="text-center py-5">
-                    <i class="bi bi-inbox text-secondary credit-empty-icon"></i>
+                    <i class="bi bi-inbox text-secondary credit-empty-icon" aria-hidden="true"></i>
                     <h5 class="text-muted mt-3">No se encontraron créditos</h5>
                     <p class="text-muted">
                         @if (filter != null && (!string.IsNullOrEmpty(filter.Cliente)
@@ -208,7 +216,7 @@
                         }
                     </p>
                     <a asp-action="Create" asp-route-returnUrl="@listReturnUrl" class="btn btn-success">
-                        <i class="bi bi-plus-circle me-1"></i>Crear Primer Crédito
+                        <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Crear Primer Crédito
                     </a>
                 </div>
             }

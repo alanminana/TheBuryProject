@@ -7,15 +7,15 @@
     <div class="col-lg-8 mx-auto">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0"><i class="bi bi-x-circle text-danger me-2"></i> Cancelar Venta</h2>
+            <h2 class="mb-0"><i class="bi bi-x-circle text-danger me-2" aria-hidden="true"></i> Cancelar Venta</h2>
             <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
             </a>
         </div>
 
         <!-- Alerta principal -->
-        <div class="alert alert-warning border-0">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div class="alert alert-warning border-0" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
             <strong>¿Está seguro de que desea cancelar esta venta?</strong>
             <p class="mb-0">
                 @if (Model.Estado == TheBuryProject.Models.Enums.EstadoVenta.Confirmada ||
@@ -29,7 +29,7 @@
         <!-- Datos de la venta -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
-                <h5 class="mb-0 text-warning"><i class="bi bi-receipt me-2"></i> Datos de la Venta</h5>
+                <h5 class="mb-0 text-warning"><i class="bi bi-receipt me-2" aria-hidden="true"></i> Datos de la Venta</h5>
             </div>
             <div class="card-body">
                 <dl class="row mb-0">
@@ -37,7 +37,7 @@
                     <dd class="col-sm-9">@Model.Numero</dd>
 
                     <dt class="col-sm-3 text-muted">Fecha:</dt>
-                    <dd class="col-sm-9">@Model.FechaVenta.ToString("dd/MM/yyyy")</dd>
+                    <dd class="col-sm-9"><time datetime="@Model.FechaVenta.ToString("yyyy-MM-dd")">@Model.FechaVenta.ToString("dd/MM/yyyy")</time></dd>
 
                     <dt class="col-sm-3 text-muted">Cliente:</dt>
                     <dd class="col-sm-9">@Model.ClienteNombre</dd>
@@ -70,7 +70,7 @@
 
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
-                    <h5 class="mb-0 text-danger"><i class="bi bi-chat-left-text me-2"></i> Motivo de Cancelación</h5>
+                    <h5 class="mb-0 text-danger"><i class="bi bi-chat-left-text me-2" aria-hidden="true"></i> Motivo de Cancelación</h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -86,10 +86,10 @@
             <!-- Botones -->
             <div class="d-flex justify-content-end gap-2">
                 <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-circle"></i> Volver
+                    <i class="bi bi-x-circle" aria-hidden="true"></i> Volver
                 </a>
                 <button type="submit" class="btn btn-danger px-4">
-                    <i class="bi bi-x-octagon"></i> Confirmar Cancelación
+                    <i class="bi bi-x-octagon" aria-hidden="true"></i> Confirmar Cancelación
                 </button>
             </div>
         </form>

@@ -11,12 +11,15 @@
         <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="bi bi-person-plus me-2"></i>Crear Nuevo Usuario</h4>
+                    <h4 class="mb-0"><i class="bi bi-person-plus me-2" aria-hidden="true"></i>Crear Nuevo Usuario</h4>
                 </div>
                 <div class="card-body">
                     <form asp-action="Create" method="post">
                         <input type="hidden" name="returnUrl" value="@returnUrl" />
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        }
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -61,7 +64,7 @@
                         </div>
                         
                         <div class="alert alert-info d-flex align-items-start">
-                            <i class="bi bi-info-circle me-2 mt-1"></i>
+                            <i class="bi bi-info-circle me-2 mt-1" aria-hidden="true"></i>
                             <div>
                                 <strong>Confirmación de Email:</strong>
                                 <p class="mb-0 small">Marque el checkbox para que el usuario pueda iniciar sesión inmediatamente. Si no lo marca, podría tener problemas de login.</p>
@@ -75,10 +78,10 @@
 
                         <div class="d-flex justify-content-between mt-4">
                             <a href="@backUrl" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-1"></i>Crear Usuario
+                                <i class="bi bi-save me-1" aria-hidden="true"></i>Crear Usuario
                             </button>
                         </div>
                     </form>

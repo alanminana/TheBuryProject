@@ -5,12 +5,13 @@
 }
 
 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
 @* Enviamos siempre un valor explícito para evitar nulls en columnas NOT NULL *@
 <input type="hidden" asp-for="TieneReciboSueldo" />
 
 <div class="card bg-dark border-primary mb-3 shadow-sm">
     <div class="card-header bg-primary text-light">
-        <h5 class="mb-0"><i class="bi bi-person me-2"></i>Datos Personales</h5>
+        <h5 class="mb-0"><i class="bi bi-person me-2" aria-hidden="true"></i>Datos Personales</h5>
     </div>
     <div class="card-body">
         <div class="row g-3">
@@ -21,22 +22,22 @@
             </div>
             <div class="col-md-3">
                 <label asp-for="NumeroDocumento" class="form-label"></label>
-                <input asp-for="NumeroDocumento" class="form-control" />
+                <input asp-for="NumeroDocumento" class="form-control" inputmode="numeric" autocomplete="off" />
                 <span asp-validation-for="NumeroDocumento" class="text-danger"></span>
             </div>
             <div class="col-md-3">
                 <label asp-for="Apellido" class="form-label"></label>
-                <input asp-for="Apellido" class="form-control" />
+                <input asp-for="Apellido" class="form-control" autocomplete="family-name" />
                 <span asp-validation-for="Apellido" class="text-danger"></span>
             </div>
             <div class="col-md-3">
                 <label asp-for="Nombre" class="form-label"></label>
-                <input asp-for="Nombre" class="form-control" />
+                <input asp-for="Nombre" class="form-control" autocomplete="given-name" />
                 <span asp-validation-for="Nombre" class="text-danger"></span>
             </div>
             <div class="col-md-4">
                 <label asp-for="FechaNacimiento" class="form-label"></label>
-                <input asp-for="FechaNacimiento" type="date" class="form-control" />
+                <input asp-for="FechaNacimiento" type="date" class="form-control" autocomplete="bday" />
                 <span asp-validation-for="FechaNacimiento" class="text-danger"></span>
             </div>
             <div class="col-md-4">
@@ -52,13 +53,13 @@
 
 <div class="card bg-dark border-secondary mb-3 shadow-sm">
     <div class="card-header bg-secondary text-light">
-        <h5 class="mb-0"><i class="bi bi-people me-2"></i>Datos del Cónyuge (Opcional)</h5>
+        <h5 class="mb-0"><i class="bi bi-people me-2" aria-hidden="true"></i>Datos del Cónyuge (Opcional)</h5>
     </div>
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-6">
                 <label asp-for="ConyugeNombreCompleto" class="form-label">Nombre completo</label>
-                <input asp-for="ConyugeNombreCompleto" class="form-control" />
+                <input asp-for="ConyugeNombreCompleto" class="form-control" autocomplete="name" />
                 <span asp-validation-for="ConyugeNombreCompleto" class="text-danger"></span>
             </div>
 
@@ -71,19 +72,19 @@
             </div>
             <div class="col-md-2">
                 <label asp-for="ConyugeNumeroDocumento" class="form-label">Documento</label>
-                <input asp-for="ConyugeNumeroDocumento" class="form-control" />
+                <input asp-for="ConyugeNumeroDocumento" class="form-control" inputmode="numeric" autocomplete="off" />
                 <span asp-validation-for="ConyugeNumeroDocumento" class="text-danger"></span>
             </div>
 
             <div class="col-md-2">
                 <label asp-for="ConyugeTelefono" class="form-label">Teléfono</label>
-                <input asp-for="ConyugeTelefono" class="form-control" />
+                <input asp-for="ConyugeTelefono" class="form-control" inputmode="tel" autocomplete="tel" />
                 <span asp-validation-for="ConyugeTelefono" class="text-danger"></span>
             </div>
 
             <div class="col-md-3">
                 <label asp-for="ConyugeSueldo" class="form-label">Ingreso mensual</label>
-                <input asp-for="ConyugeSueldo" type="number" step="0.01" class="form-control" />
+                <input asp-for="ConyugeSueldo" type="number" step="0.01" min="0" class="form-control" inputmode="decimal" />
                 <span asp-validation-for="ConyugeSueldo" class="text-danger"></span>
             </div>
         </div>
@@ -92,23 +93,23 @@
 
 <div class="card bg-dark border-info mb-3 shadow-sm">
     <div class="card-header bg-info text-dark">
-        <h5 class="mb-0"><i class="bi bi-telephone me-2"></i>Datos de Contacto</h5>
+        <h5 class="mb-0"><i class="bi bi-telephone me-2" aria-hidden="true"></i>Datos de Contacto</h5>
     </div>
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-6">
                 <label asp-for="Email" class="form-label"></label>
-                <input asp-for="Email" type="email" class="form-control" />
+                <input asp-for="Email" type="email" class="form-control" autocomplete="email" />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
             <div class="col-md-3">
                 <label asp-for="Telefono" class="form-label"></label>
-                <input asp-for="Telefono" class="form-control" />
+                <input asp-for="Telefono" class="form-control" inputmode="tel" autocomplete="tel" />
                 <span asp-validation-for="Telefono" class="text-danger"></span>
             </div>
             <div class="col-md-3">
                 <label asp-for="TelefonoAlternativo" class="form-label"></label>
-                <input asp-for="TelefonoAlternativo" class="form-control" />
+                <input asp-for="TelefonoAlternativo" class="form-control" inputmode="tel" autocomplete="tel" />
                 <span asp-validation-for="TelefonoAlternativo" class="text-danger"></span>
             </div>
         </div>
@@ -117,18 +118,18 @@
 
 <div class="card bg-dark border-success mb-3 shadow-sm">
     <div class="card-header bg-success text-light">
-        <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Domicilio</h5>
+        <h5 class="mb-0"><i class="bi bi-geo-alt me-2" aria-hidden="true"></i>Domicilio</h5>
     </div>
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-6">
                 <label asp-for="Domicilio" class="form-label"></label>
-                <input asp-for="Domicilio" class="form-control" />
+                <input asp-for="Domicilio" class="form-control" autocomplete="street-address" />
                 <span asp-validation-for="Domicilio" class="text-danger"></span>
             </div>
             <div class="col-md-3">
                 <label asp-for="Localidad" class="form-label"></label>
-                <input asp-for="Localidad" class="form-control" />
+                <input asp-for="Localidad" class="form-control" autocomplete="address-level2" />
                 <span asp-validation-for="Localidad" class="text-danger"></span>
             </div>
             <div class="col-md-2">
@@ -140,7 +141,7 @@
             </div>
             <div class="col-md-1">
                 <label asp-for="CodigoPostal" class="form-label"></label>
-                <input asp-for="CodigoPostal" class="form-control" />
+                <input asp-for="CodigoPostal" class="form-control" inputmode="numeric" autocomplete="postal-code" />
                 <span asp-validation-for="CodigoPostal" class="text-danger"></span>
             </div>
         </div>
@@ -149,13 +150,13 @@
 
 <div class="card bg-dark border-warning mb-3 shadow-sm">
     <div class="card-header bg-warning text-dark">
-        <h5 class="mb-0"><i class="bi bi-briefcase me-2"></i>Datos Laborales</h5>
+        <h5 class="mb-0"><i class="bi bi-briefcase me-2" aria-hidden="true"></i>Datos Laborales</h5>
     </div>
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-4">
                 <label asp-for="Empleador" class="form-label"></label>
-                <input asp-for="Empleador" class="form-control" />
+                <input asp-for="Empleador" class="form-control" autocomplete="organization" />
                 <span asp-validation-for="Empleador" class="text-danger"></span>
             </div>
             <div class="col-md-3">
@@ -167,12 +168,12 @@
             </div>
             <div class="col-md-2">
                 <label asp-for="Sueldo" class="form-label"></label>
-                <input asp-for="Sueldo" type="number" step="0.01" class="form-control" />
+                <input asp-for="Sueldo" type="number" step="0.01" min="0" class="form-control" inputmode="decimal" />
                 <span asp-validation-for="Sueldo" class="text-danger"></span>
             </div>
             <div class="col-md-3">
                 <label asp-for="TelefonoLaboral" class="form-label"></label>
-                <input asp-for="TelefonoLaboral" class="form-control" />
+                <input asp-for="TelefonoLaboral" class="form-control" inputmode="tel" autocomplete="tel" />
                 <span asp-validation-for="TelefonoLaboral" class="text-danger"></span>
             </div>
         </div>
@@ -182,14 +183,14 @@
 @if (!string.IsNullOrWhiteSpace(mensajeDocumentacion))
 {
     <div class="alert alert-info border-0 shadow-sm mb-3">
-        <i class="bi bi-info-circle-fill me-2"></i>
+        <i class="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
         @Html.Raw(mensajeDocumentacion)
     </div>
 }
 
 <div class="card bg-dark border-danger mb-3 shadow-sm">
     <div class="card-header bg-danger text-light">
-        <h5 class="mb-0"><i class="bi bi-shield-check me-2"></i>Calificación Crediticia</h5>
+        <h5 class="mb-0"><i class="bi bi-shield-check me-2" aria-hidden="true"></i>Calificación Crediticia</h5>
     </div>
     <div class="card-body">
         <div class="row g-3 align-items-center">
@@ -201,18 +202,18 @@
             <div class="col-md-6">
                 <div class="alert mb-0 py-2" id="alertaRiesgo">
                     <small>
-                        <i class="bi bi-info-circle me-1"></i>
+                        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                         <span id="descripcionRiesgo">Seleccione un nivel para ver la descripción</span>
                     </small>
                 </div>
             </div>
         </div>
         <div class="mt-3">
-            <small class="text-muted">
-                <strong>Guía de calificación:</strong><br/>
-                <span class="badge bg-danger">1-2</span> Rechazado - No apto para crédito<br/>
-                <span class="badge bg-warning text-dark">3</span> Aprobado Condicional - Requiere garante o anticipo mayor<br/>
-                <span class="badge bg-info">4</span> Aprobado Limitado - Límite de crédito reducido<br/>
+            <small class="text-body-secondary">
+                <strong>Guía de calificación:</strong><br />
+                <span class="badge bg-danger">1-2</span> Rechazado - No apto para crédito<br />
+                <span class="badge bg-warning text-dark">3</span> Aprobado Condicional - Requiere garante o anticipo mayor<br />
+                <span class="badge bg-info">4</span> Aprobado Limitado - Límite de crédito reducido<br />
                 <span class="badge bg-success">5</span> Aprobado Total - Sin restricciones
             </small>
         </div>
@@ -221,99 +222,99 @@
 
 <div class="card bg-dark border-warning mb-3 shadow-sm">
     <div class="card-header bg-warning text-dark d-flex align-items-center justify-content-between">
-        <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Configuración de Crédito Personalizada</h5>
+        <h5 class="mb-0"><i class="bi bi-gear me-2" aria-hidden="true"></i>Configuración de Crédito Personalizada</h5>
         <small class="badge bg-dark">Opcional</small>
     </div>
     <div class="card-body">
         <div class="alert alert-info mb-3">
-            <i class="bi bi-info-circle me-2"></i>
+            <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
             <strong>¿Para qué sirve?</strong> Si configuras valores aquí, el sistema los usará automáticamente al crear un crédito para este cliente en lugar de los valores globales del sistema.
         </div>
-        
+
         <div class="row g-3">
             <div class="col-12">
                 <label asp-for="PerfilCreditoPreferidoId" class="form-label">
-                    <i class="bi bi-star me-1"></i>Perfil de Crédito Preferido
+                    <i class="bi bi-star me-1" aria-hidden="true"></i>Perfil de Crédito Preferido
                 </label>
                 <select asp-for="PerfilCreditoPreferidoId" class="form-select" asp-items="ViewBag.PerfilesCredito">
                     <option value="">Sin perfil (usar valores manuales o globales)</option>
                 </select>
                 <span asp-validation-for="PerfilCreditoPreferidoId" class="text-danger"></span>
-                <small class="form-text text-muted">
+                <small class="form-text text-body-secondary">
                     Si seleccionas un perfil, sus valores se usarán como base. Los valores personalizados de abajo tienen prioridad sobre el perfil.
                 </small>
             </div>
         </div>
-        
+
         <hr class="my-4 border-secondary">
-        
+
         <div class="row g-3">
             <div class="col-12">
-                <h6 class="text-muted">
-                    <i class="bi bi-sliders me-1"></i>Valores Personalizados (Opcional - Sobrescriben el perfil)
+                <h6 class="text-body-secondary">
+                    <i class="bi bi-sliders me-1" aria-hidden="true"></i>Valores Personalizados (Opcional - Sobrescriben el perfil)
                 </h6>
             </div>
-            
+
             <div class="col-md-4">
                 <label asp-for="TasaInteresMensualPersonalizada" class="form-label">
                     Tasa de Interés Mensual (%)
                 </label>
                 <div class="input-group">
-                    <input asp-for="TasaInteresMensualPersonalizada" type="number" step="0.01" min="0" max="100" class="form-control" placeholder="Ej: 7.50" />
+                    <input asp-for="TasaInteresMensualPersonalizada" type="number" step="0.01" min="0" max="100" class="form-control" placeholder="Ej: 7.50" inputmode="decimal" />
                     <span class="input-group-text">%</span>
                 </div>
                 <span asp-validation-for="TasaInteresMensualPersonalizada" class="text-danger"></span>
-                <small class="form-text text-muted">Deja vacío para usar la tasa global del sistema.</small>
+                <small class="form-text text-body-secondary">Deja vacío para usar la tasa global del sistema.</small>
             </div>
-            
+
             <div class="col-md-4">
                 <label asp-for="GastosAdministrativosPersonalizados" class="form-label">
                     Gastos Administrativos (%)
                 </label>
                 <div class="input-group">
-                    <input asp-for="GastosAdministrativosPersonalizados" type="number" step="0.01" min="0" max="100" class="form-control" placeholder="Ej: 2.00" />
+                    <input asp-for="GastosAdministrativosPersonalizados" type="number" step="0.01" min="0" max="100" class="form-control" placeholder="Ej: 2.00" inputmode="decimal" />
                     <span class="input-group-text">%</span>
                 </div>
                 <span asp-validation-for="GastosAdministrativosPersonalizados" class="text-danger"></span>
-                <small class="form-text text-muted">Porcentaje sobre el monto del crédito.</small>
+                <small class="form-text text-body-secondary">Porcentaje sobre el monto del crédito.</small>
             </div>
-            
+
             <div class="col-md-4">
                 <label asp-for="CuotasMaximasPersonalizadas" class="form-label">
                     Cuotas Máximas Permitidas
                 </label>
-                <input asp-for="CuotasMaximasPersonalizadas" type="number" min="1" max="120" class="form-control" placeholder="Ej: 24" />
+                <input asp-for="CuotasMaximasPersonalizadas" type="number" min="1" max="120" class="form-control" placeholder="Ej: 24" inputmode="numeric" />
                 <span asp-validation-for="CuotasMaximasPersonalizadas" class="text-danger"></span>
-                <small class="form-text text-muted">Máximo de cuotas que puede solicitar.</small>
+                <small class="form-text text-body-secondary">Máximo de cuotas que puede solicitar.</small>
             </div>
-            
+
             <div class="col-md-6">
                 <label asp-for="MontoMinimoPersonalizado" class="form-label">
                     Monto Mínimo de Crédito ($)
                 </label>
                 <div class="input-group">
                     <span class="input-group-text">$</span>
-                    <input asp-for="MontoMinimoPersonalizado" type="number" step="0.01" min="0" class="form-control" placeholder="Ej: 5000.00" />
+                    <input asp-for="MontoMinimoPersonalizado" type="number" step="0.01" min="0" class="form-control" placeholder="Ej: 5000.00" inputmode="decimal" />
                 </div>
                 <span asp-validation-for="MontoMinimoPersonalizado" class="text-danger"></span>
-                <small class="form-text text-muted">Monto mínimo que puede financiar.</small>
+                <small class="form-text text-body-secondary">Monto mínimo que puede financiar.</small>
             </div>
-            
+
             <div class="col-md-6">
                 <label asp-for="MontoMaximoPersonalizado" class="form-label">
                     Monto Máximo de Crédito ($)
                 </label>
                 <div class="input-group">
                     <span class="input-group-text">$</span>
-                    <input asp-for="MontoMaximoPersonalizado" type="number" step="0.01" min="0" class="form-control" placeholder="Ej: 100000.00" />
+                    <input asp-for="MontoMaximoPersonalizado" type="number" step="0.01" min="0" class="form-control" placeholder="Ej: 100000.00" inputmode="decimal" />
                 </div>
                 <span asp-validation-for="MontoMaximoPersonalizado" class="text-danger"></span>
-                <small class="form-text text-muted">Monto máximo que puede financiar.</small>
+                <small class="form-text text-body-secondary">Monto máximo que puede financiar.</small>
             </div>
         </div>
-        
+
         <div class="alert alert-warning mt-3 mb-0">
-            <i class="bi bi-exclamation-triangle me-2"></i>
+            <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
             <strong>Importante:</strong> Estos valores tendrán prioridad sobre la configuración global del sistema cuando se configure un crédito para este cliente.
         </div>
     </div>
@@ -321,7 +322,7 @@
 
 <div class="card bg-dark border-light mb-3 shadow-sm">
     <div class="card-header bg-light text-dark">
-        <h5 class="mb-0"><i class="bi bi-chat-text me-2"></i>Observaciones</h5>
+        <h5 class="mb-0"><i class="bi bi-chat-text me-2" aria-hidden="true"></i>Observaciones</h5>
     </div>
     <div class="card-body">
         <div class="mb-3">

@@ -46,7 +46,11 @@
                         <dt class="col-5 text-muted">Solicitado</dt>
                         <dd class="col-7">
                             <div class="fw-semibold">@Model.SolicitadoPor</div>
-                            <div class="text-muted">@Model.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</div>
+                            <div class="text-muted">
+                                <time datetime="@Model.FechaSolicitud.ToString("O")">
+                                    @Model.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")
+                                </time>
+                            </div>
                         </dd>
                     </dl>
 
@@ -65,7 +69,7 @@
                     if (User.HasClaim("Permission", "precios:approve"))
                     {
                         <a asp-action="Autorizar" asp-route-id="@Model.BatchId" class="btn btn-warning btn-sm">
-                            <i class="bi bi-shield-check me-1"></i>Autorizar
+                            <i class="bi bi-shield-check me-1" aria-hidden="true"></i>Autorizar
                         </a>
                     }
 
@@ -76,7 +80,7 @@
                             <input type="hidden" name="id" value="@Model.BatchId" />
                             <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(Model.RowVersion ?? Array.Empty<byte>())" />
                             <button type="submit" class="btn btn-outline-secondary btn-sm" data-confirm="¿Cancelar este batch?">
-                                <i class="bi bi-ban me-1"></i>Cancelar
+                                <i class="bi bi-ban me-1" aria-hidden="true"></i>Cancelar
                             </button>
                         </form>
                     }
@@ -87,7 +91,7 @@
                     if (User.HasClaim("Permission", "precios:apply"))
                     {
                         <a asp-action="Aplicar" asp-route-id="@Model.BatchId" class="btn btn-success btn-sm">
-                            <i class="bi bi-check-circle me-1"></i>Aplicar
+                            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Aplicar
                         </a>
                     }
                 }
@@ -97,7 +101,7 @@
                     if (User.HasClaim("Permission", "precios:revert"))
                     {
                         <a asp-action="Revertir" asp-route-id="@Model.BatchId" class="btn btn-danger btn-sm">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i>Revertir
+                            <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Revertir
                         </a>
                     }
                 }
@@ -117,12 +121,12 @@
                             <table class="table table-sm table-hover table-striped align-middle mb-0">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>Código</th>
-                                        <th>Producto</th>
-                                        <th class="text-end">Precio anterior</th>
-                                        <th class="text-end">Precio nuevo</th>
-                                        <th class="text-end">Δ%</th>
-                                        <th>Advertencia</th>
+                                        <th scope="col">Código</th>
+                                        <th scope="col">Producto</th>
+                                        <th scope="col" class="text-end">Precio anterior</th>
+                                        <th scope="col" class="text-end">Precio nuevo</th>
+                                        <th scope="col" class="text-end">Δ%</th>
+                                        <th scope="col">Advertencia</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -153,7 +157,7 @@
                     else
                     {
                         <div class="p-4 text-center text-muted">
-                            <i class="bi bi-info-circle" style="font-size: 2.5rem;"></i>
+                            <i class="bi bi-info-circle fs-1" aria-hidden="true"></i>
                             <div class="mt-2">No hay items para mostrar.</div>
                         </div>
                     }

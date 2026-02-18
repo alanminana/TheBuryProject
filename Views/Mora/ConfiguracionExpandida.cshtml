@@ -10,13 +10,13 @@
 
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-gear-fill me-2"></i>Configuración Avanzada de Mora</h2>
+        <h2><i class="bi bi-gear-fill me-2" aria-hidden="true"></i>Configuración Avanzada de Mora</h2>
         <div>
             <a asp-action="Configuracion" class="btn btn-outline-secondary me-2">
-                <i class="bi bi-gear me-2"></i>Configuración Básica
+                <i class="bi bi-gear me-2" aria-hidden="true"></i>Configuración Básica
             </a>
             <a href="@backUrl" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-2"></i>Volver
+                <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver
             </a>
         </div>
     </div>
@@ -25,6 +25,10 @@
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
         <input type="hidden" name="returnUrl" value="@returnUrl" />
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        }
 
         <div class="row">
             <!-- Columna Izquierda -->
@@ -32,7 +36,7 @@
                 <!-- Cálculo de Mora -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>Cálculo de Mora</h5>
+                        <h5 class="mb-0"><i class="bi bi-calculator me-2" aria-hidden="true"></i>Cálculo de Mora</h5>
                     </div>
                     <div class="card-body">
                         <div class="row mb-3">
@@ -68,7 +72,7 @@
                         <h6 class="mb-3">Escalonamiento de Tasas</h6>
                         
                         <div class="form-check form-switch mb-3">
-                            <input asp-for="EscalonamientoActivo" class="form-check-input" type="checkbox" id="escalonamientoActivo" />
+                            <input asp-for="EscalonamientoActivo" class="form-check-input" type="checkbox" id="escalonamientoActivo" aria-controls="seccionEscalonamiento" aria-expanded="@(Model.EscalonamientoActivo ? "true" : "false")" />
                             <label class="form-check-label" for="escalonamientoActivo">Escalonamiento Activo</label>
                         </div>
 
@@ -93,7 +97,7 @@
                         <h6 class="mb-3">Tope Máximo</h6>
 
                         <div class="form-check form-switch mb-3">
-                            <input asp-for="TopeMaximoMoraActivo" class="form-check-input" type="checkbox" id="topeActivo" />
+                            <input asp-for="TopeMaximoMoraActivo" class="form-check-input" type="checkbox" id="topeActivo" aria-controls="seccionTope" aria-expanded="@(Model.TopeMaximoMoraActivo ? "true" : "false")" />
                             <label class="form-check-label" for="topeActivo">Tope Máximo Activo</label>
                         </div>
 
@@ -126,7 +130,7 @@
                 <!-- Clasificación y Prioridad -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-warning">
-                        <h5 class="mb-0"><i class="bi bi-bar-chart-steps me-2"></i>Clasificación por Prioridad</h5>
+                        <h5 class="mb-0"><i class="bi bi-bar-chart-steps me-2" aria-hidden="true"></i>Clasificación por Prioridad</h5>
                     </div>
                     <div class="card-body">
                         <h6>Por Días de Atraso</h6>
@@ -166,7 +170,7 @@
                 <!-- Gestión de Cobranzas -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-success text-white">
-                        <h5 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Gestión de Cobranzas</h5>
+                        <h5 class="mb-0"><i class="bi bi-clipboard-check me-2" aria-hidden="true"></i>Gestión de Cobranzas</h5>
                     </div>
                     <div class="card-body">
                         <div class="row mb-3">
@@ -211,7 +215,7 @@
                 <!-- Automatización -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-info text-white">
-                        <h5 class="mb-0"><i class="bi bi-robot me-2"></i>Automatización</h5>
+                        <h5 class="mb-0"><i class="bi bi-robot me-2" aria-hidden="true"></i>Automatización</h5>
                     </div>
                     <div class="card-body">
                         <div class="form-check form-switch mb-3">
@@ -260,11 +264,11 @@
                 <!-- Notificaciones -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Notificaciones</h5>
+                        <h5 class="mb-0"><i class="bi bi-bell me-2" aria-hidden="true"></i>Notificaciones</h5>
                     </div>
                     <div class="card-body">
                         <div class="form-check form-switch mb-3">
-                            <input asp-for="NotificacionesActivas" class="form-check-input" type="checkbox" id="notifActivas" />
+                            <input asp-for="NotificacionesActivas" class="form-check-input" type="checkbox" id="notifActivas" aria-controls="seccionNotif" aria-expanded="@(Model.NotificacionesActivas ? "true" : "false")" />
                             <label class="form-check-label" for="notifActivas">Notificaciones Activas</label>
                         </div>
 
@@ -346,11 +350,11 @@
                 <!-- Tramos de Cobranza -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Tramos de Cobranza</h5>
+                        <h5 class="mb-0"><i class="bi bi-diagram-3 me-2" aria-hidden="true"></i>Tramos de Cobranza</h5>
                     </div>
                     <div class="card-body">
                         <div class="form-check form-switch mb-3">
-                            <input asp-for="TramosCobranzaActivos" class="form-check-input" type="checkbox" id="tramosActivos" />
+                            <input asp-for="TramosCobranzaActivos" class="form-check-input" type="checkbox" id="tramosActivos" aria-controls="seccionTramos" aria-expanded="@(Model.TramosCobranzaActivos ? "true" : "false")" />
                             <label class="form-check-label" for="tramosActivos">Tramos de Cobranza Activos</label>
                         </div>
 
@@ -465,7 +469,7 @@
                         <div>
                             <a href="@backUrl" class="btn btn-secondary me-2">Cancelar</a>
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-check-lg me-2"></i>Guardar Configuración
+                                <i class="bi bi-check-lg me-2" aria-hidden="true"></i>Guardar Configuración
                             </button>
                         </div>
                     </div>
@@ -480,15 +484,19 @@
         // Toggle secciones
         document.getElementById('escalonamientoActivo')?.addEventListener('change', function() {
             document.getElementById('seccionEscalonamiento').classList.toggle('d-none', !this.checked);
+            this.setAttribute('aria-expanded', this.checked ? 'true' : 'false');
         });
         document.getElementById('topeActivo')?.addEventListener('change', function() {
             document.getElementById('seccionTope').classList.toggle('d-none', !this.checked);
+            this.setAttribute('aria-expanded', this.checked ? 'true' : 'false');
         });
         document.getElementById('notifActivas')?.addEventListener('change', function() {
             document.getElementById('seccionNotif').classList.toggle('d-none', !this.checked);
+            this.setAttribute('aria-expanded', this.checked ? 'true' : 'false');
         });
         document.getElementById('tramosActivos')?.addEventListener('change', function() {
             document.getElementById('seccionTramos').classList.toggle('d-none', !this.checked);
+            this.setAttribute('aria-expanded', this.checked ? 'true' : 'false');
         });
     </script>
 }

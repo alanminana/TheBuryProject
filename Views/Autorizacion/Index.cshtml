@@ -5,15 +5,18 @@
     ViewData["Title"] = "Umbrales de Autorización";
     var cleanedQuery = QueryString.Create(Context.Request.Query.Where(kvp => !string.Equals(kvp.Key, "returnUrl", StringComparison.OrdinalIgnoreCase)));
     var pageReturnUrl = Context.Request.Path + cleanedQuery;
+
+    var roles = new[] { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
 }
 
-<div class="container-fluid px-0">
+<section class="container-fluid px-0 py-3 text-light">
 
-    <!-- Header de página -->
-    <div class="d-flex align-items-start justify-content-between mb-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-4">
         <div>
             <div class="text-muted text-uppercase small mb-1">Autorizaciones</div>
             <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-shield-check" aria-hidden="true"></i>
                 <span>Umbrales de autorización</span>
             </h1>
             <p class="text-muted small mb-0">
@@ -25,29 +28,29 @@
             @if (User.IsInRole(Roles.Administrador))
             {
                 <a asp-action="CrearUmbral" asp-route-returnUrl="@pageReturnUrl" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-circle me-1"></i>Nuevo umbral
+                    <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Nuevo umbral
                 </a>
             }
             <a asp-action="Solicitudes" asp-route-returnUrl="@pageReturnUrl" class="btn btn-outline-info btn-sm">
-                <i class="bi bi-clipboard-check me-1"></i>Ver solicitudes
+                <i class="bi bi-clipboard-check me-1" aria-hidden="true"></i>Ver solicitudes
             </a>
         </div>
     </div>
 
-    <!-- Alertas de feedback -->
+    <!-- Feedback -->
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show mb-3">
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
             @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
             @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
@@ -55,7 +58,7 @@
     {
         <div class="card card-animate border-0">
             <div class="card-body">
-                <div class="alert alert-warning mb-0">
+                <div class="alert alert-warning mb-0" role="alert">
                     <i class="bi bi-exclamation-triangle me-1"></i>
                     No hay umbrales configurados. Los usuarios Admin tienen permisos ilimitados por defecto.
                 </div>
@@ -68,21 +71,24 @@
         <div class="card card-animate mb-4">
             <div class="card-body pb-0">
 
-                <ul class="nav nav-tabs mb-3" role="tablist">
+                <ul class="nav nav-tabs mb-3" role="tablist" aria-label="Roles">
                     @{
-                        var roles = new[] { Roles.Administrador, Roles.Gerente, Roles.Vendedor, Roles.Contador };
                         var firstRole = true;
                     }
                     @foreach (var rol in roles)
                     {
+                        var rolKey = rol.Replace(" ", "").ToLowerInvariant();
                         var umbralRol = Model.UmbralesPorRol.ContainsKey(rol) ? Model.UmbralesPorRol[rol].Count : 0;
 
                         <li class="nav-item" role="presentation">
                             <button class="nav-link @(firstRole ? "active" : "") d-flex align-items-center gap-1"
+                                    id="tab-@rolKey-tab"
                                     data-bs-toggle="tab"
-                                    data-bs-target="#tab-@rol"
+                                    data-bs-target="#tab-@rolKey"
                                     type="button"
-                                    role="tab">
+                                    role="tab"
+                                    aria-controls="tab-@rolKey"
+                                    aria-selected="@(firstRole ? "true" : "false")">
                                 <span>@rol</span>
                                 @if (umbralRol > 0)
                                 {
@@ -96,64 +102,69 @@
                 </ul>
             </div>
 
-            <!-- Contenido de tabs -->
+            <!-- Contenido tabs -->
             <div class="card-body pt-0">
                 <div class="tab-content">
                     @{
-                        firstRole = true;
+                        var firstPane = true;
                     }
 
                     @foreach (var rol in roles)
                     {
-                        <div class="tab-pane fade @(firstRole ? "show active" : "")" id="tab-@rol" role="tabpanel">
+                        var rolKey = rol.Replace(" ", "").ToLowerInvariant();
+
+                        <div class="tab-pane fade @(firstPane ? "show active" : "")"
+                             id="tab-@rolKey"
+                             role="tabpanel"
+                             aria-labelledby="tab-@rolKey-tab"
+                             tabindex="0">
+
                             @if (Model.UmbralesPorRol.ContainsKey(rol) && Model.UmbralesPorRol[rol].Any())
                             {
                                 <div class="table-responsive">
-                                    <table class="table table-hover table-sm align-middle">
+                                    <table class="table table-hover table-sm align-middle mb-0">
+                                        <caption class="visually-hidden">Umbrales configurados para el rol @rol</caption>
                                         <thead class="table-dark">
                                             <tr>
-                                                <th>Tipo de umbral</th>
-                                                <th>Valor máximo</th>
-                                                <th>Descripción</th>
-                                                <th>Estado</th>
-                                                <th>Última modificación</th>
+                                                <th scope="col">Tipo de umbral</th>
+                                                <th scope="col">Valor máximo</th>
+                                                <th scope="col">Descripción</th>
+                                                <th scope="col">Estado</th>
+                                                <th scope="col">Última modificación</th>
                                                 @if (User.IsInRole(Roles.Administrador))
                                                 {
-                                                    <th class="text-end">Acciones</th>
+                                                    <th scope="col" class="text-end">Acciones</th>
                                                 }
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach (var umbral in Model.UmbralesPorRol[rol])
                                             {
+                                                var tipoTexto = umbral.TipoUmbral.ToString()
+                                                    .Replace("DescuentoVenta", "Descuento en Venta")
+                                                    .Replace("MontoTotalVenta", "Monto Total de Venta")
+                                                    .Replace("MontoCredito", "Monto de Crédito")
+                                                    .Replace("DescuentoCompra", "Descuento en Compra");
+
                                                 <tr>
-                                                    <td>
-                                                        <strong>
-                                                            @umbral.TipoUmbral.ToString()
-                                                            .Replace("DescuentoVenta", "Descuento en Venta")
-                                                            .Replace("MontoTotalVenta", "Monto Total de Venta")
-                                                            .Replace("MontoCredito", "Monto de Crédito")
-                                                            .Replace("DescuentoCompra", "Descuento en Compra")
-                                                        </strong>
-                                                    </td>
+                                                    <td><strong>@tipoTexto</strong></td>
+
                                                     <td>
                                                         @if (umbral.TipoUmbral == TheBuryProject.Models.Entities.TipoUmbral.DescuentoVenta
-                                                                                                || umbral.TipoUmbral == TheBuryProject.Models.Entities.TipoUmbral.DescuentoCompra)
+                                                            || umbral.TipoUmbral == TheBuryProject.Models.Entities.TipoUmbral.DescuentoCompra)
                                                         {
-                                                            <span class="badge bg-info">
-                                                                @umbral.ValorMaximo.ToString("N2")%
-                                                            </span>
+                                                            <span class="badge bg-info">@umbral.ValorMaximo.ToString("N2")%</span>
                                                         }
                                                         else
                                                         {
-                                                            <span class="badge bg-success">
-                                                                $@umbral.ValorMaximo.ToString("N2")
-                                                            </span>
+                                                            <span class="badge bg-success">$@umbral.ValorMaximo.ToString("N2")</span>
                                                         }
                                                     </td>
+
                                                     <td class="small text-muted">
                                                         @(string.IsNullOrWhiteSpace(umbral.Descripcion) ? "-" : umbral.Descripcion)
                                                     </td>
+
                                                     <td>
                                                         @if (umbral.Activo)
                                                         {
@@ -163,22 +174,25 @@
                                                         {
                                                             <span class="badge bg-secondary">Inactivo</span>
                                                         }
-                                                </td>
-                                                <td>
-                                                    <small class="text-muted">
-                                                        @(umbral.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")
-                                                                                                    ?? umbral.CreatedAt.ToString("dd/MM/yyyy HH:mm"))
-                                        </small>
-                                    </td>
-                                    @if (User.IsInRole(Roles.Administrador))
+                                                    </td>
+
+                                                    <td>
+                                                        <small class="text-muted">
+                                                            <time datetime="@((umbral.UpdatedAt ?? umbral.CreatedAt).ToString("O"))">
+                                                                @((umbral.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")) ?? umbral.CreatedAt.ToString("dd/MM/yyyy HH:mm"))
+                                                            </time>
+                                                        </small>
+                                                    </td>
+
+                                                    @if (User.IsInRole(Roles.Administrador))
                                                     {
                                                         <td class="text-end">
-                                                            <div class="btn-group btn-group-sm" role="group">
+                                                            <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de umbral">
                                                                 <a asp-action="EditarUmbral"
                                                                    asp-route-id="@umbral.Id"
-                                                                                         asp-route-returnUrl="@pageReturnUrl"
+                                                                   asp-route-returnUrl="@pageReturnUrl"
                                                                    class="btn btn-outline-primary">
-                                                                    <i class="bi bi-pencil"></i>
+                                                                    <i class="bi bi-pencil" aria-hidden="true"></i>
                                                                     <span class="d-none d-md-inline">Editar</span>
                                                                 </a>
 
@@ -190,7 +204,7 @@
                                                                     @Html.AntiForgeryToken()
                                                                     <input type="hidden" name="returnUrl" value="@pageReturnUrl" />
                                                                     <button type="submit" class="btn btn-outline-danger">
-                                                                        <i class="bi bi-trash"></i>
+                                                                        <i class="bi bi-trash" aria-hidden="true"></i>
                                                                         <span class="d-none d-md-inline">Eliminar</span>
                                                                     </button>
                                                                 </form>
@@ -205,7 +219,7 @@
                             }
                             else
                             {
-                                <div class="alert alert-info mb-0">
+                                <div class="alert alert-info mb-0" role="alert">
                                     <i class="bi bi-info-circle me-1"></i>
                                     No hay umbrales configurados para el rol <strong>@rol</strong>.
                                     @if (User.IsInRole(Roles.Administrador))
@@ -216,53 +230,44 @@
                             }
                         </div>
 
-                        firstRole = false;
+                        firstPane = false;
                     }
                 </div>
             </div>
         </div>
     }
 
-    <!-- Información adicional -->
+    <!-- Info adicional -->
     <div class="row mt-3">
         <div class="col-12">
             <div class="card card-animate">
                 <div class="card-header bg-info text-white">
                     <h2 class="h6 mb-0 d-flex align-items-center gap-2">
-                        <i class="bi bi-info-circle"></i>
+                        <i class="bi bi-info-circle" aria-hidden="true"></i>
                         <span>Información sobre umbrales</span>
                     </h2>
                 </div>
                 <div class="card-body">
                     <ul class="mb-0 small">
-                        <li>
-                            <strong>Descuento en Venta:</strong>
-                            Porcentaje máximo de descuento que puede aplicar el rol en una venta.
-                        </li>
-                        <li>
-                            <strong>Monto Total de Venta:</strong>
-                            Monto máximo que puede procesar el rol en una sola venta.
-                        </li>
-                        <li>
-                            <strong>Monto de Crédito:</strong>
-                            Monto máximo de crédito que puede aprobar el rol.
-                        </li>
-                        <li>
-                            <strong>Descuento en Compra:</strong>
-                            Porcentaje máximo de descuento que puede negociar en compras a proveedores.
-                        </li>
-                        <li>
-                            <strong>Rol Admin:</strong>
-                            Siempre tiene permisos ilimitados, independientemente de la configuración.
-                        </li>
-                        <li>
-                            <strong>Excepciones:</strong>
-                            Los usuarios pueden solicitar autorizaciones para exceder sus límites.
-                        </li>
+                        <li><strong>Descuento en Venta:</strong> porcentaje máximo de descuento que puede aplicar el rol en una venta.</li>
+                        <li><strong>Monto Total de Venta:</strong> monto máximo que puede procesar el rol en una sola venta.</li>
+                        <li><strong>Monto de Crédito:</strong> monto máximo de crédito que puede aprobar el rol.</li>
+                        <li><strong>Descuento en Compra:</strong> porcentaje máximo de descuento que puede negociar en compras a proveedores.</li>
+                        <li><strong>Rol Admin:</strong> siempre tiene permisos ilimitados, independientemente de la configuración.</li>
+                        <li><strong>Excepciones:</strong> los usuarios pueden solicitar autorizaciones para exceder sus límites.</li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
 
-</div>
+</section>
+
+@* 
+MEJORAS (solo HTML):
+- Tabs con atributos completos (id/aria-controls/aria-selected/aria-labelledby/tabindex) para accesibilidad y compatibilidad con Bootstrap.
+- Alertas dismissible con btn-close + aria-label.
+- Tabla con <caption> (visually-hidden) y <th scope="col"> para accesibilidad.
+- Se corrigieron cierres/indentación para evitar errores silenciosos en Razor/HTML.
+- Líneas: aumentan por ARIA/caption/time; no puedo confirmar el número exacto sin comparar contra tu archivo en el repo.
+*@

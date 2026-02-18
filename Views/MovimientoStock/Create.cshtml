@@ -10,17 +10,17 @@
 
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="text-light fw-bold">
-                    <i class="bi bi-plus-circle text-info me-2"></i>Ajuste de Stock
+                    <i class="bi bi-plus-circle text-info me-2" aria-hidden="true"></i>Ajuste de Stock
                 </h2>
                 <a asp-action="Index" class="btn btn-outline-light">
-                    <i class="bi bi-arrow-left"></i> Volver
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
                 </a>
             </div>
 
             @if (TempData["Error"] != null)
             {
                 <div class="alert alert-danger d-flex align-items-center" role="alert">
-                    <i class="bi bi-x-octagon-fill me-2"></i>@TempData["Error"]
+                    <i class="bi bi-x-octagon-fill me-2" aria-hidden="true"></i>@TempData["Error"]
                 </div>
             }
 
@@ -31,7 +31,10 @@
 
                 <div class="card-body text-light">
                     <form asp-action="Create" method="post" id="formMovimientoStock" data-buscar-productos-url="@Url.Action("BuscarProductos", "MovimientoStock")">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" aria-label="Errores de validación"></div>
+                        }
 
                         <!-- Producto -->
                         <div class="mb-4">
@@ -44,14 +47,17 @@
                                        data-producto-info-url="@Url.Action("GetProductoInfo", "MovimientoStock")"
                                        value="@(!string.IsNullOrWhiteSpace(Model.ProductoCodigo) ? $"{Model.ProductoCodigo} - {Model.ProductoNombre}" : Model.ProductoNombre)"
                                        placeholder="Buscar producto por código, nombre o descripción..."
-                                       autocomplete="off" />
+                                        autocomplete="off"
+                                        aria-autocomplete="list"
+                                        aria-controls="productoSearchResults"
+                                        aria-expanded="false" />
                                 <div id="productoSearchResults" class="list-group position-absolute w-100 shadow d-none" style="z-index: 1080;"></div>
                             </div>
                             <span asp-validation-for="ProductoId" class="text-danger"></span>
                         </div>
 
                         <!-- Info del producto -->
-                        <div id="productoInfo" class="alert alert-info text-dark" style="display:none;">
+                        <div id="productoInfo" class="alert alert-info text-dark" style="display:none;" role="status" aria-live="polite">
                             <div class="row">
                                 <div class="col-md-4"><strong>Código:</strong> <span id="productoCodigo"></span></div>
                                 <div class="col-md-4"><strong>Producto:</strong> <span id="productoNombre"></span></div>
@@ -110,10 +116,10 @@
                         <!-- Botones -->
                         <div class="d-grid gap-3">
                             <button type="submit" class="btn btn-success btn-lg fw-semibold">
-                                <i class="bi bi-check-circle me-1"></i>Registrar Ajuste
+                                <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Registrar Ajuste
                             </button>
                             <a asp-action="Index" class="btn btn-outline-light btn-lg">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancelar
                             </a>
                         </div>
                     </form>

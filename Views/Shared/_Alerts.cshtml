@@ -1,57 +1,43 @@
 @*
     Partial: Alertas TempData unificadas
     Uso: <partial name="_Alerts" />
-    
+
     Muestra alertas de Success, Error, Warning, Info desde TempData
+
+    Opcional por tipo (ej: SuccessLinkUrl/SuccessLinkText):
+    - {Key}LinkUrl
+    - {Key}LinkText
 *@
 
-@if (TempData["Success"] != null)
+@{
+    var alertas = new (string Key, string Css, string Icono)[] {
+        ("Success", "success", "bi-check-circle-fill"),
+        ("Error",   "danger",  "bi-exclamation-triangle-fill"),
+        ("Warning", "warning", "bi-exclamation-circle-fill"),
+        ("Info",    "info",    "bi-info-circle-fill"),
+    };
+}
+
+@foreach (var a in alertas)
 {
-    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+    var mensajeObj = TempData[a.Key];
+    if (mensajeObj is null) { continue; }
+
+    var linkUrl = TempData[$"{a.Key}LinkUrl"] as string;
+    var linkText = TempData[$"{a.Key}LinkText"] as string;
+
+    <div class="alert alert-@a.Css alert-dismissible fade show border-0 shadow-sm mb-3" role="alert">
         <div class="d-flex align-items-center">
-            <i class="bi bi-check-circle-fill me-2"></i>
+            <i class="bi @a.Icono me-2" aria-hidden="true"></i>
             <div>
-                @TempData["Success"]
-                @if (TempData["SuccessLinkUrl"] != null)
+                @mensajeObj
+                @if (!string.IsNullOrWhiteSpace(linkUrl))
                 {
-                    <a class="ms-2 text-decoration-underline" href="@TempData["SuccessLinkUrl"]">
-                        @(TempData["SuccessLinkText"] ?? "Ver detalle")
+                    <a class="ms-2 text-decoration-underline" href="@linkUrl">
+                        @(string.IsNullOrWhiteSpace(linkText) ? "Ver detalle" : linkText)
                     </a>
                 }
             </div>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-    </div>
-}
-
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <div>@TempData["Error"]</div>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-    </div>
-}
-
-@if (TempData["Warning"] != null)
-{
-    <div class="alert alert-warning alert-dismissible fade show border-0 shadow-sm" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-exclamation-circle-fill me-2"></i>
-            <div>@TempData["Warning"]</div>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-    </div>
-}
-
-@if (TempData["Info"] != null)
-{
-    <div class="alert alert-info alert-dismissible fade show border-0 shadow-sm" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-info-circle-fill me-2"></i>
-            <div>@TempData["Info"]</div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>

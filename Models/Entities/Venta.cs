@@ -30,6 +30,13 @@ namespace TheBuryProject.Models.Entities
         // Cr�dito personal
         public int? CreditoId { get; set; }
 
+        // Snapshot de límite aplicado al momento de crear la operación
+        public decimal? LimiteAplicado { get; set; }
+        public decimal? PuntajeAlMomento { get; set; }
+        public int? PresetIdAlMomento { get; set; }
+        public decimal? OverrideAlMomento { get; set; }
+        public decimal? ExcepcionAlMomento { get; set; }
+
         // Autorización
         public EstadoAutorizacionVenta EstadoAutorizacion { get; set; } = EstadoAutorizacionVenta.NoRequiere;
         public bool RequiereAutorizacion { get; set; } = false;

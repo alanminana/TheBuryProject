@@ -1,7 +1,7 @@
 @*
     Modal de confirmación Bootstrap reutilizable.
     Se activa automáticamente desde elementos con atributo data-confirm.
-    
+
     Atributos opcionales:
     - data-confirm="mensaje": El mensaje principal de confirmación
     - data-confirm-title="título": Título del modal (default: "Confirmar acción")
@@ -10,12 +10,12 @@
     - data-confirm-cancel-text="texto": Texto del botón cancelar (default: "Cancelar")
 *@
 
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-describedby="confirmModalMessage" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title d-flex align-items-center gap-2" id="confirmModalLabel">
-                    <i class="bi bi-question-circle text-primary" id="confirmModalIcon"></i>
+                    <i class="bi bi-question-circle text-primary" id="confirmModalIcon" aria-hidden="true"></i>
                     <span id="confirmModalTitle">Confirmar acción</span>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>

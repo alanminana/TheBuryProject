@@ -13,7 +13,7 @@
 <div class="container-fluid">
     <div class="row mb-3">
         <div class="col">
-            <h2><i class="bi bi-arrow-return-left me-2"></i>Devolución @Model.Devolucion.NumeroDevolucion</h2>
+            <h2><i class="bi bi-arrow-return-left me-2" aria-hidden="true"></i>Devolución @Model.Devolucion.NumeroDevolucion</h2>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a asp-action="Index">Devoluciones</a></li>
@@ -23,24 +23,24 @@
         </div>
         <div class="col-auto">
             <a asp-action="Index" class="btn btn-secondary">
-                <i class="bi bi-arrow-left me-1"></i>Volver
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
             </a>
         </div>
     </div>
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show">
-            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2" aria-hidden="true"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show">
-            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
@@ -50,7 +50,7 @@
             <!-- Datos de la Devolución -->
             <div class="card mb-3">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información de la Devolución</h5>
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2" aria-hidden="true"></i>Información de la Devolución</h5>
                     @switch (Model.Devolucion.Estado)
                     {
                         case EstadoDevolucion.Pendiente:
@@ -105,20 +105,20 @@
             <!-- Productos Devueltos -->
             <div class="card mb-3">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>Productos Devueltos</h5>
+                    <h5 class="mb-0"><i class="bi bi-box-seam me-2" aria-hidden="true"></i>Productos Devueltos</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Producto</th>
-                                    <th>Cantidad</th>
-                                    <th>Precio Unit.</th>
-                                    <th>Subtotal</th>
-                                    <th>Estado</th>
-                                    <th>Accesorios</th>
-                                    <th>Acción</th>
+                                    <th scope="col">Producto</th>
+                                    <th scope="col">Cantidad</th>
+                                    <th scope="col">Precio Unit.</th>
+                                    <th scope="col">Subtotal</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col">Accesorios</th>
+                                    <th scope="col">Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -152,12 +152,12 @@
                                         <td>
                                             @if (detalle.AccesoriosCompletos)
                                             {
-                                                <span class="text-success"><i class="bi bi-check-circle"></i> Completos</span>
+                                                <span class="text-success"><i class="bi bi-check-circle" aria-hidden="true"></i> Completos</span>
                                             }
                                             else
                                             {
                                                 <span class="text-warning" title="@detalle.AccesoriosFaltantes">
-                                                    <i class="bi bi-exclamation-triangle"></i> Incompletos
+                                                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Incompletos
                                                 </span>
                                             }
                                         </td>
@@ -211,7 +211,7 @@
             {
                 <div class="card mb-3">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Acciones</h5>
+                        <h5 class="mb-0"><i class="bi bi-gear me-2" aria-hidden="true"></i>Acciones</h5>
                     </div>
                     <div class="card-body">
                         @if (Model.Devolucion.Estado == EstadoDevolucion.Pendiente || Model.Devolucion.Estado == EstadoDevolucion.EnRevision)
@@ -220,12 +220,12 @@
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="rowVersion" value="@rowVersionBase64" />
                                 <button type="submit" class="btn btn-success w-100" data-confirm="¿Aprobar esta devolución? Se generará una nota de crédito.">
-                                    <i class="bi bi-check-circle me-1"></i>Aprobar Devolución
+                                    <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Aprobar Devolución
                                 </button>
                             </form>
 
                             <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#modalRechazar">
-                                <i class="bi bi-x-circle me-1"></i>Rechazar Devolución
+                                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Rechazar Devolución
                             </button>
                         }
 
@@ -235,22 +235,22 @@
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="rowVersion" value="@rowVersionBase64" />
                                 <button type="submit" class="btn btn-primary w-100" data-confirm="¿Completar esta devolución? Se procesará el stock según las acciones definidas.">
-                                    <i class="bi bi-check2-all me-1"></i>Completar Devolución
+                                    <i class="bi bi-check2-all me-1" aria-hidden="true"></i>Completar Devolución
                                 </button>
                             </form>
 
                             @if (!Model.Devolucion.RequiereRMA)
                             {
                                 <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#modalCrearRMA">
-                                    <i class="bi bi-truck me-1"></i>Crear RMA
+                                    <i class="bi bi-truck me-1" aria-hidden="true"></i>Crear RMA
                                 </button>
                             }
                         }
 
                         @if (Model.Devolucion.Estado == EstadoDevolucion.Completada || Model.Devolucion.Estado == EstadoDevolucion.Rechazada)
                         {
-                            <div class="alert alert-info mb-0">
-                                <i class="bi bi-info-circle me-2"></i>
+                            <div class="alert alert-info mb-0" role="alert">
+                                <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
                                 Esta devolución ya fue @(Model.Devolucion.Estado == EstadoDevolucion.Completada ? "completada" : "rechazada").
                             </div>
                         }
@@ -263,7 +263,7 @@
             {
                 <div class="card mb-3 border-success">
                     <div class="card-header bg-success text-white">
-                        <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Nota de Crédito</h5>
+                        <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Nota de Crédito</h5>
                     </div>
                     <div class="card-body">
                         <p><strong>Número:</strong> @Model.NotaCredito.NumeroNotaCredito</p>
@@ -302,7 +302,7 @@
             {
                 <div class="card mb-3 border-warning">
                     <div class="card-header bg-warning">
-                        <h5 class="mb-0"><i class="bi bi-truck me-2"></i>RMA</h5>
+                        <h5 class="mb-0"><i class="bi bi-truck me-2" aria-hidden="true"></i>RMA</h5>
                     </div>
                     <div class="card-body">
                         <p><strong>Número:</strong> @Model.RMA.NumeroRMA</p>
@@ -354,14 +354,14 @@
             {
                 <div class="card mb-3">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Venta Original</h5>
+                        <h5 class="mb-0"><i class="bi bi-receipt me-2" aria-hidden="true"></i>Venta Original</h5>
                     </div>
                     <div class="card-body">
                         <p><strong>Número:</strong> @Model.Devolucion.Venta.Numero</p>
                         <p><strong>Fecha:</strong> @Model.Devolucion.Venta.FechaVenta.ToString("dd/MM/yyyy")</p>
                         <p><strong>Total:</strong> $@Model.Devolucion.Venta.Total.ToString("N2")</p>
                         <a asp-controller="Venta" asp-action="Detalles" asp-route-id="@Model.Devolucion.VentaId" class="btn btn-outline-primary btn-sm w-100">
-                            <i class="bi bi-eye me-1"></i>Ver Venta
+                            <i class="bi bi-eye me-1" aria-hidden="true"></i>Ver Venta
                         </a>
                     </div>
                 </div>
@@ -378,8 +378,8 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="rowVersion" value="@rowVersionBase64" />
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Rechazar Devolución</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title"><i class="bi bi-x-circle me-2" aria-hidden="true"></i>Rechazar Devolución</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -405,8 +405,8 @@
                 <input type="hidden" name="devolucionId" value="@Model.Devolucion.Id" />
                 <input type="hidden" name="devolucionRowVersion" value="@rowVersionBase64" />
                 <div class="modal-header bg-warning">
-                    <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Crear RMA</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title"><i class="bi bi-truck me-2" aria-hidden="true"></i>Crear RMA</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">

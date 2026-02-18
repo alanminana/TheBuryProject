@@ -6,17 +6,23 @@
     var backUrl = returnUrl ?? Url.Action("Index", "Acciones")!;
 }
 
-<div class="container-fluid px-0">
+<section class="container-fluid px-0 py-3 text-light">
 
     <!-- Header de página -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
             <div class="text-muted text-uppercase small mb-1">Acciones</div>
-            <h1 class="h4 mb-0">Eliminar acción</h1>
+            <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-trash" aria-hidden="true"></i>
+                <span>Eliminar acción</span>
+            </h1>
+            <p class="text-muted small mb-0">
+                Confirmá la eliminación de una acción y su impacto en permisos.
+            </p>
         </div>
 
         <a href="@backUrl" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
             Volver al listado
         </a>
     </div>
@@ -28,13 +34,13 @@
                 <div class="card-body">
 
                     <!-- Mensaje principal de peligro -->
-                    <div class="alert alert-danger d-flex align-items-start gap-2">
-                        <i class="bi bi-trash fs-5 mt-1"></i>
+                    <div class="alert alert-danger d-flex align-items-start gap-2" id="deleteWarning" role="alert">
+                        <i class="bi bi-trash fs-5 mt-1" aria-hidden="true"></i>
                         <div>
                             <div class="fw-semibold mb-1">
                                 ¿Está seguro de que desea eliminar esta acción?
                             </div>
-                            <small class="text-light">
+                            <small>
                                 Esta operación afectará permisos y no se puede deshacer.
                             </small>
                         </div>
@@ -62,7 +68,7 @@
 
                     <!-- Advertencias -->
                     <div class="alert alert-warning d-flex align-items-start gap-2 mb-2">
-                        <i class="bi bi-exclamation-triangle mt-1"></i>
+                        <i class="bi bi-exclamation-triangle mt-1" aria-hidden="true"></i>
                         <div>
                             <strong>Impacto en permisos.</strong>
                             <div class="small">
@@ -72,7 +78,7 @@
                     </div>
 
                     <div class="alert alert-danger d-flex align-items-start gap-2 mb-0">
-                        <i class="bi bi-exclamation-octagon mt-1"></i>
+                        <i class="bi bi-exclamation-octagon mt-1" aria-hidden="true"></i>
                         <div>
                             <strong>Acción irreversible.</strong>
                             <div class="small">
@@ -84,14 +90,21 @@
                     <!-- Formulario de confirmación -->
                     <form asp-action="Delete" method="post" class="mt-4">
                         <input type="hidden" asp-for="Id" />
-                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        @if (!string.IsNullOrWhiteSpace(returnUrl))
+                        {
+                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        }
 
                         <div class="d-flex justify-content-end gap-2">
                             <a href="@backUrl" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-lg me-1"></i>Cancelar
+                                <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Cancelar
                             </a>
-                            <button type="submit" class="btn btn-danger" data-confirm="¿Eliminar la acción '@Model.Nombre'? Esta operación es irreversible.">
-                                <i class="bi bi-trash me-1"></i>Eliminar acción
+
+                            <button type="submit"
+                                    class="btn btn-danger"
+                                    aria-describedby="deleteWarning"
+                                    data-confirm="¿Eliminar la acción '@Model.Nombre'? Esta operación es irreversible.">
+                                <i class="bi bi-trash me-1" aria-hidden="true"></i>Eliminar acción
                             </button>
                         </div>
                     </form>
@@ -101,4 +114,4 @@
 
         </div>
     </div>
-</div>
+</section>

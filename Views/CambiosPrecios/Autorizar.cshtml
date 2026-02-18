@@ -42,7 +42,11 @@
                         <dt class="col-sm-4 text-muted">Solicitado por</dt>
                         <dd class="col-sm-8">
                             <div>@Model.SolicitadoPor</div>
-                            <small class="text-muted">@Model.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</small>
+                            <small class="text-muted">
+                                <time datetime="@Model.FechaSolicitud.ToString("O")">
+                                    @Model.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")
+                                </time>
+                            </small>
                         </dd>
                     </dl>
 
@@ -61,7 +65,7 @@
                             </div>
 
                             <button type="submit" class="btn btn-primary" data-confirm="¿Aprobar este batch?">
-                                <i class="bi bi-check2-circle me-1"></i>Aprobar
+                                <i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Aprobar
                             </button>
                         </form>
 
@@ -76,7 +80,7 @@
                             </div>
 
                             <button type="submit" class="btn btn-danger" data-confirm="¿Rechazar este batch?">
-                                <i class="bi bi-x-circle me-1"></i>Rechazar
+                                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Rechazar
                             </button>
                         </form>
 
@@ -91,7 +95,7 @@
                             </div>
 
                             <button type="submit" class="btn btn-outline-secondary" data-confirm="¿Cancelar este batch?">
-                                <i class="bi bi-ban me-1"></i>Cancelar
+                                <i class="bi bi-ban me-1" aria-hidden="true"></i>Cancelar
                             </button>
                         </form>
 

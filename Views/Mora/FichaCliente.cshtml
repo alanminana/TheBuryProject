@@ -13,15 +13,15 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>@Model.NombreCliente</h2>
+            <h2 class="mb-0"><i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>@Model.NombreCliente</h2>
             <small class="text-muted">@Model.DocumentoCliente</small>
         </div>
         <div class="btn-group">
             <a href="@backUrl" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-2"></i>Volver
+                <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver
             </a>
             <a asp-action="RegistrarContacto" asp-route-clienteId="@Model.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-success">
-                <i class="bi bi-telephone-plus me-2"></i>Registrar Contacto
+                <i class="bi bi-telephone-plus me-2" aria-hidden="true"></i>Registrar Contacto
             </a>
         </div>
     </div>
@@ -32,23 +32,23 @@
             <!-- Datos de Contacto -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-secondary text-white">
-                    <h6 class="mb-0"><i class="bi bi-person me-2"></i>Datos de Contacto</h6>
+                    <h6 class="mb-0"><i class="bi bi-person me-2" aria-hidden="true"></i>Datos de Contacto</h6>
                 </div>
                 <div class="card-body">
-                    <p class="mb-2"><i class="bi bi-telephone me-2 text-muted"></i>@(Model.Telefono ?? "Sin teléfono")</p>
+                    <p class="mb-2"><i class="bi bi-telephone me-2 text-muted" aria-hidden="true"></i>@(Model.Telefono ?? "Sin teléfono")</p>
                     @if (!string.IsNullOrEmpty(Model.TelefonoLaboral))
                     {
-                        <p class="mb-2"><i class="bi bi-building me-2 text-muted"></i>@Model.TelefonoLaboral (Laboral)</p>
+                        <p class="mb-2"><i class="bi bi-building me-2 text-muted" aria-hidden="true"></i>@Model.TelefonoLaboral (Laboral)</p>
                     }
-                    <p class="mb-2"><i class="bi bi-envelope me-2 text-muted"></i>@(Model.Email ?? "Sin email")</p>
-                    <p class="mb-0"><i class="bi bi-geo-alt me-2 text-muted"></i>@(Model.Direccion ?? "Sin dirección")</p>
+                    <p class="mb-2"><i class="bi bi-envelope me-2 text-muted" aria-hidden="true"></i>@(Model.Email ?? "Sin email")</p>
+                    <p class="mb-0"><i class="bi bi-geo-alt me-2 text-muted" aria-hidden="true"></i>@(Model.Direccion ?? "Sin dirección")</p>
                 </div>
             </div>
 
             <!-- Resumen de Mora -->
             <div class="card shadow-sm mb-4 @(Model.Resumen.PrioridadMaxima == PrioridadAlerta.Critica ? "border-danger" : Model.Resumen.PrioridadMaxima == PrioridadAlerta.Alta ? "border-warning" : "")">
                 <div class="card-header @(Model.Resumen.PrioridadMaxima == PrioridadAlerta.Critica ? "bg-danger text-white" : Model.Resumen.PrioridadMaxima == PrioridadAlerta.Alta ? "bg-warning" : "bg-primary text-white")">
-                    <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Resumen de Mora</h6>
+                    <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>Resumen de Mora</h6>
                 </div>
                 <div class="card-body">
                     <div class="row text-center mb-3">
@@ -96,7 +96,7 @@
             <!-- Estado de Gestión -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-info text-white">
-                    <h6 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Estado de Gestión</h6>
+                    <h6 class="mb-0"><i class="bi bi-clipboard-check me-2" aria-hidden="true"></i>Estado de Gestión</h6>
                 </div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-2">
@@ -114,14 +114,14 @@
                     <hr>
                     @if (Model.Resumen.PromesaActiva)
                     {
-                        <div class="alert alert-info mb-2 py-2">
-                            <i class="bi bi-calendar-check me-2"></i>Tiene promesa de pago activa
+                        <div class="alert alert-info mb-2 py-2" role="alert">
+                            <i class="bi bi-calendar-check me-2" aria-hidden="true"></i>Tiene promesa de pago activa
                         </div>
                     }
                     @if (Model.Resumen.AcuerdoActivo)
                     {
-                        <div class="alert alert-primary mb-0 py-2">
-                            <i class="bi bi-file-earmark-text me-2"></i>Tiene acuerdo de pago activo
+                        <div class="alert alert-primary mb-0 py-2" role="alert">
+                            <i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Tiene acuerdo de pago activo
                         </div>
                     }
                 </div>
@@ -135,16 +135,16 @@
             {
                 <div class="card shadow-sm mb-4 border-info">
                     <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Promesas de Pago Activas</h6>
+                        <h6 class="mb-0"><i class="bi bi-calendar-check me-2" aria-hidden="true"></i>Promesas de Pago Activas</h6>
                     </div>
                     <div class="card-body p-0">
                         <table class="table table-sm mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Fecha Promesa</th>
-                                    <th>Monto</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
+                                    <th scope="col">Fecha Promesa</th>
+                                    <th scope="col">Monto</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -170,13 +170,15 @@
                                                 <input type="hidden" name="clienteId" value="@Model.ClienteId" />
                                                 <input type="hidden" name="returnUrl" value="@listReturnUrl" />
                                                 <button type="submit" class="btn btn-sm btn-success" title="Marcar como cumplida">
-                                                    <i class="bi bi-check-lg"></i>
+                                                    <i class="bi bi-check-lg" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Marcar cumplida</span>
                                                 </button>
                                             </form>
                                             <button type="button" class="btn btn-sm btn-danger" title="Marcar como incumplida" 
                                                     data-bs-toggle="modal" data-bs-target="#modalIncumplida" 
                                                     data-alerta="@promesa.AlertaId">
-                                                <i class="bi bi-x-lg"></i>
+                                                <i class="bi bi-x-lg" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Marcar incumplida</span>
                                             </button>
                                         </td>
                                     </tr>
@@ -190,13 +192,13 @@
             <!-- Créditos en Mora -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-danger text-white">
-                    <h6 class="mb-0"><i class="bi bi-credit-card me-2"></i>Créditos en Mora (@Model.Creditos.Count)</h6>
+                    <h6 class="mb-0"><i class="bi bi-credit-card me-2" aria-hidden="true"></i>Créditos en Mora (@Model.Creditos.Count)</h6>
                 </div>
                 <div class="card-body p-0">
                     @if (!Model.Creditos.Any())
                     {
                         <div class="text-center py-4">
-                            <i class="bi bi-check-circle fs-1 text-success"></i>
+                            <i class="bi bi-check-circle fs-1 text-success" aria-hidden="true"></i>
                             <p class="text-muted mt-2">No hay créditos en mora</p>
                         </div>
                     }
@@ -244,12 +246,12 @@
                                             <table class="table table-sm table-striped">
                                                 <thead>
                                                     <tr>
-                                                        <th>#</th>
-                                                        <th>Vencimiento</th>
-                                                        <th>Capital</th>
-                                                        <th>Interés</th>
-                                                        <th>Días Atraso</th>
-                                                        <th>Mora</th>
+                                                        <th scope="col">#</th>
+                                                        <th scope="col">Vencimiento</th>
+                                                        <th scope="col">Capital</th>
+                                                        <th scope="col">Interés</th>
+                                                        <th scope="col">Días Atraso</th>
+                                                        <th scope="col">Mora</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -272,14 +274,14 @@
                                                 {
                                                     var alertaCredito = Model.AlertasActivas.First(a => a.CreditoId == credito.CreditoId);
                                                     <a asp-action="RegistrarPromesa" asp-route-alertaId="@alertaCredito.Id" asp-route-clienteId="@Model.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-info">
-                                                        <i class="bi bi-calendar-plus me-1"></i>Promesa de Pago
+                                                        <i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>Promesa de Pago
                                                     </a>
                                                     <a asp-action="CrearAcuerdo" asp-route-alertaId="@alertaCredito.Id" asp-route-clienteId="@Model.ClienteId" asp-route-creditoId="@credito.CreditoId" asp-route-returnUrl="@listReturnUrl" class="btn btn-primary">
-                                                        <i class="bi bi-file-earmark-plus me-1"></i>Crear Acuerdo
+                                                        <i class="bi bi-file-earmark-plus me-1" aria-hidden="true"></i>Crear Acuerdo
                                                     </a>
                                                 }
                                                 <a asp-controller="Credito" asp-action="Details" asp-route-id="@credito.CreditoId" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-secondary">
-                                                    <i class="bi bi-eye me-1"></i>Ver Crédito
+                                                    <i class="bi bi-eye me-1" aria-hidden="true"></i>Ver Crédito
                                                 </a>
                                             </div>
                                         </div>
@@ -294,13 +296,13 @@
             <!-- Alertas Activas -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-warning d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-bell me-2"></i>Alertas Activas (@Model.AlertasActivas.Count)</h6>
+                    <h6 class="mb-0"><i class="bi bi-bell me-2" aria-hidden="true"></i>Alertas Activas (@Model.AlertasActivas.Count)</h6>
                 </div>
                 <div class="card-body p-0">
                     @if (!Model.AlertasActivas.Any())
                     {
                         <div class="text-center py-3">
-                            <i class="bi bi-check-circle text-success fs-4"></i>
+                            <i class="bi bi-check-circle text-success fs-4" aria-hidden="true"></i>
                             <p class="text-muted mb-0">Sin alertas activas</p>
                         </div>
                     }
@@ -309,11 +311,11 @@
                         <table class="table table-sm mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Tipo</th>
-                                    <th>Mensaje</th>
-                                    <th>Prioridad</th>
-                                    <th>Fecha</th>
-                                    <th>Acciones</th>
+                                    <th scope="col">Tipo</th>
+                                    <th scope="col">Mensaje</th>
+                                    <th scope="col">Prioridad</th>
+                                    <th scope="col">Fecha</th>
+                                    <th scope="col">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -336,7 +338,8 @@
                                                 <input type="hidden" name="rowVersion" value="@(alerta.RowVersion != null ? Convert.ToBase64String(alerta.RowVersion) : "")" />
                                                 <input type="hidden" name="returnUrl" value="@listReturnUrl" />
                                                 <button type="submit" class="btn btn-sm btn-success" title="Resolver">
-                                                    <i class="bi bi-check-lg"></i>
+                                                    <i class="bi bi-check-lg" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Resolver</span>
                                                 </button>
                                             </form>
                                         </td>
@@ -351,19 +354,19 @@
             <!-- Historial de Contactos -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Historial de Contactos (@Model.HistorialContactos.Count)</h6>
+                    <h6 class="mb-0"><i class="bi bi-clock-history me-2" aria-hidden="true"></i>Historial de Contactos (@Model.HistorialContactos.Count)</h6>
                     <a asp-action="RegistrarContacto" asp-route-clienteId="@Model.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-sm btn-light">
-                        <i class="bi bi-plus-lg"></i> Nuevo
+                        <i class="bi bi-plus-lg" aria-hidden="true"></i> Nuevo
                     </a>
                 </div>
                 <div class="card-body p-0">
                     @if (!Model.HistorialContactos.Any())
                     {
                         <div class="text-center py-4">
-                            <i class="bi bi-chat-dots fs-1 text-muted"></i>
+                            <i class="bi bi-chat-dots fs-1 text-muted" aria-hidden="true"></i>
                             <p class="text-muted mt-2">No hay contactos registrados</p>
                             <a asp-action="RegistrarContacto" asp-route-clienteId="@Model.ClienteId" asp-route-returnUrl="@listReturnUrl" class="btn btn-success">
-                                <i class="bi bi-telephone-plus me-2"></i>Registrar Primer Contacto
+                                <i class="bi bi-telephone-plus me-2" aria-hidden="true"></i>Registrar Primer Contacto
                             </a>
                         </div>
                     }
@@ -379,7 +382,7 @@
                                             <span class="badge bg-@contacto.ResultadoColor">@contacto.ResultadoNombre</span>
                                             @if (contacto.DuracionMinutos.HasValue)
                                             {
-                                                <span class="text-muted ms-2"><i class="bi bi-clock"></i> @contacto.DuracionMinutos min</span>
+                                                <span class="text-muted ms-2"><i class="bi bi-clock" aria-hidden="true"></i> @contacto.DuracionMinutos min</span>
                                             }
                                         </div>
                                         <small class="text-muted">@contacto.FechaContacto.ToString("dd/MM/yyyy HH:mm")</small>
@@ -392,7 +395,7 @@
                                     {
                                         <div class="mt-1">
                                             <span class="badge bg-info">
-                                                <i class="bi bi-calendar-check me-1"></i>
+                                                <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>
                                                 Promesa: @contacto.FechaPromesaPago.Value.ToString("dd/MM/yyyy") - $@contacto.MontoPromesaPago?.ToString("N2")
                                             </span>
                                         </div>
@@ -409,19 +412,19 @@
             {
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-primary text-white">
-                        <h6 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Acuerdos de Pago (@Model.Acuerdos.Count)</h6>
+                        <h6 class="mb-0"><i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Acuerdos de Pago (@Model.Acuerdos.Count)</h6>
                     </div>
                     <div class="card-body p-0">
                         <table class="table mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Número</th>
-                                    <th>Fecha</th>
-                                    <th>Estado</th>
-                                    <th>Monto Total</th>
-                                    <th>Pagado</th>
-                                    <th>Cuotas</th>
-                                    <th>Próx. Vto.</th>
+                                    <th scope="col">Número</th>
+                                    <th scope="col">Fecha</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col">Monto Total</th>
+                                    <th scope="col">Pagado</th>
+                                    <th scope="col">Cuotas</th>
+                                    <th scope="col">Próx. Vto.</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -456,8 +459,8 @@
                 <input type="hidden" name="clienteId" value="@Model.ClienteId" />
                 <input type="hidden" name="returnUrl" value="@listReturnUrl" />
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Marcar Promesa Incumplida</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title"><i class="bi bi-x-circle me-2" aria-hidden="true"></i>Marcar Promesa Incumplida</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">

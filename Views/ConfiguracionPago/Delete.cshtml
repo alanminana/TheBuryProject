@@ -11,12 +11,12 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="fw-bold mb-1">
-                        <i class="bi bi-trash text-danger me-2"></i>@ViewData["Title"]
+                        <i class="bi bi-trash text-danger me-2" aria-hidden="true"></i>@ViewData["Title"]
                     </h2>
                     <p class="text-secondary mb-0">Esta acción no se puede deshacer.</p>
                 </div>
                 <a asp-action="Index" class="btn btn-outline-light">
-                    <i class="bi bi-arrow-left"></i> Volver
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
                 </a>
             </div>
 
@@ -24,14 +24,14 @@
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-danger text-light">
                     <h4 class="fw-bold mb-0">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Confirmar eliminación
                     </h4>
                 </div>
 
                 <div class="card-body">
 
-                    <div class="alert alert-danger bg-opacity-10 border-danger text-light">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
+                    <div class="alert alert-danger bg-opacity-10 border-danger text-light" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
                         <strong>Atención:</strong> Esta acción eliminará permanentemente la configuración de pago seleccionada.
                     </div>
 
@@ -40,19 +40,19 @@
                     <!-- Resumen principal -->
                     <table class="table table-dark table-borderless align-middle mt-2 mb-0">
                         <tr>
-                            <th class="text-muted" width="30%">Tipo de Pago:</th>
+                            <th scope="row" class="text-muted" width="30%">Tipo de Pago:</th>
                             <td class="fw-semibold">@Model.TipoPago</td>
                         </tr>
                         <tr>
-                            <th class="text-muted">Nombre:</th>
+                            <th scope="row" class="text-muted">Nombre:</th>
                             <td>@Model.Nombre</td>
                         </tr>
                         <tr>
-                            <th class="text-muted">Descripción:</th>
+                            <th scope="row" class="text-muted">Descripción:</th>
                             <td>@(string.IsNullOrEmpty(Model.Descripcion) ? "-" : Model.Descripcion)</td>
                         </tr>
                         <tr>
-                            <th class="text-muted">Estado:</th>
+                            <th scope="row" class="text-muted">Estado:</th>
                             <td>
                                 <span class="badge @(Model.Activo ? "bg-success" : "bg-secondary")">
                                     @(Model.Activo ? "Activo" : "Inactivo")
@@ -67,13 +67,13 @@
                             <div class="card bg-secondary bg-opacity-10 border-secondary h-100">
                                 <div class="card-body">
                                     <h6 class="text-secondary text-uppercase small mb-2">
-                                        <i class="bi bi-tag me-1"></i>Descuentos
+                                        <i class="bi bi-tag me-1" aria-hidden="true"></i>Descuentos
                                     </h6>
                                     @if (Model.PermiteDescuento)
                                     {
                                         <p class="mb-1">
                                             <span class="badge bg-success">
-                                                <i class="bi bi-check-circle"></i> Permite descuento
+                                                <i class="bi bi-check-circle" aria-hidden="true"></i> Permite descuento
                                             </span>
                                         </p>
                                         <p class="mb-0 text-secondary small">
@@ -85,7 +85,7 @@
                                     else
                                     {
                                         <span class="badge bg-secondary">
-                                            <i class="bi bi-x-circle"></i> No permite descuento
+                                            <i class="bi bi-x-circle" aria-hidden="true"></i> No permite descuento
                                         </span>
                                     }
                                 </div>
@@ -96,13 +96,13 @@
                             <div class="card bg-secondary bg-opacity-10 border-secondary h-100">
                                 <div class="card-body">
                                     <h6 class="text-secondary text-uppercase small mb-2">
-                                        <i class="bi bi-percent me-1"></i>Recargos
+                                        <i class="bi bi-percent me-1" aria-hidden="true"></i>Recargos
                                     </h6>
                                     @if (Model.TieneRecargo)
                                     {
                                         <p class="mb-1">
                                             <span class="badge bg-warning text-dark">
-                                                <i class="bi bi-exclamation-circle"></i> Con recargo
+                                                <i class="bi bi-exclamation-circle" aria-hidden="true"></i> Con recargo
                                             </span>
                                         </p>
                                         <p class="mb-0 text-secondary small">
@@ -114,7 +114,7 @@
                                     else
                                     {
                                         <span class="badge bg-secondary">
-                                            <i class="bi bi-x-circle"></i> Sin recargo
+                                            <i class="bi bi-x-circle" aria-hidden="true"></i> Sin recargo
                                         </span>
                                     }
                                 </div>
@@ -125,7 +125,7 @@
                             <div class="card bg-secondary bg-opacity-10 border-secondary h-100">
                                 <div class="card-body">
                                     <h6 class="text-secondary text-uppercase small mb-2">
-                                        <i class="bi bi-info-circle me-1"></i>Impacto
+                                        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Impacto
                                     </h6>
                                     <p class="text-secondary small mb-0">
                                         Esta configuración ya no estará disponible para nuevas ventas o cobranzas.
@@ -141,11 +141,11 @@
                         @Html.AntiForgeryToken()
                         <div class="d-flex justify-content-end gap-3">
                             <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-light px-4">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-danger px-4"
                                     data-confirm="¿Está seguro de eliminar esta configuración de pago? Esta acción no se puede deshacer.">
-                                <i class="bi bi-trash me-1"></i>Eliminar definitivamente
+                                <i class="bi bi-trash me-1" aria-hidden="true"></i>Eliminar definitivamente
                             </button>
                         </div>
                     </form>

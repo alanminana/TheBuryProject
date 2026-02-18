@@ -1447,6 +1447,119 @@ namespace TheBuryProject.Migrations
                     b.ToTable("Clientes");
                 });
 
+            modelBuilder.Entity("TheBuryProject.Models.Entities.ClienteCreditoConfiguracion", b =>
+                {
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("AprobadoEnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AprobadoPor")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreditoPresetId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("ExcepcionDelta")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ExcepcionDesde")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExcepcionHasta")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("LimiteOverride")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("MotivoExcepcion")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("MotivoOverride")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("OverrideAprobadoEnUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OverrideAprobadoPor")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ClienteId");
+
+                    b.HasIndex("CreditoPresetId");
+
+                    b.HasIndex("ExcepcionHasta");
+
+                    b.ToTable("ClientesCreditoConfiguraciones", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ClientesCreditoConfiguraciones_ExcepcionVigencia", "[ExcepcionDesde] IS NULL OR [ExcepcionHasta] IS NULL OR [ExcepcionDesde] <= [ExcepcionHasta]");
+
+                            t.HasCheckConstraint("CK_ClientesCreditoConfiguraciones_MontosNoNegativos", "([LimiteOverride] IS NULL OR [LimiteOverride] >= 0) AND ([ExcepcionDelta] IS NULL OR [ExcepcionDelta] >= 0)");
+                        });
+                });
+
+            modelBuilder.Entity("TheBuryProject.Models.Entities.ClientePuntajeHistorial", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("NivelRiesgo")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Observacion")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Origen")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("Puntaje")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("RegistradoPor")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("ClienteId", "Fecha");
+
+                    b.ToTable("ClientesPuntajeHistorial", (string)null);
+                });
+
             modelBuilder.Entity("TheBuryProject.Models.Entities.ConfiguracionCredito", b =>
                 {
                     b.Property<int>("Id")
@@ -5184,6 +5297,10 @@ namespace TheBuryProject.Migrations
                     b.Property<int>("EstadoAutorizacion")
                         .HasColumnType("int");
 
+                    b.Property<decimal?>("ExcepcionAlMomento")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime?>("FechaAutorizacion")
                         .HasColumnType("datetime2");
 
@@ -5215,6 +5332,10 @@ namespace TheBuryProject.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<decimal?>("LimiteAplicado")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("MotivoAutorizacion")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -5235,6 +5356,17 @@ namespace TheBuryProject.Migrations
                     b.Property<string>("Observaciones")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal?>("OverrideAlMomento")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("PresetIdAlMomento")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("PuntajeAlMomento")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<string>("RazonesAutorizacionJson")
                         .HasColumnType("nvarchar(max)");
@@ -5298,6 +5430,8 @@ namespace TheBuryProject.Migrations
 
                     b.HasIndex("Numero")
                         .IsUnique();
+
+                    b.HasIndex("PresetIdAlMomento");
 
                     b.HasIndex("VendedorUserId");
 
@@ -5664,6 +5798,35 @@ namespace TheBuryProject.Migrations
                     b.Navigation("Garante");
 
                     b.Navigation("PerfilCreditoPreferido");
+                });
+
+            modelBuilder.Entity("TheBuryProject.Models.Entities.ClienteCreditoConfiguracion", b =>
+                {
+                    b.HasOne("TheBuryProject.Models.Entities.Cliente", "Cliente")
+                        .WithOne("CreditoConfiguracion")
+                        .HasForeignKey("TheBuryProject.Models.Entities.ClienteCreditoConfiguracion", "ClienteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TheBuryProject.Models.Entities.PuntajeCreditoLimite", "CreditoPreset")
+                        .WithMany()
+                        .HasForeignKey("CreditoPresetId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("CreditoPreset");
+                });
+
+            modelBuilder.Entity("TheBuryProject.Models.Entities.ClientePuntajeHistorial", b =>
+                {
+                    b.HasOne("TheBuryProject.Models.Entities.Cliente", "Cliente")
+                        .WithMany("PuntajeHistorial")
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
                 });
 
             modelBuilder.Entity("TheBuryProject.Models.Entities.ConfiguracionTarjeta", b =>
@@ -6227,6 +6390,11 @@ namespace TheBuryProject.Migrations
                         .HasForeignKey("CreditoId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("TheBuryProject.Models.Entities.PuntajeCreditoLimite", null)
+                        .WithMany()
+                        .HasForeignKey("PresetIdAlMomento")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("TheBuryProject.Models.Entities.ApplicationUser", "VendedorUser")
                         .WithMany()
                         .HasForeignKey("VendedorUserId")
@@ -6322,9 +6490,13 @@ namespace TheBuryProject.Migrations
                 {
                     b.Navigation("ComoGarante");
 
+                    b.Navigation("CreditoConfiguracion");
+
                     b.Navigation("Creditos");
 
                     b.Navigation("Documentos");
+
+                    b.Navigation("PuntajeHistorial");
                 });
 
             modelBuilder.Entity("TheBuryProject.Models.Entities.ConfiguracionPago", b =>

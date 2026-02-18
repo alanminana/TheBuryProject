@@ -1,109 +1,89 @@
-﻿@model TheBuryProject.ViewModels.ProveedorViewModel
+@model TheBuryProject.ViewModels.OrdenCompraViewModel
+@using TheBuryProject.Models.Enums
 @{
-    ViewData["Title"] = "Eliminar Proveedor";
+    ViewData["Title"] = "Eliminar Orden de Compra";
 }
 
 <section class="container-fluid py-5">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-9">
             <div class="mb-4">
-                <a asp-action="Index" class="link-light text-decoration-none">
-                    <i class="bi bi-arrow-left me-2"></i>Volver al listado
+                <a asp-action="Details" asp-route-id="@Model.Id" class="link-light text-decoration-none">
+                    <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver a detalles
                 </a>
             </div>
 
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-danger border-0">
                     <h4 class="fw-bold text-white mb-0">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar Eliminación
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Confirmar Eliminación
                     </h4>
                 </div>
 
                 <div class="card-body text-light">
-                    <div class="alert alert-danger border-0 d-flex align-items-start">
-                        <i class="bi bi-exclamation-octagon-fill fs-3 me-3 flex-shrink-0"></i>
+                    <div class="alert alert-danger border-0 d-flex align-items-start" role="alert">
+                        <i class="bi bi-exclamation-octagon-fill fs-3 me-3 flex-shrink-0" aria-hidden="true"></i>
                         <div>
-                            <h5 class="fw-bold mb-2">¿Está seguro que desea eliminar este proveedor?</h5>
-                            <p class="mb-0">Esta acción es irreversible y podría afectar registros relacionados.</p>
+                            <h5 class="fw-bold mb-2">¿Está seguro que desea eliminar esta orden de compra?</h5>
+                            <p class="mb-0">Esta acción es irreversible y no podrá recuperar la orden eliminada.</p>
                         </div>
                     </div>
 
                     <div class="card bg-body-secondary border-0 mt-4">
-                        <div class="card-body p-4">
-                            <h6 class="text-secondary text-uppercase fw-semibold mb-3">Información del Proveedor</h6>
+                        <div class="card-body p-4 text-dark">
+                            <h6 class="text-uppercase fw-semibold mb-3">Información de la Orden</h6>
 
                             <dl class="row mb-0">
-                                <dt class="col-sm-4">CUIT</dt>
-                                <dd class="col-sm-8">@Model.Cuit</dd>
+                                <dt class="col-sm-4">Número</dt>
+                                <dd class="col-sm-8 fw-semibold">@Model.Numero</dd>
 
-                                <dt class="col-sm-4">Razón Social</dt>
-                                <dd class="col-sm-8">@Model.RazonSocial</dd>
+                                <dt class="col-sm-4">Proveedor</dt>
+                                <dd class="col-sm-8">@Model.ProveedorNombre</dd>
 
-                                @if (!string.IsNullOrEmpty(Model.NombreFantasia))
+                                <dt class="col-sm-4">Fecha Emisión</dt>
+                                <dd class="col-sm-8"><time datetime="@Model.FechaEmision.ToString("yyyy-MM-dd")">@Model.FechaEmision.ToString("dd/MM/yyyy")</time></dd>
+
+                                @if (Model.FechaEntregaEstimada.HasValue)
                                 {
-                                    <dt class="col-sm-4">Nombre Fantasía</dt>
-                                    <dd class="col-sm-8">@Model.NombreFantasia</dd>
-                                }
-
-                                <dt class="col-sm-4">Email</dt>
-                                <dd class="col-sm-8">@Model.Email</dd>
-
-                                <dt class="col-sm-4">Teléfono</dt>
-                                <dd class="col-sm-8">@Model.Telefono</dd>
-
-                                @if (!string.IsNullOrEmpty(Model.Direccion))
-                                {
-                                    <dt class="col-sm-4">Dirección</dt>
-                                    <dd class="col-sm-8">@Model.Direccion</dd>
+                                    <dt class="col-sm-4">Entrega Estimada</dt>
+                                    <dd class="col-sm-8"><time datetime="@Model.FechaEntregaEstimada.Value.ToString("yyyy-MM-dd")">@Model.FechaEntregaEstimada.Value.ToString("dd/MM/yyyy")</time></dd>
                                 }
 
                                 <dt class="col-sm-4">Estado</dt>
                                 <dd class="col-sm-8">
-                                    @if (Model.Activo)
-                                    {
-                                        <span class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-check-circle"></i> Activo</span>
+                                    @{
+                                        var badge = Model.Estado switch
+                                        {
+                                            EstadoOrdenCompra.Borrador => "bg-secondary",
+                                            EstadoOrdenCompra.Enviada => "bg-info text-dark",
+                                            EstadoOrdenCompra.Confirmada => "bg-primary",
+                                            EstadoOrdenCompra.EnTransito => "bg-warning text-dark",
+                                            EstadoOrdenCompra.Recibida => "bg-success",
+                                            EstadoOrdenCompra.Cancelada => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
                                     }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary fs-6 px-3 py-2"><i class="bi bi-x-circle"></i> Inactivo</span>
-                                    }
+                                    <span class="badge @badge fs-6 px-3 py-2">@Model.Estado</span>
                                 </dd>
 
-                                @if (Model.TotalOrdenesCompra > 0)
-                                {
-                                    <dt class="col-sm-4">Órdenes de Compra</dt>
-                                    <dd class="col-sm-8">
-                                        <span class="badge bg-info text-dark fs-6 px-3 py-2">@Model.TotalOrdenesCompra</span>
-                                    </dd>
-                                }
+                                <dt class="col-sm-4">Total</dt>
+                                <dd class="col-sm-8 fw-bold">$@Model.Total.ToString("N2")</dd>
 
-                                @if (Model.ChequesVigentes > 0)
-                                {
-                                    <dt class="col-sm-4">Cheques Vigentes</dt>
-                                    <dd class="col-sm-8">
-                                        <span class="badge bg-warning text-dark fs-6 px-3 py-2">@Model.ChequesVigentes</span>
-                                    </dd>
-                                }
-
-                                @if (Model.TotalDeuda > 0)
-                                {
-                                    <dt class="col-sm-4">Deuda Pendiente</dt>
-                                    <dd class="col-sm-8">
-                                        <span class="text-danger fw-bold">$@Model.TotalDeuda.ToString("N2")</span>
-                                    </dd>
-                                }
+                                <dt class="col-sm-4">Items</dt>
+                                <dd class="col-sm-8"><span class="badge bg-info text-dark fs-6 px-3 py-2">@Model.Detalles.Count</span></dd>
                             </dl>
                         </div>
                     </div>
 
                     <form asp-action="Delete" method="post" class="mt-4">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="Id" />
                         <div class="d-flex justify-content-end gap-2">
-                            <a asp-action="Index" class="btn btn-outline-light btn-lg px-4">
-                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-light btn-lg px-4">
+                                <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-danger btn-lg px-4">
-                                <i class="bi bi-trash me-2"></i>Eliminar Proveedor
+                                <i class="bi bi-trash me-2" aria-hidden="true"></i>Eliminar Orden
                             </button>
                         </div>
                     </form>
@@ -112,5 +92,3 @@
         </div>
     </div>
 </section>
-
-

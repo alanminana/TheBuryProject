@@ -22,11 +22,11 @@
         <div class="col-md-8 offset-md-2">
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0"><i class="bi bi-trash me-2"></i>Confirmar Eliminación</h4>
+                    <h4 class="mb-0"><i class="bi bi-trash me-2" aria-hidden="true"></i>Confirmar Eliminación</h4>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
                         <strong>¿Está seguro que desea eliminar este rol?</strong>
                     </div>
 
@@ -51,8 +51,8 @@
 
                     @if (Model.CantidadUsuarios > 0)
                     {
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
                             <strong>Advertencia:</strong> Este rol tiene usuarios asignados. Al eliminarlo, estos usuarios perderán los permisos asociados.
                         </div>
                     }
@@ -62,10 +62,10 @@
                         <input type="hidden" name="returnUrl" value="@returnUrl" />
                         <div class="d-flex justify-content-between mt-4">
                             <a href="@backUrl" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-danger" data-confirm="¿Eliminar el rol '@Model.Nombre'? Esta acción no se puede deshacer.">
-                                <i class="bi bi-trash me-1"></i>Eliminar Rol
+                                <i class="bi bi-trash me-1" aria-hidden="true"></i>Eliminar Rol
                             </button>
                         </div>
                     </form>

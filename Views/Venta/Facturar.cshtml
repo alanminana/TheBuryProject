@@ -8,9 +8,9 @@
     <div class="col-lg-8 mx-auto">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0"><i class="bi bi-receipt text-success me-2"></i> Facturar Venta</h2>
+            <h2 class="mb-0"><i class="bi bi-receipt text-success me-2" aria-hidden="true"></i> Facturar Venta</h2>
             <a asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
             </a>
         </div>
 
@@ -19,7 +19,7 @@
         {
             <div class="card mb-4 shadow-sm">
                 <div class="card-header bg-surface-soft border-bottom border-dark-subtle d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-cart-check me-2 text-info"></i> Información de la Venta</h5>
+                    <h5 class="mb-0"><i class="bi bi-cart-check me-2 text-info" aria-hidden="true"></i> Información de la Venta</h5>
                 </div>
                 <div class="card-body">
                     <div class="row g-4">
@@ -32,21 +32,21 @@
                                 <dd class="col-sm-8">@venta.ClienteNombre</dd>
 
                                 <dt class="col-sm-4 fw-semibold text-muted">Fecha:</dt>
-                                <dd class="col-sm-8">@venta.FechaVenta.ToString("dd/MM/yyyy")</dd>
+                                <dd class="col-sm-8"><time datetime="@venta.FechaVenta.ToString("yyyy-MM-dd")">@venta.FechaVenta.ToString("dd/MM/yyyy")</time></dd>
                             </dl>
                         </div>
                         <div class="col-md-6">
                             <table class="table table-sm mb-0">
                                 <tr>
-                                    <th class="text-muted">Subtotal</th>
+                                    <th scope="row" class="text-muted">Subtotal</th>
                                     <td class="text-end">@venta.Subtotal.ToString("C")</td>
                                 </tr>
                                 <tr>
-                                    <th class="text-muted">IVA</th>
+                                    <th scope="row" class="text-muted">IVA</th>
                                     <td class="text-end">@venta.IVA.ToString("C")</td>
                                 </tr>
                                 <tr class="table-dark">
-                                    <th>Total</th>
+                                    <th scope="row">Total</th>
                                     <th class="text-end text-success">@venta.Total.ToString("C")</th>
                                 </tr>
                             </table>
@@ -64,11 +64,14 @@
             <input type="hidden" asp-for="IVA" />
             <input type="hidden" asp-for="Total" />
 
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" aria-label="Errores de validación"></div>
+            }
 
             <div class="card mb-4 shadow-sm">
                 <div class="card-header bg-surface-soft border-bottom border-dark-subtle">
-                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2 text-success"></i> Datos de la Factura</h5>
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2 text-success" aria-hidden="true"></i> Datos de la Factura</h5>
                 </div>
 
                 <div class="card-body">
@@ -76,7 +79,7 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Número de Factura</label>
                             <div class="form-control bg-light text-muted">
-                                <i class="bi bi-magic me-1"></i> Se generará automáticamente al confirmar
+                                <i class="bi bi-magic me-1" aria-hidden="true"></i> Se generará automáticamente al confirmar
                             </div>
                         </div>
 
@@ -116,10 +119,10 @@
             <!-- Botones -->
             <div class="d-flex justify-content-end gap-2">
                 <a asp-action="Details" asp-route-id="@Model.VentaId" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-circle"></i> Cancelar
+                    <i class="bi bi-x-circle" aria-hidden="true"></i> Cancelar
                 </a>
                 <button type="submit" class="btn btn-success px-4">
-                    <i class="bi bi-receipt"></i> Generar Factura
+                    <i class="bi bi-receipt" aria-hidden="true"></i> Generar Factura
                 </button>
             </div>
         </form>

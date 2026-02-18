@@ -11,7 +11,7 @@
 
 @section PageActions {
     <a href="@backUrl" class="btn btn-outline-light">
-        <i class="bi bi-arrow-left"></i> Volver
+        <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
     </a>
 }
 
@@ -21,20 +21,20 @@
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-danger text-white border-0">
                     <h4 class="mb-0">
-                        <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
+                        <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>Confirmar Eliminación
                     </h4>
                 </div>
 
                 <div class="card-body">
                     <div class="alert alert-danger bg-opacity-25 border-danger text-light shadow-sm">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
                         <strong>¡Atención!</strong> El cliente será marcado como eliminado y dejará de estar disponible en los listados.
                     </div>
 
                     <div class="card bg-dark border-secondary shadow-sm">
                         <div class="card-header bg-secondary text-light">
                             <h5 class="mb-0">
-                                <i class="bi bi-person me-2"></i>Cliente a eliminar
+                                <i class="bi bi-person me-2" aria-hidden="true"></i>Cliente a eliminar
                             </h5>
                         </div>
                         <div class="card-body">
@@ -57,14 +57,17 @@
                     <form asp-action="Delete" method="post" class="mt-4">
                         @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="Id" />
-                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        @if (!string.IsNullOrWhiteSpace(returnUrl))
+                        {
+                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        }
                         <div class="d-flex justify-content-between">
                             <a href="@backUrl" class="btn btn-outline-light">
-                                <i class="bi bi-arrow-left me-2"></i>Cancelar
+                                <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-danger fw-semibold"
                                     data-confirm="¿Eliminar este cliente? Esta acción lo marcará como eliminado.">
-                                <i class="bi bi-trash me-2"></i>Eliminar Cliente
+                                <i class="bi bi-trash me-2" aria-hidden="true"></i>Eliminar Cliente
                             </button>
                         </div>
                     </form>

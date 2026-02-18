@@ -227,9 +227,21 @@ namespace TheBuryProject.Services
             if (cliente == null)
                 throw new InvalidOperationException("Cliente no encontrado.");
 
+            var puntajeAnterior = cliente.PuntajeRiesgo;
             cliente.PuntajeRiesgo = nuevoPuntaje;
             cliente.UpdatedBy = actualizadoPor;
             cliente.UpdatedAt = DateTime.UtcNow;
+
+            _context.ClientesPuntajeHistorial.Add(new ClientePuntajeHistorial
+            {
+                ClienteId = clienteId,
+                Puntaje = nuevoPuntaje,
+                NivelRiesgo = cliente.NivelRiesgo,
+                Fecha = DateTime.UtcNow,
+                Origen = "ActualizacionManual",
+                Observacion = $"Puntaje actualizado de {puntajeAnterior} a {nuevoPuntaje}",
+                RegistradoPor = actualizadoPor
+            });
 
             await _context.SaveChangesAsync();
         }

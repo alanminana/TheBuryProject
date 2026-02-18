@@ -9,13 +9,14 @@
     var returnUrl = $"{ViewContext.HttpContext.Request.Path}{ViewContext.HttpContext.Request.QueryString}";
 }
 
-<div class="container-fluid px-0">
+<section class="container-fluid px-0 py-3 text-light">
 
     <!-- Header de página -->
     <div class="d-flex align-items-start justify-content-between mb-4">
         <div>
             <div class="text-muted text-uppercase small mb-1">Alertas de stock</div>
             <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-bell" aria-hidden="true"></i>
                 <span>Gestión de alertas</span>
             </h1>
             <p class="text-muted small mb-0">
@@ -25,20 +26,20 @@
 
         <div class="d-flex flex-wrap gap-2">
             <a asp-action="Pendientes" class="btn btn-warning btn-sm">
-                <i class="bi bi-exclamation-triangle me-1"></i>Pendientes
+                <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Pendientes
             </a>
             <a asp-action="Criticos" class="btn btn-danger btn-sm">
-                <i class="bi bi-exclamation-octagon me-1"></i>Productos críticos
+                <i class="bi bi-exclamation-octagon me-1" aria-hidden="true"></i>Productos críticos
             </a>
             <a asp-action="Estadisticas" class="btn btn-info btn-sm">
-                <i class="bi bi-bar-chart me-1"></i>Estadísticas
+                <i class="bi bi-bar-chart me-1" aria-hidden="true"></i>Estadísticas
             </a>
             <form asp-action="GenerarAlertas" method="post" class="d-inline-block">
                 @Html.AntiForgeryToken()
                 <button type="submit"
                         class="btn btn-primary btn-sm"
                         data-confirm="¿Generar alertas de stock manualmente?">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Generar alertas
+                    <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Generar alertas
                 </button>
             </form>
         </div>
@@ -50,8 +51,9 @@
             <form asp-action="Index" method="get">
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <label class="form-label">Código producto</label>
-                        <input type="text"
+                        <label class="form-label" for="FiltroProductoCodigo">Código producto</label>
+                        <input id="FiltroProductoCodigo"
+                               type="text"
                                class="form-control"
                                name="ProductoCodigo"
                                value="@filtro?.ProductoCodigo"
@@ -59,8 +61,9 @@
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">Nombre producto</label>
-                        <input type="text"
+                        <label class="form-label" for="FiltroProductoNombre">Nombre producto</label>
+                        <input id="FiltroProductoNombre"
+                               type="text"
                                class="form-control"
                                name="ProductoNombre"
                                value="@filtro?.ProductoNombre"
@@ -68,8 +71,8 @@
                     </div>
 
                     <div class="col-md-2">
-                        <label class="form-label">Tipo</label>
-                        <select class="form-select" name="Tipo">
+                        <label class="form-label" for="FiltroTipo">Tipo</label>
+                        <select id="FiltroTipo" class="form-select" name="Tipo">
                             <option value="">Todos</option>
                             @if (tiposAlerta != null)
                             {
@@ -83,8 +86,8 @@
                     </div>
 
                     <div class="col-md-2">
-                        <label class="form-label">Prioridad</label>
-                        <select class="form-select" name="Prioridad">
+                        <label class="form-label" for="FiltroPrioridad">Prioridad</label>
+                        <select id="FiltroPrioridad" class="form-select" name="Prioridad">
                             <option value="">Todas</option>
                             @if (prioridades != null)
                             {
@@ -98,8 +101,8 @@
                     </div>
 
                     <div class="col-md-2">
-                        <label class="form-label">Estado</label>
-                        <select class="form-select" name="Estado">
+                        <label class="form-label" for="FiltroEstado">Estado</label>
+                        <select id="FiltroEstado" class="form-select" name="Estado">
                             <option value="">Todos</option>
                             @if (estados != null)
                             {
@@ -143,19 +146,19 @@
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">&nbsp;</label>
+                        <label class="form-label visually-hidden" for="btnBuscar">Buscar</label>
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-search me-1"></i>Buscar
+                            <button id="btnBuscar" type="submit" class="btn btn-primary">
+                                <i class="bi bi-search me-1" aria-hidden="true"></i>Buscar
                             </button>
                         </div>
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">&nbsp;</label>
+                        <label class="form-label visually-hidden" for="btnLimpiar">Limpiar</label>
                         <div class="d-grid">
-                            <a asp-action="Index" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-1"></i>Limpiar
+                            <a id="btnLimpiar" asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Limpiar
                             </a>
                         </div>
                     </div>
@@ -168,9 +171,9 @@
     @if (Model.TotalRecords == 0)
     {
         <div class="card card-animate border-0">
-            <div class="card-body text-center py-5">
+            <div class="card-body text-center py-5" role="status" aria-live="polite">
                 <div class="mb-3">
-                    <i class="bi bi-check-circle text-success" style="font-size: 2.8rem;"></i>
+                    <i class="bi bi-check-circle text-success fs-1" aria-hidden="true"></i>
                 </div>
                 <h2 class="h5 mb-2">No hay alertas de stock</h2>
                 <p class="text-muted mb-0">
@@ -194,16 +197,17 @@
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0 align-middle">
+                        <caption class="visually-hidden">Listado de alertas de stock</caption>
                         <thead class="table-dark">
                             <tr>
-                                <th>Producto</th>
-                                <th>Tipo</th>
-                                <th>Prioridad</th>
-                                <th>Stock</th>
-                                <th>Reposición</th>
-                                <th>Fecha</th>
-                                <th>Estado</th>
-                                <th class="text-end">Acciones</th>
+                                <th scope="col">Producto</th>
+                                <th scope="col">Tipo</th>
+                                <th scope="col">Prioridad</th>
+                                <th scope="col">Stock</th>
+                                <th scope="col">Reposición</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col" class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -230,7 +234,7 @@
 
                                     <td>
                                         <span class="badge @alerta.BadgeTipo">
-                                            <i class="@alerta.IconoTipo"></i> @alerta.TipoDescripcion
+                                            <i class="@alerta.IconoTipo" aria-hidden="true"></i> @alerta.TipoDescripcion
                                         </span>
                                     </td>
 
@@ -259,11 +263,16 @@
                                     </td>
 
                                     <td>
-                                        <small>@alerta.FechaAlerta.ToString("dd/MM/yyyy HH:mm")</small><br />
+                                        <small>
+                                            <time datetime="@alerta.FechaAlerta.ToString("yyyy-MM-ddTHH:mm:ss")">
+                                                @alerta.FechaAlerta.ToString("dd/MM/yyyy HH:mm")
+                                            </time>
+                                        </small>
+                                        <br />
                                         @if (alerta.EstaVencida)
                                         {
                                             <small class="text-danger">
-                                                <i class="bi bi-clock me-1"></i>Vencida (@alerta.DiasDesdeAlerta días)
+                                                <i class="bi bi-clock me-1" aria-hidden="true"></i>Vencida (@alerta.DiasDesdeAlerta días)
                                             </small>
                                         }
                                         else
@@ -281,13 +290,15 @@
                                     </td>
 
                                     <td class="text-end">
-                                        <div class="btn-group btn-group-sm" role="group">
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de la alerta">
                                             <a asp-controller="Producto"
                                                asp-action="Details"
                                                asp-route-id="@alerta.ProductoId"
                                                class="btn btn-outline-info"
-                                               title="Ver producto">
-                                                <i class="bi bi-eye"></i>
+                                               title="Ver producto"
+                                               aria-label="Ver producto">
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Ver producto</span>
                                             </a>
 
                                             @if (alerta.Estado == TheBuryProject.Models.Enums.EstadoAlerta.Pendiente)
@@ -303,8 +314,10 @@
                                                             class="btn btn-outline-success"
                                                             data-prompt="@($"Resolver alerta de \"{alerta.ProductoNombre}\".\\n\\nObservaciones (opcional):")"
                                                             data-prompt-name="observaciones"
-                                                            title="Resolver">
-                                                        <i class="bi bi-check-circle"></i>
+                                                            title="Resolver"
+                                                            aria-label="Resolver alerta">
+                                                        <i class="bi bi-check-circle" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Resolver alerta</span>
                                                     </button>
                                                 </form>
 
@@ -320,8 +333,10 @@
                                                             data-confirm="@($"¿Ignorar alerta de \"{alerta.ProductoNombre}\"?")"
                                                             data-prompt="Motivo (opcional):"
                                                             data-prompt-name="observaciones"
-                                                            title="Ignorar">
-                                                        <i class="bi bi-x-circle"></i>
+                                                            title="Ignorar"
+                                                            aria-label="Ignorar alerta">
+                                                        <i class="bi bi-x-circle" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Ignorar alerta</span>
                                                     </button>
                                                 </form>
                                             }
@@ -337,7 +352,7 @@
             @if (Model.TotalPages > 1)
             {
                 <div class="card-footer">
-                    <nav>
+                    <nav aria-label="Paginación de alertas">
                         <ul class="pagination pagination-sm mb-0 justify-content-center">
                             <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
                                 <a class="page-link"
@@ -349,7 +364,9 @@
                                    asp-route-Estado="@(filtro?.Estado != null ? (int)filtro.Estado : (int?)null)"
                                    asp-route-SoloUrgentes="@(filtro?.SoloUrgentes == true ? "true" : (string?)null)"
                                    asp-route-SoloVencidas="@(filtro?.SoloVencidas == true ? "true" : (string?)null)"
-                                   asp-route-PageNumber="@(Model.PageNumber - 1)">
+                                   asp-route-PageNumber="@(Model.PageNumber - 1)"
+                                   aria-disabled="@(Model.HasPreviousPage ? "false" : "true")"
+                                   tabindex="@(Model.HasPreviousPage ? "0" : "-1")">
                                     Anterior
                                 </a>
                             </li>
@@ -366,7 +383,8 @@
                                        asp-route-Estado="@(filtro?.Estado != null ? (int)filtro.Estado : (int?)null)"
                                        asp-route-SoloUrgentes="@(filtro?.SoloUrgentes == true ? "true" : (string?)null)"
                                        asp-route-SoloVencidas="@(filtro?.SoloVencidas == true ? "true" : (string?)null)"
-                                       asp-route-PageNumber="@i">
+                                       asp-route-PageNumber="@i"
+                                       aria-current="@(i == Model.PageNumber ? "page" : (string?)null)">
                                         @i
                                     </a>
                                 </li>
@@ -382,7 +400,9 @@
                                    asp-route-Estado="@(filtro?.Estado != null ? (int)filtro.Estado : (int?)null)"
                                    asp-route-SoloUrgentes="@(filtro?.SoloUrgentes == true ? "true" : (string?)null)"
                                    asp-route-SoloVencidas="@(filtro?.SoloVencidas == true ? "true" : (string?)null)"
-                                   asp-route-PageNumber="@(Model.PageNumber + 1)">
+                                   asp-route-PageNumber="@(Model.PageNumber + 1)"
+                                   aria-disabled="@(Model.HasNextPage ? "false" : "true")"
+                                   tabindex="@(Model.HasNextPage ? "0" : "-1")">
                                     Siguiente
                                 </a>
                             </li>
@@ -392,4 +412,13 @@
             }
         </div>
     }
-</div>
+</section>
+
+@*
+MEJORAS (solo HTML/markup):
+- Labels asociados con for/id en inputs/selects (mejor accesibilidad).
+- Tabla: caption + th scope="col" + <time datetime="...">.
+- Botones solo-ícono con aria-label.
+- Paginación con aria-current, aria-disabled y tabindex en disabled.
+- Clase visually-hidden usada para etiquetas no visibles (Bootstrap). 
+*@

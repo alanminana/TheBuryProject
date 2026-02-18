@@ -5,15 +5,15 @@
     <table class="table table-hover">
         <thead class="table-light">
             <tr>
-                <th>Número</th>
-                <th>Fecha</th>
-                <th>Cliente</th>
-                <th>Venta</th>
-                <th>Motivo</th>
-                <th>Total</th>
-                <th>Estado</th>
-                <th>Nota Crédito</th>
-                <th>Acciones</th>
+                <th scope="col">Número</th>
+                <th scope="col">Fecha</th>
+                <th scope="col">Cliente</th>
+                <th scope="col">Venta</th>
+                <th scope="col">Motivo</th>
+                <th scope="col">Total</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Nota Crédito</th>
+                <th scope="col">Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -64,7 +64,7 @@
                         @if (devolucion.NotaCreditoGenerada)
                         {
                             <span class="badge bg-success">
-                                <i class="bi bi-check-circle"></i> Generada
+                                <i class="bi bi-check-circle" aria-hidden="true"></i> Generada
                             </span>
                         }
                         else
@@ -77,7 +77,8 @@
                            class="btn btn-sm btn-outline-info"
                            data-bs-toggle="tooltip"
                            title="Ver detalles">
-                            <i class="bi bi-eye"></i>
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                            <span class="visually-hidden">Ver detalles</span>
                         </a>
 
                         @if (devolucion.Estado == TheBuryProject.Models.Entities.EstadoDevolucion.Pendiente && (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Gerente)))
@@ -90,7 +91,8 @@
                                         data-bs-toggle="tooltip"
                                         title="Aprobar devolución"
                                         data-confirm="¿Aprobar esta devolución?">
-                                    <i class="bi bi-check-circle"></i>
+                                    <i class="bi bi-check-circle" aria-hidden="true"></i>
+                                    <span class="visually-hidden">Aprobar devolución</span>
                                 </button>
                             </form>
                         }
@@ -105,7 +107,8 @@
                                         data-bs-toggle="tooltip"
                                         title="Completar devolución"
                                         data-confirm="¿Completar esta devolución y procesar stock?">
-                                    <i class="bi bi-check2-all"></i>
+                                    <i class="bi bi-check2-all" aria-hidden="true"></i>
+                                    <span class="visually-hidden">Completar devolución</span>
                                 </button>
                             </form>
                         }

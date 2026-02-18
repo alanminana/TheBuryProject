@@ -7,13 +7,14 @@
     var listReturnUrl = Context.Request.Path + cleanedQuery;
 }
 
-<div class="container-fluid px-0">
+<section class="container-fluid px-0 py-3 text-light">
 
-    <!-- Header de página -->
-    <div class="d-flex align-items-start justify-content-between mb-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-4">
         <div>
             <div class="text-muted text-uppercase small mb-1">Autorizaciones</div>
             <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-clipboard-check" aria-hidden="true"></i>
                 <span>Solicitudes de autorización</span>
             </h1>
             <p class="text-muted small mb-0">
@@ -23,37 +24,37 @@
 
         <div class="d-flex flex-wrap gap-2">
             <a asp-action="CrearSolicitud" asp-route-returnUrl="@listReturnUrl" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-circle me-1"></i>Nueva solicitud
+                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Nueva solicitud
             </a>
             <a asp-action="Index" asp-route-returnUrl="@listReturnUrl" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-gear me-1"></i>Configurar umbrales
+                <i class="bi bi-gear me-1" aria-hidden="true"></i>Configurar umbrales
             </a>
         </div>
     </div>
 
-    <!-- Alertas de feedback -->
+    <!-- Feedback -->
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show mb-3">
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
             @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
             @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
-    <!-- Resumen de estadísticas -->
+    <!-- Stats -->
     <div class="row g-3 mb-4">
         <div class="col-12 col-md-4">
             <div class="card card-animate border-warning">
                 <div class="card-body text-center py-3">
-                    <h3 class="text-warning mb-1">@Model.TotalPendientes</h3>
+                    <h2 class="h3 text-warning mb-1">@Model.TotalPendientes</h2>
                     <p class="text-muted mb-0 small">Pendientes</p>
                 </div>
             </div>
@@ -61,7 +62,7 @@
         <div class="col-12 col-md-4">
             <div class="card card-animate border-success">
                 <div class="card-body text-center py-3">
-                    <h3 class="text-success mb-1">@Model.TotalAprobadas</h3>
+                    <h2 class="h3 text-success mb-1">@Model.TotalAprobadas</h2>
                     <p class="text-muted mb-0 small">Aprobadas</p>
                 </div>
             </div>
@@ -69,23 +70,26 @@
         <div class="col-12 col-md-4">
             <div class="card card-animate border-danger">
                 <div class="card-body text-center py-3">
-                    <h3 class="text-danger mb-1">@Model.TotalRechazadas</h3>
+                    <h2 class="h3 text-danger mb-1">@Model.TotalRechazadas</h2>
                     <p class="text-muted mb-0 small">Rechazadas</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Card con tabs -->
+    <!-- Tabs -->
     <div class="card card-animate">
         <div class="card-header border-bottom-0 pb-0">
-            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist" aria-label="Solicitudes">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active d-flex align-items-center gap-1"
+                            id="tab-pendientes-tab"
                             data-bs-toggle="tab"
                             data-bs-target="#tab-pendientes"
                             type="button"
-                            role="tab">
+                            role="tab"
+                            aria-controls="tab-pendientes"
+                            aria-selected="true">
                         <span>Pendientes</span>
                         @if (Model.Pendientes.Any())
                         {
@@ -93,12 +97,16 @@
                         }
                     </button>
                 </li>
+
                 <li class="nav-item" role="presentation">
                     <button class="nav-link d-flex align-items-center gap-1"
+                            id="tab-resueltas-tab"
                             data-bs-toggle="tab"
                             data-bs-target="#tab-resueltas"
                             type="button"
-                            role="tab">
+                            role="tab"
+                            aria-controls="tab-resueltas"
+                            aria-selected="false">
                         <span>Resueltas</span>
                         @if (Model.Resueltas.Any())
                         {
@@ -106,12 +114,16 @@
                         }
                     </button>
                 </li>
+
                 <li class="nav-item" role="presentation">
                     <button class="nav-link d-flex align-items-center gap-1"
+                            id="tab-mis-tab"
                             data-bs-toggle="tab"
-                            data-bs-target="#tab-mis-solicitudes"
+                            data-bs-target="#tab-mis"
                             type="button"
-                            role="tab">
+                            role="tab"
+                            aria-controls="tab-mis"
+                            aria-selected="false">
                         <span>Mis solicitudes</span>
                         @if (Model.MisSolicitudes.Any())
                         {
@@ -125,11 +137,11 @@
         <div class="card-body">
             <div class="tab-content">
 
-                <!-- Tab Pendientes -->
-                <div class="tab-pane fade show active" id="tab-pendientes" role="tabpanel">
+                <!-- Pendientes -->
+                <div class="tab-pane fade show active" id="tab-pendientes" role="tabpanel" aria-labelledby="tab-pendientes-tab" tabindex="0">
                     @if (!Model.Pendientes.Any())
                     {
-                        <div class="alert alert-info mb-0">
+                        <div class="alert alert-info mb-0" role="alert">
                             <i class="bi bi-info-circle me-1"></i>
                             No hay solicitudes pendientes.
                         </div>
@@ -138,74 +150,76 @@
                     {
                         <div class="table-responsive">
                             <table class="table table-hover table-sm align-middle mb-0">
+                                <caption class="visually-hidden">Solicitudes pendientes</caption>
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>Fecha</th>
-                                        <th>Solicitante</th>
-                                        <th>Rol</th>
-                                        <th>Tipo</th>
-                                        <th>Operación</th>
-                                        <th>Valor solicitado</th>
-                                        <th>Valor permitido</th>
-                                        <th>Justificación</th>
+                                        <th scope="col">Fecha</th>
+                                        <th scope="col">Solicitante</th>
+                                        <th scope="col">Rol</th>
+                                        <th scope="col">Tipo</th>
+                                        <th scope="col">Operación</th>
+                                        <th scope="col">Valor solicitado</th>
+                                        <th scope="col">Valor permitido</th>
+                                        <th scope="col">Justificación</th>
                                         @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Gerente))
                                         {
-                                            <th class="text-end">Acciones</th>
+                                            <th scope="col" class="text-end">Acciones</th>
                                         }
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var solicitud in Model.Pendientes)
                                     {
+                                        var tipoTexto = solicitud.TipoUmbral.ToString()
+                                            .Replace("DescuentoVenta", "Descuento en Venta")
+                                            .Replace("MontoTotalVenta", "Monto Total de Venta")
+                                            .Replace("MontoCredito", "Monto de Crédito")
+                                            .Replace("DescuentoCompra", "Descuento en Compra");
+
                                         <tr>
                                             <td>
-                                                <small>@solicitud.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                                <small>
+                                                    <time datetime="@solicitud.CreatedAt.ToString("O")">@solicitud.CreatedAt.ToString("dd/MM/yyyy HH:mm")</time>
+                                                </small>
                                             </td>
                                             <td>@solicitud.UsuarioSolicitante</td>
-                                            <td>
-                                                <span class="badge bg-secondary">@solicitud.RolSolicitante</span>
-                                            </td>
-                                            <td>
-                                                @solicitud.TipoUmbral.ToString().Replace("DescuentoVenta", "Descuento Venta")
-                                            </td>
+                                            <td><span class="badge bg-secondary">@solicitud.RolSolicitante</span></td>
+                                            <td>@tipoTexto</td>
                                             <td>@solicitud.TipoOperacion</td>
+                                            <td><span class="text-danger fw-semibold">$@solicitud.ValorSolicitado.ToString("N2")</span></td>
+                                            <td><span class="text-success">$@solicitud.ValorPermitido.ToString("N2")</span></td>
                                             <td>
-                                                <span class="text-danger fw-semibold">
-                                                    $@solicitud.ValorSolicitado.ToString("N2")
+                                                <span class="d-inline-block text-truncate" style="max-width: 320px;" title="@solicitud.Justificacion">
+                                                    @solicitud.Justificacion
                                                 </span>
                                             </td>
-                                            <td>
-                                                <span class="text-success">
-                                                    $@solicitud.ValorPermitido.ToString("N2")
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <small class="text-muted">
-                                                    @(solicitud.Justificacion.Length > 50
-                                                                                                ? solicitud.Justificacion.Substring(0, 50) + "..."
-                                                                                                : solicitud.Justificacion)
-                                        </small>
-                                    </td>
-                                    @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Gerente))
+
+                                            @if (User.IsInRole(Roles.Administrador) || User.IsInRole(Roles.Gerente))
                                             {
                                                 <td class="text-end">
-                                                    <div class="btn-group btn-group-sm" role="group">
+                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de solicitud pendiente">
                                                         <a asp-action="DetallesSolicitud"
                                                            asp-route-id="@solicitud.Id"
-                                                                                                                     asp-route-returnUrl="@listReturnUrl"
-                                                           class="btn btn-outline-info">
-                                                            <i class="bi bi-eye"></i>
+                                                           asp-route-returnUrl="@listReturnUrl"
+                                                           class="btn btn-outline-info"
+                                                           aria-label="Ver detalle de solicitud"
+                                                           title="Ver detalle">
+                                                            <i class="bi bi-eye" aria-hidden="true"></i>
+                                                            <span class="visually-hidden">Ver detalle</span>
                                                         </a>
+
                                                         <form asp-action="AprobarSolicitud"
                                                               asp-route-id="@solicitud.Id"
                                                               method="post"
                                                               class="d-inline">
                                                             @Html.AntiForgeryToken()
-                                                                                                                        <input type="hidden" name="returnUrl" value="@listReturnUrl" />
+                                                            <input type="hidden" name="returnUrl" value="@listReturnUrl" />
                                                             <button type="submit"
                                                                     class="btn btn-success"
-                                                                    data-confirm="¿Aprobar esta solicitud?">
-                                                                <i class="bi bi-check-circle"></i>
+                                                                    data-confirm="¿Aprobar esta solicitud?"
+                                                                    title="Aprobar">
+                                                                <i class="bi bi-check-circle" aria-hidden="true"></i>
+                                                                <span class="visually-hidden">Aprobar solicitud</span>
                                                             </button>
                                                         </form>
                                                     </div>
@@ -219,11 +233,11 @@
                     }
                 </div>
 
-                <!-- Tab Resueltas -->
-                <div class="tab-pane fade" id="tab-resueltas" role="tabpanel">
+                <!-- Resueltas -->
+                <div class="tab-pane fade" id="tab-resueltas" role="tabpanel" aria-labelledby="tab-resueltas-tab" tabindex="0">
                     @if (!Model.Resueltas.Any())
                     {
-                        <div class="alert alert-info mb-0">
+                        <div class="alert alert-info mb-0" role="alert">
                             <i class="bi bi-info-circle me-1"></i>
                             No hay solicitudes resueltas.
                         </div>
@@ -232,34 +246,29 @@
                     {
                         <div class="table-responsive">
                             <table class="table table-hover table-sm align-middle mb-0">
+                                <caption class="visually-hidden">Solicitudes resueltas</caption>
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Fecha solicitud</th>
-                                        <th>Solicitante</th>
-                                        <th>Tipo</th>
-                                        <th>Operación</th>
-                                        <th>Valor</th>
-                                        <th>Estado</th>
-                                        <th>Fecha resolución</th>
-                                        <th>Resuelto por</th>
-                                        <th class="text-end">Acciones</th>
+                                        <th scope="col">Fecha solicitud</th>
+                                        <th scope="col">Solicitante</th>
+                                        <th scope="col">Tipo</th>
+                                        <th scope="col">Operación</th>
+                                        <th scope="col">Valor</th>
+                                        <th scope="col">Estado</th>
+                                        <th scope="col">Fecha resolución</th>
+                                        <th scope="col">Resuelto por</th>
+                                        <th scope="col" class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var solicitud in Model.Resueltas)
                                     {
                                         <tr>
-                                            <td>
-                                                <small>@solicitud.CreatedAt.ToString("dd/MM/yyyy")</small>
-                                            </td>
+                                            <td><small><time datetime="@solicitud.CreatedAt.ToString("O")">@solicitud.CreatedAt.ToString("dd/MM/yyyy")</time></small></td>
                                             <td>@solicitud.UsuarioSolicitante</td>
-                                            <td>
-                                                @solicitud.TipoUmbral.ToString().Replace("DescuentoVenta", "Descuento")
-                                            </td>
+                                            <td>@solicitud.TipoUmbral.ToString()</td>
                                             <td>@solicitud.TipoOperacion</td>
-                                            <td>
-                                                $@solicitud.ValorSolicitado.ToString("N2")
-                                            </td>
+                                            <td>$@solicitud.ValorSolicitado.ToString("N2")</td>
                                             <td>
                                                 @if (solicitud.Estado == TheBuryProject.Models.Entities.EstadoSolicitud.Aprobada)
                                                 {
@@ -275,15 +284,21 @@
                                                 }
                                             </td>
                                             <td>
-                                                <small>@solicitud.FechaResolucion?.ToString("dd/MM/yyyy")</small>
+                                                @if (solicitud.FechaResolucion.HasValue)
+                                                {
+                                                    <small><time datetime="@solicitud.FechaResolucion.Value.ToString("O")">@solicitud.FechaResolucion.Value.ToString("dd/MM/yyyy")</time></small>
+                                                }
                                             </td>
                                             <td>@solicitud.UsuarioAutorizador</td>
                                             <td class="text-end">
                                                 <a asp-action="DetallesSolicitud"
                                                    asp-route-id="@solicitud.Id"
-                                                                    asp-route-returnUrl="@listReturnUrl"
-                                                   class="btn btn-sm btn-outline-info">
-                                                    <i class="bi bi-eye"></i>
+                                                   asp-route-returnUrl="@listReturnUrl"
+                                                   class="btn btn-sm btn-outline-info"
+                                                   aria-label="Ver detalle de solicitud"
+                                                   title="Ver detalle">
+                                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Ver detalle</span>
                                                 </a>
                                             </td>
                                         </tr>
@@ -294,11 +309,11 @@
                     }
                 </div>
 
-                <!-- Tab Mis Solicitudes -->
-                <div class="tab-pane fade" id="tab-mis-solicitudes" role="tabpanel">
+                <!-- Mis solicitudes -->
+                <div class="tab-pane fade" id="tab-mis" role="tabpanel" aria-labelledby="tab-mis-tab" tabindex="0">
                     @if (!Model.MisSolicitudes.Any())
                     {
-                        <div class="alert alert-info mb-0">
+                        <div class="alert alert-info mb-0" role="alert">
                             <i class="bi bi-info-circle me-1"></i>
                             No has creado solicitudes aún.
                             <a asp-action="CrearSolicitud" asp-route-returnUrl="@listReturnUrl" class="alert-link ms-1">Crear una ahora</a>
@@ -308,29 +323,26 @@
                     {
                         <div class="table-responsive">
                             <table class="table table-hover table-sm align-middle mb-0">
+                                <caption class="visually-hidden">Mis solicitudes</caption>
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Fecha</th>
-                                        <th>Tipo</th>
-                                        <th>Operación</th>
-                                        <th>Valor solicitado</th>
-                                        <th>Estado</th>
-                                        <th>Autorizador</th>
-                                        <th class="text-end">Acciones</th>
+                                        <th scope="col">Fecha</th>
+                                        <th scope="col">Tipo</th>
+                                        <th scope="col">Operación</th>
+                                        <th scope="col">Valor solicitado</th>
+                                        <th scope="col">Estado</th>
+                                        <th scope="col">Autorizador</th>
+                                        <th scope="col" class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var solicitud in Model.MisSolicitudes)
                                     {
                                         <tr>
-                                            <td>
-                                                @solicitud.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-                                            </td>
+                                            <td><time datetime="@solicitud.CreatedAt.ToString("O")">@solicitud.CreatedAt.ToString("dd/MM/yyyy HH:mm")</time></td>
                                             <td>@solicitud.TipoUmbral.ToString()</td>
                                             <td>@solicitud.TipoOperacion</td>
-                                            <td>
-                                                $@solicitud.ValorSolicitado.ToString("N2")
-                                            </td>
+                                            <td>$@solicitud.ValorSolicitado.ToString("N2")</td>
                                             <td>
                                                 @if (solicitud.Estado == TheBuryProject.Models.Entities.EstadoSolicitud.Pendiente)
                                                 {
@@ -351,13 +363,17 @@
                                             </td>
                                             <td>@(solicitud.UsuarioAutorizador ?? "-")</td>
                                             <td class="text-end">
-                                                <div class="btn-group btn-group-sm" role="group">
+                                                <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de mi solicitud">
                                                     <a asp-action="DetallesSolicitud"
                                                        asp-route-id="@solicitud.Id"
                                                        asp-route-returnUrl="@listReturnUrl"
-                                                       class="btn btn-outline-info">
-                                                        <i class="bi bi-eye"></i>
+                                                       class="btn btn-outline-info"
+                                                       aria-label="Ver detalle de solicitud"
+                                                       title="Ver detalle">
+                                                        <i class="bi bi-eye" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Ver detalle</span>
                                                     </a>
+
                                                     @if (solicitud.Estado == TheBuryProject.Models.Entities.EstadoSolicitud.Pendiente)
                                                     {
                                                         <form asp-action="CancelarSolicitud"
@@ -368,8 +384,10 @@
                                                             <input type="hidden" name="returnUrl" value="@listReturnUrl" />
                                                             <button type="submit"
                                                                     class="btn btn-outline-danger"
-                                                                    data-confirm="¿Cancelar esta solicitud?">
-                                                                <i class="bi bi-x-circle"></i>
+                                                                    data-confirm="¿Cancelar esta solicitud?"
+                                                                    title="Cancelar">
+                                                                <i class="bi bi-x-circle" aria-hidden="true"></i>
+                                                                <span class="visually-hidden">Cancelar solicitud</span>
                                                             </button>
                                                         </form>
                                                     }
@@ -386,4 +404,14 @@
             </div>
         </div>
     </div>
-</div>
+</section>
+
+@* 
+MEJORAS (solo HTML):
+- Tabs con atributos ARIA completos (Bootstrap-friendly).
+- Alertas dismissible con btn-close + aria-label.
+- Tablas con <caption> (visually-hidden) y <th scope="col">.
+- Justificación en pendientes: truncado visual con title para ver completo sin JS extra.
+- Se encapsularon fechas en <time datetime="...">.
+- Líneas: aumentan por ARIA/caption/time; no puedo confirmar el número exacto sin comparar contra tu archivo en el repo.
+*@

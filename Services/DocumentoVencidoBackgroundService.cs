@@ -27,7 +27,15 @@ namespace TheBuryProject.Services
                 _horaEjecucion.ToString(@"hh\:mm"));
 
             // Esperar hasta la pr�xima ejecuci�n programada (m�ximo 30 segundos en desarrollo)
-            await EsperarHastaProximaEjecucionAsync(stoppingToken);
+            try
+            {
+                await EsperarHastaProximaEjecucionAsync(stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                _logger.LogInformation("DocumentoVencidoBackgroundService cancelado durante la espera inicial");
+                return;
+            }
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -48,11 +56,24 @@ namespace TheBuryProject.Services
                     // Esperar hasta la pr�xima ejecuci�n (ma�ana a las 2 AM)
                     await EsperarUnDiaAsync(stoppingToken);
                 }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    _logger.LogInformation("DocumentoVencidoBackgroundService cancelado durante la espera programada");
+                    break;
+                }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error en DocumentoVencidoBackgroundService");
                     // Continuar esperando en caso de error
-                    await EsperarUnDiaAsync(stoppingToken);
+                    try
+                    {
+                        await EsperarUnDiaAsync(stoppingToken);
+                    }
+                    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                    {
+                        _logger.LogInformation("DocumentoVencidoBackgroundService cancelado despu�s de un error");
+                        break;
+                    }
                 }
             }
 

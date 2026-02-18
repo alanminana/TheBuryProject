@@ -4,22 +4,23 @@
     ViewData["Title"] = "Nueva Caja";
 }
 
-<div class="container-fluid px-0">
+<section class="container-fluid px-0 py-3 text-light">
 
     <!-- Header de página -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <div class="text-muted text-uppercase small mb-1">Cajas</div>
+            <div class="text-body-secondary text-uppercase small mb-1">Cajas</div>
             <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-plus-circle" aria-hidden="true"></i>
                 <span>Nueva caja</span>
             </h1>
-            <p class="text-muted small mb-0">
+            <p class="text-body-secondary small mb-0">
                 Crea una nueva caja indicando su código, ubicación y estado inicial.
             </p>
         </div>
 
         <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i>Volver al listado
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver al listado
         </a>
     </div>
 
@@ -32,13 +33,17 @@
                     <form asp-action="Create" method="post" novalidate>
                         @Html.AntiForgeryToken()
 
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+                        }
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label asp-for="Codigo" class="form-label"></label>
                                 <input asp-for="Codigo"
                                        class="form-control"
+                                       autocomplete="off"
                                        placeholder="Ej: CAJA01" />
                                 <span asp-validation-for="Codigo" class="text-danger small"></span>
                             </div>
@@ -79,8 +84,8 @@
                             <span asp-validation-for="Descripcion" class="text-danger small"></span>
                         </div>
 
-                        <div class="form-check mb-3">
-                            <input asp-for="Activa" class="form-check-input" />
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="Activa" class="form-check-input" type="checkbox" />
                             <label asp-for="Activa" class="form-check-label">
                                 Caja activa
                             </label>
@@ -88,10 +93,10 @@
 
                         <div class="d-flex justify-content-end gap-2 mt-2">
                             <a asp-action="Index" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i>Crear caja
+                                <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Crear caja
                             </button>
                         </div>
                     </form>
@@ -101,7 +106,7 @@
 
         </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
     @{

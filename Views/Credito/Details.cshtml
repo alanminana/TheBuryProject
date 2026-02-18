@@ -12,7 +12,7 @@
 <section class="container-fluid py-4 text-light">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold mb-0">
-            <i class="bi bi-credit-card text-success me-2"></i>Línea de Crédito
+            <i class="bi bi-credit-card text-success me-2" aria-hidden="true"></i>Línea de Crédito
         </h2>
         <div class="d-flex flex-wrap gap-2">
             @if (Model.Credito.Estado == TheBuryProject.Models.Enums.EstadoCredito.Solicitado)
@@ -21,43 +21,43 @@
                     <input type="hidden" name="id" value="@Model.Credito.Id" />
                     <input type="hidden" name="returnUrl" value="@returnUrl" />
                     <button type="submit" class="btn btn-success" data-confirm="¿Aprobar esta línea de crédito?">
-                        <i class="bi bi-check-circle me-1"></i>Aprobar
+                        <i class="bi bi-check-circle me-1" aria-hidden="true"></i>Aprobar
                     </button>
                 </form>
                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rechazarModal">
-                    <i class="bi bi-x-circle me-1"></i>Rechazar
+                    <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Rechazar
                 </button>
             }
             @if (Model.Credito.Estado == TheBuryProject.Models.Enums.EstadoCredito.Activo || Model.Credito.Estado == TheBuryProject.Models.Enums.EstadoCredito.Aprobado)
             {
                 <button type="button" class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#cancelarModal">
-                    <i class="bi bi-ban me-1"></i>Cancelar Crédito
+                    <i class="bi bi-ban me-1" aria-hidden="true"></i>Cancelar Crédito
                 </button>
             }
             <a href="@backUrl" class="btn btn-outline-light">
-                <i class="bi bi-arrow-left me-1"></i>Volver
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Volver
             </a>
         </div>
     </div>
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show shadow-sm">
-            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
     @if (TempData["Warning"] != null)
     {
-        <div class="alert alert-warning alert-dismissible fade show shadow-sm">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Warning"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>@TempData["Warning"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
     }
 
-    <div class="alert alert-info bg-opacity-25 border-info text-light shadow-sm mb-4">
-        <i class="bi bi-info-circle me-2"></i>
+    <div class="alert alert-info bg-opacity-25 border-info text-light shadow-sm mb-4" role="alert">
+        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
         <strong>Línea de Crédito:</strong> Límite disponible para que el cliente realice compras. Las cuotas se generan automáticamente al usarla.
     </div>
 
@@ -66,7 +66,7 @@
         <div class="col-md-6">
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-primary text-light py-3">
-                    <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2"></i>Información General</h5>
+                    <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2" aria-hidden="true"></i>Información General</h5>
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
@@ -102,12 +102,12 @@
                         </dd>
 
                         <dt class="col-sm-4 text-secondary">Fecha Solicitud</dt>
-                        <dd class="col-sm-8">@Model.Credito.FechaSolicitud.ToString("dd/MM/yyyy")</dd>
+                        <dd class="col-sm-8"><time datetime="@Model.Credito.FechaSolicitud.ToString("yyyy-MM-dd")">@Model.Credito.FechaSolicitud.ToString("dd/MM/yyyy")</time></dd>
 
                         @if (Model.Credito.FechaAprobacion.HasValue)
                         {
                             <dt class="col-sm-4 text-secondary">Fecha Aprobación</dt>
-                            <dd class="col-sm-8">@Model.Credito.FechaAprobacion.Value.ToString("dd/MM/yyyy")</dd>
+                            <dd class="col-sm-8"><time datetime="@Model.Credito.FechaAprobacion.Value.ToString("yyyy-MM-dd")">@Model.Credito.FechaAprobacion.Value.ToString("dd/MM/yyyy")</time></dd>
                         }
 
                         @if (!string.IsNullOrEmpty(Model.Credito.AprobadoPor))
@@ -133,7 +133,7 @@
         <div class="col-md-6">
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-success text-dark py-3">
-                    <h5 class="fw-bold mb-0"><i class="bi bi-cash-stack me-2"></i>Información de Crédito</h5>
+                    <h5 class="fw-bold mb-0"><i class="bi bi-cash-stack me-2" aria-hidden="true"></i>Información de Crédito</h5>
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
@@ -167,9 +167,40 @@
 
                         <dt class="col-sm-5 text-secondary">Tasa de Interés</dt>
                         <dd class="col-sm-7">@Model.Credito.TasaInteres.ToString("N2")% mensual</dd>
+
+                        <dt class="col-sm-5 text-secondary">Comparativa de cupo</dt>
+                        <dd class="col-sm-7">
+                            @if (!Model.CupoGlobalConError && Model.CupoGlobalDisponible.HasValue)
+                            {
+                                var saldoLinea = Model.Credito.SaldoPendiente;
+                                var cupoGlobal = Model.CupoGlobalDisponible.Value;
+                                var delta = cupoGlobal - saldoLinea;
+                                var estadoClass = delta >= 0
+                                    ? "bg-success"
+                                    : "bg-danger";
+                                var estadoTexto = delta >= 0
+                                    ? "Dentro de cupo global"
+                                    : "Excede cupo global";
+                                var deltaClase = delta >= 0 ? "text-success" : "text-danger";
+                                var deltaSigno = delta >= 0 ? "+" : "-";
+
+                                <div class="small text-secondary">Saldo de esta línea</div>
+                                <div class="fw-semibold text-success mb-1">@saldoLinea.ToString("C2")</div>
+                                <div class="small text-secondary">Cupo global cliente</div>
+                                <div class="fw-semibold text-info">@cupoGlobal.ToString("C2")</div>
+                                <div class="small text-muted">Origen límite global: @Model.CupoGlobalOrigenLimite</div>
+                                <span class="badge @estadoClass mt-2">@estadoTexto</span>
+                                <div class="small fw-semibold @deltaClase mt-1">Diferencia: @deltaSigno@Math.Abs(delta).ToString("C2")</div>
+                            }
+                            else
+                            {
+                                <span class="text-warning small">No se pudo calcular el cupo global del cliente.</span>
+                            }
+                        </dd>
+
                         <dd class="col-sm-12">
                             <small class="text-muted">
-                                <i class="bi bi-info-circle me-1"></i>Aplicable a todas las compras con cuotas.
+                                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Aplicable a todas las compras con cuotas.
                             </small>
                         </dd>
                     </dl>
@@ -185,7 +216,7 @@
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-info text-dark py-3">
                     <h5 class="fw-bold mb-0">
-                        <i class="bi bi-speedometer2 me-2"></i>Evaluación Crediticia
+                        <i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>Evaluación Crediticia
                     </h5>
                 </div>
                 <div class="card-body">
@@ -199,7 +230,7 @@
     {
         <div class="card bg-dark border-0 shadow-sm mt-4">
             <div class="card-header bg-secondary text-light py-3">
-                <h5 class="fw-bold mb-0"><i class="bi bi-chat-left-text me-2"></i>Observaciones</h5>
+                <h5 class="fw-bold mb-0"><i class="bi bi-chat-left-text me-2" aria-hidden="true"></i>Observaciones</h5>
             </div>
             <div class="card-body">
                 <p class="mb-0">@Model.Credito.Observaciones</p>
@@ -221,7 +252,7 @@
         <div class="card bg-dark border-0 shadow-sm mt-4">
             <div class="card-header bg-primary text-light py-3 d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold mb-0">
-                    <i class="bi bi-calendar3 me-2"></i>Plan de Cuotas
+                    <i class="bi bi-calendar3 me-2" aria-hidden="true"></i>Plan de Cuotas
                     <span class="badge bg-light text-dark ms-2">@cuotasPagadas.Count / @Model.Credito.Cuotas.Count pagadas</span>
                 </h5>
                 @if (cuotasPendientes.Any())
@@ -229,7 +260,7 @@
                     <div class="d-flex gap-2">
                         <a asp-action="PagarCuota" asp-route-id="@Model.Credito.Id" asp-route-returnUrl="@returnUrl" 
                            class="btn btn-success btn-sm">
-                            <i class="bi bi-cash-coin me-1"></i>Pagar Cuota
+                            <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Pagar Cuota
                             @if (primeraCuotaPendiente != null)
                             {
                                 <span class="badge bg-light text-success ms-1">#@primeraCuotaPendiente.NumeroCuota</span>
@@ -237,7 +268,7 @@
                         </a>
                         <a asp-action="AdelantarCuota" asp-route-id="@Model.Credito.Id" asp-route-returnUrl="@returnUrl" 
                            class="btn btn-warning btn-sm text-dark">
-                            <i class="bi bi-lightning-charge me-1"></i>Adelantar
+                            <i class="bi bi-lightning-charge me-1" aria-hidden="true"></i>Adelantar
                             @if (ultimaCuotaPendiente != null)
                             {
                                 <span class="badge bg-dark text-warning ms-1">#@ultimaCuotaPendiente.NumeroCuota</span>
@@ -251,14 +282,14 @@
                     <table class="table table-dark table-hover mb-0">
                         <thead class="table-secondary text-dark">
                             <tr>
-                                <th class="text-center">#</th>
-                                <th>Vencimiento</th>
-                                <th class="text-end">Capital</th>
-                                <th class="text-end">Interés</th>
-                                <th class="text-end">Total</th>
-                                <th class="text-end">Pagado</th>
-                                <th class="text-center">Estado</th>
-                                <th class="text-center">Acciones</th>
+                                <th scope="col" class="text-center">#</th>
+                                <th scope="col">Vencimiento</th>
+                                <th scope="col" class="text-end">Capital</th>
+                                <th scope="col" class="text-end">Interés</th>
+                                <th scope="col" class="text-end">Total</th>
+                                <th scope="col" class="text-end">Pagado</th>
+                                <th scope="col" class="text-center">Estado</th>
+                                <th scope="col" class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -270,7 +301,7 @@
                                 <tr class="@rowClass">
                                     <td class="text-center fw-bold">@cuota.NumeroCuota</td>
                                     <td>
-                                        @cuota.FechaVencimiento.ToString("dd/MM/yyyy")
+                                        <time datetime="@cuota.FechaVencimiento.ToString("yyyy-MM-dd")">@cuota.FechaVencimiento.ToString("dd/MM/yyyy")</time>
                                         @if (esVencida)
                                         {
                                             var diasAtraso = (DateTime.Today - cuota.FechaVencimiento.Date).Days;
@@ -312,13 +343,14 @@
                                         {
                                             <a asp-action="PagarCuota" asp-route-id="@Model.Credito.Id" 
                                                asp-route-cuotaId="@cuota.Id" asp-route-returnUrl="@returnUrl"
-                                               class="btn btn-outline-success btn-sm" title="Pagar esta cuota">
-                                                <i class="bi bi-cash"></i>
+                                               class="btn btn-outline-success btn-sm" title="Pagar esta cuota" aria-label="Pagar cuota @cuota.NumeroCuota">
+                                                <i class="bi bi-cash" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Pagar cuota</span>
                                             </a>
                                         }
                                         else if (cuota.FechaPago.HasValue)
                                         {
-                                            <small class="text-muted">@cuota.FechaPago.Value.ToString("dd/MM")</small>
+                                            <small class="text-muted"><time datetime="@cuota.FechaPago.Value.ToString("yyyy-MM-dd")">@cuota.FechaPago.Value.ToString("dd/MM")</time></small>
                                         }
                                     </td>
                                 </tr>
@@ -349,8 +381,8 @@
             <input type="hidden" name="returnUrl" value="@returnUrl" />
             <div class="modal-content bg-dark text-light border-danger">
                 <div class="modal-header bg-danger text-light">
-                    <h5 class="modal-title"><i class="bi bi-x-circle me-2"></i>Rechazar Línea de Crédito</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title"><i class="bi bi-x-circle me-2" aria-hidden="true"></i>Rechazar Línea de Crédito</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <label for="motivo" class="form-label">Motivo del rechazo</label>
@@ -373,12 +405,12 @@
             <input type="hidden" name="returnUrl" value="@returnUrl" />
             <div class="modal-content bg-dark text-light border-warning">
                 <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title"><i class="bi bi-ban me-2"></i>Cancelar Línea de Crédito</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title"><i class="bi bi-ban me-2" aria-hidden="true"></i>Cancelar Línea de Crédito</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-warning bg-opacity-25 border-warning text-light">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
                         <strong>Atención:</strong> El cliente no podrá usar esta línea de crédito tras cancelarla.
                     </div>
                     <label for="motivoCancelar" class="form-label">Motivo de cancelación</label>

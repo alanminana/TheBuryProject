@@ -33,6 +33,7 @@ namespace TheBuryProject.Controllers
         private readonly ILogger<CreditoController> _logger;
         private readonly IClienteLookupService _clienteLookup;
         private readonly IProductoService _productoService;
+        private readonly ICreditoDisponibleService _creditoDisponibleService;
 
         private string? GetSafeReturnUrl(string? returnUrl)
         {
@@ -67,7 +68,8 @@ namespace TheBuryProject.Controllers
             IMapper mapper,
             ILogger<CreditoController> logger,
             IClienteLookupService clienteLookup,
-            IProductoService productoService)
+            IProductoService productoService,
+            ICreditoDisponibleService creditoDisponibleService)
         {
             _creditoService = creditoService;
             _evaluacionService = evaluacionService;
@@ -79,6 +81,7 @@ namespace TheBuryProject.Controllers
             _logger = logger;
             _clienteLookup = clienteLookup;
             _productoService = productoService;
+            _creditoDisponibleService = creditoDisponibleService;
         }
 
         // GET: Credito
@@ -153,6 +156,18 @@ namespace TheBuryProject.Controllers
                     Credito = credito,
                     Evaluacion = evaluacion
                 };
+
+                try
+                {
+                    var cupoGlobal = await _creditoDisponibleService.CalcularDisponibleAsync(credito.ClienteId);
+                    detalle.CupoGlobalDisponible = cupoGlobal.Disponible;
+                    detalle.CupoGlobalOrigenLimite = cupoGlobal.OrigenLimite;
+                }
+                catch (CreditoDisponibleException ex)
+                {
+                    detalle.CupoGlobalConError = true;
+                    detalle.CupoGlobalMensajeError = ex.Message;
+                }
 
                 return View(detalle);
             }
@@ -1331,7 +1346,10 @@ namespace TheBuryProject.Controllers
 
                 // Obtener alertas de mora configuradas
                 var configuracionMora = await _configuracionMoraService.GetConfiguracionAsync();
-                var alertas = configuracionMora.Alertas.Where(a => a.Activa).OrderBy(a => a.DiasRelativoVencimiento).ToList();
+                var alertas = (configuracionMora?.Alertas ?? new List<AlertaMora>())
+                    .Where(a => a.Activa)
+                    .OrderBy(a => a.DiasRelativoVencimiento)
+                    .ToList();
 
                 var cuotasViewModel = cuotas.Select(c =>
                 {

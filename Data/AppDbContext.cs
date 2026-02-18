@@ -43,6 +43,8 @@ namespace TheBuryProject.Data
         public DbSet<Cheque> Cheques { get; set; }
 
         public DbSet<Cliente> Clientes { get; set; }
+        public DbSet<ClienteCreditoConfiguracion> ClientesCreditoConfiguraciones { get; set; }
+        public DbSet<ClientePuntajeHistorial> ClientesPuntajeHistorial { get; set; }
         public DbSet<PuntajeCreditoLimite> PuntajesCreditoLimite { get; set; }
         public DbSet<Credito> Creditos { get; set; }
         public DbSet<Cuota> Cuotas { get; set; }
@@ -492,7 +494,75 @@ namespace TheBuryProject.Data
                     .HasForeignKey(e => e.GaranteId)
                     .OnDelete(DeleteBehavior.NoAction);
 
+                entity.HasOne(e => e.CreditoConfiguracion)
+                    .WithOne(c => c.Cliente)
+                    .HasForeignKey<ClienteCreditoConfiguracion>(c => c.ClienteId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
                 // SIN: entity.HasQueryFilter(e => !e.IsDeleted);
+            });
+
+            // =======================
+            // ClienteCreditoConfiguracion (1:1)
+            // =======================
+            modelBuilder.Entity<ClienteCreditoConfiguracion>(entity =>
+            {
+                entity.ToTable("ClientesCreditoConfiguraciones");
+
+                entity.HasKey(e => e.ClienteId);
+
+                entity.Property(e => e.LimiteOverride).HasPrecision(18, 2);
+                entity.Property(e => e.ExcepcionDelta).HasPrecision(18, 2);
+
+                entity.Property(e => e.MotivoExcepcion).HasMaxLength(1000);
+                entity.Property(e => e.MotivoOverride).HasMaxLength(1000);
+                entity.Property(e => e.AprobadoPor).HasMaxLength(200);
+                entity.Property(e => e.OverrideAprobadoPor).HasMaxLength(200);
+
+                entity.Property(e => e.RowVersion)
+                    .IsRowVersion()
+                    .IsConcurrencyToken();
+
+                entity.HasOne(e => e.CreditoPreset)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreditoPresetId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(e => e.CreditoPresetId);
+                entity.HasIndex(e => e.ExcepcionHasta);
+
+                entity.ToTable(t =>
+                {
+                    t.HasCheckConstraint(
+                        "CK_ClientesCreditoConfiguraciones_ExcepcionVigencia",
+                        "[ExcepcionDesde] IS NULL OR [ExcepcionHasta] IS NULL OR [ExcepcionDesde] <= [ExcepcionHasta]");
+
+                    t.HasCheckConstraint(
+                        "CK_ClientesCreditoConfiguraciones_MontosNoNegativos",
+                        "([LimiteOverride] IS NULL OR [LimiteOverride] >= 0) AND ([ExcepcionDelta] IS NULL OR [ExcepcionDelta] >= 0)");
+                });
+            });
+
+            // =======================
+            // ClientePuntajeHistorial
+            // =======================
+            modelBuilder.Entity<ClientePuntajeHistorial>(entity =>
+            {
+                entity.ToTable("ClientesPuntajeHistorial");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Puntaje).HasPrecision(5, 2);
+                entity.Property(e => e.Origen).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Observacion).HasMaxLength(500);
+                entity.Property(e => e.RegistradoPor).HasMaxLength(200);
+
+                entity.HasOne(e => e.Cliente)
+                    .WithMany(c => c.PuntajeHistorial)
+                    .HasForeignKey(e => e.ClienteId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.ClienteId);
+                entity.HasIndex(e => new { e.ClienteId, e.Fecha });
             });
 
             // =======================
@@ -500,7 +570,10 @@ namespace TheBuryProject.Data
             // =======================
             modelBuilder.Entity<PuntajeCreditoLimite>(entity =>
             {
-                entity.ToTable("PuntajeCreditoLimites");
+                entity.ToTable("PuntajeCreditoLimites", t =>
+                {
+                    t.HasCheckConstraint("CK_PuntajeCreditoLimites_Puntaje", "[Puntaje] >= 1 AND [Puntaje] <= 5");
+                });
 
                 entity.HasKey(e => e.Id);
 
@@ -523,8 +596,6 @@ namespace TheBuryProject.Data
 
                 entity.HasIndex(e => e.Puntaje)
                     .IsUnique();
-
-                entity.HasCheckConstraint("CK_PuntajeCreditoLimites_Puntaje", "[Puntaje] >= 1 AND [Puntaje] <= 5");
             });
 
             // =======================
@@ -664,6 +735,10 @@ namespace TheBuryProject.Data
                 entity.Property(e => e.Descuento).HasPrecision(18, 2);
                 entity.Property(e => e.IVA).HasPrecision(18, 2);
                 entity.Property(e => e.Total).HasPrecision(18, 2);
+                entity.Property(e => e.LimiteAplicado).HasPrecision(18, 2);
+                entity.Property(e => e.PuntajeAlMomento).HasPrecision(5, 2);
+                entity.Property(e => e.OverrideAlMomento).HasPrecision(18, 2);
+                entity.Property(e => e.ExcepcionAlMomento).HasPrecision(18, 2);
                 entity.Property(e => e.VendedorUserId).HasMaxLength(450);
 
                 entity.HasIndex(e => e.Numero).IsUnique();
@@ -671,6 +746,7 @@ namespace TheBuryProject.Data
                 entity.HasIndex(e => e.Estado);
                 entity.HasIndex(e => e.AperturaCajaId);
                 entity.HasIndex(e => e.VendedorUserId);
+                entity.HasIndex(e => e.PresetIdAlMomento);
 
                 entity.HasOne(e => e.Cliente)
                     .WithMany()
@@ -681,6 +757,12 @@ namespace TheBuryProject.Data
                     .WithMany()
                     .HasForeignKey(e => e.CreditoId)
                     .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired(false);
+
+                entity.HasOne<PuntajeCreditoLimite>()
+                    .WithMany()
+                    .HasForeignKey(e => e.PresetIdAlMomento)
+                    .OnDelete(DeleteBehavior.SetNull)
                     .IsRequired(false);
 
                 entity.HasOne(e => e.AperturaCaja)

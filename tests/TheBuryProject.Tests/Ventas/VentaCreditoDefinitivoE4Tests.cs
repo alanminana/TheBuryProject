@@ -483,6 +483,78 @@ public class VentaCreditoDefinitivoE4Tests
     }
 
     [Fact]
+    public async Task ConfirmarVenta_ExcedeDisponiblePorLimiteEfectivo_Falla()
+    {
+        using var db = new SqliteInMemoryDb(userName: "tester");
+        var (cliente, producto, creditoPrincipal) = await SetupTestDataAsync(db);
+
+        cliente.NivelRiesgo = NivelRiesgoCredito.AprobadoTotal;
+        creditoPrincipal.SaldoPendiente = 1000m;
+
+        var preset = await db.Context.PuntajesCreditoLimite
+            .FirstOrDefaultAsync(p => p.Puntaje == NivelRiesgoCredito.AprobadoTotal);
+
+        if (preset == null)
+        {
+            db.Context.PuntajesCreditoLimite.Add(new PuntajeCreditoLimite
+            {
+                Puntaje = NivelRiesgoCredito.AprobadoTotal,
+                LimiteMonto = 1500m,
+                Activo = true,
+                UsuarioActualizacion = "tester"
+            });
+        }
+        else
+        {
+            preset.LimiteMonto = 1500m;
+            preset.Activo = true;
+            preset.UsuarioActualizacion = "tester";
+            preset.FechaActualizacion = DateTime.UtcNow;
+        }
+
+        db.Context.Creditos.Add(new Credito
+        {
+            ClienteId = cliente.Id,
+            Numero = "CRED-SEC",
+            MontoSolicitado = 500m,
+            MontoAprobado = 500m,
+            SaldoPendiente = 500m,
+            Estado = EstadoCredito.Activo,
+            FechaSolicitud = DateTime.UtcNow.AddDays(-10),
+            FechaAprobacion = DateTime.UtcNow.AddDays(-9),
+            TasaInteres = 5m
+        });
+
+        await db.Context.SaveChangesAsync();
+
+        var venta = CrearVentaConPlanCredito(
+            cliente,
+            producto,
+            creditoPrincipal,
+            montoTotal: 900m,
+            requiereAutorizacion: false,
+            estadoAutorizacion: EstadoAutorizacionVenta.NoRequiere);
+
+        db.Context.Ventas.Add(venta);
+        await db.Context.SaveChangesAsync();
+
+        var ventaService = CreateVentaService(db);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ventaService.ConfirmarVentaAsync(venta.Id));
+
+        Assert.Contains("cupo de crédito insuficiente", ex.Message.ToLower());
+
+        var cuotas = await db.Context.VentaCreditoCuotas
+            .Where(c => c.VentaId == venta.Id)
+            .CountAsync();
+        Assert.Equal(0, cuotas);
+
+        var creditoActualizado = await db.Context.Creditos.FindAsync(creditoPrincipal.Id);
+        Assert.Equal(1000m, creditoActualizado?.SaldoPendiente);
+    }
+
+    [Fact]
     public async Task ConfirmarMultiplesVentas_DescuentaCupoAcumulado()
     {
         // Arrange

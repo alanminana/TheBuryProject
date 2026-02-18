@@ -1,6 +1,6 @@
-﻿@model TheBuryProject.ViewModels.OrdenCompraViewModel
+@model TheBuryProject.ViewModels.ProveedorViewModel
 @{
-    ViewData["Title"] = "Eliminar Orden de Compra";
+    ViewData["Title"] = "Eliminar Proveedor";
 }
 
 <section class="container-fluid py-4">
@@ -9,34 +9,28 @@
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-danger text-white border-0">
                     <h4 class="mb-0">
-                        <i class="bi bi-exclamation-triangle me-2"></i>Confirmar Eliminación
+                        <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>Confirmar Eliminación
                     </h4>
                 </div>
 
                 <div class="card-body text-light">
-                    <div class="alert alert-danger border-0 shadow-sm">
-                        <i class="bi bi-exclamation-circle me-2"></i>
-                        <strong>¿Está seguro de que desea eliminar esta orden de compra?</strong>
+                    <div class="alert alert-danger border-0 shadow-sm" role="alert">
+                        <i class="bi bi-exclamation-circle me-2" aria-hidden="true"></i>
+                        <strong>¿Está seguro de que desea eliminar este proveedor?</strong>
                         <p class="mb-0 mt-2">Esta acción no se puede deshacer.</p>
                     </div>
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <dl class="row mb-0">
-                                <dt class="col-sm-5 text-secondary">Número de Orden</dt>
-                                <dd class="col-sm-7 fw-semibold text-light">@Model.Numero</dd>
+                                <dt class="col-sm-5 text-secondary">CUIT</dt>
+                                <dd class="col-sm-7 fw-semibold text-light">@Model.Cuit</dd>
 
-                                <dt class="col-sm-5 text-secondary">Proveedor</dt>
-                                <dd class="col-sm-7">@Model.ProveedorNombre</dd>
+                                <dt class="col-sm-5 text-secondary">Razón Social</dt>
+                                <dd class="col-sm-7">@Model.RazonSocial</dd>
 
-                                <dt class="col-sm-5 text-secondary">Fecha Emisión</dt>
-                                <dd class="col-sm-7">@Model.FechaEmision.ToString("dd/MM/yyyy")</dd>
-
-                                @if (Model.FechaEntregaEstimada.HasValue)
-                                {
-                                    <dt class="col-sm-5 text-secondary">Entrega Estimada</dt>
-                                    <dd class="col-sm-7">@Model.FechaEntregaEstimada.Value.ToString("dd/MM/yyyy")</dd>
-                                }
+                                <dt class="col-sm-5 text-secondary">Nombre Fantasía</dt>
+                                <dd class="col-sm-7">@(!string.IsNullOrWhiteSpace(Model.NombreFantasia) ? Model.NombreFantasia : "-")</dd>
                             </dl>
                         </div>
 
@@ -44,68 +38,34 @@
                             <dl class="row mb-0">
                                 <dt class="col-sm-5 text-secondary">Estado</dt>
                                 <dd class="col-sm-7">
-                                    @{
-                                        var badgeClass = Model.Estado switch
-                                        {
-                                            TheBuryProject.Models.Enums.EstadoOrdenCompra.Borrador => "bg-secondary text-light",
-                                            TheBuryProject.Models.Enums.EstadoOrdenCompra.Enviada => "bg-info text-dark",
-                                            TheBuryProject.Models.Enums.EstadoOrdenCompra.Confirmada => "bg-primary text-light",
-                                            TheBuryProject.Models.Enums.EstadoOrdenCompra.EnTransito => "bg-warning text-dark",
-                                            TheBuryProject.Models.Enums.EstadoOrdenCompra.Recibida => "bg-success text-dark",
-                                            TheBuryProject.Models.Enums.EstadoOrdenCompra.Cancelada => "bg-danger text-light",
-                                            _ => "bg-secondary text-light"
-                                        };
+                                    @if (Model.Activo)
+                                    {
+                                        <span class="badge bg-success text-dark"><i class="bi bi-check-circle" aria-hidden="true"></i> Activo</span>
                                     }
-                                    <span class="badge @badgeClass">@Model.Estado</span>
+                                    else
+                                    {
+                                        <span class="badge bg-danger text-light"><i class="bi bi-x-circle" aria-hidden="true"></i> Inactivo</span>
+                                    }
                                 </dd>
 
-                                <dt class="col-sm-5 text-secondary">Total de Ítems</dt>
-                                <dd class="col-sm-7">
-                                    <span class="badge bg-info text-dark">@Model.Detalles.Count productos</span>
-                                </dd>
+                                <dt class="col-sm-5 text-secondary">Órdenes</dt>
+                                <dd class="col-sm-7"><span class="badge bg-info text-dark">@Model.TotalOrdenesCompra</span></dd>
+
+                                <dt class="col-sm-5 text-secondary">Cheques</dt>
+                                <dd class="col-sm-7"><span class="badge bg-warning text-dark">@Model.ChequesVigentes</span></dd>
                             </dl>
                         </div>
                     </div>
 
-                    <h5 class="text-info border-bottom pb-2 mb-3">
-                        <i class="bi bi-calculator me-2"></i>Totales
-                    </h5>
-
-                    <dl class="row mb-0">
-                        <dt class="col-sm-4 text-secondary">Subtotal</dt>
-                        <dd class="col-sm-8 text-light">$@Model.Subtotal.ToString("N2")</dd>
-
-                        @if (Model.Descuento > 0)
-                        {
-                            <dt class="col-sm-4 text-secondary">Descuento</dt>
-                            <dd class="col-sm-8 text-danger">-$@Model.Descuento.ToString("N2")</dd>
-                        }
-
-                        <dt class="col-sm-4 text-secondary">IVA</dt>
-                        <dd class="col-sm-8 text-light">$@Model.Iva.ToString("N2")</dd>
-
-                        <dt class="col-sm-4 border-top border-secondary pt-2"><strong>Total</strong></dt>
-                        <dd class="col-sm-8 border-top border-secondary pt-2">
-                            <strong class="text-info fs-5">$@Model.Total.ToString("N2")</strong>
-                        </dd>
-                    </dl>
-
-                    @if (!string.IsNullOrEmpty(Model.Observaciones))
-                    {
-                        <div class="mt-4">
-                            <h6 class="text-secondary text-uppercase small fw-semibold">Observaciones</h6>
-                            <p class="text-light">@Model.Observaciones</p>
-                        </div>
-                    }
-
                     <form asp-action="Delete" method="post" class="mt-4">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="Id" />
                         <div class="d-flex justify-content-between">
                             <a asp-action="Index" class="btn btn-outline-light">
-                                <i class="bi bi-arrow-left me-2"></i>Cancelar
+                                <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Cancelar
                             </a>
                             <button type="submit" class="btn btn-danger fw-semibold">
-                                <i class="bi bi-trash me-2"></i>Eliminar Orden
+                                <i class="bi bi-trash me-2" aria-hidden="true"></i>Eliminar Proveedor
                             </button>
                         </div>
                     </form>

@@ -8,18 +8,20 @@
     <div>
         @if (!string.IsNullOrEmpty(Model.Breadcrumb))
         {
-            <div class="text-muted text-uppercase small mb-1">@Model.Breadcrumb</div>
+            <div class="text-body-secondary text-uppercase small mb-1">@Model.Breadcrumb</div>
         }
+
         <h1 class="h4 mb-1 d-flex align-items-center gap-2">
             @if (!string.IsNullOrEmpty(Model.Icon))
             {
-                <i class="bi bi-@Model.Icon"></i>
+                <i class="bi bi-@Model.Icon" aria-hidden="true"></i>
             }
             <span>@Model.Title</span>
         </h1>
+
         @if (!string.IsNullOrEmpty(Model.Subtitle))
         {
-            <p class="text-muted small mb-0">@Model.Subtitle</p>
+            <p class="text-body-secondary small mb-0">@Model.Subtitle</p>
         }
     </div>
 
@@ -28,16 +30,16 @@
         @if (!string.IsNullOrEmpty(Model.BackUrl))
         {
             <a href="@Model.BackUrl" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-arrow-left me-1"></i>@(Model.BackText ?? "Volver")
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>@(Model.BackText ?? "Volver")
             </a>
         }
         else if (!string.IsNullOrEmpty(Model.BackAction))
         {
-            <a asp-action="@Model.BackAction" 
+            <a asp-action="@Model.BackAction"
                asp-controller="@Model.BackController"
                asp-route-id="@Model.BackRouteId"
                class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-arrow-left me-1"></i>@(Model.BackText ?? "Volver")
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>@(Model.BackText ?? "Volver")
             </a>
         }
 
@@ -45,16 +47,16 @@
         @if (Model.ShowCatalogoLink)
         {
             <a asp-controller="Catalogo" asp-action="Index" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-grid me-1"></i>Catálogo
+                <i class="bi bi-grid me-1" aria-hidden="true"></i>Catálogo
             </a>
         }
 
         @* Acción primaria (botón opcional) *@
         @if (!string.IsNullOrEmpty(Model.PrimaryActionText))
         {
-            var showButton = string.IsNullOrEmpty(Model.PrimaryActionRequiredClaim) 
+            var showButton = string.IsNullOrEmpty(Model.PrimaryActionRequiredClaim)
                 || User.HasClaim("Permission", Model.PrimaryActionRequiredClaim);
-            
+
             if (showButton)
             {
                 <a asp-action="@Model.PrimaryAction"
@@ -62,7 +64,7 @@
                    class="btn @Model.PrimaryActionClass">
                     @if (!string.IsNullOrEmpty(Model.PrimaryActionIcon))
                     {
-                        <i class="bi bi-@Model.PrimaryActionIcon me-1"></i>
+                        <i class="bi bi-@Model.PrimaryActionIcon me-1" aria-hidden="true"></i>
                     }
                     @Model.PrimaryActionText
                 </a>

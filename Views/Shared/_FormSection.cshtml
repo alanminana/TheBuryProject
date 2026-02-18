@@ -1,7 +1,7 @@
 @*
     Partial: Sección de formulario con título e icono
     Uso: <partial name="_FormSection" model='new FormSectionModel { Title = "...", Icon = "..." }' />
-    
+
     Agrupa campos de formulario bajo un título visual consistente
 *@
 @model TheBuryProject.ViewModels.Shared.FormSectionModel
@@ -10,7 +10,7 @@
     <h5 class="border-bottom border-secondary pb-2 mb-3 @Model.TitleColorClass">
         @if (!string.IsNullOrEmpty(Model.Icon))
         {
-            <i class="bi bi-@Model.Icon me-2"></i>
+            <i class="bi bi-@Model.Icon me-2" aria-hidden="true"></i>
         }
         @Model.Title
     </h5>

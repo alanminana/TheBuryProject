@@ -12,10 +12,10 @@
 
 @section PageActions {
     <a href="@backUrl" class="btn btn-outline-light me-2">
-        <i class="bi bi-arrow-left"></i> Volver
+        <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
     </a>
     <a asp-action="Descargar" asp-route-id="@Model.Id" asp-route-returnUrl="@returnUrl" class="btn btn-success">
-        <i class="bi bi-download me-2"></i>Descargar
+        <i class="bi bi-download me-2" aria-hidden="true"></i>Descargar
     </a>
 }
 
@@ -26,15 +26,15 @@
             @if (TempData["Success"] != null)
             {
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                 </div>
             }
             @if (TempData["Error"] != null)
             {
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                 </div>
             }
 
@@ -43,7 +43,7 @@
                 <div class="col-md-7">
                     <div class="card bg-dark border-0 shadow-sm mb-3">
                         <div class="card-header bg-secondary text-light">
-                            <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información del Documento</h5>
+                            <h5 class="mb-0"><i class="bi bi-info-circle me-2" aria-hidden="true"></i>Información del Documento</h5>
                         </div>
                         <div class="card-body">
                             <dl class="row mb-0">
@@ -61,7 +61,7 @@
 
                                 <dt class="col-sm-4">Archivo:</dt>
                                 <dd class="col-sm-8">
-                                    <i class="bi bi-file-earmark me-1"></i>@Model.NombreArchivo
+                                    <i class="bi bi-file-earmark me-1" aria-hidden="true"></i>@Model.NombreArchivo
                                 </dd>
 
                                 <dt class="col-sm-4">Tamaño:</dt>
@@ -70,18 +70,18 @@
                                 <dt class="col-sm-4">Estado:</dt>
                                 <dd class="col-sm-8">
                                     <span class="badge bg-@Model.EstadoColor">
-                                        <i class="bi @Model.EstadoIcono"></i> @Model.EstadoNombre
+                                        <i class="bi @Model.EstadoIcono" aria-hidden="true"></i> @Model.EstadoNombre
                                     </span>
                                 </dd>
 
                                 <dt class="col-sm-4">Fecha Subida:</dt>
-                                <dd class="col-sm-8">@Model.FechaSubida.ToString("dd/MM/yyyy HH:mm")</dd>
+                                <dd class="col-sm-8"><time datetime="@Model.FechaSubida.ToString("s")">@Model.FechaSubida.ToString("dd/MM/yyyy HH:mm")</time></dd>
 
                                 @if (Model.FechaVencimiento.HasValue)
                                 {
                                     <dt class="col-sm-4">Vencimiento:</dt>
                                     <dd class="col-sm-8">
-                                        @Model.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                                        <time datetime="@Model.FechaVencimiento.Value.ToString("yyyy-MM-dd")">@Model.FechaVencimiento.Value.ToString("dd/MM/yyyy")</time>
                                         @if (Model.FechaVencimiento.Value < DateTime.Today)
                                         {
                                             <span class="badge bg-danger ms-2">Vencido</span>
@@ -107,7 +107,7 @@
                     {
                         <div class="card bg-dark border-0 shadow-sm mb-3">
                             <div class="card-header bg-secondary text-light">
-                                <h5 class="mb-0"><i class="bi bi-shield-check me-2"></i>Verificación</h5>
+                                <h5 class="mb-0"><i class="bi bi-shield-check me-2" aria-hidden="true"></i>Verificación</h5>
                             </div>
                             <div class="card-body">
                                 <dl class="row mb-0">
@@ -115,7 +115,7 @@
                                     <dd class="col-sm-8">@Model.VerificadoPor</dd>
 
                                     <dt class="col-sm-4">Fecha:</dt>
-                                    <dd class="col-sm-8">@Model.FechaVerificacion.Value.ToString("dd/MM/yyyy HH:mm")</dd>
+                                    <dd class="col-sm-8"><time datetime="@Model.FechaVerificacion.Value.ToString("s")">@Model.FechaVerificacion.Value.ToString("dd/MM/yyyy HH:mm")</time></dd>
 
                                     @if (!string.IsNullOrEmpty(Model.MotivoRechazo))
                                     {
@@ -136,18 +136,18 @@
                 <div class="col-md-5">
                     <div class="card bg-dark border-0 shadow-sm mb-3">
                         <div class="card-header bg-secondary text-light">
-                            <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Acciones</h5>
+                            <h5 class="mb-0"><i class="bi bi-gear me-2" aria-hidden="true"></i>Acciones</h5>
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
                                 @if (Model.Estado == TheBuryProject.Models.Enums.EstadoDocumento.Pendiente)
                                 {
                                     <button type="button" class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#verificarModal">
-                                        <i class="bi bi-check-circle me-2"></i>Verificar
+                                        <i class="bi bi-check-circle me-2" aria-hidden="true"></i>Verificar
                                     </button>
 
                                     <button type="button" class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#rechazarModal">
-                                        <i class="bi bi-x-circle me-2"></i>Rechazar
+                                        <i class="bi bi-x-circle me-2" aria-hidden="true"></i>Rechazar
                                     </button>
 
                                     <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
@@ -155,13 +155,13 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="returnUrl" value="@returnUrl" />
                                         <button type="submit" class="btn btn-danger w-100">
-                                            <i class="bi bi-trash me-2"></i>Eliminar
+                                            <i class="bi bi-trash me-2" aria-hidden="true"></i>Eliminar
                                         </button>
                                     </form>
                                 }
 
                                 <a href="@clienteDetailsUrl" class="btn btn-outline-light">
-                                    <i class="bi bi-person me-2"></i>Ver Cliente
+                                    <i class="bi bi-person me-2" aria-hidden="true"></i>Ver Cliente
                                 </a>
                             </div>
                         </div>
@@ -172,10 +172,10 @@
                     {
                         <div class="card bg-dark border-0 shadow-sm">
                             <div class="card-header bg-secondary text-light">
-                                <h5 class="mb-0"><i class="bi bi-image me-2"></i>Vista Previa</h5>
+                                <h5 class="mb-0"><i class="bi bi-image me-2" aria-hidden="true"></i>Vista Previa</h5>
                             </div>
                             <div class="card-body">
-                                <img src="/@Model.RutaArchivo" alt="Preview" class="img-fluid rounded" />
+                                <img src="/@Model.RutaArchivo" alt="Vista previa del documento" class="img-fluid rounded" />
                             </div>
                         </div>
                     }
@@ -183,7 +183,7 @@
                     {
                         <div class="card bg-dark border-0 shadow-sm">
                             <div class="card-header bg-secondary text-light">
-                                <h5 class="mb-0"><i class="bi bi-file-pdf me-2"></i>Vista Previa PDF</h5>
+                                <h5 class="mb-0"><i class="bi bi-file-pdf me-2" aria-hidden="true"></i>Vista Previa PDF</h5>
                             </div>
                             <div class="card-body p-0">
                                 <embed src="/@Model.RutaArchivo" type="application/pdf" width="100%" height="400px" class="rounded" />

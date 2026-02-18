@@ -6,27 +6,27 @@
     ViewData["Title"] = "Cajas y arqueos";
 }
 
-<div class="container-fluid px-0">
+<section class="container-fluid px-0 py-3 text-light">
 
     <!-- Header de página -->
     <div class="d-flex align-items-start justify-content-between mb-4">
         <div>
-            <div class="text-muted text-uppercase small mb-1">Cajas</div>
+            <div class="text-body-secondary text-uppercase small mb-1">Cajas</div>
             <h1 class="h4 mb-1 d-flex align-items-center gap-2">
-                <i class="bi bi-cash-stack"></i>
+                <i class="bi bi-cash-stack" aria-hidden="true"></i>
                 <span>Módulo de cajas</span>
             </h1>
-            <p class="text-muted small mb-0">
+            <p class="text-body-secondary small mb-0">
                 Gestiona las cajas, sus aperturas y movimientos, y accede al historial de cierres.
             </p>
         </div>
 
         <div class="d-flex flex-wrap gap-2">
             <a asp-action="Historial" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-clock-history me-1"></i>Historial de cierres
+                <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Historial de cierres
             </a>
             <a asp-action="Create" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-circle me-1"></i>Nueva caja
+                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>Nueva caja
             </a>
         </div>
     </div>
@@ -35,7 +35,7 @@
     <div class="card card-animate mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h2 class="h6 mb-0 d-flex align-items-center gap-2">
-                <i class="bi bi-door-open"></i>
+                <i class="bi bi-door-open" aria-hidden="true"></i>
                 <span>Cajas actualmente abiertas</span>
             </h2>
             @if (Model.AperturasAbiertas.Any())
@@ -52,12 +52,12 @@
                     <table class="table table-hover table-sm align-middle mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th>Caja</th>
-                                <th>Usuario apertura</th>
-                                <th>Fecha apertura</th>
-                                <th class="text-end">Monto inicial</th>
-                                <th class="text-end">Movimientos</th>
-                                <th class="text-end">Acciones</th>
+                                <th scope="col">Caja</th>
+                                <th scope="col">Usuario apertura</th>
+                                <th scope="col">Fecha apertura</th>
+                                <th scope="col" class="text-end">Monto inicial</th>
+                                <th scope="col" class="text-end">Movimientos</th>
+                                <th scope="col" class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -66,11 +66,13 @@
                                 <tr>
                                     <td class="small">
                                         <strong>@apertura.Caja.Nombre</strong><br />
-                                        <span class="text-muted">@apertura.Caja.Codigo</span>
+                                        <span class="text-body-secondary">@apertura.Caja.Codigo</span>
                                     </td>
                                     <td class="small">@apertura.UsuarioApertura</td>
                                     <td class="small">
-                                        @apertura.FechaApertura.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                        <time datetime="@apertura.FechaApertura.ToString("O")">
+                                            @apertura.FechaApertura.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                        </time>
                                     </td>
                                     <td class="text-end small">
                                         @apertura.MontoInicial.ToString("C")
@@ -79,16 +81,20 @@
                                         @apertura.Movimientos.Count
                                     </td>
                                     <td class="text-end">
-                                        <div class="btn-group btn-group-sm">
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de apertura">
                                             <a asp-action="DetallesApertura"
                                                asp-route-id="@apertura.Id"
-                                               class="btn btn-outline-primary">
-                                                <i class="bi bi-eye"></i>
+                                               class="btn btn-outline-primary"
+                                               aria-label="Ver detalles de apertura">
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Ver detalles de apertura</span>
                                             </a>
                                             <a asp-action="Cerrar"
                                                asp-route-aperturaId="@apertura.Id"
-                                               class="btn btn-warning">
-                                                <i class="bi bi-lock"></i>
+                                               class="btn btn-warning"
+                                               aria-label="Cerrar caja">
+                                                <i class="bi bi-lock" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Cerrar caja</span>
                                             </a>
                                         </div>
                                     </td>
@@ -101,8 +107,8 @@
             else
             {
                 <div class="p-3">
-                    <div class="alert alert-info mb-0">
-                        <i class="bi bi-info-circle me-1"></i>
+                    <div class="alert alert-info mb-0" role="alert">
+                        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                         No hay cajas abiertas en este momento.
                         <a asp-action="Abrir" class="alert-link ms-1">
                             Abrir una caja
@@ -119,7 +125,7 @@
             <div class="card card-animate h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="h6 mb-0 d-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle"></i>
+                        <i class="bi bi-check-circle" aria-hidden="true"></i>
                         <span>Cajas activas</span>
                     </h2>
                     @if (Model.CajasActivas.Any())
@@ -136,12 +142,12 @@
                             <table class="table table-hover table-sm align-middle mb-0">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>Código</th>
-                                        <th>Nombre</th>
-                                        <th>Sucursal</th>
-                                        <th>Ubicación</th>
-                                        <th>Estado</th>
-                                        <th class="text-end">Acciones</th>
+                                        <th scope="col">Código</th>
+                                        <th scope="col">Nombre</th>
+                                        <th scope="col">Sucursal</th>
+                                        <th scope="col">Ubicación</th>
+                                        <th scope="col">Estado</th>
+                                        <th scope="col" class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -167,28 +173,34 @@
                                                 }
                                             </td>
                                             <td class="text-end">
-                                                <div class="btn-group btn-group-sm">
+                                                <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de caja activa">
                                                     @if (estaAbierta)
                                                     {
                                                         <a asp-action="DetallesApertura"
                                                            asp-route-id="@aperturaAbierta!.Id"
-                                                           class="btn btn-outline-primary">
-                                                            <i class="bi bi-eye"></i>
+                                                           class="btn btn-outline-primary"
+                                                           aria-label="Ver apertura">
+                                                            <i class="bi bi-eye" aria-hidden="true"></i>
+                                                            <span class="visually-hidden">Ver apertura</span>
                                                         </a>
                                                     }
                                                     else
                                                     {
                                                         <a asp-action="Abrir"
                                                            asp-route-cajaId="@caja.Id"
-                                                           class="btn btn-success">
-                                                            <i class="bi bi-unlock"></i>
+                                                           class="btn btn-success"
+                                                           aria-label="Abrir caja">
+                                                            <i class="bi bi-unlock" aria-hidden="true"></i>
+                                                            <span class="visually-hidden">Abrir caja</span>
                                                         </a>
                                                     }
 
                                                     <a asp-action="Edit"
                                                        asp-route-id="@caja.Id"
-                                                       class="btn btn-outline-secondary">
-                                                        <i class="bi bi-pencil"></i>
+                                                       class="btn btn-outline-secondary"
+                                                       aria-label="Editar caja">
+                                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Editar caja</span>
                                                     </a>
 
                                                     @if (User.IsInRole(Roles.SuperAdmin) || User.IsInRole(Roles.Administrador))
@@ -197,9 +209,12 @@
                                                             @Html.AntiForgeryToken()
                                                             <input type="hidden" name="id" value="@caja.Id" />
                                                             <input type="hidden" name="rowVersion" value="@(caja.RowVersion != null ? Convert.ToBase64String(caja.RowVersion) : "")" />
-                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar"
+                                                            <button type="submit"
+                                                                    class="btn btn-outline-danger"
+                                                                    title="Eliminar"
                                                                     data-confirm="¿Eliminar esta caja? Esta acción no se puede deshacer.">
-                                                                <i class="bi bi-trash"></i>
+                                                                <i class="bi bi-trash" aria-hidden="true"></i>
+                                                                <span class="visually-hidden">Eliminar caja</span>
                                                             </button>
                                                         </form>
                                                     }
@@ -214,8 +229,8 @@
                     else
                     {
                         <div class="p-3">
-                            <div class="alert alert-info mb-0">
-                                <i class="bi bi-info-circle me-1"></i>
+                            <div class="alert alert-info mb-0" role="alert">
+                                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                                 No hay cajas activas registradas.
                                 <a asp-action="Create" class="alert-link ms-1">
                                     Crear nueva caja
@@ -232,7 +247,7 @@
             <div class="card card-animate h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h2 class="h6 mb-0 d-flex align-items-center gap-2">
-                        <i class="bi bi-pause-circle"></i>
+                        <i class="bi bi-pause-circle" aria-hidden="true"></i>
                         <span>Cajas inactivas</span>
                     </h2>
                     @if (Model.CajasInactivas.Any())
@@ -249,10 +264,10 @@
                             <table class="table table-hover table-sm align-middle mb-0">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>Código</th>
-                                        <th>Nombre</th>
-                                        <th>Sucursal</th>
-                                        <th class="text-end">Acciones</th>
+                                        <th scope="col">Código</th>
+                                        <th scope="col">Nombre</th>
+                                        <th scope="col">Sucursal</th>
+                                        <th scope="col" class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -265,11 +280,13 @@
                                             <td class="small">@caja.Nombre</td>
                                             <td class="small">@(caja.Sucursal ?? "-")</td>
                                             <td class="text-end">
-                                                <div class="btn-group btn-group-sm">
+                                                <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de caja inactiva">
                                                     <a asp-action="Edit"
                                                        asp-route-id="@caja.Id"
-                                                       class="btn btn-outline-secondary">
-                                                        <i class="bi bi-pencil"></i>
+                                                       class="btn btn-outline-secondary"
+                                                       aria-label="Editar caja">
+                                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                        <span class="visually-hidden">Editar caja</span>
                                                     </a>
 
                                                     @if (User.IsInRole(Roles.SuperAdmin) || User.IsInRole(Roles.Administrador))
@@ -278,9 +295,12 @@
                                                             @Html.AntiForgeryToken()
                                                             <input type="hidden" name="id" value="@caja.Id" />
                                                             <input type="hidden" name="rowVersion" value="@(caja.RowVersion != null ? Convert.ToBase64String(caja.RowVersion) : "")" />
-                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar"
+                                                            <button type="submit"
+                                                                    class="btn btn-outline-danger"
+                                                                    title="Eliminar"
                                                                     data-confirm="¿Eliminar esta caja? Esta acción no se puede deshacer.">
-                                                                <i class="bi bi-trash"></i>
+                                                                <i class="bi bi-trash" aria-hidden="true"></i>
+                                                                <span class="visually-hidden">Eliminar caja</span>
                                                             </button>
                                                         </form>
                                                     }
@@ -295,8 +315,8 @@
                     else
                     {
                         <div class="p-3">
-                            <div class="alert alert-info mb-0">
-                                <i class="bi bi-info-circle me-1"></i>
+                            <div class="alert alert-info mb-0" role="alert">
+                                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
                                 No hay cajas inactivas.
                             </div>
                         </div>
@@ -306,4 +326,4 @@
         </div>
     </div>
 
-</div>
+</section>

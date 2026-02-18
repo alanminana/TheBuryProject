@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TheBuryProject.Data;
+using TheBuryProject.Models.Entities;
 using TheBuryProject.Models.Enums;
 using TheBuryProject.Services.Exceptions;
 using TheBuryProject.Services.Interfaces;
@@ -49,13 +50,16 @@ namespace TheBuryProject.Services
             int clienteId,
             CancellationToken cancellationToken = default)
         {
-            return await _context.Creditos
+            var saldosVigentes = await _context.Creditos
                 .AsNoTracking()
                 .Where(c => c.ClienteId == clienteId
                             && !c.IsDeleted
                             && c.SaldoPendiente > 0
                             && EstadosVigentes.Contains(c.Estado))
-                .SumAsync(c => c.SaldoPendiente, cancellationToken);
+                .Select(c => c.SaldoPendiente)
+                .ToListAsync(cancellationToken);
+
+            return saldosVigentes.Sum();
         }
 
         public async Task<CreditoDisponibleResultado> CalcularDisponibleAsync(
@@ -71,20 +75,41 @@ namespace TheBuryProject.Services
                 throw new CreditoDisponibleException($"Cliente no encontrado para calcular crédito disponible. Id: {clienteId}.");
             }
 
-            var limitePorPuntaje = await ObtenerLimitePorPuntajeAsync(cliente.NivelRiesgo, cancellationToken);
-            var limite = limitePorPuntaje;
-            var origenLimite = "Puntaje";
+            var config = await _context.ClientesCreditoConfiguraciones
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.ClienteId == clienteId, cancellationToken);
 
-            if (cliente.LimiteCredito.HasValue && cliente.LimiteCredito.Value > limite)
+            decimal limite;
+            string origenLimite;
+
+            if (config is not null)
             {
-                limite = cliente.LimiteCredito.Value;
-                origenLimite = "Límite manual del cliente";
+                var limiteBase = await ObtenerLimiteBaseAsync(cliente, config, cancellationToken);
+                var overrideConfig = config.LimiteOverride;
+                var excepcionDelta = ObtenerExcepcionDeltaVigente(config, DateTime.UtcNow);
+
+                var limiteEfectivo = CalcularLimiteEfectivo(limiteBase, overrideConfig, excepcionDelta);
+                limite = limiteEfectivo.Limite;
+                origenLimite = limiteEfectivo.OrigenLimite;
             }
-
-            if (cliente.MontoMaximoPersonalizado.HasValue && cliente.MontoMaximoPersonalizado.Value > limite)
+            else
             {
-                limite = cliente.MontoMaximoPersonalizado.Value;
-                origenLimite = "Monto máximo personalizado";
+                // Compatibilidad con comportamiento histórico mientras se completa la migración funcional.
+                var limitePorPuntaje = await ObtenerLimitePorPuntajeAsync(cliente.NivelRiesgo, cancellationToken);
+                limite = limitePorPuntaje;
+                origenLimite = "Puntaje";
+
+                if (cliente.LimiteCredito.HasValue && cliente.LimiteCredito.Value > limite)
+                {
+                    limite = cliente.LimiteCredito.Value;
+                    origenLimite = "Límite manual del cliente";
+                }
+
+                if (cliente.MontoMaximoPersonalizado.HasValue && cliente.MontoMaximoPersonalizado.Value > limite)
+                {
+                    limite = cliente.MontoMaximoPersonalizado.Value;
+                    origenLimite = "Monto máximo personalizado";
+                }
             }
 
             var saldoVigente = await CalcularSaldoVigenteAsync(clienteId, cancellationToken);
@@ -97,6 +122,71 @@ namespace TheBuryProject.Services
                 SaldoVigente = saldoVigente,
                 Disponible = disponible
             };
+        }
+
+        public static (decimal Limite, string OrigenLimite) CalcularLimiteEfectivo(
+            decimal limiteBase,
+            decimal? limiteOverride,
+            decimal excepcionDeltaVigente)
+        {
+            if (limiteOverride.HasValue)
+            {
+                return (limiteOverride.Value, "Override absoluto");
+            }
+
+            var limite = limiteBase + Math.Max(0m, excepcionDeltaVigente);
+            var origen = excepcionDeltaVigente > 0m
+                ? "Preset + Excepción"
+                : "Preset";
+
+            return (limite, origen);
+        }
+
+        private async Task<decimal> ObtenerLimiteBaseAsync(
+            Cliente cliente,
+            ClienteCreditoConfiguracion config,
+            CancellationToken cancellationToken)
+        {
+            if (config.CreditoPresetId.HasValue)
+            {
+                var preset = await _context.PuntajesCreditoLimite
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        p => p.Id == config.CreditoPresetId.Value && p.Activo,
+                        cancellationToken);
+
+                if (preset == null)
+                {
+                    throw new CreditoDisponibleException(
+                        $"No existe preset activo para CreditoPresetId={config.CreditoPresetId.Value} del cliente {cliente.Id}.");
+                }
+
+                return preset.LimiteMonto;
+            }
+
+            return await ObtenerLimitePorPuntajeAsync(cliente.NivelRiesgo, cancellationToken);
+        }
+
+        private static decimal ObtenerExcepcionDeltaVigente(
+            ClienteCreditoConfiguracion config,
+            DateTime fechaUtc)
+        {
+            if (!config.ExcepcionDelta.HasValue || config.ExcepcionDelta.Value <= 0m)
+            {
+                return 0m;
+            }
+
+            if (config.ExcepcionDesde.HasValue && config.ExcepcionDesde.Value > fechaUtc)
+            {
+                return 0m;
+            }
+
+            if (config.ExcepcionHasta.HasValue && config.ExcepcionHasta.Value < fechaUtc)
+            {
+                return 0m;
+            }
+
+            return config.ExcepcionDelta.Value;
         }
     }
 }

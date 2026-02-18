@@ -11,7 +11,7 @@
         </div>
         <div class="col-auto">
             <a asp-action="Index" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver
+                <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver
             </a>
         </div>
     </div>
@@ -60,7 +60,7 @@
     <div class="card mb-4">
         <div class="card-header bg-danger text-white">
             <h5 class="mb-0">
-                <i class="bi bi-clock-history"></i> Análisis por Antigüedad de Deuda
+                <i class="bi bi-clock-history" aria-hidden="true"></i> Análisis por Antigüedad de Deuda
             </h5>
         </div>
         <div class="card-body">
@@ -100,10 +100,10 @@
     <div class="row mb-3">
         <div class="col-md-12 text-end">
             <a asp-action="ExportarMorosidadExcel" class="btn btn-success">
-                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Exportar a Excel
             </a>
             <a asp-action="ExportarMorosidadPdf" class="btn btn-danger">
-                <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF
+                <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> Exportar a PDF
             </a>
         </div>
     </div>
@@ -114,7 +114,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-people"></i> Detalle de Clientes Morosos
+                    <i class="bi bi-people" aria-hidden="true"></i> Detalle de Clientes Morosos
                 </h5>
             </div>
             <div class="card-body p-0">
@@ -122,17 +122,17 @@
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>Cliente</th>
-                                <th>Documento</th>
-                                <th>Teléfono</th>
-                                <th class="text-center">Créditos Vencidos</th>
-                                <th class="text-end">Deuda Vencida</th>
-                                <th class="text-end">Deuda Vigente</th>
-                                <th class="text-end">Total Deuda</th>
-                                <th>Primera Cuota Vencida</th>
-                                <th class="text-center">Días Atraso</th>
-                                <th class="text-center">Nivel Riesgo</th>
-                                <th class="text-center">Acciones</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Documento</th>
+                                <th scope="col">Teléfono</th>
+                                <th scope="col" class="text-center">Créditos Vencidos</th>
+                                <th scope="col" class="text-end">Deuda Vencida</th>
+                                <th scope="col" class="text-end">Deuda Vigente</th>
+                                <th scope="col" class="text-end">Total Deuda</th>
+                                <th scope="col">Primera Cuota Vencida</th>
+                                <th scope="col" class="text-center">Días Atraso</th>
+                                <th scope="col" class="text-center">Nivel Riesgo</th>
+                                <th scope="col" class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -149,7 +149,7 @@
                                     <td>
                                         @if (!string.IsNullOrEmpty(cliente.ClienteTelefono))
                                         {
-                                            <i class="bi bi-telephone"></i>
+                                            <i class="bi bi-telephone" aria-hidden="true"></i>
                                             @cliente.ClienteTelefono
                                         }
                                     </td>
@@ -180,11 +180,13 @@
                                         <div class="btn-group btn-group-sm">
                                             <a asp-controller="Cliente" asp-action="Details" asp-route-id="@cliente.ClienteId"
                                                class="btn btn-info" title="Ver Cliente">
-                                                <i class="bi bi-eye"></i>
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Ver cliente</span>
                                             </a>
                                             <a asp-controller="Credito" asp-action="Details" asp-route-id="@cliente.CreditoIdMasAntiguo"
                                                class="btn btn-warning" title="Ver Crédito Más Antiguo">
-                                                <i class="bi bi-credit-card"></i>
+                                                <i class="bi bi-credit-card" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Ver crédito más antiguo</span>
                                             </a>
                                         </div>
                                     </td>
@@ -193,7 +195,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="table-secondary">
-                                <th colspan="4" class="text-end">TOTALES:</th>
+                                <th scope="row" colspan="4" class="text-end">TOTALES:</th>
                                 <th class="text-end text-danger">$@Model.TotalDeudaVencida.ToString("N2")</th>
                                 <th class="text-end text-warning">$@Model.TotalDeudaVigente.ToString("N2")</th>
                                 <th class="text-end">$@(Model.TotalDeudaVencida + Model.TotalDeudaVigente).ToString("N2")</th>
@@ -209,7 +211,7 @@
         <div class="card mt-3">
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-lightbulb"></i> Recomendaciones
+                    <i class="bi bi-lightbulb" aria-hidden="true"></i> Recomendaciones
                 </h5>
             </div>
             <div class="card-body">
@@ -271,8 +273,8 @@
     }
     else
     {
-        <div class="alert alert-success">
-            <i class="bi bi-check-circle-fill"></i>
+        <div class="alert alert-success" role="alert">
+            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
             <strong>¡Excelente!</strong> No hay clientes con deudas vencidas. La cartera está al día.
         </div>
     }

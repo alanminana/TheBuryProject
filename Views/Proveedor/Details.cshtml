@@ -8,16 +8,16 @@
     <div class="row mb-4 align-items-center">
         <div class="col">
             <h1 class="h3 fw-bold text-light mb-0">
-                <i class="bi bi-truck text-info me-2"></i> Detalle de Proveedor
+                <i class="bi bi-truck text-info me-2" aria-hidden="true"></i> Detalle de Proveedor
             </h1>
             <p class="text-secondary mb-0">Información general y asociaciones del proveedor</p>
         </div>
         <div class="col-auto d-flex gap-2">
             <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning text-dark fw-semibold">
-                <i class="bi bi-pencil-square me-2"></i>Editar
+                <i class="bi bi-pencil-square me-2" aria-hidden="true"></i>Editar
             </a>
             <a asp-action="Index" class="btn btn-outline-light">
-                <i class="bi bi-arrow-left me-2"></i>Volver al listado
+                <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver al listado
             </a>
         </div>
     </div>
@@ -28,7 +28,7 @@
             <div class="card bg-dark border-0 shadow-sm mb-4">
                 <div class="card-header bg-body-secondary border-0">
                     <h5 class="mb-0 text-info">
-                        <i class="bi bi-info-circle me-2"></i>Información General
+                        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>Información General
                     </h5>
                 </div>
                 <div class="card-body text-light">
@@ -53,11 +53,11 @@
                                 <dd class="col-sm-7">
                                     @if (Model.Activo)
                                     {
-                                        <span class="badge bg-success text-dark"><i class="bi bi-check-circle"></i> Activo</span>
+                                        <span class="badge bg-success text-dark"><i class="bi bi-check-circle" aria-hidden="true"></i> Activo</span>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-danger text-light"><i class="bi bi-x-circle"></i> Inactivo</span>
+                                        <span class="badge bg-danger text-light"><i class="bi bi-x-circle" aria-hidden="true"></i> Inactivo</span>
                                     }
                                 </dd>
 
@@ -113,19 +113,19 @@
             <div class="card bg-dark border-0 shadow-sm">
                 <div class="card-header bg-body-secondary border-0">
                     <h5 class="mb-0 text-info">
-                        <i class="bi bi-diagram-3 me-2"></i>Asociaciones con el Catálogo
+                        <i class="bi bi-diagram-3 me-2" aria-hidden="true"></i>Asociaciones con el Catálogo
                     </h5>
                 </div>
                 <div class="card-body text-light">
                     <div class="row g-4">
                         <div class="col-md-4">
-                            <h6 class="fw-semibold text-info"><i class="bi bi-tag me-2"></i>Categorías</h6>
+                            <h6 class="fw-semibold text-info"><i class="bi bi-tag me-2" aria-hidden="true"></i>Categorías</h6>
                             @if (Model.CategoriasAsociadas.Any())
                             {
                                 <ul class="list-unstyled small mb-0">
                                     @foreach (var c in Model.CategoriasAsociadas.OrderBy(c => c))
                                     {
-                                        <li><i class="bi bi-dot text-info"></i>@c</li>
+                                        <li><i class="bi bi-dot text-info" aria-hidden="true"></i>@c</li>
                                     }
                                 </ul>
                             }
@@ -136,13 +136,13 @@
                         </div>
 
                         <div class="col-md-4">
-                            <h6 class="fw-semibold text-info"><i class="bi bi-award me-2"></i>Marcas</h6>
+                            <h6 class="fw-semibold text-info"><i class="bi bi-award me-2" aria-hidden="true"></i>Marcas</h6>
                             @if (Model.MarcasAsociadas.Any())
                             {
                                 <ul class="list-unstyled small mb-0">
                                     @foreach (var m in Model.MarcasAsociadas.OrderBy(m => m))
                                     {
-                                        <li><i class="bi bi-dot text-info"></i>@m</li>
+                                        <li><i class="bi bi-dot text-info" aria-hidden="true"></i>@m</li>
                                     }
                                 </ul>
                             }
@@ -153,13 +153,13 @@
                         </div>
 
                         <div class="col-md-4">
-                            <h6 class="fw-semibold text-info"><i class="bi bi-box-seam me-2"></i>Productos Clave</h6>
+                            <h6 class="fw-semibold text-info"><i class="bi bi-box-seam me-2" aria-hidden="true"></i>Productos Clave</h6>
                             @if (Model.ProductosAsociados.Any())
                             {
                                 <ul class="list-unstyled small mb-0">
                                     @foreach (var p in Model.ProductosAsociados.OrderBy(p => p))
                                     {
-                                        <li><i class="bi bi-dot text-info"></i>@p</li>
+                                        <li><i class="bi bi-dot text-info" aria-hidden="true"></i>@p</li>
                                     }
                                 </ul>
                             }
@@ -177,7 +177,7 @@
         <div class="col-lg-4">
             <div class="card bg-body-secondary border-0 shadow-sm mb-4">
                 <div class="card-header border-0 bg-dark text-light">
-                    <h5 class="mb-0 text-info"><i class="bi bi-graph-up me-2"></i>Métricas rápidas</h5>
+                    <h5 class="mb-0 text-info"><i class="bi bi-graph-up me-2" aria-hidden="true"></i>Métricas rápidas</h5>
                 </div>
                 <div class="card-body text-light">
                     <div class="d-flex flex-column gap-3">
